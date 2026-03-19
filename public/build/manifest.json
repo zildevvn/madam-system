@@ -1,11 +1,28 @@
 {
+  "resources/images/Logo.png": {
+    "file": "assets/Logo-Cg5u9XuE.png",
+    "src": "resources/images/Logo.png"
+  },
+  "resources/images/bg-home.jpg": {
+    "file": "assets/bg-home-C0g112qC.jpg",
+    "src": "resources/images/bg-home.jpg"
+  },
+  "resources/images/image-madam.jpg": {
+    "file": "assets/image-madam-2XTCAgdh.jpg",
+    "src": "resources/images/image-madam.jpg"
+  },
   "resources/js/app.jsx": {
-    "file": "assets/app-JtHuEt8J.js",
+    "file": "assets/app-C7T-6fxL.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "css": [
-      "assets/app-BR4LZGDj.css"
+      "assets/app-BTrUHVWx.css"
+    ],
+    "assets": [
+      "assets/Logo-Cg5u9XuE.png",
+      "assets/image-madam-2XTCAgdh.jpg",
+      "assets/bg-home-C0g112qC.jpg"
     ]
   }
 }
