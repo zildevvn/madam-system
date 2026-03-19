@@ -11,6 +11,12 @@ body {
     color: $color-text
 }
 
+:root {
+    @media (max-width: 399.98px) {
+        --text-sm: 14px;
+    }
+}
+
 h1,
 h2,
 h3,
