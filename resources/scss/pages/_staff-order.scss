@@ -1,0 +1,24 @@
+.md-staff-order-page {
+    .item-info {
+        svg {
+            width: 100%;
+            max-width: 20px;
+            height: auto;
+
+            @media (max-width: 399.98px) {
+                max-width: 18px;
+            }
+
+            path {
+                stroke: $color-primary;
+            }
+        }
+    }
+
+    .list-tables {
+        .is-busy {
+            background-color: $color-second;
+            color: #fff;
+        }
+    }
+}
