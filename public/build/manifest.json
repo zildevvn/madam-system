@@ -7,21 +7,26 @@
     "file": "assets/bg-home-C0g112qC.jpg",
     "src": "resources/images/bg-home.jpg"
   },
+  "resources/images/default-product.png": {
+    "file": "assets/default-product-LzAw5vD-.png",
+    "src": "resources/images/default-product.png"
+  },
   "resources/images/image-madam.jpg": {
     "file": "assets/image-madam-2XTCAgdh.jpg",
     "src": "resources/images/image-madam.jpg"
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-C7T-6fxL.js",
+    "file": "assets/app-CNr2HR1L.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "css": [
-      "assets/app-BTrUHVWx.css"
+      "assets/app-WysDWbZ3.css"
     ],
     "assets": [
       "assets/Logo-Cg5u9XuE.png",
       "assets/image-madam-2XTCAgdh.jpg",
+      "assets/default-product-LzAw5vD-.png",
       "assets/bg-home-C0g112qC.jpg"
     ]
   }
