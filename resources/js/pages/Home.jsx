@@ -139,7 +139,7 @@ export default function Home() {
                             )}
 
                             <div className="flex items-center justify-between space-x-4">
-                                <button type="submit" disabled={loading} className={`md-btn ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <button type="submit" disabled={loading} className={`mdt-btn${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                     {loading ? 'Logging in...' : 'Log In'}
                                 </button>
                             </div>

@@ -1,0 +1,80 @@
+.mdt-order-page {
+    &__sidebar {
+        .item-category {
+            line-height: 1.2;
+            font-weight: 500;
+            background: transparent;
+            color: $color-text;
+            transition: $transition-base;
+            border-bottom: 1px solid #f3f4f6;
+
+            .category-icon {
+                svg {
+                    width: 28px;
+                    height: 28px;
+                    stroke: #9ca3af;
+                    transition: $transition-base;
+
+                    @media (max-width: 767.98px) {
+                        width: 22px;
+                        height: 22px;
+                    }
+                }
+            }
+
+            .category-name {
+                display: block;
+                margin-top: 4px;
+            }
+
+            &.is-active {
+                background: #fff;
+                color: $color-second;
+                position: relative;
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                    background: $color-second;
+                }
+
+                .category-icon {
+                    svg {
+                        stroke: $color-second;
+                    }
+                }
+            }
+        }
+    }
+
+
+    .list-products {
+        .product-item {
+            background: $color-blue-gray;
+
+            h3 {
+                color: #fff;
+                font-size: 14px;
+                font-weight: 400;
+
+                @media (max-width: 767.98px) {
+                    font-size: 12px;
+                }
+            }
+        }
+    }
+
+    .product-category-section {
+        h2 {
+            font-size: 16px;
+
+            @media (max-width: 767.98px) {
+                font-size: 13px;
+            }
+        }
+    }
+}

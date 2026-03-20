@@ -8,12 +8,14 @@ import axios from "axios";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import DefaultLayout from "./layouts/DefaultLayout";
 import StaffOrderLayout from "./layouts/StaffOrderLayout";
+import OrderLayout from "./layouts/OrderLayout";
 import Home from "./pages/Home";
 import Tables from "./pages/Tables";
 import StaffOrder from "./pages/StaffOrder";
 import Kitchen from "./pages/Kitchen";
 import Accountant from "./pages/Accountant";
 import Admin from "./pages/Admin";
+import Order from "./pages/Order";
 
 // Set base default header
 window.axios = axios;
@@ -38,6 +40,7 @@ function App() {
                     <Route path="/kitchen" element={<DefaultLayout><Kitchen /></DefaultLayout>} />
                     <Route path="/accountant" element={<DefaultLayout><Accountant /></DefaultLayout>} />
                     <Route path="/admin" element={<DefaultLayout><Admin /></DefaultLayout>} />
+                    <Route path="/order/:tableId" element={<OrderLayout><Order /></OrderLayout>} />
                 </Route>
             </Routes>
         </BrowserRouter>

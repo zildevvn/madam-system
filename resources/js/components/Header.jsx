@@ -34,7 +34,7 @@ export default function Header() {
                     <div className="flex justify-between items-center">
                         <div className="flex h-auto">
                             <Link to="/" className="flex items-center">
-                                <img src={LogoImg} alt="logo" className="w-full max-w-[120px] h-auto" />
+                                <img src={LogoImg} alt="logo" className="w-full max-w-[70px] md:max-w-[100px] h-auto" />
                             </Link>
                         </div>
 

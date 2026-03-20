@@ -8,7 +8,8 @@ body {
     line-height: 1.5;
     font-weight: 400;
     font-family: $font-primary;
-    color: $color-text
+    color: $color-text;
+    background: $color-bg-light;
 }
 
 :root {
@@ -17,44 +18,64 @@ body {
     }
 }
 
+main {
+    background: $color-bg-light;
+}
+
+.nmc-bg-light {
+    background: $color-bg-light;
+}
+
 h1,
 h2,
 h3,
 h4,
 h5,
-h6 {
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
     font-family: $font-second;
     font-weight: 700;
     line-height: 1.2;
     color: $color-text;
 }
 
-h1 {
+h1,
+.h1 {
     font-size: 48px;
 }
 
-h2 {
+h2,
+.h2 {
     font-size: 40px;
 }
 
-h3 {
+h3,
+.h3 {
     font-size: 32px;
 }
 
-h4 {
+h4,
+.h4 {
     font-size: 24px;
 }
 
-h5 {
+h5,
+.h5 {
     font-size: 20px;
 }
 
-h6 {
+h6,
+.h6 {
     font-size: 16px;
 }
 
-.md-btn {
-    font-size: 16px;
+.mdt-btn {
+    font-size: 14px;
     line-height: 1.5;
     font-weight: 600;
     font-family: $font-primary;
@@ -65,12 +86,26 @@ h6 {
     transition: $transition-base;
     padding: 12px 24px;
     border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
 
     &:hover {
         background: darken($color-primary, 10%);
     }
 
     @media (max-width: 767.98px) {
-        font-size: 14px;
+        font-size: 12px;
+    }
+
+    svg {
+        width: 100%;
+        height: auto;
+        max-width: 16px;
+
+        path {
+            stroke: #fff;
+        }
     }
 }

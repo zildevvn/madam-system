@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import FooterStaffOrder from '../components/FooterStaffOrder';
 
 export default function StaffOrder() {
+    const navigate = useNavigate();
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -23,21 +25,8 @@ export default function StaffOrder() {
         fetchTables();
     }, []);
 
-    const getStatusColor = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'available':
-            case 'empty':
-                return 'bg-green-100 text-green-700 border-green-200';
-            case 'occupied':
-            case 'busy':
-                return 'bg-amber-100 text-amber-700 border-amber-200';
-            case 'reserved':
-                return 'bg-blue-100 text-blue-700 border-blue-200';
-            case 'calling_bill':
-                return 'bg-purple-100 text-purple-700 border-purple-200';
-            default:
-                return 'bg-gray-100 text-gray-700 border-gray-200';
-        }
+    const handleTableClick = (tableId) => {
+        navigate(`/order/${tableId}`);
     };
 
     const emptyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'available' || t.status?.toLowerCase() === 'empty').length;
@@ -49,9 +38,6 @@ export default function StaffOrder() {
             </div>
         );
     }
-
-    // console.log(tables)
-    // console.log("check code")
 
     return (
         <div className="md-staff-order-page pb-20">
@@ -83,7 +69,8 @@ export default function StaffOrder() {
                         {tables.map((table, index) => (
                             <div
                                 key={table.id}
-                                className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 ${table.status?.toLowerCase() === 'busy' ? 'is-busy' : ''}`}
+                                onClick={() => handleTableClick(table.id)}
+                                className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${table.status?.toLowerCase() === 'busy' ? 'is-busy' : ''}`}
                             >
                                 <span className="text-lg font-bold">{index + 1}</span>
                                 <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
