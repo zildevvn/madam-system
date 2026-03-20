@@ -22,7 +22,7 @@ main {
     background: $color-bg-light;
 }
 
-.nmc-bg-light {
+.mdt-bg-light {
     background: $color-bg-light;
 }
 
@@ -90,6 +90,7 @@ h6,
     align-items: center;
     justify-content: center;
     gap: 3px;
+    overflow: hidden;
 
     &:hover {
         background: darken($color-primary, 10%);
