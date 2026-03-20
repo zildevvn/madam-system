@@ -1,4 +1,17 @@
 .md-staff-order-page {
+    padding-top: 160px;
+
+    >div {
+        &:first-child {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            z-index: 40;
+            top: 120px;
+        }
+    }
+
     .item-info {
         svg {
             width: 100%;

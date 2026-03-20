@@ -5,8 +5,9 @@ import "../scss/app.scss";
 
 
 import axios from "axios";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Layout from "./components/Layout";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import DefaultLayout from "./layouts/DefaultLayout";
+import StaffOrderLayout from "./layouts/StaffOrderLayout";
 import Home from "./pages/Home";
 import Tables from "./pages/Tables";
 import StaffOrder from "./pages/StaffOrder";
@@ -23,7 +24,7 @@ const ProtectedRoute = ({ children }) => {
     if (!user) {
         return <Navigate to="/" replace />;
     }
-    return children;
+    return children ? children : <Outlet />;
 };
 
 function App() {
@@ -31,12 +32,12 @@ function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Home />} />
-                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                    <Route path="/tables" element={<Tables />} />
-                    <Route path="/staff-order" element={<StaffOrder />} />
-                    <Route path="/kitchen" element={<Kitchen />} />
-                    <Route path="/accountant" element={<Accountant />} />
-                    <Route path="/admin" element={<Admin />} />
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/tables" element={<DefaultLayout><Tables /></DefaultLayout>} />
+                    <Route path="/staff-order" element={<StaffOrderLayout><StaffOrder /></StaffOrderLayout>} />
+                    <Route path="/kitchen" element={<DefaultLayout><Kitchen /></DefaultLayout>} />
+                    <Route path="/accountant" element={<DefaultLayout><Accountant /></DefaultLayout>} />
+                    <Route path="/admin" element={<DefaultLayout><Admin /></DefaultLayout>} />
                 </Route>
             </Routes>
         </BrowserRouter>

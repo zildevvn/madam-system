@@ -25,10 +25,11 @@ export default function Header() {
         localStorage.removeItem('user');
         navigate('/');
     };
+    const isStaffOrder = location.pathname === '/staff-order';
 
     return (
         <>
-            <header className="bg-white shadow">
+            <header className={`bg-white shadow ${isStaffOrder ? 'is-fixed' : ''}`}>
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center">
                         <div className="flex h-auto">
@@ -97,11 +98,10 @@ export default function Header() {
                                 key={item.name}
                                 to={item.href}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center px-6 py-3 text-sm font-medium transition-all duration-200 ${
-                                    isActive(item.href)
-                                        ? 'bg-orange-50 text-orange-600 border-r-4 border-orange-500'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                }`}
+                                className={`flex items-center px-6 py-3 text-sm font-medium transition-all duration-200 ${isActive(item.href)
+                                    ? 'bg-orange-50 text-orange-600 border-r-4 border-orange-500'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
                             >
                                 {item.name}
                             </Link>

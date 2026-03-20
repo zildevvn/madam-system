@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import FooterStaffOrder from '../components/FooterStaffOrder';
 
 export default function StaffOrder() {
     const [tables, setTables] = useState([]);
@@ -53,8 +54,8 @@ export default function StaffOrder() {
     // console.log("check code")
 
     return (
-        <div className="md-staff-order-page">
-            <div className="bg-white py-3 border-t border-gray-200 flex items-center justify-between gap-2">
+        <div className="md-staff-order-page pb-20">
+            <div className="bg-white py-3 border-t border-b border-gray-200 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between">
                     <p className="item-info flex items-center gap-1 m-0 text-sm">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
@@ -71,10 +72,6 @@ export default function StaffOrder() {
             {/* Content Area */}
             <div className="md-staff-order-page__content py-8">
                 <div className="w-full max-w-[1200px] mx-auto px-[20px] flex items-start gap-3 md:gap-4">
-                    <div className="flex-0 w-20 items-center justify-between mb-6">
-                        <h5>Bàn</h5>
-                    </div>
-
                     {error && (
                         <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm flex items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
