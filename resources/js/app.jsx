@@ -16,6 +16,7 @@ import Kitchen from "./pages/Kitchen";
 import Accountant from "./pages/Accountant";
 import Admin from "./pages/Admin";
 import Order from "./pages/Order";
+import Checkout from "./pages/Checkout";
 
 // Set base default header
 window.axios = axios;
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/accountant" element={<DefaultLayout><Accountant /></DefaultLayout>} />
                     <Route path="/admin" element={<DefaultLayout><Admin /></DefaultLayout>} />
                     <Route path="/order/:tableId" element={<OrderLayout><Order /></OrderLayout>} />
+                    <Route path="/checkout/:tableId" element={<Checkout />} />
                 </Route>
             </Routes>
         </BrowserRouter>

@@ -9,11 +9,10 @@ export default function HeaderOrder() {
     return (
         <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40">
             <div className="max-w-[1200px] mx-auto px-2 h-auto grid grid-cols-3 items-center">
-
                 <div className="flex items-center">
                     <button
                         onClick={() => navigate('/staff-order')}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
+                        className="mdt-btn-back p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
                     >
                         <svg width="24px" height="24px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </button>
