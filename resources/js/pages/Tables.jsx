@@ -1,23 +1,18 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { fetchTables } from "../store/slices/tableSlice";
 
 export default function Tables() {
-    const [tables, setTables] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const dispatch = useAppDispatch();
+    const { items: tables, status, error } = useAppSelector(state => state.table);
 
     useEffect(() => {
-        axios.get("/api/tables")
-            .then(res => {
-                setTables(res.data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setError("Failed to fetch tables data");
-                setLoading(false);
-            });
-    }, []);
+        if (status === 'idle') {
+            dispatch(fetchTables());
+        }
+    }, [status, dispatch]);
+
+    const loading = status === 'loading';
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">

@@ -1,5 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Provider } from 'react-redux';
+import { store } from './store';
 import "../css/app.css";
 import "../scss/app.scss";
 
@@ -22,8 +24,10 @@ import Checkout from "./pages/Checkout";
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
+import { useAppSelector } from "./store/hooks";
+
 const ProtectedRoute = ({ children }) => {
-    const user = localStorage.getItem("user");
+    const { user } = useAppSelector(state => state.auth);
     if (!user) {
         return <Navigate to="/" replace />;
     }
@@ -49,4 +53,8 @@ function App() {
     );
 }
 
-ReactDOM.createRoot(document.getElementById("app")).render(<App />);
+ReactDOM.createRoot(document.getElementById("app")).render(
+    <Provider store={store}>
+        <App />
+    </Provider>
+);

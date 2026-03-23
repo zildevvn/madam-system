@@ -1,29 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchTables } from '../store/slices/tableSlice';
 import FooterStaffOrder from '../components/FooterStaffOrder';
 
 export default function StaffOrder() {
     const navigate = useNavigate();
-    const [tables, setTables] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const dispatch = useAppDispatch();
+    const { items: tables, status, error } = useAppSelector(state => state.table);
 
     useEffect(() => {
-        const fetchTables = async () => {
-            try {
-                const response = await axios.get('/api/tables');
-                setTables(response.data);
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching tables:", err);
-                setError("Could not load tables. Please try again later.");
-                setLoading(false);
-            }
-        };
+        if (status === 'idle') {
+            dispatch(fetchTables());
+        }
+    }, [status, dispatch]);
 
-        fetchTables();
-    }, []);
+    const loading = status === 'loading';
 
     const handleTableClick = (tableId) => {
         navigate(`/order/${tableId}`);

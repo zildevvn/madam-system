@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { logout } from '../store/slices/authSlice';
 import LogoImg from '../../images/Logo.png';
 
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const { user } = useAppSelector(state => state.auth);
 
     const navigation = [
         { name: 'Staff Order', href: '/staff-order' },
@@ -22,7 +25,7 @@ export default function Header() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('user');
+        dispatch(logout());
         navigate('/');
     };
     const isStaffOrder = location.pathname === '/staff-order';

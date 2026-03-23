@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { login } from "../store/slices/authSlice";
 
 import TeamImg from '../../images/image-madam.jpg';
 import LogoImg from '../../images/logo.png';
@@ -8,14 +9,16 @@ import LogoImg from '../../images/logo.png';
 export default function Home() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const dispatch = useAppDispatch();
+    const { user, status, error: reduxError } = useAppSelector(state => state.auth);
+    const [localError, setLocalError] = useState("");
     const navigate = useNavigate();
 
+    const loading = status === 'loading';
+    const error = reduxError || localError;
+
     useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            const user = JSON.parse(storedUser);
+        if (user) {
             const role = user.role?.toLowerCase();
             if (role === 'admin') {
                 navigate("/admin");
@@ -27,49 +30,18 @@ export default function Home() {
                 navigate("/staff-order");
             }
         }
-    }, [navigate]);
+    }, [user, navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError("");
+        setLocalError("");
 
         if (!username || !password) {
-            setError("Please enter both username and password.");
+            setLocalError("Please enter both username and password.");
             return;
         }
 
-        console.log(username, password)
-
-        setLoading(true);
-        try {
-            const response = await axios.post('/api/login', { username, password }, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            });
-            const user = response.data.user;
-
-            // Store user in local storage
-            localStorage.setItem("user", JSON.stringify(user));
-
-            // Navigate based on user role
-            const role = user.role?.toLowerCase();
-            if (role === 'admin') {
-                navigate("/admin");
-            } else if (role === 'kitchen') {
-                navigate("/kitchen");
-            } else if (role === 'accountant') {
-                navigate("/accountant");
-            } else {
-                navigate("/staff-order");
-            }
-        } catch (err) {
-            console.error(err);
-            setError(err.response?.data?.message || "Login failed. Please verify your credentials.");
-        } finally {
-            setLoading(false);
-        }
+        dispatch(login({ username, password }));
     };
 
     return (
