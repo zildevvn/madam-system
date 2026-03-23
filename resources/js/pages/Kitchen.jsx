@@ -108,33 +108,13 @@ const Kitchen = () => {
 
     return (
         <div className="md-management-page mdt-kitchen-page !pt-0 pb-20 min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="!hidden bg-white py-4 border-b border-gray-200 sticky top-0 z-20">
-                <div className="max-w-[1600px] mx-auto px-6 flex items-center justify-between">
-                    <h1 className="text-xl font-black text-gray-900 m-0 flex items-center gap-2">
-                        <span className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></span>
-                        HỆ THỐNG NHÀ BẾP
-                    </h1>
-                    <div className="flex items-center gap-6">
-                        <div className="text-sm font-bold flex gap-4">
-                            <span className="text-blue-500">Chờ: {orders.reduce((s, o) => s + o.items.filter(i => i.status === 'pending').length, 0)}</span>
-                            <span className="text-orange-500">Đang nấu: {orders.reduce((s, o) => s + o.items.filter(i => i.status === 'cooking').length, 0)}</span>
-                            <span className="text-green-500">Sẵn sàng: {orders.reduce((s, o) => s + o.items.filter(i => i.status === 'ready').length, 0)}</span>
-                        </div>
-                        <div className="text-xs font-mono bg-gray-100 px-3 py-1 rounded-full text-gray-500">
-                            {currentTime.toLocaleTimeString()}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div className="max-w-[1600px] mx-auto px-6 py-4 h-[calc(100vh-40px)] overflow-hidden">
                 <div className="grid grid-cols-12 gap-6 h-full">
 
                     {/* LEFT COLUMN: Table List (25%) */}
                     <div className="col-span-3 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                        <TableList 
-                            tables={tables} 
+                        <TableList
+                            tables={tables}
                             orders={orders}
                             currentTime={currentTime}
                         />

@@ -29,7 +29,7 @@ export default function Header() {
         dispatch(logout());
         navigate('/');
     };
-    const isStaffOrder = location.pathname === '/staff-order' || location.pathname === '/bills';
+    const isStaffOrder = location.pathname === '/staff-order' || location.pathname === '/bills' || location.pathname === '/cashier';
 
     return (
         <>

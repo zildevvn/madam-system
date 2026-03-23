@@ -89,12 +89,6 @@ const DelayWarnings = ({
                                     <h6 className="m-0">{item.name}</h6>
                                     <span className="text-xs font-black">x{item.quantity}</span>
                                 </div>
-                                {item.status && (
-                                    <div className="mt-2 text-[8px] font-bold uppercase tracking-widest opacity-60 flex items-center gap-1">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${statusConfig[item.status]?.dotClass || ''}`}></div>
-                                        {statusConfig[item.status]?.label || item.status}
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>

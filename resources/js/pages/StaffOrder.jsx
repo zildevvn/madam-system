@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchTables } from '../store/slices/tableSlice';
-import FooterStaffOrder from '../components/FooterStaffOrder';
+import TableGrid from '../components/TableGrid';
 
 export default function StaffOrder() {
     const navigate = useNavigate();
@@ -57,27 +57,11 @@ export default function StaffOrder() {
                         </div>
                     )}
 
-                    <div className="list-tables w-full flex-1 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-                        {tables.map((table, index) => (
-                            <div
-                                key={table.id}
-                                onClick={() => handleTableClick(table.id)}
-                                className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${table.status?.toLowerCase() === 'busy' ? 'is-busy' : ''}`}
-                            >
-                                <span className="text-lg font-bold">{index + 1}</span>
-                                <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
-                                <span className="mt-1 text-[10px] uppercase tracking-wider font-semibold">
-                                    {(!table.status || table.status.toLowerCase() === 'available' || table.status.toLowerCase() === 'empty') ? 'Bàn Trống' : '20 minutes'}
-                                </span>
-                            </div>
-                        ))}
-
-                        {tables.length === 0 && !error && (
-                            <div className="col-span-full py-20 text-center text-gray-400">
-                                Không tìm thấy dữ liệu bàn nào.
-                            </div>
-                        )}
-                    </div>
+                    <TableGrid
+                        tables={tables}
+                        onTableClick={handleTableClick}
+                        error={error}
+                    />
                 </div>
             </div>
         </div>

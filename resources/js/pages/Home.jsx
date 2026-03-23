@@ -24,8 +24,8 @@ export default function Home() {
                 navigate("/admin");
             } else if (role === 'kitchen') {
                 navigate("/kitchen");
-            } else if (role === 'accountant') {
-                navigate("/accountant");
+            } else if (role === 'accountant' || role === 'cashier') {
+                navigate("/cashier");
             } else {
                 navigate("/staff-order");
             }
