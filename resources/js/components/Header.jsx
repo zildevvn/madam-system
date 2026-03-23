@@ -17,6 +17,7 @@ export default function Header() {
         { name: 'Kitchen', href: '/kitchen' },
         { name: 'Accountant', href: '/accountant' },
         { name: 'Tables', href: '/tables' },
+        { name: 'Bills', href: '/bills' },
         { name: 'Admin', href: '/admin' },
     ];
 
@@ -28,7 +29,7 @@ export default function Header() {
         dispatch(logout());
         navigate('/');
     };
-    const isStaffOrder = location.pathname === '/staff-order';
+    const isStaffOrder = location.pathname === '/staff-order' || location.pathname === '/bills';
 
     return (
         <>
