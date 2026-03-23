@@ -1,59 +1,304 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📘 Coding Conventions & Best Practices
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 🎯 Goals
 
-## About Laravel
+* Avoid redundant queries (N+1)
+* Optimize performance for 100–200 concurrent users
+* Maintain clean, scalable codebase
+* Manage state efficiently with Redux Toolkit
+* Ensure real-time consistency (Kitchen / Bar / Cashier)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+# 🧠 Backend (Laravel)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 1. Eager Loading (REQUIRED)
 
-## Learning Laravel
+Always load relationships explicitly to avoid N+1 queries.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```php
+Order::with(['table', 'items.product'])->get();
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 2. No Queries Inside Loops
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+❌ Bad:
 
-### Premium Partners
+```php
+foreach ($ids as $id) {
+    Product::find($id);
+}
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+✅ Good:
 
-## Contributing
+```php
+Product::whereIn('id', $ids)->get();
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 3. Select Only Required Fields
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```php
+Product::select('id', 'name', 'price')->get();
+```
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 4. Database Indexing (REQUIRED)
 
-## License
+Add indexes to frequently queried columns:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+* `order_id`
+* `product_id`
+* `table_id`
+* `status`
+
+---
+
+## 5. Service Layer Architecture
+
+Controllers must remain thin.
+Business logic belongs in Services.
+
+```php
+public function store(OrderRequest $request) {
+    return $this->orderService->create($request->validated());
+}
+```
+
+---
+
+## 6. API Response Standard
+
+Always return consistent structure:
+
+```php
+return response()->json([
+    'data' => $data,
+    'message' => 'Success'
+]);
+```
+
+---
+
+## 7. Order Domain Rules
+
+* `orders` = master record
+* `order_items` = individual items
+* Never update entire order when updating a single item
+* Always track item-level status (`pending`, `preparing`, `done`)
+
+---
+
+## 8. Realtime Broadcasting Rules
+
+* Do not broadcast unnecessary data
+* Use events for all realtime updates
+* Keep payload minimal
+
+```php
+event(new NewOrderCreated($order));
+```
+
+---
+
+## 9. Avoid Fat Models & Controllers
+
+* No business logic inside Controllers
+* No complex logic inside Models
+* Use Service / Action classes
+
+---
+
+# ⚛️ Frontend (React + Redux Toolkit)
+
+## 1. State Structure
+
+```js
+store = {
+  cart,
+  orders,
+  auth,
+  realtime
+}
+```
+
+---
+
+## 2. Normalize State (REQUIRED)
+
+❌ Bad:
+
+```js
+orders: [{ items: [{ product: {...} }] }]
+```
+
+✅ Good:
+
+```js
+orders: {
+  byId: {},
+  allIds: []
+}
+```
+
+---
+
+## 3. Use Selectors
+
+```js
+const selectOrders = (state) =>
+  state.orders.allIds.map(id => state.orders.byId[id])
+```
+
+---
+
+## 4. Memoized Selectors
+
+```js
+import { createSelector } from '@reduxjs/toolkit'
+
+const selectCartTotal = createSelector(
+  state => state.cart.items,
+  items => items.reduce((total, item) => total + item.price, 0)
+)
+```
+
+---
+
+## 5. Prevent Unnecessary Re-renders
+
+❌ Bad:
+
+```js
+useSelector(state => state)
+```
+
+✅ Good:
+
+```js
+useSelector(state => state.orders)
+```
+
+---
+
+## 6. Realtime State Handling
+
+* Never use `useState` for realtime data
+* Always dispatch to Redux
+
+```js
+socket.on('new-order', (data) => {
+  dispatch(addOrder(data))
+})
+```
+
+---
+
+## 7. API Layer Separation
+
+All API calls must be isolated:
+
+```js
+// services/orderService.js
+export const createOrder = (data) => axios.post('/orders', data)
+```
+
+---
+
+## 8. Cart Handling Rule
+
+* Store locally (Redux)
+* Send to server only when submitting order
+
+---
+
+## 9. Avoid Overusing Redux
+
+Do NOT use Redux for:
+
+* UI state (modal, input, toggle)
+
+Use `useState` instead.
+
+---
+
+# 🔄 Realtime Architecture Rules
+
+## Flow
+
+1. Client sends request
+2. Server processes & stores data
+3. Server emits event
+4. Clients receive via WebSocket
+5. Redux updates UI
+
+---
+
+## Channel Separation
+
+* `kitchen` → food items only
+* `bar` → drink items only
+
+---
+
+## Event Rules
+
+* Keep payload minimal
+* Broadcast only necessary data
+* Avoid sending full objects if not needed
+
+---
+
+# 🚀 Performance Best Practices
+
+## Backend
+
+* Use eager loading
+* Avoid query in loops
+* Add proper indexes
+* Use caching if needed (Redis)
+
+---
+
+## Frontend
+
+* Normalize Redux state
+* Use memoized selectors
+* Avoid unnecessary renders
+* Use lazy loading when needed
+
+---
+
+## Realtime
+
+* Dispatch Redux actions only
+* Avoid direct component state updates
+
+---
+
+# ✅ Checklist
+
+### Backend
+
+* [ ] Using eager loading (`with`)
+* [ ] No queries inside loops
+* [ ] Indexed database columns
+* [ ] Service layer implemented
+
+### Frontend
+
+* [ ] Normalized Redux state
+* [ ] Using selectors
+* [ ] Avoiding unnecessary re-renders
+* [ ] API separated into services
+
+### Realtime
+
+* [ ] Events implemented correctly
+* [ ] Redux used for updates
+* [ ] Channels separated (kitchen / bar)
