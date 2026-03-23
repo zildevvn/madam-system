@@ -54,7 +54,7 @@ const Kitchen = () => {
             startTime: new Date(Date.now() - 2 * 60000),
             items: [
                 { id: 106, name: "Nem lụi Huế", quantity: 3, status: 'pending', orderTime: new Date(Date.now() - 2 * 60000) },
-                { id: 107, name: "Trà đào", quantity: 2, status: 'ready', orderTime: new Date(Date.now() - 1 * 60000) }
+                { id: 107, name: "Mỳ xào", quantity: 2, status: 'ready', orderTime: new Date(Date.now() - 1 * 60000) }
             ]
         }
     ]);

@@ -58,7 +58,7 @@ const Bills = () => {
                 startTime: new Date(now - 4 * 60000),
                 served: false,
                 items: [
-                    { name: "Trà đào", quantity: 2, orderTime: new Date(now - 4 * 60000), done: false }
+                    { name: "Mỳ xào", quantity: 2, orderTime: new Date(now - 4 * 60000), done: false }
                 ]
             },
             "20": {
@@ -184,7 +184,7 @@ const Bills = () => {
 
                         {/* Right: Delay Warnings Sidebar */}
                         <div className="col-span-12 md:col-span-4 lg:col-span-3">
-                            <DelayWarnings 
+                            <DelayWarnings
                                 tables={tables}
                                 orders={mockOrders}
                                 currentTime={currentTime}
@@ -217,7 +217,7 @@ const Bills = () => {
                                     return (
                                         <div key={idx} className={`flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}>
                                             <div className="flex items-center gap-4 flex-1">
-                                                <div 
+                                                <div
                                                     onClick={() => toggleItemStatus(selectedTable.id, idx)}
                                                     className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${item.done ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}
                                                 >
