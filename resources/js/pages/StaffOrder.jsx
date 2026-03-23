@@ -32,7 +32,7 @@ export default function StaffOrder() {
     }
 
     return (
-        <div className="md-staff-order-page pb-20">
+        <div className="md-management-page pb-20">
             <div className="bg-white py-3 border-t border-b border-gray-200 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between">
                     <p className="item-info flex items-center gap-1 m-0 text-sm">
@@ -48,7 +48,7 @@ export default function StaffOrder() {
             </div>
 
             {/* Content Area */}
-            <div className="md-staff-order-page__content py-8">
+            <div className="md-management-page__content py-8">
                 <div className="w-full max-w-[1200px] mx-auto px-[20px] flex items-start gap-3 md:gap-4">
                     {error && (
                         <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm flex items-center gap-2">

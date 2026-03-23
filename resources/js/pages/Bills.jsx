@@ -179,7 +179,7 @@ const Bills = () => {
     }
 
     return (
-        <div className="md-staff-order-page pb-20">
+        <div className="md-management-page pb-20">
             <div className="bg-white py-3 border-t border-b border-gray-200">
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between overflow-x-auto no-scrollbar">
                     <div className="flex items-center gap-4">
@@ -198,7 +198,7 @@ const Bills = () => {
                     </div>
                 </div>
             </div>
-            <div className="md-staff-order-page__content py-4 md:py-8">
+            <div className="md-management-page__content py-4 md:py-8">
                 <div className="w-full max-w-[1200px] mx-auto px-[20px] flex items-start gap-3 md:gap-4 flex-col">
                     {error && (
                         <div className="w-full bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm flex items-center gap-2">
