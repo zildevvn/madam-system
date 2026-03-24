@@ -36,21 +36,37 @@ const ProtectedRoute = ({ children }) => {
     return children ? children : <Outlet />;
 };
 
+const RoleProtectedRoute = ({ children, allowedRoles }) => {
+    const { user } = useAppSelector(state => state.auth);
+    if (!user) {
+        return <Navigate to="/" replace />;
+    }
+
+    if (user.role === 'admin') {
+        return children ? children : <Outlet />;
+    }
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-50 text-red-500 font-bold text-2xl">403 | Unauthorized Access</div>;
+    }
+
+    return children ? children : <Outlet />;
+};
+
 function App() {
     return (
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/tables" element={<DefaultLayout><Tables /></DefaultLayout>} />
-                    <Route path="/staff-order" element={<StaffOrderLayout><StaffOrder /></StaffOrderLayout>} />
-                    <Route path="/kitchen" element={<DefaultLayout><Kitchen /></DefaultLayout>} />
-                    <Route path="/accountant" element={<DefaultLayout><Accountant /></DefaultLayout>} />
-                    <Route path="/admin" element={<DefaultLayout><Admin /></DefaultLayout>} />
-                    <Route path="/bills" element={<DefaultLayout><Bills /></DefaultLayout>} />
-                    <Route path="/cashier" element={<DefaultLayout><Cashier /></DefaultLayout>} />
-                    <Route path="/order/:tableId" element={<OrderLayout><Order /></OrderLayout>} />
-                    <Route path="/checkout/:tableId" element={<Checkout />} />
+                    <Route path="/tables" element={<RoleProtectedRoute allowedRoles={['order_staff']}><DefaultLayout><Tables /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={['order_staff']}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
+                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/accountant" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Accountant /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={['order_staff']}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
+                    <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><Checkout /></RoleProtectedRoute>} />
                 </Route>
             </Routes>
         </BrowserRouter>

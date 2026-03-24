@@ -12,14 +12,24 @@ export default function Header() {
 
     const { user } = useAppSelector(state => state.auth);
 
-    const navigation = [
-        { name: 'Staff Order', href: '/staff-order' },
-        { name: 'Kitchen', href: '/kitchen' },
-        { name: 'Accountant', href: '/accountant' },
-        { name: 'Tables', href: '/tables' },
-        { name: 'Bills', href: '/bills' },
-        { name: 'Admin', href: '/admin' },
-    ];
+    const getNavigation = () => {
+        const baseNav = [
+            { name: 'Staff Order', href: '/staff-order', roles: ['order_staff'] },
+            { name: 'Kitchen', href: '/kitchen', roles: ['kitchen'] },
+            { name: 'Accountant', href: '/accountant', roles: ['accountant'] },
+            { name: 'Tables', href: '/tables', roles: ['order_staff'] },
+            { name: 'Bills', href: '/bills', roles: ['order_staff', 'cashier'] },
+            { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
+            { name: 'Admin', href: '/admin', roles: [] },
+        ];
+        
+        if (!user) return [];
+        
+        if (user.role === 'admin') return baseNav;
+        return baseNav.filter(item => item.roles.includes(user.role));
+    };
+
+    const navigation = getNavigation();
 
     const isActive = (path) => {
         return location.pathname === path;

@@ -15,11 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $roles = ['admin', 'order_staff', 'kitchen', 'bar', 'cashier'];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach ($roles as $role) {
+            User::factory()->create([
+                'name' => ucfirst(str_replace('_', ' ', $role)),
+                'email' => $role . '@example.com',
+                'role' => $role,
+            ]);
+        }
     }
 }
