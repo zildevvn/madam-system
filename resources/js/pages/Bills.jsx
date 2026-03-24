@@ -6,7 +6,8 @@ import DelayWarnings from '../components/DelayWarnings';
 
 const Bills = () => {
     const dispatch = useAppDispatch();
-    const { items: tables, status, error } = useAppSelector(state => state.table);
+    const { status, error } = useAppSelector(state => state.table);
+    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
     const [selectedTable, setSelectedTable] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
 

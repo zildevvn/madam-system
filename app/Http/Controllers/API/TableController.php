@@ -3,15 +3,26 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Table;
+use App\Services\TableService;
 use Illuminate\Http\Request;
 
 class TableController extends Controller
 {
+    protected $tableService;
+
+    public function __construct(TableService $tableService)
+    {
+        $this->tableService = $tableService;
+    }
+
     // get all tables
     public function index()
     {
-        return response()->json(Table::all());
+        $tables = $this->tableService->getAllTables();
+        return response()->json([
+            'data' => $tables,
+            'message' => 'Success'
+        ]);
     }
 
     // create table
@@ -23,33 +34,39 @@ class TableController extends Controller
             'capacity' => 'integer'
         ]);
 
-        $table = Table::create($validated);
+        $table = $this->tableService->createTable($validated);
 
-        return response()->json($table, 201);
+        return response()->json([
+            'data' => $table,
+            'message' => 'Table created successfully'
+        ], 201);
     }
 
     // update table
     public function update(Request $request, $id)
     {
-        $table = Table::findOrFail($id);
-
         $validated = $request->validate([
             'name' => 'string',
             'status' => 'string',
             'capacity' => 'integer'
         ]);
 
-        $table->update($validated);
+        $table = $this->tableService->updateTable($id, $validated);
 
-        return response()->json($table);
+        return response()->json([
+            'data' => $table,
+            'message' => 'Table updated successfully'
+        ]);
     }
 
     // delete table
     public function destroy($id)
     {
-        $table = Table::findOrFail($id);
-        $table->delete();
+        $this->tableService->deleteTable($id);
 
-        return response()->json(null, 204);
+        return response()->json([
+            'data' => null,
+            'message' => 'Table deleted successfully'
+        ], 200);
     }
 }

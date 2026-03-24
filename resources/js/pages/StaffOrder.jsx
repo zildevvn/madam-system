@@ -7,7 +7,8 @@ import TableGrid from '../components/TableGrid';
 export default function StaffOrder() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const { items: tables, status, error } = useAppSelector(state => state.table);
+    const { status, error } = useAppSelector(state => state.table);
+    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
 
     useEffect(() => {
         if (status === 'idle') {

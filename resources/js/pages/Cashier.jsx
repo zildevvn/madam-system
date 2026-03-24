@@ -5,7 +5,8 @@ import TableGrid from '../components/TableGrid';
 
 const Cashier = () => {
     const dispatch = useAppDispatch();
-    const { items: tables, status, error } = useAppSelector(state => state.table);
+    const { status, error } = useAppSelector(state => state.table);
+    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
     const [currentTime, setCurrentTime] = useState(new Date());
     const [selectedTable, setSelectedTable] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card'

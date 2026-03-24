@@ -8,7 +8,8 @@ export default function Checkout() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    const { items: selectedItems, orderType } = useAppSelector(state => state.order);
+    const { orderType } = useAppSelector(state => state.order);
+    const selectedItems = useAppSelector(state => state.order.items.allIds.map(id => state.order.items.byId[id]));
 
     const subtotal = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const serviceFee = 5000;

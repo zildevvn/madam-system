@@ -1,7 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  items: [],
+  items: {
+    byId: {},
+    allIds: []
+  },
   orderType: 'dine-in',
   tableId: null,
 };
@@ -11,23 +14,26 @@ const orderSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
-      const existingItem = state.items.find(item => item.id === action.payload.id);
-      if (existingItem) {
-        existingItem.quantity += 1;
+      const item = action.payload;
+      if (state.items.byId[item.id]) {
+        state.items.byId[item.id].quantity += 1;
       } else {
-        state.items.push({ ...action.payload, quantity: 1 });
+        state.items.byId[item.id] = { ...item, quantity: 1 };
+        state.items.allIds.push(item.id);
       }
     },
     removeFromCart: (state, action) => {
-      state.items = state.items.filter(item => item.id !== action.payload);
+      const id = action.payload;
+      delete state.items.byId[id];
+      state.items.allIds = state.items.allIds.filter(itemId => itemId !== id);
     },
     updateQuantity: (state, action) => {
       const { id, quantity } = action.payload;
-      const item = state.items.find(item => item.id === id);
-      if (item) {
-        item.quantity = quantity;
-        if (item.quantity <= 0) {
-          state.items = state.items.filter(i => i.id !== id);
+      if (state.items.byId[id]) {
+        state.items.byId[id].quantity = quantity;
+        if (state.items.byId[id].quantity <= 0) {
+          delete state.items.byId[id];
+          state.items.allIds = state.items.allIds.filter(itemId => itemId !== id);
         }
       }
     },
@@ -38,7 +44,7 @@ const orderSlice = createSlice({
       state.tableId = action.payload;
     },
     clearCart: (state) => {
-      state.items = [];
+      state.items = { byId: {}, allIds: [] };
     },
   },
 });

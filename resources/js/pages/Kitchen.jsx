@@ -13,7 +13,8 @@ const STATUS_CONFIG = {
 
 const Kitchen = () => {
     const dispatch = useAppDispatch();
-    const { items: tables, status: tableStatus } = useAppSelector(state => state.table);
+    const { status: tableStatus } = useAppSelector(state => state.table);
+    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
     const [currentTime, setCurrentTime] = useState(new Date());
 
     // Mock initial orders - refined to be more like Bills.jsx

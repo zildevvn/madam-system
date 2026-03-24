@@ -62,8 +62,14 @@ export const staticCategories = [
 ];
 
 const initialState = {
-  products: staticProducts,
-  categories: staticCategories,
+  products: {
+    byId: staticProducts.reduce((acc, p) => ({ ...acc, [p.id]: p }), {}),
+    allIds: staticProducts.map(p => p.id)
+  },
+  categories: {
+    byId: staticCategories.reduce((acc, c) => ({ ...acc, [c.id]: c }), {}),
+    allIds: staticCategories.map(c => c.id)
+  },
   status: 'succeeded', // Since they are static for now
   error: null,
 };

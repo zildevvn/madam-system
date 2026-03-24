@@ -5,7 +5,7 @@ import { useAppSelector } from '../store/hooks';
 export default function FooterOrder() {
     const navigate = useNavigate();
     const { tableId } = useParams();
-    const items = useAppSelector(state => state.order.items);
+    const items = useAppSelector(state => state.order.items.allIds.map(id => state.order.items.byId[id]));
 
     const total = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const totalQuantity = items.reduce((acc, item) => acc + item.quantity, 0);

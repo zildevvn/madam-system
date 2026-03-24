@@ -4,7 +4,8 @@ import { fetchTables } from "../store/slices/tableSlice";
 
 export default function Tables() {
     const dispatch = useAppDispatch();
-    const { items: tables, status, error } = useAppSelector(state => state.table);
+    const { status, error } = useAppSelector(state => state.table);
+    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
 
     useEffect(() => {
         if (status === 'idle') {

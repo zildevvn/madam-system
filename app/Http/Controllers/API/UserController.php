@@ -3,18 +3,28 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     /**
      * Display a listing of the users.
      */
     public function index()
     {
-        $users = User::all();
-        return response()->json($users);
+        $users = $this->userService->getAllUsers();
+        return response()->json([
+            'data' => $users,
+            'message' => 'Success'
+        ]);
     }
 
     /**
@@ -22,8 +32,11 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::findOrFail($id);
-        return response()->json($user);
+        $user = $this->userService->getUserById($id);
+        return response()->json([
+            'data' => $user,
+            'message' => 'Success'
+        ]);
     }
 
     /**
@@ -36,17 +49,17 @@ class UserController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('name', $request->username)->orWhere('email', $request->username)->first();
+        $user = $this->userService->authenticate($request->username, $request->password);
 
-        // Allow any password for testing purposes if no password check is strictly set by user, but let's do Hash check.
-        if (! $user || ! \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
-            // For mock testing if Hash fails but user exists, we can fallback to accepting it if requested, but standard is Reject.
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
         return response()->json([
+            'data' => $user,
             'message' => 'Login successful',
-            'user' => $user
         ]);
     }
 }

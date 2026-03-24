@@ -17,7 +17,8 @@ const CATEGORY_ICONS = {
 const Order = () => {
     const { tableId } = useParams();
     const dispatch = useAppDispatch();
-    const { products, categories } = useAppSelector(state => state.product);
+    const products = useAppSelector(state => state.product.products.allIds.map(id => state.product.products.byId[id]));
+    const categories = useAppSelector(state => state.product.categories.allIds.map(id => state.product.categories.byId[id]));
 
     const filteredCategories = categories.filter(category =>
         products.some(product => product.category_id === category.id)

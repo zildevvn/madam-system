@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
+import tableService from '../../services/tableService';
 
 export const fetchTables = createAsyncThunk('table/fetchTables', async () => {
-  const response = await axios.get('/api/tables');
-  return response.data;
+  const response = await tableService.getAllTables();
+  return response.data; // The backend now wraps the payload in { data: [...], message: ... }
 });
 
 const initialState = {
-  items: [],
+  byId: {},
+  allIds: [],
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
 };
@@ -23,7 +24,11 @@ const tableSlice = createSlice({
       })
       .addCase(fetchTables.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.items = action.payload;
+        const tables = action.payload;
+        tables.forEach(table => {
+            state.byId[table.id] = table;
+        });
+        state.allIds = tables.map(table => table.id);
       })
       .addCase(fetchTables.rejected, (state, action) => {
         state.status = 'failed';
