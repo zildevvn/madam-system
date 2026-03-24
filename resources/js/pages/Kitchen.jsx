@@ -67,6 +67,20 @@ const Kitchen = () => {
     }, [tableStatus, dispatch]);
 
     useEffect(() => {
+        if (window.Echo) {
+            const channel = window.Echo.channel('orders');
+            channel.listen('OrderUpdated', (e) => {
+                console.log('Real-time order update received:', e);
+                dispatch(fetchTables());
+            });
+
+            return () => {
+                window.Echo.leaveChannel('orders');
+            };
+        }
+    }, [dispatch]);
+
+    useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 10000);
         return () => clearInterval(timer);
     }, []);

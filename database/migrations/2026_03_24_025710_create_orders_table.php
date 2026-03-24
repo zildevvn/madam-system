@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('table_id')->nullable()->constrained('tables')->nullOnDelete();
             $table->enum('order_type', ['dine-in', 'takeout'])->default('dine-in');
-            $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['draft', 'pending', 'processing', 'completed', 'cancelled'])->default('draft');
             $table->integer('total_price')->default(0);
             $table->timestamps();
             

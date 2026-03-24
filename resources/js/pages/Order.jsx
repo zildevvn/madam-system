@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addToCart } from '../store/slices/orderSlice';
+import { addToCart, cancelOrderAsync } from '../store/slices/orderSlice';
 import DefaultProductImg from '../../images/default-product.png';
 
 const CATEGORY_ICONS = {
@@ -16,7 +16,9 @@ const CATEGORY_ICONS = {
 
 const Order = () => {
     const { tableId } = useParams();
+    const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const { activeOrderId } = useAppSelector(state => state.order);
     const products = useAppSelector(state => state.product.products.allIds.map(id => state.product.products.byId[id]));
     const categories = useAppSelector(state => state.product.categories.allIds.map(id => state.product.categories.byId[id]));
 
@@ -98,70 +100,82 @@ const Order = () => {
         dispatch(addToCart(product));
     };
 
+    React.useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (activeOrderId) {
+                navigator.sendBeacon(`/api/orders/${activeOrderId}`);
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [activeOrderId]);
+
     return (
-        <div className="mdt-order-page w-full max-w-[1200px] mx-auto px-2 flex h-[calc(100vh-134px)] overflow-hidden gap-2">
-            <aside
-                ref={sidebarRef}
-                className="mdt-order-page__sidebar bg-white w-1/4 min-w-[100px] max-w-[100px] md:min-w-[150px] md:max-w-[200px] border-r border-gray-200 overflow-y-auto hide-scrollbar"
-            >
-                <div className="flex flex-col">
-                    {filteredCategories.map((category) => (
-                        <button
-                            key={category.id}
-                            onClick={() => handleCategoryClick(category.id)}
-                            className={`item-category flex flex-col items-center justify-center text-center py-[10px] px-[4px] md:px-4 md:py-6 border-none cursor-pointer ${activeCategoryId === category.id
-                                ? 'is-active'
-                                : ''
-                                }`}
-                        >
-                            {CATEGORY_ICONS[category.id] && <div className="category-icon mb-1 md:mb-2">{CATEGORY_ICONS[category.id]}</div>}
-                            <span className="category-name text-[10px] md:text-[12px]">{category.name}</span>
-                        </button>
-                    ))}
-                </div>
-            </aside>
-
-            <main
-                ref={scrollContainerRef}
-                className="flex-1 overflow-y-auto  scroll-smooth"
-            >
-                <div className="w-full">
-                    {filteredCategories.map((category) => {
-                        const categoryProducts = products.filter(p => p.category_id === category.id);
-                        return (
-                            <section
+        <div className="flex flex-col w-full h-[calc(100vh-134px)]">
+            <div className="mdt-order-page w-full max-w-[1200px] mx-auto px-2 flex flex-1 overflow-hidden gap-2 pt-2">
+                <aside
+                    ref={sidebarRef}
+                    className="mdt-order-page__sidebar bg-white w-1/4 min-w-[100px] max-w-[100px] md:min-w-[150px] md:max-w-[200px] border-r border-gray-200 overflow-y-auto hide-scrollbar"
+                >
+                    <div className="flex flex-col">
+                        {filteredCategories.map((category) => (
+                            <button
                                 key={category.id}
-                                id={`category-section-${category.id}`}
-                                data-category-id={category.id}
-                                className="product-category-section mb-4 scroll-mt-6"
+                                onClick={() => handleCategoryClick(category.id)}
+                                className={`item-category flex flex-col items-center justify-center text-center py-[10px] px-[4px] md:px-4 md:py-6 border-none cursor-pointer ${activeCategoryId === category.id
+                                    ? 'is-active'
+                                    : ''
+                                    }`}
                             >
-                                <div className="product-category-section__header flex items-center justify-between mb-3 sticky top-0 mdt-bg-light py-2 z-10">
-                                    <h2 className="h5">{category.name}</h2>
-                                </div>
+                                {CATEGORY_ICONS[category.id] && <div className="category-icon mb-1 md:mb-2">{CATEGORY_ICONS[category.id]}</div>}
+                                <span className="category-name text-[10px] md:text-[12px]">{category.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </aside>
 
-                                <div className="list-products grid grid-cols-2 lg:grid-cols-3 gap-2">
-                                    {categoryProducts.map((product) => (
-                                        <div
-                                            key={product.id}
-                                            className='product-item cursor-pointer overflow-hidden rounded-[0px_10px_0px_10px]'
-                                            onClick={() => handleAddToCart(product)}
-                                        >
-                                            <img
-                                                src={product.image || DefaultProductImg}
-                                                onError={(e) => { e.target.src = DefaultProductImg; }}
-                                                alt={product.name}
-                                                className="aspect-square object-cover object-center"
-                                            />
-                                            <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>{new Intl.NumberFormat('vi-VN').format(product.price)}đ</p>
-                                            <h3 className='text-center py-[12px] px-[5px]]'>{product.name}</h3>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        );
-                    })}
-                </div>
-            </main>
+                <main
+                    ref={scrollContainerRef}
+                    className="flex-1 overflow-y-auto  scroll-smooth"
+                >
+                    <div className="w-full">
+                        {filteredCategories.map((category) => {
+                            const categoryProducts = products.filter(p => p.category_id === category.id);
+                            return (
+                                <section
+                                    key={category.id}
+                                    id={`category-section-${category.id}`}
+                                    data-category-id={category.id}
+                                    className="product-category-section mb-4 scroll-mt-6"
+                                >
+                                    <div className="product-category-section__header flex items-center justify-between mb-3 sticky top-0 mdt-bg-light py-2 z-10">
+                                        <h2 className="h5">{category.name}</h2>
+                                    </div>
+
+                                    <div className="list-products grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {categoryProducts.map((product) => (
+                                            <div
+                                                key={product.id}
+                                                className='product-item cursor-pointer overflow-hidden rounded-[0px_10px_0px_10px]'
+                                                onClick={() => handleAddToCart(product)}
+                                            >
+                                                <img
+                                                    src={product.image || DefaultProductImg}
+                                                    onError={(e) => { e.target.src = DefaultProductImg; }}
+                                                    alt={product.name}
+                                                    className="aspect-square object-cover object-center"
+                                                />
+                                                <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>{new Intl.NumberFormat('vi-VN').format(product.price)}đ</p>
+                                                <h3 className='text-center py-[12px] px-[5px]]'>{product.name}</h3>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            );
+                        })}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const TableGrid = ({
     tables,
@@ -7,6 +7,24 @@ const TableGrid = ({
     gridClassName = "list-tables w-full flex-1 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4",
     renderCard
 }) => {
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const getElapsed = (timestamp) => {
+        if (!timestamp) return 'Đang xử lý';
+        const diffMs = now - new Date(timestamp);
+        const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+        
+        if (diffMins < 60) return `${diffMins} phút`;
+        const hours = Math.floor(diffMins / 60);
+        const mins = diffMins % 60;
+        return `${hours} giờ ${mins} phút`;
+    };
+
     return (
         <div className={gridClassName}>
             {tables.map((table, index) => {
@@ -18,7 +36,7 @@ const TableGrid = ({
                 const isBusy = table.status?.toLowerCase() === 'busy';
                 const statusText = (!table.status || table.status.toLowerCase() === 'available' || table.status.toLowerCase() === 'empty')
                     ? 'Bàn Trống'
-                    : '20 minutes';
+                    : (table.active_order?.updated_at ? getElapsed(table.active_order.updated_at) : 'Đang xử lý');
 
                 return (
                     <div

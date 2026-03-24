@@ -1,14 +1,16 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateQuantity, setOrderType } from '../store/slices/orderSlice';
+import { updateQuantity, setOrderType, checkoutOrderAsync, cancelOrderAsync } from '../store/slices/orderSlice';
+import { fetchTables } from '../store/slices/tableSlice';
 
 export default function Checkout() {
     const { tableId } = useParams();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    const { orderType } = useAppSelector(state => state.order);
+    const { orderType, activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
+    const isConfirmed = orderStatus && orderStatus !== 'draft';
     const selectedItems = useAppSelector(state => state.order.items.allIds.map(id => state.order.items.byId[id]));
 
     const subtotal = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -20,6 +22,38 @@ export default function Checkout() {
     const handleUpdateQuantity = (id, newQuantity) => {
         dispatch(updateQuantity({ id, quantity: newQuantity }));
     };
+
+    const handleCheckout = async () => {
+        if (!activeOrderId) return;
+        try {
+            await dispatch(checkoutOrderAsync({
+                orderId: activeOrderId,
+                items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price }))
+            })).unwrap();
+            dispatch(fetchTables());
+            alert("Đơn hàng đã được gửi thành công!");
+            navigate('/staff-order');
+        } catch (error) {
+            alert("Lỗi khi thanh toán!");
+        }
+    };
+
+    const handleCancelOrder = async () => {
+        if (activeOrderId) {
+            await dispatch(cancelOrderAsync(activeOrderId));
+        }
+        navigate('/staff-order');
+    };
+
+    React.useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (activeOrderId) {
+                navigator.sendBeacon(`/api/orders/${activeOrderId}`);
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [activeOrderId]);
 
     return (
         <div className="mdt-bg-light mdt-checkout-page min-h-screen pb-40">
@@ -33,7 +67,7 @@ export default function Checkout() {
                             <svg width="24px" height="24px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                         </button>
 
-                        <h1 className="h6">Tạo hóa đơn</h1>
+                        <h1 className="h6">{isConfirmed ? 'Chi tiết hóa đơn' : 'Tạo hóa đơn'}</h1>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -100,22 +134,40 @@ export default function Checkout() {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                        {!isConfirmed && (
+                            <button
+                                onClick={handleCancelOrder}
+                                className="btn-cancel flex-[0.8] flex items-center justify-center text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3 gap-2 active:scale-98 hover:bg-red-100 cursor-pointer font-medium"
+                            >
+                                Hủy Bàn
+                            </button>
+                        )}
                         <button
                             onClick={() => navigate(`/order/${tableId}`)}
                             className="btn-add flex-1 flex flex-row items-center justify-center text-[#313234] dark:text-slate-300 border border-[#b2b2b4]/20 rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 hover:opacity-90 cursor-pointer"
                         >
-                            <svg width="18px" height="18px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                             Thêm
                         </button>
-                        <button
-                            onClick={() => alert("Đơn hàng đã được gửi!")}
-                            disabled={selectedItems.length === 0}
-                            className={`btn-save flex-[1.5] flex items-center justify-center text-white rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 shadow-lg shadow-primary/20 cursor-pointer ${selectedItems.length === 0 ? 'opacity-50 grayscale' : ''}`}
-                        >
-                            <svg width="18px" height="18px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M3 19V5C3 3.89543 3.89543 3 5 3H16.1716C16.702 3 17.2107 3.21071 17.5858 3.58579L20.4142 6.41421C20.7893 6.78929 21 7.29799 21 7.82843V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#fff" stroke-width="1.5"></path><path d="M8.6 9H15.4C15.7314 9 16 8.73137 16 8.4V3.6C16 3.26863 15.7314 3 15.4 3H8.6C8.26863 3 8 3.26863 8 3.6V8.4C8 8.73137 8.26863 9 8.6 9Z" stroke="#fff" stroke-width="1.5"></path><path d="M6 13.6V21H18V13.6C18 13.2686 17.7314 13 17.4 13H6.6C6.26863 13 6 13.2686 6 13.6Z" stroke="#fff" stroke-width="1.5"></path></svg>
-                            Lưu
-                        </button>
+                        {(!isConfirmed || isModified) ? (
+                            <button
+                                onClick={handleCheckout}
+                                disabled={selectedItems.length === 0}
+                                className={`btn-save flex-[1.5] flex items-center justify-center text-white rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 shadow-lg shadow-primary/20 cursor-pointer ${selectedItems.length === 0 ? 'opacity-50 grayscale' : ''}`}
+                            >
+                                <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M3 19V5C3 3.89543 3.89543 3 5 3H16.1716C16.702 3 17.2107 3.21071 17.5858 3.58579L20.4142 6.41421C20.7893 6.78929 21 7.29799 21 7.82843V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#fff" strokeWidth="1.5"></path><path d="M8.6 9H15.4C15.7314 9 16 8.73137 16 8.4V3.6C16 3.26863 15.7314 3 15.4 3H8.6C8.26863 3 8 3.26863 8 3.6V8.4C8 8.73137 8.26863 9 8.6 9Z" stroke="#fff" strokeWidth="1.5"></path><path d="M6 13.6V21H18V13.6C18 13.2686 17.7314 13 17.4 13H6.6C6.26863 13 6 13.2686 6 13.6Z" stroke="#fff" strokeWidth="1.5"></path></svg>
+                                Lưu
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => alert("Thanh toán functionality pending!")}
+                                className={`btn-pay flex-[1.5] flex items-center justify-center text-white bg-[#03b879] rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 shadow-lg shadow-[#03b879]/20 cursor-pointer`}
+                            >
+                                <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#fff" strokeWidth="1.5"></path><path d="M9 12L11 14L15 10" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                Thanh toán
+                            </button>
+                        )}
                     </div>
                 </div>
             </footer>

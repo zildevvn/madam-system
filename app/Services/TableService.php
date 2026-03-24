@@ -6,9 +6,17 @@ use App\Models\Table;
 
 class TableService
 {
+    protected $orderService;
+
+    public function __construct(\App\Services\OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     public function getAllTables()
     {
-        return Table::all();
+        $this->orderService->cleanupDrafts();
+        return Table::with('activeOrder')->get();
     }
 
     public function createTable(array $data)

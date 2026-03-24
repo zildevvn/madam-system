@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchTables } from '../store/slices/tableSlice';
+import { fetchActiveOrderAsync, createOrderAsync } from '../store/slices/orderSlice';
 import TableGrid from '../components/TableGrid';
 
 export default function StaffOrder() {
@@ -16,13 +17,38 @@ export default function StaffOrder() {
         }
     }, [status, dispatch]);
 
+    useEffect(() => {
+        if (window.Echo) {
+            const channel = window.Echo.channel('orders');
+            channel.listen('OrderUpdated', (e) => {
+                dispatch(fetchTables());
+            });
+
+            return () => {
+                window.Echo.leaveChannel('orders');
+            };
+        }
+    }, [dispatch]);
+
     const loading = status === 'loading';
 
-    const handleTableClick = (tableId) => {
-        navigate(`/order/${tableId}`);
+    const handleTableClick = async (tableId) => {
+        const resultAction = await dispatch(fetchActiveOrderAsync(tableId));
+        if (!resultAction.payload) {
+            await dispatch(createOrderAsync({ table_id: tableId, order_type: 'dine-in' }));
+            navigate(`/order/${tableId}`);
+        } else {
+            const order = resultAction.payload;
+            if (order.status === 'draft') {
+                navigate(`/order/${tableId}`);
+            } else {
+                navigate(`/checkout/${tableId}`);
+            }
+        }
     };
 
     const emptyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'available' || t.status?.toLowerCase() === 'empty').length;
+    const busyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'busy').length;
 
     if (loading) {
         return (
@@ -38,7 +64,7 @@ export default function StaffOrder() {
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between">
                     <p className="item-info flex items-center gap-1 m-0 text-sm">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                        Tổng số đơn hiện tại: 8
+                        Tổng số đơn: {busyTablesCount}
                     </p>
 
                     <p className="item-info flex items-center gap-1 m-0 text-sm">

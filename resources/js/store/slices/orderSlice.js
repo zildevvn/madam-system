@@ -1,4 +1,25 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import orderApi from '../../services/orderApi';
+
+export const fetchActiveOrderAsync = createAsyncThunk('order/fetchActiveOrder', async (tableId) => {
+    const data = await orderApi.getActiveOrder(tableId);
+    return data.data;
+});
+
+export const createOrderAsync = createAsyncThunk('order/createOrder', async (createData) => {
+    const response = await orderApi.createOrder(createData);
+    return response.data;
+});
+
+export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items }) => {
+    const data = await orderApi.checkoutOrder(orderId, items);
+    return data.data;
+});
+
+export const cancelOrderAsync = createAsyncThunk('order/cancelOrder', async (orderId) => {
+    const data = await orderApi.cancelOrder(orderId);
+    return data.data;
+});
 
 const initialState = {
   items: {
@@ -7,6 +28,10 @@ const initialState = {
   },
   orderType: 'dine-in',
   tableId: null,
+  activeOrderId: null,
+  orderStatus: 'draft',
+  isModified: false,
+  status: 'idle',
 };
 
 const orderSlice = createSlice({
@@ -21,19 +46,25 @@ const orderSlice = createSlice({
         state.items.byId[item.id] = { ...item, quantity: 1 };
         state.items.allIds.push(item.id);
       }
+      state.isModified = true;
     },
     removeFromCart: (state, action) => {
       const id = action.payload;
       delete state.items.byId[id];
       state.items.allIds = state.items.allIds.filter(itemId => itemId !== id);
+      state.isModified = true;
     },
     updateQuantity: (state, action) => {
       const { id, quantity } = action.payload;
       if (state.items.byId[id]) {
-        state.items.byId[id].quantity = quantity;
+        if (state.items.byId[id].quantity !== quantity) {
+           state.items.byId[id].quantity = quantity;
+           state.isModified = true;
+        }
         if (state.items.byId[id].quantity <= 0) {
           delete state.items.byId[id];
           state.items.allIds = state.items.allIds.filter(itemId => itemId !== id);
+          state.isModified = true;
         }
       }
     },
@@ -45,7 +76,58 @@ const orderSlice = createSlice({
     },
     clearCart: (state) => {
       state.items = { byId: {}, allIds: [] };
+      state.isModified = true;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchActiveOrderAsync.fulfilled, (state, action) => {
+        const order = action.payload;
+        if (order) {
+           state.activeOrderId = order.id;
+           state.orderStatus = order.status;
+           state.orderType = order.order_type;
+           state.tableId = order.table_id;
+           state.isModified = false;
+           state.items.byId = {};
+           state.items.allIds = [];
+           if (order.items) {
+               order.items.forEach(orderItem => {
+                   if (orderItem.product) {
+                       state.items.byId[orderItem.product.id] = { ...orderItem.product, quantity: orderItem.quantity };
+                       if (!state.items.allIds.includes(orderItem.product.id)) {
+                           state.items.allIds.push(orderItem.product.id);
+                       }
+                   }
+               });
+           }
+        } else {
+           // No active order found for table
+           state.activeOrderId = null;
+           state.isModified = false;
+           state.items = { byId: {}, allIds: [] };
+        }
+      })
+      .addCase(createOrderAsync.fulfilled, (state, action) => {
+        const order = action.payload;
+        if (order) {
+           state.activeOrderId = order.id;
+           state.orderStatus = order.status;
+           state.isModified = false;
+        }
+      })
+      .addCase(checkoutOrderAsync.fulfilled, (state) => {
+        state.items = { byId: {}, allIds: [] };
+        state.activeOrderId = null;
+        state.orderStatus = null;
+        state.isModified = false;
+      })
+      .addCase(cancelOrderAsync.fulfilled, (state) => {
+        state.items = { byId: {}, allIds: [] };
+        state.activeOrderId = null;
+        state.orderStatus = null;
+        state.isModified = false;
+      });
   },
 });
 
