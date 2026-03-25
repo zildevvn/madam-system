@@ -21,7 +21,8 @@ class OrderController extends Controller
         
         return response()->json([
             'data' => $order,
-            'message' => 'Success'
+            'message' => 'Success',
+            'errors' => null
         ]);
     }
 
@@ -36,7 +37,8 @@ class OrderController extends Controller
 
         return response()->json([
             'data' => $order,
-            'message' => 'Order created successfully'
+            'message' => 'Order created successfully',
+            'errors' => null
         ], 201);
     }
 
@@ -54,7 +56,8 @@ class OrderController extends Controller
 
         return response()->json([
             'data' => $order,
-            'message' => 'Order checkout successful'
+            'message' => 'Order checkout successful',
+            'errors' => null
         ]);
     }
 
@@ -63,9 +66,17 @@ class OrderController extends Controller
         $deleted = $this->orderService->cancelOrder($id);
         
         if ($deleted) {
-            return response()->json(['message' => 'Order cancelled seamlessly']);
+            return response()->json([
+                'data' => null,
+                'message' => 'Order cancelled seamlessly',
+                'errors' => null
+            ]);
         }
 
-        return response()->json(['message' => 'Order could not be cancelled or was not draft'], 400);
+        return response()->json([
+            'data' => null,
+            'message' => 'Order could not be cancelled or was not draft',
+            'errors' => 'Deletion failed'
+        ], 400);
     }
 }

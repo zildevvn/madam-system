@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateQuantity, setOrderType, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart } from '../store/slices/orderSlice';
+import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import ProductItem from '../components/ProductItem';
 
@@ -10,7 +10,7 @@ export default function Checkout() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    const { orderType, activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
+    const { activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
     const isConfirmed = orderStatus && orderStatus !== 'draft';
     const selectedItems = useAppSelector(state => state.order.items.allIds.map(id => state.order.items.byId[id]));
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);

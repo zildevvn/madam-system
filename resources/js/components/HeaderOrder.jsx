@@ -54,7 +54,7 @@ export default function HeaderOrder() {
 
     return (
         <>
-            <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40 h-[60px] flex items-center">
+            <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-40 h-[60px] md:h-[88px] flex items-center">
                 <div className="w-full max-w-[1200px] mx-auto px-2 relative overflow-hidden">
                     {/* Search active state */}
                     <div className={`flex items-center w-full gap-2 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] absolute inset-0 px-2 bg-white z-10 ${isSearchActive ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>

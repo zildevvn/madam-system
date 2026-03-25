@@ -65,7 +65,8 @@ class OrderService
                     }
                     $orderItem->save();
                     $totalPrice += ($itemData['price'] * $itemData['quantity']);
-                } else {
+                }
+                else {
                     OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $itemData['product_id'],
