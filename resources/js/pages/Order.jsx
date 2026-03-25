@@ -88,7 +88,6 @@ const Order = () => {
     }, [activeCategoryId]);
 
     const handleCategoryClick = (categoryId) => {
-        setIsActiveStateSetting(true);
         setActiveCategoryId(categoryId);
         isManualScrolling.current = true;
 
