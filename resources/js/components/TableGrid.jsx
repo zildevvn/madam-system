@@ -18,7 +18,6 @@ const TableGrid = ({
         if (!timestamp) return 'Đang xử lý';
         const diffMs = now - new Date(timestamp);
         const diffMins = Math.max(0, Math.floor(diffMs / 60000));
-        
         if (diffMins < 60) return `${diffMins} phút`;
         const hours = Math.floor(diffMins / 60);
         const mins = diffMins % 60;
@@ -33,8 +32,9 @@ const TableGrid = ({
                 }
 
                 // Default StaffOrder-style card implementation (Logic remains intact)
-                const isBusy = table.status?.toLowerCase() === 'busy';
-                const statusText = (!table.status || table.status.toLowerCase() === 'available' || table.status.toLowerCase() === 'empty')
+                const effectiveStatus = (!table.active_order) ? 'empty' : table.status?.toLowerCase();
+                const isBusy = effectiveStatus === 'busy';
+                const statusText = (!effectiveStatus || effectiveStatus === 'available' || effectiveStatus === 'empty')
                     ? 'Bàn Trống'
                     : (table.active_order?.updated_at ? getElapsed(table.active_order.updated_at) : 'Đang xử lý');
 

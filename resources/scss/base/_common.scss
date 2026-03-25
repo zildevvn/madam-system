@@ -109,6 +109,16 @@ h6,
     justify-content: center;
     gap: 3px;
     overflow: hidden;
+
+    @media (max-width: 767.98px) {
+        font-size: 12px;
+    }
+
+    svg {
+        path {
+            stroke: #fff;
+        }
+    }
 }
 
 .mdt-btn {
@@ -120,15 +130,7 @@ h6,
         background: darken($color-primary, 10%);
     }
 
-    @media (max-width: 767.98px) {
-        font-size: 12px;
-    }
-
     svg {
-        width: 100%;
-        height: auto;
-        max-width: 16px;
-
         path {
             stroke: #fff;
         }
@@ -139,4 +141,10 @@ h6,
     background: #fff;
     border: 1px solid $color-primary;
     color: $color-primary;
+
+    svg {
+        path {
+            stroke: $color-primary;
+        }
+    }
 }
