@@ -1,12 +1,15 @@
-# 📘 Coding Conventions & Best Practices
+# 📘 Coding Conventions & Best Practices (Final 2026)
 
-## 🎯 Goals
+---
 
-* Avoid redundant queries (N+1)
-* Optimize performance for 100–200 concurrent users
-* Maintain clean, scalable codebase
-* Manage state efficiently with Redux Toolkit
-* Ensure real-time consistency (Kitchen / Bar / Cashier)
+# 🎯 Goals
+
+* Tránh N+1 queries
+* Tối ưu cho 100–200 concurrent users
+* Code clean, dễ maintain & scale
+* State management rõ ràng với Redux Toolkit
+* Realtime đồng bộ (Kitchen / Bar / Cashier)
+* Giảm bug từ re-render & side effects
 
 ---
 
@@ -14,11 +17,14 @@
 
 ## 1. Eager Loading (REQUIRED)
 
-Always load relationships explicitly to avoid N+1 queries.
-
 ```php
 Order::with(['table', 'items.product'])->get();
 ```
+
+❗ Rule:
+
+* Không dùng lazy loading trong production
+* Nested relationship phải explicit
 
 ---
 
@@ -46,11 +52,14 @@ Product::whereIn('id', $ids)->get();
 Product::select('id', 'name', 'price')->get();
 ```
 
+❗ Tránh:
+
+* `select *`
+* trả về data dư thừa
+
 ---
 
 ## 4. Database Indexing (REQUIRED)
-
-Add indexes to frequently queried columns:
 
 * `order_id`
 * `product_id`
@@ -59,10 +68,7 @@ Add indexes to frequently queried columns:
 
 ---
 
-## 5. Service Layer Architecture
-
-Controllers must remain thin.
-Business logic belongs in Services.
+## 5. Service Layer Architecture (REQUIRED)
 
 ```php
 public function store(OrderRequest $request) {
@@ -70,16 +76,20 @@ public function store(OrderRequest $request) {
 }
 ```
 
+❗ Rule:
+
+* Controller phải mỏng
+* Business logic nằm ở Service
+
 ---
 
 ## 6. API Response Standard
 
-Always return consistent structure:
-
 ```php
 return response()->json([
     'data' => $data,
-    'message' => 'Success'
+    'message' => 'Success',
+    'errors' => null
 ]);
 ```
 
@@ -87,30 +97,48 @@ return response()->json([
 
 ## 7. Order Domain Rules
 
-* `orders` = master record
-* `order_items` = individual items
-* Never update entire order when updating a single item
-* Always track item-level status (`pending`, `preparing`, `done`)
+* `orders` = master
+* `order_items` = chi tiết
+
+❗ Rule:
+
+* Không update toàn bộ order khi update 1 item
+* Track status từng item:
+
+  * `pending`
+  * `preparing`
+  * `done`
 
 ---
 
 ## 8. Realtime Broadcasting Rules
 
-* Do not broadcast unnecessary data
-* Use events for all realtime updates
-* Keep payload minimal
-
 ```php
 event(new NewOrderCreated($order));
 ```
 
+❗ Rule:
+
+* Payload minimal
+* Không broadcast dư data
+
 ---
 
-## 9. Avoid Fat Models & Controllers
+## 9. Caching Strategy
 
-* No business logic inside Controllers
-* No complex logic inside Models
-* Use Service / Action classes
+* Dùng Redis cho:
+
+  * menu
+  * product list
+
+❗ Không cache realtime data
+
+---
+
+## 10. Avoid Fat Models & Controllers
+
+* Không business logic trong Controller
+* Không logic phức tạp trong Model
 
 ---
 
@@ -120,10 +148,11 @@ event(new NewOrderCreated($order));
 
 ```js
 store = {
+  auth,
   cart,
   orders,
-  auth,
-  realtime
+  realtime,
+  ui
 }
 ```
 
@@ -188,23 +217,21 @@ useSelector(state => state.orders)
 
 ## 6. Realtime State Handling
 
-* Never use `useState` for realtime data
-* Always dispatch to Redux
-
 ```js
 socket.on('new-order', (data) => {
   dispatch(addOrder(data))
 })
 ```
 
+❗ Rule:
+
+* Không dùng `useState` cho realtime
+
 ---
 
 ## 7. API Layer Separation
 
-All API calls must be isolated:
-
 ```js
-// services/orderService.js
 export const createOrder = (data) => axios.post('/orders', data)
 ```
 
@@ -212,18 +239,90 @@ export const createOrder = (data) => axios.post('/orders', data)
 
 ## 8. Cart Handling Rule
 
-* Store locally (Redux)
-* Send to server only when submitting order
+* Lưu local (Redux)
+* Submit mới gửi server
 
 ---
 
 ## 9. Avoid Overusing Redux
 
-Do NOT use Redux for:
+❌ Không dùng Redux cho:
 
-* UI state (modal, input, toggle)
+* modal
+* input
+* toggle
 
-Use `useState` instead.
+---
+
+## 10. useEffect Rules (CRITICAL)
+
+❗ Rule:
+
+* Dependency phải đầy đủ
+* Không dùng cho logic thuần
+* Không gây infinite loop
+
+---
+
+## 11. Component Design Rules
+
+❗ Rule:
+
+* 1 component = 1 responsibility
+* > 200 dòng → tách component
+* Tách UI và logic (custom hook)
+
+---
+
+## 12. Performance Optimization
+
+* `React.memo`
+* `useMemo`
+* `useCallback`
+* Lazy loading
+
+---
+
+## 13. Remove Unused Variables / Imports (REQUIRED)
+
+❗ Rule:
+
+* Không được để:
+
+  * biến không dùng
+  * function không dùng
+  * import thừa
+
+---
+
+### ❌ Bad
+
+```js
+const total = 100
+const handleClick = () => {}
+
+import axios from 'axios'
+```
+
+---
+
+### ✅ Good
+
+```js
+const total = calculateTotal(items)
+```
+
+---
+
+### 🛠️ ESLint
+
+```json
+{
+  "rules": {
+    "no-unused-vars": "error"
+  }
+}
+```
 
 ---
 
@@ -231,26 +330,25 @@ Use `useState` instead.
 
 ## Flow
 
-1. Client sends request
-2. Server processes & stores data
-3. Server emits event
-4. Clients receive via WebSocket
-5. Redux updates UI
+1. Client → request
+2. Server → xử lý + lưu DB
+3. Server → emit event
+4. Client → nhận socket
+5. Redux → update UI
 
 ---
 
 ## Channel Separation
 
-* `kitchen` → food items only
-* `bar` → drink items only
+* `kitchen` → món ăn
+* `bar` → đồ uống
 
 ---
 
 ## Event Rules
 
-* Keep payload minimal
-* Broadcast only necessary data
-* Avoid sending full objects if not needed
+* Payload minimal
+* Không gửi full object nếu không cần
 
 ---
 
@@ -258,47 +356,64 @@ Use `useState` instead.
 
 ## Backend
 
-* Use eager loading
-* Avoid query in loops
-* Add proper indexes
-* Use caching if needed (Redis)
+* Eager loading
+* No query in loop
+* Index DB
+* Cache Redis
 
 ---
 
 ## Frontend
 
-* Normalize Redux state
-* Use memoized selectors
-* Avoid unnecessary renders
-* Use lazy loading when needed
+* Normalize state
+* Memo selector
+* Tránh re-render
+* Lazy load
 
 ---
 
 ## Realtime
 
-* Dispatch Redux actions only
-* Avoid direct component state updates
+* Redux only
+* Không update trực tiếp component state
 
 ---
 
 # ✅ Checklist
 
-### Backend
+## Backend
 
-* [ ] Using eager loading (`with`)
-* [ ] No queries inside loops
-* [ ] Indexed database columns
-* [ ] Service layer implemented
+* [ ] Eager loading (`with`)
+* [ ] Không query trong loop
+* [ ] Có index DB
+* [ ] Service layer
 
-### Frontend
+---
 
-* [ ] Normalized Redux state
-* [ ] Using selectors
-* [ ] Avoiding unnecessary re-renders
-* [ ] API separated into services
+## Frontend
 
-### Realtime
+* [ ] Normalized state
+* [ ] Selector + memo
+* [ ] Không re-render thừa
+* [ ] API tách riêng
+* [ ] useEffect đúng
+* [ ] Không có unused code
 
-* [ ] Events implemented correctly
-* [ ] Redux used for updates
-* [ ] Channels separated (kitchen / bar)
+---
+
+## Realtime
+
+* [ ] Event đúng flow
+* [ ] Redux update
+* [ ] Channel tách riêng
+
+---
+
+# 💡 KEY TAKEAWAY
+
+* Backend: Query ít + đúng + nhẹ
+* Frontend: State rõ + render ít
+* Realtime: Data tối thiểu + flow chuẩn
+* Code: Clean + không dư thừa
+
+---

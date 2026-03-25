@@ -11,12 +11,17 @@ const initialState = {
   allIds: [],
   status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
   error: null,
+  activeTab: 'tables', // 'tables' | 'orders'
 };
 
 const tableSlice = createSlice({
   name: 'table',
   initialState,
-  reducers: {},
+  reducers: {
+    setActiveTab: (state, action) => {
+      state.activeTab = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchTables.pending, (state) => {
@@ -36,5 +41,7 @@ const tableSlice = createSlice({
       });
   },
 });
+
+export const { setActiveTab } = tableSlice.actions;
 
 export default tableSlice.reducer;

@@ -21,12 +21,18 @@ const Order = () => {
     const { activeOrderId } = useAppSelector(state => state.order);
     const products = useAppSelector(state => state.product.products.allIds.map(id => state.product.products.byId[id]));
     const categories = useAppSelector(state => state.product.categories.allIds.map(id => state.product.categories.byId[id]));
+    const searchQuery = useAppSelector(state => state.product.searchQuery) || '';
+
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const filteredCategories = categories.filter(category =>
-        products.some(product => product.category_id === category.id)
+        filteredProducts.some(product => product.category_id === category.id)
     );
 
     const [activeCategoryId, setActiveCategoryId] = useState(filteredCategories[0]?.id);
+    const [animatingItems, setAnimatingItems] = useState({});
     const scrollContainerRef = useRef(null);
     const sidebarRef = useRef(null);
     const observerRef = useRef(null);
@@ -82,6 +88,7 @@ const Order = () => {
     }, [activeCategoryId]);
 
     const handleCategoryClick = (categoryId) => {
+        setIsActiveStateSetting(true);
         setActiveCategoryId(categoryId);
         isManualScrolling.current = true;
 
@@ -98,6 +105,12 @@ const Order = () => {
 
     const handleAddToCart = (product) => {
         dispatch(addToCart(product));
+
+        // Trigger micro-animation
+        setAnimatingItems(prev => ({ ...prev, [product.id]: true }));
+        setTimeout(() => {
+            setAnimatingItems(prev => ({ ...prev, [product.id]: false }));
+        }, 600); // Extended slightly for softer fade
     };
 
     React.useEffect(() => {
@@ -112,13 +125,13 @@ const Order = () => {
 
     return (
         <div className="flex flex-col w-full h-[calc(100vh-134px)]">
-            <div className="mdt-order-page w-full max-w-[1200px] mx-auto px-2 flex flex-1 overflow-hidden gap-2 pt-2">
+            <div className="mdt-order-page w-full max-w-[1200px] mx-auto px-2 flex flex-1 overflow-hidden gap-2 pt-0">
                 <aside
                     ref={sidebarRef}
                     className="mdt-order-page__sidebar bg-white w-1/4 min-w-[100px] max-w-[100px] md:min-w-[150px] md:max-w-[200px] border-r border-gray-200 overflow-y-auto hide-scrollbar"
                 >
                     <div className="flex flex-col">
-                        {filteredCategories.map((category) => (
+                        {categories.map((category) => (
                             <button
                                 key={category.id}
                                 onClick={() => handleCategoryClick(category.id)}
@@ -139,40 +152,73 @@ const Order = () => {
                     className="flex-1 overflow-y-auto  scroll-smooth"
                 >
                     <div className="w-full">
-                        {filteredCategories.map((category) => {
-                            const categoryProducts = products.filter(p => p.category_id === category.id);
-                            return (
-                                <section
-                                    key={category.id}
-                                    id={`category-section-${category.id}`}
-                                    data-category-id={category.id}
-                                    className="product-category-section mb-4 scroll-mt-6"
-                                >
-                                    <div className="product-category-section__header flex items-center justify-between mb-3 sticky top-0 mdt-bg-light py-2 z-10">
-                                        <h2 className="h5">{category.name}</h2>
-                                    </div>
+                        {filteredCategories.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-center sm:min-h-[400px]">
+                                <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <p className="text-gray-500 font-medium">Không tìm thấy món ăn, thức uống nào</p>
+                            </div>
+                        ) : (
+                            filteredCategories.map((category) => {
+                                const categoryProducts = filteredProducts.filter(p => p.category_id === category.id);
+                                return (
+                                    <section
+                                        key={category.id}
+                                        id={`category-section-${category.id}`}
+                                        data-category-id={category.id}
+                                        className="product-category-section mb-4 scroll-mt-6"
+                                    >
+                                        <div className="product-category-section__header flex items-center justify-between mb-3 sticky top-0 mdt-bg-light py-2 z-10">
+                                            <h2 className="h5">{category.name}</h2>
+                                        </div>
 
-                                    <div className="list-products grid grid-cols-2 lg:grid-cols-3 gap-2">
-                                        {categoryProducts.map((product) => (
-                                            <div
-                                                key={product.id}
-                                                className='product-item cursor-pointer overflow-hidden rounded-[0px_10px_0px_10px]'
-                                                onClick={() => handleAddToCart(product)}
-                                            >
-                                                <img
-                                                    src={product.image || DefaultProductImg}
-                                                    onError={(e) => { e.target.src = DefaultProductImg; }}
-                                                    alt={product.name}
-                                                    className="aspect-square object-cover object-center"
-                                                />
-                                                <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>{new Intl.NumberFormat('vi-VN').format(product.price)}đ</p>
-                                                <h3 className='text-center py-[12px] px-[5px]]'>{product.name}</h3>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            );
-                        })}
+                                        <div className="list-products grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {categoryProducts.map((product) => (
+                                                <div
+                                                    key={product.id}
+                                                    className='relative product-item cursor-pointer rounded-[0px_10px_0px_10px] bg-white transition-all duration-300 select-none group'
+                                                    onClick={() => handleAddToCart(product)}
+                                                >
+                                                    {/* Image Container with targeted hover/active zoom */}
+                                                    <div className="relative overflow-hidden w-full aspect-square bg-gray-50 rounded-tr-[10px]">
+                                                        <img
+                                                            src={product.image || DefaultProductImg}
+                                                            onError={(e) => { e.target.src = DefaultProductImg; }}
+                                                            alt={product.name}
+                                                            className={`w-full h-full object-cover object-center transition-transform duration-500 ease-out ${animatingItems[product.id] ? 'scale-110 blur-[1px]' : 'group-hover:scale-105 group-active:scale-95'}`}
+                                                        />
+
+                                                        {/* Glassmorphic Success Overlay */}
+                                                        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${animatingItems[product.id] ? 'opacity-100 bg-black/20 backdrop-blur-[2px]' : 'opacity-0 bg-transparent pointer-events-none'}`}>
+                                                            {/* Success Check Badge */}
+                                                            <div className={`flex flex-col items-center justify-center transition-all duration-500 transform ${animatingItems[product.id] ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-50 opacity-0'}`}>
+                                                                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#03b879] rounded-full flex items-center justify-center shadow-lg shadow-[#03b879]/40 mb-1">
+                                                                    <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                                                </div>
+                                                                <span className="text-white font-bold text-[11px] md:text-[13px] drop-shadow-md tracking-wide">
+                                                                    +1 {category.type === 'drink' ? 'Ly' : 'Phần'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Product Info Card Overlap */}
+                                                    <div className="relative z-8 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] rounded-[0px_10px_0px_10px] -mt-0 pt-0 pb-2 transition-transform duration-300 group-active:translate-y-1">
+                                                        <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>
+                                                            {new Intl.NumberFormat('vi-VN').format(product.price)}đ
+                                                        </p>
+                                                        <h3 className='mb-0 pt-1 text-center px-2 text-[12px] md:text-[14px] font-medium text-gray-700 line-clamp-2 leading-snug min-h-[40px] flex items-center justify-center'>
+                                                            {product.name}
+                                                        </h3>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                );
+                            })
+                        )}
                     </div>
                 </main>
             </div>

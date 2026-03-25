@@ -47,6 +47,7 @@ class OrderController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
+            'items.*.note' => 'nullable|string|max:255',
         ]);
 
         $order = $this->orderService->checkoutOrder($id, $validated['items']);

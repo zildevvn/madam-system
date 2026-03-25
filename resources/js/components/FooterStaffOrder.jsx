@@ -1,16 +1,30 @@
+import React from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setActiveTab } from '../store/slices/tableSlice';
+
 export default function FooterStaffOrder() {
+    const dispatch = useAppDispatch();
+    const activeTab = useAppSelector(state => state.table.activeTab);
+
     return (
         <footer className="footer-staff-order bg-white w-full border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
             <div className="w-full max-w-[1200px] mx-auto px-[20px] py-2">
                 <div className="flex justify-between items-center">
-                    <button className="footer-item flex flex-col items-center gap-1 text-orange-500 font-semibold border-none bg-transparent cursor-pointer">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                        <span className="text-[10px] uppercase tracking-wider">Đơn hàng</span>
-                    </button>
 
-                    <button className="footer-item flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors duration-200 border-none bg-transparent cursor-pointer">
+                    <button
+                        onClick={() => dispatch(setActiveTab('tables'))}
+                        className={`footer-item flex flex-col items-center gap-1 ${activeTab === 'tables' ? 'text-orange-500 font-semibold' : 'text-gray-400 hover:text-orange-500'} transition-colors duration-200 border-none bg-transparent cursor-pointer`}
+                    >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                         <span className="text-[10px] uppercase tracking-wider">Chọn bàn</span>
+                    </button>
+
+                    <button
+                        onClick={() => dispatch(setActiveTab('orders'))}
+                        className={`footer-item flex flex-col items-center gap-1 ${activeTab === 'orders' ? 'text-orange-500 font-semibold' : 'text-gray-400 hover:text-orange-500'} transition-colors duration-200 border-none bg-transparent cursor-pointer`}
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                        <span className="text-[10px] uppercase tracking-wider">Đơn hàng</span>
                     </button>
 
                     <button className="footer-item flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors duration-200 border-none bg-transparent cursor-pointer">

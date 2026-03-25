@@ -72,12 +72,19 @@ const initialState = {
   },
   status: 'succeeded', // Since they are static for now
   error: null,
+  searchQuery: '',
 };
 
 const productSlice = createSlice({
   name: 'product',
   initialState,
-  reducers: {},
+  reducers: {
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+    }
+  },
 });
+
+export const { setSearchQuery } = productSlice.actions;
 
 export default productSlice.reducer;

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateQuantity, setOrderType, checkoutOrderAsync, cancelOrderAsync } from '../store/slices/orderSlice';
+import { updateQuantity, setOrderType, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
+import ProductItem from '../components/ProductItem';
 
 export default function Checkout() {
     const { tableId } = useParams();
@@ -12,27 +13,40 @@ export default function Checkout() {
     const { orderType, activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
     const isConfirmed = orderStatus && orderStatus !== 'draft';
     const selectedItems = useAppSelector(state => state.order.items.allIds.map(id => state.order.items.byId[id]));
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
-    const subtotal = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const serviceFee = 5000;
-    const total = subtotal + serviceFee;
+    const total = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
     const totalQuantity = selectedItems.reduce((acc, item) => acc + item.quantity, 0);
 
     const handleUpdateQuantity = (id, newQuantity) => {
-        dispatch(updateQuantity({ id, quantity: newQuantity }));
+        if (newQuantity === 0) {
+            dispatch(removeFromCart(id));
+        } else {
+            dispatch(updateQuantity({ id, quantity: newQuantity }));
+        }
+    };
+
+    const handleUpdateNote = (id, note) => {
+        dispatch(updateItemNote({ id, note }));
     };
 
     const handleCheckout = async () => {
         if (!activeOrderId) return;
         try {
+
             await dispatch(checkoutOrderAsync({
                 orderId: activeOrderId,
-                items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price }))
+                items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, note: i.note }))
             })).unwrap();
             dispatch(fetchTables());
-            alert("Đơn hàng đã được gửi thành công!");
-            navigate('/staff-order');
+
+            setShowSuccessPopup(true);
+            setTimeout(() => {
+                setShowSuccessPopup(false);
+                navigate('/staff-order');
+            }, 1500);
+
         } catch (error) {
             alert("Lỗi khi thanh toán!");
         }
@@ -85,36 +99,13 @@ export default function Checkout() {
                         <p className="text-center text-gray-500 py-10">Chưa có món nào được chọn</p>
                     ) : (
                         selectedItems.map((item) => (
-                            <div key={item.id} className="product-item bg-surface-container-lowest py-3 border-b border-gray-100 last:border-0 flex flex-col gap-2">
-                                <div className="flex justify-between items-start gap-2">
-                                    <div className="space-y-1">
-                                        <h3 className="font-medium">{item.name}</h3>
-                                        <p className="text-[12px] opacity-70">
-                                            Đơn giá: {new Intl.NumberFormat('vi-VN').format(item.price)}đ
-                                        </p>
-                                    </div>
-                                    <span className="font-bold text-on-surface text-[14px]">
-                                        {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)}đ
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-end gap-2">
-                                    <div className="flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm">
-                                        <button
-                                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                            className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer"
-                                        >
-                                            <svg width="18px" height="18px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H18" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                        </button>
-                                        <span className="px-5 font-bold text-on-surface text-sm">{item.quantity}</span>
-                                        <button
-                                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                            className="btn-plus w-6 h-6 flex items-center justify-center rounded-full text-white shadow-md active:scale-90 transition-all hover:brightness-110 cursor-pointer"
-                                        >
-                                            <svg width="18px" height="18px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <ProductItem
+                                key={item.id}
+                                item={item}
+                                onUpdateQuantity={handleUpdateQuantity}
+                                onUpdateNote={handleUpdateNote}
+                                showNoteButton={true}
+                            />
                         ))
                     )}
                 </div>
@@ -126,8 +117,7 @@ export default function Checkout() {
                         <span className="font-extrabold label-md text-on-surface-variant uppercase tracking-wider">
                             Số lượng: {totalQuantity}
                         </span>
-                        <div className="flex flex-col items-end">
-                            {serviceFee > 0 && <span className="text-[12px] opacity-60">Phí phục vụ: {new Intl.NumberFormat('vi-VN').format(serviceFee)}đ</span>}
+                        <div className="flex flex-col items-end mt-1">
                             <span className="text-xl font-extrabold text-on-surface">
                                 {new Intl.NumberFormat('vi-VN').format(total)}đ
                             </span>
@@ -138,39 +128,45 @@ export default function Checkout() {
                         {!isConfirmed && (
                             <button
                                 onClick={handleCancelOrder}
-                                className="btn-cancel flex-[0.8] flex items-center justify-center text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3 gap-2 active:scale-98 hover:bg-red-100 cursor-pointer font-medium"
+                                className="btn-cancel mdt-btn w-full"
                             >
                                 Hủy Bàn
                             </button>
                         )}
                         <button
                             onClick={() => navigate(`/order/${tableId}`)}
-                            className="btn-add flex-1 flex flex-row items-center justify-center text-[#313234] dark:text-slate-300 border border-[#b2b2b4]/20 rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 hover:opacity-90 cursor-pointer"
+                            className="btn-add mdt-btn-outline w-full"
                         >
                             <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                             Thêm
                         </button>
-                        {(!isConfirmed || isModified) ? (
-                            <button
-                                onClick={handleCheckout}
-                                disabled={selectedItems.length === 0}
-                                className={`btn-save flex-[1.5] flex items-center justify-center text-white rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 shadow-lg shadow-primary/20 cursor-pointer ${selectedItems.length === 0 ? 'opacity-50 grayscale' : ''}`}
-                            >
-                                <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M3 19V5C3 3.89543 3.89543 3 5 3H16.1716C16.702 3 17.2107 3.21071 17.5858 3.58579L20.4142 6.41421C20.7893 6.78929 21 7.29799 21 7.82843V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#fff" strokeWidth="1.5"></path><path d="M8.6 9H15.4C15.7314 9 16 8.73137 16 8.4V3.6C16 3.26863 15.7314 3 15.4 3H8.6C8.26863 3 8 3.26863 8 3.6V8.4C8 8.73137 8.26863 9 8.6 9Z" stroke="#fff" strokeWidth="1.5"></path><path d="M6 13.6V21H18V13.6C18 13.2686 17.7314 13 17.4 13H6.6C6.26863 13 6 13.2686 6 13.6Z" stroke="#fff" strokeWidth="1.5"></path></svg>
-                                Lưu
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => alert("Thanh toán functionality pending!")}
-                                className={`btn-pay flex-[1.5] flex items-center justify-center text-white bg-[#03b879] rounded-xl px-4 py-3 gap-2 active:scale-98 duration-150 shadow-lg shadow-[#03b879]/20 cursor-pointer`}
-                            >
-                                <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#fff" strokeWidth="1.5"></path><path d="M9 12L11 14L15 10" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                                Thanh toán
-                            </button>
-                        )}
+                        <button
+                            onClick={handleCheckout}
+                            disabled={selectedItems.length === 0 || (isConfirmed && !isModified)}
+                            className={`btn-save mdt-btn w-full ${(selectedItems.length === 0 || (isConfirmed && !isModified)) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                        >
+                            <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M3 19V5C3 3.89543 3.89543 3 5 3H16.1716C16.702 3 17.2107 3.21071 17.5858 3.58579L20.4142 6.41421C20.7893 6.78929 21 7.29799 21 7.82843V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#fff" strokeWidth="1.5"></path><path d="M8.6 9H15.4C15.7314 9 16 8.73137 16 8.4V3.6C16 3.26863 15.7314 3 15.4 3H8.6C8.26863 3 8 3.26863 8 3.6V8.4C8 8.73137 8.26863 9 8.6 9Z" stroke="#fff" strokeWidth="1.5"></path><path d="M6 13.6V21H18V13.6C18 13.2686 17.7314 13 17.4 13H6.6C6.26863 13 6 13.2686 6 13.6Z" stroke="#fff" strokeWidth="1.5"></path></svg>
+                            Lưu
+                        </button>
                     </div>
                 </div>
             </footer>
+
+            {/* Success Popup Notification */}
+            {showSuccessPopup && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center py-4 px-2">
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300"></div>
+                    <div className="bg-white rounded-[20px] p-8 max-w-[280px] w-full shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex flex-col items-center text-center relative z-10 transition-all duration-300 animate-[pulse_0.3s_ease-out]">
+                        <div className="w-[40px] h-[40px] bg-[#03b879]/10 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                            <svg className="w-5 h-5 text-[#03b879]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h5 className="text-[20px] mb-2">Thành công!</h5>
+                        <p className="!text-[13px]">Đơn hàng đã được lưu thành công.</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

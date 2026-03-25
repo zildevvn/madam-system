@@ -60,6 +60,9 @@ class OrderService
 
                 if ($orderItem) {
                     $orderItem->quantity += $itemData['quantity'];
+                    if (array_key_exists('note', $itemData)) {
+                        $orderItem->note = $itemData['note'];
+                    }
                     $orderItem->save();
                     $totalPrice += ($itemData['price'] * $itemData['quantity']);
                 } else {
@@ -68,6 +71,7 @@ class OrderService
                         'product_id' => $itemData['product_id'],
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
+                        'note' => $itemData['note'] ?? null,
                         'status' => 'pending'
                     ]);
                     $totalPrice += ($itemData['price'] * $itemData['quantity']);

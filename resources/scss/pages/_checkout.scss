@@ -1,25 +1,25 @@
-.mdt-checkout-page {
-    .list-products {
-        .product-item {
-            &:not(:last-child) {
-                border-bottom: 2px dotted rgba($color: $color-second, $alpha: 0.4);
-                padding-bottom: 20px;
-                margin-bottom: 20px;
-            }
+.list-products {
+    .product-item {
+        &:not(:last-child) {
+            border-bottom: 2px dotted rgba($color: $color-second, $alpha: 0.4);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
 
-            h3 {
-                font-size: 13px;
-                font-family: $font-second;
-                line-height: 1.5;
-                font-weight: 600;
-            }
+        h3 {
+            font-size: 13px;
+            font-family: $font-second;
+            line-height: 1.5;
+            font-weight: 600;
+        }
 
-            .btn-plus {
-                background: $color-second;
-            }
+        .btn-plus {
+            background: $color-second;
         }
     }
+}
 
+.mdt-checkout-page {
     .btn-save {
         background: $color-primary;
     }

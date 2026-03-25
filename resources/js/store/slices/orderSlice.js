@@ -68,6 +68,13 @@ const orderSlice = createSlice({
         }
       }
     },
+    updateItemNote: (state, action) => {
+      const { id, note } = action.payload;
+      if (state.items.byId[id]) {
+        state.items.byId[id].note = note;
+        state.isModified = true;
+      }
+    },
     setOrderType: (state, action) => {
       state.orderType = action.payload;
     },
@@ -135,6 +142,7 @@ export const {
   addToCart,
   removeFromCart,
   updateQuantity,
+  updateItemNote,
   setOrderType,
   setTableId,
   clearCart

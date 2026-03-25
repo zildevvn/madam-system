@@ -8,7 +8,7 @@ import TableGrid from '../components/TableGrid';
 export default function StaffOrder() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const { status, error } = useAppSelector(state => state.table);
+    const { status, error, activeTab } = useAppSelector(state => state.table);
     const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
 
     useEffect(() => {
@@ -50,6 +50,10 @@ export default function StaffOrder() {
     const emptyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'available' || t.status?.toLowerCase() === 'empty').length;
     const busyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'busy').length;
 
+    const displayedTables = activeTab === 'orders' 
+        ? tables.filter(t => t.status?.toLowerCase() === 'busy')
+        : tables;
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -85,7 +89,7 @@ export default function StaffOrder() {
                     )}
 
                     <TableGrid
-                        tables={tables}
+                        tables={displayedTables}
                         onTableClick={handleTableClick}
                         error={error}
                     />
