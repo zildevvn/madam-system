@@ -27,6 +27,19 @@ class OrderService
         return false;
     }
 
+    public function updateItemStatus($itemId, $status)
+    {
+        $item = OrderItem::findOrFail($itemId);
+        $item->update(['status' => $status]);
+
+        $order = Order::with(['items.product', 'table'])->find($item->order_id);
+        if ($order) {
+            broadcast(new OrderUpdated($order, 'update_item_status'));
+        }
+
+        return $item;
+    }
+
     public function cleanupDrafts()
     {
         Order::where('status', 'draft')

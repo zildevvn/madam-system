@@ -12,6 +12,7 @@ Route::get('/tables/{id}/active-order', [OrderController::class, 'activeOrder'])
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/{id}/checkout', [OrderController::class, 'checkout']);
 Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
+Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
 
 use App\Http\Controllers\API\UserController;
 
