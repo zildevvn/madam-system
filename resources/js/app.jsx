@@ -8,6 +8,7 @@ import "../scss/app.scss";
 
 import axios from "axios";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
+import Header from "./components/Header";
 import DefaultLayout from "./layouts/DefaultLayout";
 import StaffOrderLayout from "./layouts/StaffOrderLayout";
 import OrderLayout from "./layouts/OrderLayout";
@@ -56,16 +57,19 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
         const redirect = getRoleRedirect(user.role);
 
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-50">
-                <div className="text-red-500 font-bold text-3xl mb-4">403</div>
-                <h3 class="mb-3">Unauthorized Access</h3>
-                <p className="text-gray-500 mb-8 max-w-md text-center">You do not have the required permissions to view this page. Please return to your designated workspace.</p>
-                <Link
-                    to={redirect.path}
-                    className="mdt-btn"
-                >
-                    {redirect.label}
-                </Link>
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="flex flex-col items-center justify-center pt-50 px-4">
+                    <div className="text-red-500 font-bold text-3xl mb-4">403</div>
+                    <h3 className="mb-3">Unauthorized Access</h3>
+                    <p className="text-gray-500 mb-8 max-w-md text-center">You do not have the required permissions to view this page. Please return to your designated workspace.</p>
+                    <Link
+                        to={redirect.path}
+                        className="mdt-btn"
+                    >
+                        {redirect.label}
+                    </Link>
+                </div>
             </div>
         );
     }
