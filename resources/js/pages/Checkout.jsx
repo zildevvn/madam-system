@@ -32,6 +32,7 @@ export default function Checkout() {
     };
 
     const handleCheckout = async () => {
+        console.log("check activeOrderId", activeOrderId);
         if (!activeOrderId) return;
         try {
 

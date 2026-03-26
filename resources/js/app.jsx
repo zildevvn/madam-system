@@ -1,22 +1,21 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from 'react-redux';
-import './bootstrap';
 import { store } from './store';
+import './bootstrap';
 import "../css/app.css";
 import "../scss/app.scss";
 
 
 import axios from "axios";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
+import Header from "./components/Header";
 import DefaultLayout from "./layouts/DefaultLayout";
 import StaffOrderLayout from "./layouts/StaffOrderLayout";
 import OrderLayout from "./layouts/OrderLayout";
 import Home from "./pages/Home";
-import Tables from "./pages/Tables";
 import StaffOrder from "./pages/StaffOrder";
 import Kitchen from "./pages/Kitchen";
-import Accountant from "./pages/Accountant";
 import Admin from "./pages/Admin";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
@@ -47,7 +46,33 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
         return children ? children : <Outlet />;
     }
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-50 text-red-500 font-bold text-2xl">403 | Unauthorized Access</div>;
+        const getRoleRedirect = (role) => {
+            switch (role) {
+                case 'kitchen': return { path: '/kitchen', label: 'Go to Kitchen Page' };
+                case 'cashier': return { path: '/cashier', label: 'Go to Cashier Page' };
+                case 'order_staff': return { path: '/staff-order', label: 'Go to Staff Order Page' };
+                default: return { path: '/', label: 'Return to Home' };
+            }
+        };
+
+        const redirect = getRoleRedirect(user.role);
+
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="flex flex-col items-center justify-center pt-50 px-4">
+                    <div className="text-red-500 font-bold text-3xl mb-4">403</div>
+                    <h3 className="mb-3">Unauthorized Access</h3>
+                    <p className="text-gray-500 mb-8 max-w-md text-center">You do not have the required permissions to view this page. Please return to your designated workspace.</p>
+                    <Link
+                        to={redirect.path}
+                        className="mdt-btn"
+                    >
+                        {redirect.label}
+                    </Link>
+                </div>
+            </div>
+        );
     }
 
     return children ? children : <Outlet />;
@@ -59,10 +84,8 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/tables" element={<RoleProtectedRoute allowedRoles={['order_staff']}><DefaultLayout><Tables /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={['order_staff']}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
                     <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/accountant" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Accountant /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><Bills /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />

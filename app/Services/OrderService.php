@@ -34,7 +34,11 @@ class OrderService
 
         $order = Order::with(['items.product', 'table'])->find($item->order_id);
         if ($order) {
-            broadcast(new OrderUpdated($order, 'update_item_status'));
+            try {
+                broadcast(new OrderUpdated($order, 'update_item_status'));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Broadcast failed: ' . $e->getMessage());
+            }
         }
 
         return $item;
@@ -104,7 +108,11 @@ class OrderService
             $order->load(['items.product', 'table']);
 
             // Broadcast the real-time event
-            broadcast(new OrderUpdated($order, 'checkout'));
+            try {
+                broadcast(new OrderUpdated($order, 'checkout'));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Broadcast failed during checkout: ' . $e->getMessage());
+            }
 
             return $order;
         });

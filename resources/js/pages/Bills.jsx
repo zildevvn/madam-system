@@ -94,7 +94,7 @@ const Bills = () => {
                 counts.served++;
             } else {
                 const startTime = order.startTime;
-                const diffMinutes = Math.floor((currentTime - startTime) / 60000);
+                const diffMinutes = Math.max(1, Math.floor((currentTime - startTime) / 60000));
                 if (diffMinutes >= 15) counts.critical++;
                 else if (diffMinutes >= 10) counts.warning++;
                 else counts.active++;
@@ -182,7 +182,7 @@ const Bills = () => {
                         <div className="px-2 py-4 md:p-6">
                             <div className="space-y-4">
                                 {mockOrders[selectedTable.id.toString()].items.map((item, idx) => {
-                                    const itemDiff = Math.floor((currentTime - item.orderTime) / 60000);
+                                    const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
                                     return (
                                         <div key={idx} className={`flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}>
                                             <div className="flex items-center gap-4 flex-1">
