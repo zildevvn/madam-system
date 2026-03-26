@@ -93,8 +93,11 @@ const Bills = () => {
             } else if (order.served) {
                 counts.served++;
             } else {
-                const startTime = order.startTime;
-                const diffMinutes = Math.max(1, Math.floor((currentTime - startTime) / 60000));
+                const diffMinutes = order.items && order.items.length > 0 
+                    ? Math.max(0, ...order.items
+                        .filter(item => !item.done)
+                        .map(item => Math.max(1, Math.floor((currentTime - item.orderTime) / 60000))))
+                    : 0;
                 if (diffMinutes >= 15) counts.critical++;
                 else if (diffMinutes >= 10) counts.warning++;
                 else counts.active++;
