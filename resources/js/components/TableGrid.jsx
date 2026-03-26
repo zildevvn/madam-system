@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getElapsedString } from '../utils/time';
 
 const TableGrid = ({
     tables,
@@ -14,15 +15,7 @@ const TableGrid = ({
         return () => clearInterval(timer);
     }, []);
 
-    const getElapsed = (timestamp) => {
-        if (!timestamp) return 'Đang xử lý';
-        const diffMs = now - new Date(timestamp);
-        const diffMins = Math.max(0, Math.floor(diffMs / 60000));
-        if (diffMins < 60) return `${diffMins} phút`;
-        const hours = Math.floor(diffMins / 60);
-        const mins = diffMins % 60;
-        return `${hours} giờ ${mins} phút`;
-    };
+    const getElapsed = (timestamp) => getElapsedString(timestamp, now);
 
     return (
         <div className={gridClassName}>
@@ -36,7 +29,7 @@ const TableGrid = ({
                 const isBusy = effectiveStatus === 'busy';
                 const statusText = (!effectiveStatus || effectiveStatus === 'available' || effectiveStatus === 'empty')
                     ? 'Bàn Trống'
-                    : (table.active_order?.updated_at ? getElapsed(table.active_order.updated_at) : 'Đang xử lý');
+                    : (table.active_order?.created_at ? getElapsed(table.active_order.created_at) : 'Đang xử lý');
 
                 return (
                     <div

@@ -19,6 +19,7 @@ export default function FooterStaffOrder() {
                         <span className="text-[10px] uppercase tracking-wider">Chọn bàn</span>
                     </button>
 
+
                     <button
                         onClick={() => dispatch(setActiveTab('orders'))}
                         className={`footer-item flex flex-col items-center gap-1 ${activeTab === 'orders' ? 'text-orange-500 font-semibold' : 'text-gray-400 hover:text-orange-500'} transition-colors duration-200 border-none bg-transparent cursor-pointer`}

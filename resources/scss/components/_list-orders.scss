@@ -1,0 +1,24 @@
+.list-orders {
+    .order-item {
+        overflow: hidden;
+
+        .line-top {
+            background: $color-second;
+            height: 5px;
+        }
+
+        &__icon {
+            .bg {
+                background: $color-second;
+            }
+
+            .graphic-left {
+                border-left-color: $color-second;
+            }
+
+            .graphic-right {
+                border-right-color: $color-second;
+            }
+        }
+    }
+}

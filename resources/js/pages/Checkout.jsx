@@ -75,7 +75,7 @@ export default function Checkout() {
                 <div className="flex items-center justify-between px-2 py-4 w-full">
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => navigate(`/order/${tableId}`)}
+                            onClick={() => isConfirmed ? navigate('/staff-order') : navigate(`/order/${tableId}`)}
                             className="mdt-btn-back p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
                         >
                             <svg width="24px" height="24px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>

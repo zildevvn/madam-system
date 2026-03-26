@@ -4,9 +4,16 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchTables } from '../store/slices/tableSlice';
 import { fetchActiveOrderAsync, createOrderAsync } from '../store/slices/orderSlice';
 import TableGrid from '../components/TableGrid';
+import OrderList from '../components/OrderList';
 
 export default function StaffOrder() {
     const navigate = useNavigate();
+    const [now, setNow] = React.useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 30000);
+        return () => clearInterval(timer);
+    }, []);
     const dispatch = useAppDispatch();
     const { status, error, activeTab } = useAppSelector(state => state.table);
     const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
@@ -47,12 +54,8 @@ export default function StaffOrder() {
         }
     };
 
-    const emptyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'available' || t.status?.toLowerCase() === 'empty').length;
-    const busyTablesCount = tables.filter(t => t.status?.toLowerCase() === 'busy').length;
-
-    const displayedTables = activeTab === 'orders' 
-        ? tables.filter(t => t.status?.toLowerCase() === 'busy')
-        : tables;
+    const emptyTablesCount = tables.filter(t => !t.active_order).length;
+    const busyTablesCount = tables.filter(t => !!t.active_order).length;
 
     if (loading) {
         return (
@@ -88,11 +91,20 @@ export default function StaffOrder() {
                         </div>
                     )}
 
-                    <TableGrid
-                        tables={displayedTables}
-                        onTableClick={handleTableClick}
-                        error={error}
-                    />
+                    {activeTab === 'orders' ? (
+                        <OrderList
+                            tables={tables.filter(t => !!t.active_order)}
+                            allTables={tables}
+                            onTableClick={handleTableClick}
+                            now={now}
+                        />
+                    ) : (
+                        <TableGrid
+                            tables={tables}
+                            onTableClick={handleTableClick}
+                            error={error}
+                        />
+                    )}
                 </div>
             </div>
         </div>
