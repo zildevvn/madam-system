@@ -27,22 +27,6 @@ class OrderService
         return false;
     }
 
-    public function updateItemStatus($itemId, $status)
-    {
-        $item = OrderItem::findOrFail($itemId);
-        $item->update(['status' => $status]);
-
-        $order = Order::with(['items.product', 'table'])->find($item->order_id);
-        if ($order) {
-            try {
-                broadcast(new OrderUpdated($order, 'update_item_status'));
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Broadcast failed: ' . $e->getMessage());
-            }
-        }
-
-        return $item;
-    }
 
     public function cleanupDrafts()
     {
@@ -65,26 +49,24 @@ class OrderService
 
     public function checkoutOrder($orderId, array $items)
     {
-        return DB::transaction(function () use ($orderId, $items) {
+        $result = DB::transaction(function () use ($orderId, $items) {
             $order = Order::findOrFail($orderId);
-            $totalPrice = $order->total_price;
+            $totalPrice = 0;
 
             foreach ($items as $itemData) {
-                // If item exists, we could update, but for simplicity we append or update matching product_id
                 $orderItem = OrderItem::where('order_id', $orderId)
                     ->where('product_id', $itemData['product_id'])
                     ->first();
 
                 if ($orderItem) {
-                    $orderItem->quantity += $itemData['quantity'];
+                    $orderItem->quantity = $itemData['quantity'];
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
                     $orderItem->save();
-                    $totalPrice += ($itemData['price'] * $itemData['quantity']);
                 }
                 else {
-                    OrderItem::create([
+                    $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $itemData['product_id'],
                         'quantity' => $itemData['quantity'],
@@ -92,9 +74,17 @@ class OrderService
                         'note' => $itemData['note'] ?? null,
                         'status' => 'pending'
                     ]);
-                    $totalPrice += ($itemData['price'] * $itemData['quantity']);
                 }
+                $totalPrice += ($orderItem->price * $orderItem->quantity);
             }
+
+            // Sync: Remove items that are no longer in the request
+            $itemProductIds = collect($items)->pluck('product_id')->toArray();
+            OrderItem::where('order_id', $orderId)
+                ->whereNotIn('product_id', $itemProductIds)
+                ->delete();
+
+            $wasDraft = $order->status === 'draft';
 
             $order->update([
                 'total_price' => $totalPrice,
@@ -105,16 +95,37 @@ class OrderService
                 \App\Models\Table::where('id', $order->table_id)->update(['status' => 'busy']);
             }
 
-            $order->load(['items.product', 'table']);
-
-            // Broadcast the real-time event
-            try {
-                broadcast(new OrderUpdated($order, 'checkout'));
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Broadcast failed during checkout: ' . $e->getMessage());
-            }
-
-            return $order;
+            return ['order' => $order, 'wasDraft' => $wasDraft];
         });
+
+        // Broadcast AFTER transaction commits to avoid race conditions
+        try {
+            $orderObj = $result['order'];
+            $orderObj->load(['items.product', 'table']);
+            broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed during checkout: ' . $e->getMessage());
+        }
+
+        return $orderObj;
+    }
+
+    public function updateItemStatus($itemId, $status)
+    {
+        $item = OrderItem::findOrFail($itemId);
+        $item->status = $status;
+        $item->save();
+
+        $order = $item->order;
+        $order->load(['items.product', 'table']);
+
+        // Broadcast the real-time event
+        try {
+            broadcast(new OrderUpdated($order, 'item_status_updated'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed during item status update: ' . $e->getMessage());
+        }
+
+        return $order;
     }
 }

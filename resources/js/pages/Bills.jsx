@@ -58,10 +58,15 @@ const Bills = () => {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            channel.listen('.OrderUpdated', (e) => {
+            
+            const handleUpdate = (e) => {
                 console.log('Real-time order update received:', e);
                 dispatch(fetchTables());
-            });
+            };
+
+            channel.listen('.order_created', handleUpdate)
+                   .listen('.order_updated', handleUpdate)
+                   .listen('.item_status_updated', handleUpdate);
 
             return () => {
                 window.Echo.leaveChannel('orders');

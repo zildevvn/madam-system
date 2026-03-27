@@ -48,6 +48,6 @@ class OrderUpdated implements ShouldBroadcastNow
 
     public function broadcastAs()
     {
-        return 'OrderUpdated';
+        return $this->action;
     }
 }
