@@ -50,24 +50,23 @@ class OrderService
     {
         return DB::transaction(function () use ($orderId, $items) {
             $order = Order::findOrFail($orderId);
-            $totalPrice = $order->total_price;
+            $totalPrice = 0;
 
+            // Map incoming items by product_id for easier lookup or processing
             foreach ($items as $itemData) {
-                // If item exists, we could update, but for simplicity we append or update matching product_id
                 $orderItem = OrderItem::where('order_id', $orderId)
                     ->where('product_id', $itemData['product_id'])
                     ->first();
 
                 if ($orderItem) {
-                    $orderItem->quantity += $itemData['quantity'];
+                    // OVERWRITE quantity instead of accumulating
+                    $orderItem->quantity = $itemData['quantity'];
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
                     $orderItem->save();
-                    $totalPrice += ($itemData['price'] * $itemData['quantity']);
-                }
-                else {
-                    OrderItem::create([
+                } else {
+                    $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $itemData['product_id'],
                         'quantity' => $itemData['quantity'],
@@ -75,9 +74,17 @@ class OrderService
                         'note' => $itemData['note'] ?? null,
                         'status' => 'pending'
                     ]);
-                    $totalPrice += ($itemData['price'] * $itemData['quantity']);
                 }
+                
+                $totalPrice += ($orderItem->price * $orderItem->quantity);
             }
+
+            // Sync: Remove items that are no longer in the request
+            // (Optional: depending on if we want to support removal from Checkout)
+            $itemProductIds = collect($items)->pluck('product_id')->toArray();
+            OrderItem::where('order_id', $orderId)
+                ->whereNotIn('product_id', $itemProductIds)
+                ->delete();
 
             $order->update([
                 'total_price' => $totalPrice,
