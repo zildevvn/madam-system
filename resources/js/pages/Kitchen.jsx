@@ -17,48 +17,23 @@ const Kitchen = () => {
     const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Mock initial orders - refined to be more like Bills.jsx
-    const [orders, setOrders] = useState([
-        {
-            id: 'ORD-001',
-            tableId: 1,
-            tableName: 'Bàn 1',
-            startTime: new Date(Date.now() - 12 * 60000),
-            items: [
-                { id: 101, name: "Bún bò đặc biệt", quantity: 2, status: 'pending', orderTime: new Date(Date.now() - 12 * 60000) },
-                { id: 102, name: "Cơm Chiên", quantity: 1, status: 'cooking', orderTime: new Date(Date.now() - 8 * 60000) }
-            ]
-        },
-        {
-            id: 'ORD-002',
-            tableId: 5,
-            tableName: 'Bàn 5',
-            startTime: new Date(Date.now() - 11 * 60000),
-            items: [
-                { id: 103, name: "Bánh bèo", quantity: 2, status: 'ready', orderTime: new Date(Date.now() - 11 * 60000) },
-                { id: 104, name: "Lẩu hải sản", quantity: 1, status: 'cooking', orderTime: new Date(Date.now() - 5 * 60000) }
-            ]
-        },
-        {
-            id: 'ORD-003',
-            tableId: 2,
-            tableName: 'Bàn 2',
-            startTime: new Date(Date.now() - 17 * 60000),
-            items: [
-                { id: 105, name: "Set menu gia đình", quantity: 1, status: 'cooking', orderTime: new Date(Date.now() - 17 * 60000) }
-            ]
-        },
-        {
-            id: 'ORD-004',
-            tableId: 8,
-            tableName: 'Bàn 8',
-            startTime: new Date(Date.now() - 2 * 60000),
-            items: [
-                { id: 106, name: "Nem lụi Huế", quantity: 3, status: 'pending', orderTime: new Date(Date.now() - 2 * 60000) },
-                { id: 107, name: "Mỳ xào", quantity: 2, status: 'ready', orderTime: new Date(Date.now() - 1 * 60000) }
-            ]
-        }
-    ]);
+    const orders = useMemo(() => {
+        return tables
+            .filter(t => t.active_order && t.active_order.items)
+            .map(t => ({
+                id: t.active_order.id,
+                tableId: t.id,
+                tableName: t.name || `Bàn ${t.id}`,
+                startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
+                items: t.active_order.items.map(item => ({
+                    id: item.id,
+                    name: item.product?.name || 'Unknown',
+                    quantity: item.quantity,
+                    status: item.status || 'pending',
+                    orderTime: new Date(item.created_at)
+                }))
+            }));
+    }, [tables]);
 
     useEffect(() => {
         if (tableStatus === 'idle') {
@@ -69,10 +44,15 @@ const Kitchen = () => {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            channel.listen('OrderUpdated', (e) => {
+            
+            const handleUpdate = (e) => {
                 console.log('Real-time order update received:', e);
                 dispatch(fetchTables());
-            });
+            };
+
+            channel.listen('.order_created', handleUpdate)
+                   .listen('.order_updated', handleUpdate)
+                   .listen('.item_status_updated', handleUpdate);
 
             return () => {
                 window.Echo.leaveChannel('orders');
@@ -85,22 +65,23 @@ const Kitchen = () => {
         return () => clearInterval(timer);
     }, []);
 
-    const handleItemStatusChange = (orderId, itemId) => {
-        setOrders(prevOrders => prevOrders.map(order => {
-            if (order.id !== orderId) return order;
-            return {
-                ...order,
-                items: order.items.map(item => {
-                    if (item.id !== itemId) return item;
-                    let nextStatus = 'pending';
-                    if (item.status === 'pending') nextStatus = 'cooking';
-                    else if (item.status === 'cooking') nextStatus = 'ready';
-                    else if (item.status === 'ready') nextStatus = 'served';
-                    else nextStatus = 'pending';
-                    return { ...item, status: nextStatus };
-                })
-            };
-        }));
+    const handleItemStatusChange = async (orderId, itemId) => {
+        // Find current status to calculate next shift
+        const targetOrder = orders.find(o => o.id === orderId);
+        if (!targetOrder) return;
+        const targetItem = targetOrder.items.find(i => i.id === itemId);
+        if (!targetItem) return;
+
+        let nextStatus = 'pending';
+        if (targetItem.status === 'pending') nextStatus = 'cooking';
+        else if (targetItem.status === 'cooking') nextStatus = 'ready';
+        else if (targetItem.status === 'ready') nextStatus = 'served';
+
+        try {
+            await window.axios.put(`/api/order-items/${itemId}/status`, { status: nextStatus });
+        } catch (error) {
+            console.error('Failed to update item status:', error);
+        }
     };
 
 

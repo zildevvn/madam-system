@@ -45,4 +45,9 @@ class OrderUpdated implements ShouldBroadcastNow
             'action' => $this->action,
         ];
     }
+
+    public function broadcastAs()
+    {
+        return $this->action;
+    }
 }

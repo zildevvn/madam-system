@@ -32,10 +32,11 @@ const TableList = ({
 
         if (isOrderServed(order)) return { statusClass: "!bg-green-400 !text-white", duration: "HOÀN TẤT" };
 
-        const startTime = order.startTime || (order.items && order.items[0]?.orderTime);
-        if (!startTime || !currentTime) return { statusClass: "is-busy", duration: "ĐANG CÓ KHÁCH" };
-
-        const diff = Math.floor((currentTime - new Date(startTime)) / 60000);
+        const diff = order.items && order.items.length > 0
+            ? Math.max(0, ...order.items
+                .filter(item => !item.done && item.status !== 'ready' && item.status !== 'served')
+                .map(item => Math.max(1, Math.floor((currentTime - new Date(item.orderTime)) / 60000))))
+            : 0;
         let statusClass = "is-busy";
         if (diff >= 15) statusClass = "!bg-red-400 !text-white";
         else if (diff >= 10) statusClass = "!bg-yellow-100 !text-yellow-700";

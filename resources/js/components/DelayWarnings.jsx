@@ -24,7 +24,7 @@ const DelayWarnings = ({
         const warnings = [];
         const getElapsedTime = (time) => {
             const timeValue = time instanceof Date ? time.getTime() : new Date(time).getTime();
-            return Math.floor((currentTime - timeValue) / 60000);
+            return Math.max(1, Math.floor((currentTime - timeValue) / 60000));
         };
 
         const processOrder = (tableId, order) => {

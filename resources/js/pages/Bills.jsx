@@ -11,88 +11,42 @@ const Bills = () => {
     const [selectedTable, setSelectedTable] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Mock order data for demonstration
-    // In a real app, this would come from an API or the Redux store
-    // Generate mock order data to ensure various states are represented
-    // Generate mock order data to ensure various states are represented
-    const [mockOrders, setMockOrders] = useState(() => {
-        const now = new Date();
-        return {
-            "1": {
-                startTime: new Date(now - 12 * 60000),
-                served: false,
-                items: [
-                    { name: "Bún bò đặc biệt", quantity: 2, orderTime: new Date(now - 12 * 60000), done: false },
-                    { name: "Cơm Chiên", quantity: 1, orderTime: new Date(now - 8 * 60000), done: false }
-                ]
-            },
-            "2": {
-                startTime: new Date(now - 25 * 60000),
-                served: false,
-                items: [
-                    { name: "Set menu gia đình", quantity: 1, orderTime: new Date(now - 25 * 60000), done: false }
-                ]
-            },
-            "4": {
-                startTime: new Date(now - 7 * 60000),
-                served: false,
-                items: [
-                    { name: "Phở bò", quantity: 1, orderTime: new Date(now - 7 * 60000), done: false }
-                ]
-            },
-            "5": {
-                startTime: new Date(now - 15 * 60000),
-                served: false,
-                items: [
-                    { name: "Bún bò Huế", quantity: 2, orderTime: new Date(now - 15 * 60000), done: false },
-                    { name: "Bánh bèo", quantity: 2, orderTime: new Date(now - 10 * 60000), done: false }
-                ]
-            },
-            "6": {
-                startTime: new Date(now - 30 * 60000),
-                served: true,
-                items: [
-                    { name: "Nem lụi", quantity: 5, orderTime: new Date(now - 30 * 60000), done: true }
-                ]
-            },
-            "15": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Mỳ xào", quantity: 2, orderTime: new Date(now - 4 * 60000), done: false }
-                ]
-            },
-            "20": {
-                startTime: new Date(now - 14 * 60000),
-                served: false,
-                items: [
-                    { name: "Gỏi cuốn", quantity: 1, orderTime: new Date(now - 14 * 60000), done: false }
-                ]
+    // Reactive map automatically compiled directly from the live API response mapped onto the Table Redux Store
+    const mockOrders = React.useMemo(() => {
+        const orderDict = {};
+        tables.forEach(t => {
+            if (t.active_order && t.active_order.items) {
+                const allDone = t.active_order.items.every(item => item.status === 'served');
+                orderDict[t.id.toString()] = {
+                    id: t.active_order.id,
+                    startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
+                    served: allDone,
+                    items: t.active_order.items.map(item => ({
+                        id: item.id,
+                        name: item.product?.name || 'Unknown',
+                        quantity: item.quantity,
+                        orderTime: new Date(item.created_at),
+                        done: item.status === 'served',
+                        status: item.status || 'pending'
+                    }))
+                };
             }
-        };
-    });
-
-    const toggleItemStatus = (tableId, itemIndex) => {
-        setMockOrders(prev => {
-            const tableKey = tableId.toString();
-            const order = prev[tableKey];
-            if (!order) return prev;
-
-            const newItems = [...order.items];
-            newItems[itemIndex] = { ...newItems[itemIndex], done: !newItems[itemIndex].done };
-
-            // Check if all items are done
-            const allDone = newItems.every(item => item.done);
-
-            return {
-                ...prev,
-                [tableKey]: {
-                    ...order,
-                    items: newItems,
-                    served: allDone
-                }
-            };
         });
+        return orderDict;
+    }, [tables]);
+
+    const toggleItemStatus = async (tableId, itemIndex) => {
+        const orderInfo = mockOrders[tableId.toString()];
+        if (!orderInfo || !orderInfo.items[itemIndex]) return;
+
+        const item = orderInfo.items[itemIndex];
+        const nextStatus = item.status === 'served' ? 'ready' : 'served';
+
+        try {
+            await window.axios.put(`/api/order-items/${item.id}/status`, { status: nextStatus });
+        } catch (error) {
+            console.error('Failed to sync item status:', error);
+        }
     };
 
     useEffect(() => {
@@ -104,10 +58,15 @@ const Bills = () => {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            channel.listen('OrderUpdated', (e) => {
+            
+            const handleUpdate = (e) => {
                 console.log('Real-time order update received:', e);
                 dispatch(fetchTables());
-            });
+            };
+
+            channel.listen('.order_created', handleUpdate)
+                   .listen('.order_updated', handleUpdate)
+                   .listen('.item_status_updated', handleUpdate);
 
             return () => {
                 window.Echo.leaveChannel('orders');
@@ -139,8 +98,11 @@ const Bills = () => {
             } else if (order.served) {
                 counts.served++;
             } else {
-                const startTime = order.startTime;
-                const diffMinutes = Math.floor((currentTime - startTime) / 60000);
+                const diffMinutes = order.items && order.items.length > 0 
+                    ? Math.max(0, ...order.items
+                        .filter(item => !item.done)
+                        .map(item => Math.max(1, Math.floor((currentTime - item.orderTime) / 60000))))
+                    : 0;
                 if (diffMinutes >= 15) counts.critical++;
                 else if (diffMinutes >= 10) counts.warning++;
                 else counts.active++;
@@ -228,7 +190,7 @@ const Bills = () => {
                         <div className="px-2 py-4 md:p-6">
                             <div className="space-y-4">
                                 {mockOrders[selectedTable.id.toString()].items.map((item, idx) => {
-                                    const itemDiff = Math.floor((currentTime - item.orderTime) / 60000);
+                                    const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
                                     return (
                                         <div key={idx} className={`flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}>
                                             <div className="flex items-center gap-4 flex-1">

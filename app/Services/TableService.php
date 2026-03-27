@@ -16,7 +16,7 @@ class TableService
     public function getAllTables()
     {
         $this->orderService->cleanupDrafts();
-        return Table::with('activeOrder')->get();
+        return Table::with(['activeOrder.items.product'])->get();
     }
 
     public function createTable(array $data)

@@ -61,6 +61,21 @@ class OrderController extends Controller
         ]);
     }
 
+    public function updateItemStatus(Request $request, $itemId)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,cooking,ready,served'
+        ]);
+
+        $item = $this->orderService->updateItemStatus($itemId, $validated['status']);
+
+        return response()->json([
+            'data' => $item,
+            'message' => 'Item status updated successfully',
+            'errors' => null
+        ]);
+    }
+
     public function destroy($id)
     {
         $deleted = $this->orderService->cancelOrder($id);
