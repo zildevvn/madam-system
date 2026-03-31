@@ -192,3 +192,29 @@ h6,
 .mdt-border-yellow {
     border-color: $color-yellow;
 }
+
+/* Premium Scrollbar Style */
+.mdt-scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba($color-primary, 0.2);
+        border-radius: 10px;
+        transition: background 0.3s ease;
+
+        &:hover {
+            background: rgba($color-primary, 0.4);
+        }
+    }
+
+    /* Firefox Support */
+    scrollbar-width: thin;
+    scrollbar-color: rgba($color-primary, 0.2) transparent;
+}

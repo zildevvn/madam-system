@@ -49,7 +49,7 @@ const Bar = () => {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            
+
             const handleUpdate = (e) => {
                 dispatch(fetchTables());
             };

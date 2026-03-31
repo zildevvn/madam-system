@@ -143,7 +143,7 @@ const DelayWarnings = ({
                 {buckets.critical.length > 0 && <span className="flex h-2 w-2 rounded-full mdt-bg-red  animate-ping"></span>}
             </div>
             <div
-                className="p-4 md:px-2 lg:overflow-y-auto flex-1 hide-scrollbar bg-gray-50/20"
+                className="p-4 md:px-2 overflow-y-auto lg:overflow-y-auto flex-1 mdt-scrollbar bg-gray-50/20"
                 style={{ maxHeight }}
             >
                 {hasAnyItems ? (

@@ -153,7 +153,7 @@ const Kitchen = () => {
                     </div>
 
                     {/* RIGHT COLUMN: Time Warnings (Full width on Tablet, 1/4 on Desktop) */}
-                    <div className="col-span-12 lg:col-span-3 lg:h-full">
+                    <div className="col-span-12 lg:col-span-3 lg:h-full flex flex-col lg:overflow-hidden">
                         <DelayWarnings
                             tables={tables}
                             orders={orders}
@@ -161,7 +161,6 @@ const Kitchen = () => {
                             onItemClick={handleItemStatusChange}
                             statusConfig={STATUS_CONFIG}
                             filterType="food"
-                            maxHeight="auto"
                         />
                     </div>
 
