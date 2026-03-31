@@ -1,27 +1,23 @@
 import React from 'react';
 
-const STATUS_CONFIG_DEFAULT = {
-    pending: { label: 'Chờ', colorClass: 'bg-blue-50 text-blue-600 border-blue-100', dotClass: 'bg-blue-500' },
-    cooking: { label: 'Gội', colorClass: 'bg-orange-50 text-orange-600 border-orange-100', dotClass: 'bg-orange-500 animate-pulse' },
-    ready: { label: 'Xong', colorClass: 'bg-green-50 text-green-600 border-green-100', dotClass: 'bg-green-500' },
-    served: { label: 'Đã giao', colorClass: 'bg-gray-50 text-gray-400 border-gray-100', dotClass: 'bg-gray-300' }
-};
-
 const DelayWarnings = ({
     warningItems: externalWarningItems,
     onItemClick,
     title = "Cảnh báo trễ",
-    maxHeight = "calc(100vh - 250px)",
-    statusConfig = STATUS_CONFIG_DEFAULT,
+    maxHeight = "calc(100vh - 150px)",
     tables,
     orders,
     currentTime
 }) => {
-    const warningItems = React.useMemo(() => {
-        if (externalWarningItems) return externalWarningItems;
-        if (!orders || !currentTime) return [];
+    const buckets = React.useMemo(() => {
+        if (!orders || !currentTime) return { critical: [], warning: [], active: [] };
 
-        const warnings = [];
+        const result = {
+            critical: {}, // >= 15
+            warning: {},  // 10 - < 15
+            active: {}    // 1 - < 10
+        };
+
         const getElapsedTime = (time) => {
             const timeValue = time instanceof Date ? time.getTime() : new Date(time).getTime();
             return Math.max(1, Math.floor((currentTime - timeValue) / 60000));
@@ -30,22 +26,34 @@ const DelayWarnings = ({
         const processOrder = (tableId, order) => {
             if (order.served) return;
             order.items.forEach((item, idx) => {
-                // Skip if already done (Bills) or ready/served (Kitchen)
                 if (item.done || item.status === 'ready' || item.status === 'served') return;
 
                 const diff = getElapsedTime(item.orderTime);
-                if (diff >= 10) {
-                    const tableIndex = tables ? tables.findIndex(t => t.id.toString() === tableId.toString()) : -1;
-                    const tableName = order.tableName || (tableIndex !== -1 ? `BÀN ${tableIndex + 1}` : `BÀN ${tableId}`);
+                let bucketKey = 'active';
+                if (diff >= 15) bucketKey = 'critical';
+                else if (diff >= 10) bucketKey = 'warning';
 
-                    warnings.push({
-                        ...item,
-                        tableId,
-                        tableName,
-                        diff,
-                        orderId: order.id,
-                        id: item.id || `${tableId}-${idx}`
-                    });
+                const bucket = result[bucketKey];
+                const itemName = item.name;
+                const tableIndex = tables ? tables.findIndex(t => t.id.toString() === tableId.toString()) : -1;
+                const tableName = order.tableName || (tableIndex !== -1 ? `BÀN ${tableIndex + 1}` : `BÀN ${tableId}`);
+
+                if (!bucket[itemName]) {
+                    bucket[itemName] = {
+                        name: itemName,
+                        totalQuantity: item.quantity,
+                        tables: [tableName],
+                        maxDiff: diff,
+                        itemIds: [item.id],
+                        orderId: order.id
+                    };
+                } else {
+                    bucket[itemName].totalQuantity += item.quantity;
+                    if (!bucket[itemName].tables.includes(tableName)) {
+                        bucket[itemName].tables.push(tableName);
+                    }
+                    bucket[itemName].maxDiff = Math.max(bucket[itemName].maxDiff, diff);
+                    bucket[itemName].itemIds.push(item.id);
                 }
             });
         };
@@ -56,48 +64,86 @@ const DelayWarnings = ({
             Object.entries(orders).forEach(([tableId, order]) => processOrder(tableId, order));
         }
 
-        return warnings.sort((a, b) => b.diff - a.diff);
-    }, [externalWarningItems, tables, orders, currentTime]);
+        const formatBucket = (bucketObj) => Object.values(bucketObj).sort((a, b) => b.maxDiff - a.maxDiff);
+
+        return {
+            critical: formatBucket(result.critical),
+            warning: formatBucket(result.warning),
+            active: formatBucket(result.active)
+        };
+    }, [tables, orders, currentTime]);
+
+    const renderSection = (items, type) => {
+        if (items.length === 0) return null;
+
+        const config = {
+            critical: { title: 'Món ăn trễ (>= 15p)', color: 'text-red-600', bg: 'mdt-bg-red ', border: 'mdt-border-red shadow-red-100', dot: 'mdt-bg-red ' },
+            warning: { title: 'Món ăn trễ (10p - 15p)', color: 'text-yellow-700', bg: 'bg-yellow-500', border: 'border-yellow-200 shadow-yellow-100', dot: 'bg-yellow-500' },
+            active: { title: 'Món ăn (< 10p)', color: 'text-gray-500', bg: 'bg-gray-400', border: 'border-gray-200 shadow-gray-100', dot: 'bg-gray-400' }
+        }[type];
+
+        return (
+            <div className="mb-6 animate-[fadeIn_0.3s_ease-out]">
+                <div className={`px-3 py-1 flex items-center justify-between font-black text-[12px] border-l-4 rounded-r-md bg-white mb-3 shadow-sm border-[rgba(0,0,0,0.05)] ${config.color === 'text-red-600' ? 'mdt-border-red ' : config.color === 'text-yellow-700' ? 'border-yellow-600' : 'border-gray-400'}`}>
+                    <span>{config.title}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-white ${config.bg}`}>{items.length} món</span>
+                </div>
+
+
+                <div className="space-y-3">
+                    {items.map((item, idx) => (
+                        <div
+                            key={`${item.name}-${type}-${idx}`}
+                            className={`p-3 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] bg-white cursor-pointer group ${config.border}`}
+                            onClick={() => onItemClick && onItemClick(item.orderId, item.itemIds[0])}
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[14px] font-black text-gray-800 leading-none">{item.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg text-white shadow-sm transition-all duration-300 ${config.bg} ${type === 'critical' ? 'animate-pulse' : ''}`}>
+                                        {item.maxDiff}P
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
+                                    {item.tables.map((t, tid) => (
+                                        <span key={tid} className="text-[12px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded uppercase">{t}</span>
+                                    ))}
+                                </div>
+                                <span className={`text-[13px] font-black group-hover:scale-110 transition-transform ${config.color}`}>x{item.totalQuantity}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    const hasAnyItems = buckets.critical.length > 0 || buckets.warning.length > 0 || buckets.active.length > 0;
 
     return (
         <div className="mdt-delay-warnings bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
             <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                <h5 className="m-0">{title}</h5>
-                <svg className="w-4 h-4 text-red-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                <h5 className="m-0 tracking-widest">{title}</h5>
+                {buckets.critical.length > 0 && <span className="flex h-2 w-2 rounded-full mdt-bg-red  animate-ping"></span>}
             </div>
             <div
-                className="p-4 md:px-2 overflow-y-auto flex-1 hide-scrollbar bg-red-50/30"
+                className="p-4 md:px-2 overflow-y-auto flex-1 hide-scrollbar bg-gray-50/20"
                 style={{ maxHeight }}
             >
-                {warningItems.length > 0 ? (
-                    <div className="space-y-3">
-                        {warningItems.map((item, idx) => (
-                            <div
-                                key={`${item.id}-${idx}`}
-                                onClick={() => onItemClick && onItemClick(item.orderId, item.id)}
-                                className={`p-4 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm cursor-pointer ${item.diff >= 15 ? 'bg-white border-red-200 text-red-600 shadow-red-100' : 'bg-white border-yellow-200 text-yellow-700 shadow-yellow-100'}`}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg ${item.diff >= 15 ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white'}`}>
-                                        {item.diff} PHÚT
-                                    </span>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase">{item.tableName}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <h6 className="m-0">{item.name}</h6>
-                                    <span className="text-xs font-black">x{item.quantity}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                {hasAnyItems ? (
+                    <>
+                        {renderSection(buckets.critical, 'critical')}
+                        {renderSection(buckets.warning, 'warning')}
+                        {renderSection(buckets.active, 'active')}
+                    </>
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-gray-300 italic py-10 opacity-60">
                         <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <p className="text-xs">Không có món quá hạn</p>
+                        <p className="text-xs">Không có món nào đang chờ</p>
                     </div>
                 )}
             </div>

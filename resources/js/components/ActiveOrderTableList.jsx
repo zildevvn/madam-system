@@ -30,7 +30,7 @@ const ActiveOrderTableList = ({
         const order = getOrderForTable(tableId);
         if (!order) return { statusClass: "", duration: "BÀN TRỐNG" };
 
-        if (isOrderServed(order)) return { statusClass: "!bg-green-400 !text-white", duration: "HOÀN TẤT" };
+        if (isOrderServed(order)) return { statusClass: "mdt-bg-green !text-white", duration: "HOÀN TẤT" };
 
         const diff = order.items && order.items.length > 0
             ? Math.max(0, ...order.items
@@ -38,8 +38,8 @@ const ActiveOrderTableList = ({
                 .map(item => Math.max(1, Math.floor((currentTime - new Date(item.orderTime)) / 60000))))
             : 0;
         let statusClass = "is-busy";
-        if (diff >= 15) statusClass = "!bg-red-400 !text-white";
-        else if (diff >= 10) statusClass = "!bg-yellow-100 !text-yellow-700";
+        if (diff >= 15) statusClass = "mdt-bg-red !text-white";
+        else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
 
         return { statusClass, duration: `${diff} PHÚT` };
     };

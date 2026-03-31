@@ -160,3 +160,35 @@ h6,
         }
     }
 }
+
+.mdt-bg-red {
+    background: $color-red;
+}
+
+.mdt-bg-blue {
+    background: $color-blue;
+}
+
+.mdt-bg-second {
+    background: $color-second;
+}
+
+.mdt-bg-green {
+    background: $color-green;
+}
+
+.mdt-bg-yellow {
+    background: $color-yellow;
+}
+
+.mdt-text-primary {
+    color: $color-primary;
+}
+
+.mdt-border-red {
+    border-color: $color-red;
+}
+
+.mdt-border-yellow {
+    border-color: $color-yellow;
+}

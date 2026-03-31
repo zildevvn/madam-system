@@ -58,15 +58,15 @@ const Bills = () => {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            
+
             const handleUpdate = (e) => {
                 console.log('Real-time order update received:', e);
                 dispatch(fetchTables());
             };
 
             channel.listen('.order_created', handleUpdate)
-                   .listen('.order_updated', handleUpdate)
-                   .listen('.item_status_updated', handleUpdate);
+                .listen('.order_updated', handleUpdate)
+                .listen('.item_status_updated', handleUpdate);
 
             return () => {
                 window.Echo.leaveChannel('orders');
@@ -90,26 +90,25 @@ const Bills = () => {
 
     // Calculate status counts
     const statusCounts = React.useMemo(() => {
-        const counts = { total: tables.length, empty: 0, active: 0, warning: 0, critical: 0, served: 0 };
-        tables.forEach(table => {
-            const order = mockOrders[table.id.toString()];
-            if (!order) {
-                counts.empty++;
-            } else if (order.served) {
-                counts.served++;
-            } else {
-                const diffMinutes = order.items && order.items.length > 0 
-                    ? Math.max(0, ...order.items
-                        .filter(item => !item.done)
-                        .map(item => Math.max(1, Math.floor((currentTime - item.orderTime) / 60000))))
-                    : 0;
-                if (diffMinutes >= 15) counts.critical++;
-                else if (diffMinutes >= 10) counts.warning++;
-                else counts.active++;
-            }
+        const counts = { active: 0, warning: 0, critical: 0, served: 0, total: 0 };
+        
+        Object.values(mockOrders).forEach(order => {
+            if (!order || !order.items) return;
+            order.items.forEach(item => {
+                counts.total++;
+                if (item.done || item.status === 'ready' || item.status === 'served') {
+                    counts.served++;
+                } else {
+                    const diffMinutes = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
+                    if (diffMinutes >= 15) counts.critical++;
+                    else if (diffMinutes >= 10) counts.warning++;
+                    else counts.active++;
+                }
+            });
         });
+        
         return counts;
-    }, [tables, mockOrders, currentTime]);
+    }, [mockOrders, currentTime]);
 
     if (status === 'loading') {
         return (
@@ -125,16 +124,16 @@ const Bills = () => {
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between overflow-x-auto no-scrollbar">
                     <div className="flex items-center gap-4">
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-blue-500 font-bold">
-                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                            <span>&lt; 10p: <span className="text-gray-900">{statusCounts.active}</span></span>
+                            <span className="w-2 h-2 mdt-bg-blue rounded-full"></span>
+                            <span>&lt; 10p: <span className="text-gray-900">{statusCounts.active} món</span></span>
                         </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-yellow-500 font-bold">
-                            <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-                            <span>&ge; 10p: <span className="text-gray-900">{statusCounts.warning}</span></span>
+                            <span className="w-2 h-2 mdt-bg-yellow rounded-full"></span>
+                            <span>&ge; 10p: <span className="text-gray-900">{statusCounts.warning} món</span></span>
                         </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-red-500 font-bold">
-                            <span className="w-2 h-2 bg-red-400 rounded-full"></span>
-                            <span>&ge; 15p: <span className="text-gray-900">{statusCounts.critical}</span></span>
+                            <span className="w-2 h-2 mdt-bg-red rounded-full"></span>
+                            <span>&ge; 15p: <span className="text-gray-900">{statusCounts.critical} món</span></span>
                         </p>
                     </div>
                 </div>
@@ -165,6 +164,7 @@ const Bills = () => {
                                 tables={tables}
                                 orders={mockOrders}
                                 currentTime={currentTime}
+                                title='Danh sách món'
                             />
                         </div>
                     </div>

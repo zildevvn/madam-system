@@ -44,15 +44,15 @@ const Kitchen = () => {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            
+
             const handleUpdate = (e) => {
                 console.log('Real-time order update received:', e);
                 dispatch(fetchTables());
             };
 
             channel.listen('.order_created', handleUpdate)
-                   .listen('.order_updated', handleUpdate)
-                   .listen('.item_status_updated', handleUpdate);
+                .listen('.order_updated', handleUpdate)
+                .listen('.item_status_updated', handleUpdate);
 
             return () => {
                 window.Echo.leaveChannel('orders');
@@ -119,8 +119,8 @@ const Kitchen = () => {
                     {/* CENTER COLUMN: All Items Summary (50%) */}
                     <div className="col-span-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                         <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                            <h5 className="tracking-widest m-0">Tổng hợp món đang làm</h5>
-                            <span className="text-xs font-bold bg-orange-100 text-orange-600 px-3 py-1 rounded-full uppercase">
+                            <h5 className="tracking-widest m-0"> Danh sách món </h5>
+                            <span className="text-xs font-bold bg-orange-100 mdt-text-primary  px-3 py-1 rounded-full uppercase">
                                 {consolidatedItems.length} loại món
                             </span>
                         </div>
@@ -128,13 +128,13 @@ const Kitchen = () => {
                             {consolidatedItems.length > 0 ? (
                                 <div className="space-y-3">
                                     {consolidatedItems.map((item, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-3xl border border-transparent hover:border-orange-200 transition-colors group">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-xl font-black text-orange-500 shadow-sm border border-gray-100">
-                                                    {item.quantity}
-                                                </div>
-
+                                        <div key={idx} className="flex items-center justify-between px-2 py-3 bg-gray-50 rounded-xl border border-transparent hover:border-orange-200 transition-colors group">
+                                            <div className="flex items-center gap-4 justify-between">
                                                 <h6 className="m-0">{item.name}</h6>
+
+                                                <div className="flex items-center justify-center text-sm font-black mdt-text-primary ">
+                                                    X{item.quantity}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
