@@ -46,10 +46,10 @@ export default function Checkout() {
             setTimeout(() => {
                 setShowSuccessPopup(false);
                 navigate('/staff-order');
-            }, 1500);
+            }, 4000);
 
         } catch (error) {
-            alert("Lỗi khi thanh toán!");
+            alert("Lỗi Order");
         }
     };
 

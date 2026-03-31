@@ -203,7 +203,7 @@ const Order = () => {
                                                     </div>
 
                                                     {/* Product Info Card Overlap */}
-                                                    <div className="relative z-8 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] rounded-[0px_10px_0px_10px] -mt-0 pt-0 pb-2 transition-transform duration-300 group-active:translate-y-1">
+                                                    <div className="relative z-8 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] rounded-[0px_10px_0px_10px]  transition-transform duration-300 group-active:translate-y-1">
                                                         <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>
                                                             {new Intl.NumberFormat('vi-VN').format(product.price)}đ
                                                         </p>

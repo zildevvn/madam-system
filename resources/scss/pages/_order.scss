@@ -55,6 +55,7 @@
     .list-products {
         .product-item {
             background: $color-blue-gray;
+            // height: 100%;
 
             h3 {
                 color: #fff;
@@ -63,6 +64,10 @@
 
                 @media (max-width: 767.98px) {
                     font-size: 12px;
+                }
+
+                @media (max-width: 389.98px) {
+                    font-size: 11px;
                 }
             }
         }

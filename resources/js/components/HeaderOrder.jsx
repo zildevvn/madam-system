@@ -68,7 +68,7 @@ export default function HeaderOrder() {
                             <input
                                 ref={searchInputRef}
                                 type="text"
-                                className="w-full bg-gray-100 border-none rounded-full py-[10px] pl-4 pr-10 text-[14px] md:text-[15px] focus:ring-2 focus:ring-orange-500/20 focus:bg-white focus:outline-none transition-all placeholder:text-gray-400 font-medium"
+                                className="w-full bg-gray-100 border-none rounded-full py-[10px] pl-4 pr-10 text-base focus:ring-2 focus:ring-orange-500/20 focus:bg-white focus:outline-none transition-all placeholder:text-gray-400 font-medium"
                                 placeholder="Tìm kiếm món ăn, thức uống..."
                                 value={searchQuery}
                                 onChange={(e) => dispatch(setSearchQuery(e.target.value))}

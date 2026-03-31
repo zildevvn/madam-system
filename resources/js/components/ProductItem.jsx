@@ -9,7 +9,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
             <div className="flex justify-between items-start gap-2">
                 <div className="space-y-1">
                     <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-[12px] opacity-70">
+                    <p className="text-[14px] opacity-70">
                         Đơn giá: {new Intl.NumberFormat('vi-VN').format(item.price)}đ
                     </p>
                     {item.note && !showNote && (
@@ -63,7 +63,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                                     if (onUpdateNote) onUpdateNote(item.id, noteValue);
                                 }
                             }}
-                            className="w-full text-[13px] pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-gray-700 placeholder-gray-400 shadow-inner"
+                            className="w-full max-w-full text-base pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-gray-700 placeholder-gray-400 shadow-inner"
                             autoFocus
                         />
                         {noteValue !== (item.note || '') && (
