@@ -55,6 +55,7 @@ const ActiveOrderTableList = ({
         let statusClass = "is-busy";
         if (diff >= 15) statusClass = "mdt-bg-red !text-white";
         else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
+        else if (diff >= 5) statusClass = "bg-blue-500 !text-white";
 
         return { statusClass, duration: `${diff} PHÚT` };
     };

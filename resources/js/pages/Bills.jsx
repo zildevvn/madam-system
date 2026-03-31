@@ -92,19 +92,20 @@ const Bills = () => {
 
     // Calculate status counts
     const statusCounts = React.useMemo(() => {
-        const counts = { active: 0, warning: 0, critical: 0, served: 0, total: 0 };
+        const counts = { active: 0, alert: 0, warning: 0, critical: 0, served: 0, total: 0 };
         
         Object.values(mockOrders).forEach(order => {
             if (!order || !order.items) return;
             order.items.forEach(item => {
                 if (item.type !== 'food') return; // Only count food items
                 counts.total++;
-                if (item.done || item.status === 'ready' || item.status === 'served') {
+                if (item.status === 'ready' || item.status === 'served') {
                     counts.served++;
                 } else {
                     const diffMinutes = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
                     if (diffMinutes >= 15) counts.critical++;
                     else if (diffMinutes >= 10) counts.warning++;
+                    else if (diffMinutes >= 5) counts.alert++;
                     else counts.active++;
                 }
             });
@@ -126,13 +127,17 @@ const Bills = () => {
             <div className="bg-white py-3 border-t border-b border-gray-200">
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between overflow-x-auto no-scrollbar">
                     <div className="flex items-center gap-4">
+                        <p className="item-info flex items-center gap-1 m-0 text-sm text-gray-500 font-bold">
+                            <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span>1-5p: <span className="text-gray-900">{statusCounts.active} món</span></span>
+                        </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-blue-500 font-bold">
-                            <span className="w-2 h-2 mdt-bg-blue rounded-full"></span>
-                            <span>&lt; 10p: <span className="text-gray-900">{statusCounts.active} món</span></span>
+                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            <span>5-10p: <span className="text-gray-900">{statusCounts.alert} món</span></span>
                         </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-yellow-500 font-bold">
                             <span className="w-2 h-2 mdt-bg-yellow rounded-full"></span>
-                            <span>&ge; 10p: <span className="text-gray-900">{statusCounts.warning} món</span></span>
+                            <span>10-15p: <span className="text-gray-900">{statusCounts.warning} món</span></span>
                         </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-red-500 font-bold">
                             <span className="w-2 h-2 mdt-bg-red rounded-full"></span>

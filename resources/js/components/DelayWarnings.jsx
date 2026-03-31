@@ -11,12 +11,13 @@ const DelayWarnings = ({
     filterType = null // 'food' or 'drink'
 }) => {
     const buckets = React.useMemo(() => {
-        if (!orders || !currentTime) return { critical: [], warning: [], active: [] };
+        if (!orders || !currentTime) return { critical: [], warning: [], alert: [], active: [] };
 
         const result = {
             critical: {}, // >= 15
             warning: {},  // 10 - < 15
-            active: {}    // 1 - < 10
+            alert: {},    // 5 - < 10
+            active: {}    // 1 - < 5
         };
 
         const getElapsedTime = (time) => {
@@ -38,6 +39,7 @@ const DelayWarnings = ({
                 let bucketKey = 'active';
                 if (diff >= 15) bucketKey = 'critical';
                 else if (diff >= 10) bucketKey = 'warning';
+                else if (diff >= 5) bucketKey = 'alert';
 
                 const bucket = result[bucketKey];
                 const itemName = item.name;
@@ -83,6 +85,7 @@ const DelayWarnings = ({
         return {
             critical: formatBucket(result.critical),
             warning: formatBucket(result.warning),
+            alert: formatBucket(result.alert),
             active: formatBucket(result.active)
         };
     }, [tables, orders, currentTime]);
@@ -93,12 +96,13 @@ const DelayWarnings = ({
         const config = {
             critical: { title: 'Món ăn trễ (>= 15p)', color: 'text-red-600', bg: 'mdt-bg-red ', border: 'mdt-border-red shadow-red-100', dot: 'mdt-bg-red ' },
             warning: { title: 'Món ăn trễ (10p - 15p)', color: 'text-yellow-700', bg: 'bg-yellow-500', border: 'border-yellow-200 shadow-yellow-100', dot: 'bg-yellow-500' },
-            active: { title: 'Món ăn (< 10p)', color: 'text-gray-500', bg: 'bg-gray-400', border: 'border-gray-200 shadow-gray-100', dot: 'bg-gray-400' }
+            alert: { title: 'Món ăn trễ (5p - 10p)', color: 'text-blue-600', bg: 'bg-blue-500', border: 'border-blue-200 shadow-blue-100', dot: 'bg-blue-500' },
+            active: { title: 'Món ăn (1p - 5p)', color: 'text-gray-500', bg: 'bg-gray-400', border: 'border-gray-200 shadow-gray-100', dot: 'bg-gray-400' }
         }[type];
 
         return (
             <div className="mb-6 animate-[fadeIn_0.3s_ease-out]">
-                <div className={`px-3 py-1 flex items-center justify-between font-black text-[12px] border-l-4 rounded-r-md bg-white mb-3 shadow-sm border-[rgba(0,0,0,0.05)] ${config.color === 'text-red-600' ? 'mdt-border-red ' : config.color === 'text-yellow-700' ? 'border-yellow-600' : 'border-gray-400'}`}>
+                <div className={`px-3 py-1 flex items-center justify-between font-black text-[12px] border-l-4 rounded-r-md bg-white mb-3 shadow-sm border-[rgba(0,0,0,0.05)] ${config.color === 'text-red-600' ? 'mdt-border-red ' : config.color === 'text-yellow-700' ? 'border-yellow-600' : config.color === 'text-blue-600' ? 'border-blue-600' : 'border-gray-400'}`}>
                     <span>{config.title}</span>
                     <span className={`px-2 py-0.5 rounded-full text-white ${config.bg}`}>{items.length} món</span>
                 </div>
@@ -134,7 +138,7 @@ const DelayWarnings = ({
         );
     };
 
-    const hasAnyItems = buckets.critical.length > 0 || buckets.warning.length > 0 || buckets.active.length > 0;
+    const hasAnyItems = buckets.critical.length > 0 || buckets.warning.length > 0 || buckets.alert.length > 0 || buckets.active.length > 0;
 
     return (
         <div className="mdt-delay-warnings bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:overflow-hidden lg:h-full">
@@ -150,6 +154,7 @@ const DelayWarnings = ({
                     <>
                         {renderSection(buckets.critical, 'critical')}
                         {renderSection(buckets.warning, 'warning')}
+                        {renderSection(buckets.alert, 'alert')}
                         {renderSection(buckets.active, 'active')}
                     </>
                 ) : (
