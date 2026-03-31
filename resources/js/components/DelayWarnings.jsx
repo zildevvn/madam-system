@@ -7,7 +7,8 @@ const DelayWarnings = ({
     maxHeight = "calc(100vh - 150px)",
     tables,
     orders,
-    currentTime
+    currentTime,
+    filterType = null // 'food' or 'drink'
 }) => {
     const buckets = React.useMemo(() => {
         if (!orders || !currentTime) return { critical: [], warning: [], active: [] };
@@ -24,10 +25,15 @@ const DelayWarnings = ({
         };
 
         const processOrder = (tableId, order) => {
-            if (order.served) return;
-            order.items.forEach((item, idx) => {
-                if (item.done || item.status === 'ready' || item.status === 'served') return;
+            if (order.served && !filterType) return;
 
+            const itemsToProcess = order.items.filter(item => {
+                if (item.done || item.status === 'ready' || item.status === 'served') return false;
+                if (!filterType) return true;
+                return (item.product?.type === filterType) || (item.type === filterType);
+            });
+
+            itemsToProcess.forEach((item, idx) => {
                 const diff = getElapsedTime(item.orderTime);
                 let bucketKey = 'active';
                 if (diff >= 15) bucketKey = 'critical';
@@ -42,15 +48,23 @@ const DelayWarnings = ({
                     bucket[itemName] = {
                         name: itemName,
                         totalQuantity: item.quantity,
-                        tables: [tableName],
+                        tables: [{ name: tableName, orderTime: item.orderTime }],
                         maxDiff: diff,
                         itemIds: [item.id],
                         orderId: order.id
                     };
                 } else {
                     bucket[itemName].totalQuantity += item.quantity;
-                    if (!bucket[itemName].tables.includes(tableName)) {
-                        bucket[itemName].tables.push(tableName);
+                    const existingTable = bucket[itemName].tables.find(t => t.name === tableName);
+                    if (!existingTable) {
+                        bucket[itemName].tables.push({ name: tableName, orderTime: item.orderTime });
+                    } else {
+                        // Keep the earliest order time for this table's dish
+                        const existingTime = new Date(existingTable.orderTime).getTime();
+                        const newTime = new Date(item.orderTime).getTime();
+                        if (newTime < existingTime) {
+                            existingTable.orderTime = item.orderTime;
+                        }
                     }
                     bucket[itemName].maxDiff = Math.max(bucket[itemName].maxDiff, diff);
                     bucket[itemName].itemIds.push(item.id);
@@ -107,11 +121,11 @@ const DelayWarnings = ({
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
-                                    {item.tables.map((t, tid) => (
-                                        <span key={tid} className="text-[12px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded uppercase">{t}</span>
+                                    {item.tables.slice().sort((a, b) => new Date(a.orderTime) - new Date(b.orderTime)).map((t, tid) => (
+                                        <span key={tid} className="text-[12px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded uppercase">{t.name}</span>
                                     ))}
                                 </div>
-                                <span className={`text-[13px] font-black group-hover:scale-110 transition-transform ${config.color}`}>x{item.totalQuantity}</span>
+                                <span className={`text-[14px] font-black group-hover:scale-110 transition-transform ${config.color}`}>x{item.totalQuantity}</span>
                             </div>
                         </div>
                     ))}
@@ -123,13 +137,13 @@ const DelayWarnings = ({
     const hasAnyItems = buckets.critical.length > 0 || buckets.warning.length > 0 || buckets.active.length > 0;
 
     return (
-        <div className="mdt-delay-warnings bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
+        <div className="mdt-delay-warnings bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:overflow-hidden lg:h-full">
             <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                 <h5 className="m-0 tracking-widest">{title}</h5>
                 {buckets.critical.length > 0 && <span className="flex h-2 w-2 rounded-full mdt-bg-red  animate-ping"></span>}
             </div>
             <div
-                className="p-4 md:px-2 overflow-y-auto flex-1 hide-scrollbar bg-gray-50/20"
+                className="p-4 md:px-2 lg:overflow-y-auto flex-1 hide-scrollbar bg-gray-50/20"
                 style={{ maxHeight }}
             >
                 {hasAnyItems ? (

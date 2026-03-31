@@ -45,6 +45,7 @@ export default function Checkout() {
             setShowSuccessPopup(true);
             setTimeout(() => {
                 setShowSuccessPopup(false);
+
                 navigate('/staff-order');
             }, 4000);
 

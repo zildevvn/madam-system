@@ -27,7 +27,9 @@ const Bills = () => {
                         quantity: item.quantity,
                         orderTime: new Date(item.created_at),
                         done: item.status === 'served',
-                        status: item.status || 'pending'
+                        status: item.status || 'pending',
+                        product: item.product,
+                        type: item.type || item.product?.type
                     }))
                 };
             }
@@ -95,6 +97,7 @@ const Bills = () => {
         Object.values(mockOrders).forEach(order => {
             if (!order || !order.items) return;
             order.items.forEach(item => {
+                if (item.type !== 'food') return; // Only count food items
                 counts.total++;
                 if (item.done || item.status === 'ready' || item.status === 'served') {
                     counts.served++;
@@ -155,6 +158,7 @@ const Bills = () => {
                                 orders={mockOrders}
                                 currentTime={currentTime}
                                 onTableClick={handleTableClick}
+                                filterType="food"
                             />
                         </div>
 
@@ -165,6 +169,7 @@ const Bills = () => {
                                 orders={mockOrders}
                                 currentTime={currentTime}
                                 title='Danh sách món'
+                                filterType="food"
                             />
                         </div>
                     </div>
@@ -189,7 +194,9 @@ const Bills = () => {
 
                         <div className="px-2 py-4 md:p-6">
                             <div className="space-y-4">
-                                {mockOrders[selectedTable.id.toString()].items.map((item, idx) => {
+                                {mockOrders[selectedTable.id.toString()].items
+                                    .filter(item => item.type === 'food')
+                                    .map((item, idx) => {
                                     const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
                                     return (
                                         <div key={idx} className={`flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}>

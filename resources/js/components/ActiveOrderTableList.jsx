@@ -7,19 +7,34 @@ const ActiveOrderTableList = ({
     currentTime,
     onTableClick,
     title = "Danh sách bàn",
-    className = ""
+    className = "",
+    filterType = null // 'food' or 'drink'
 }) => {
     const getOrderForTable = (tableId) => {
         if (!orders) return null;
+        let order;
         if (Array.isArray(orders)) {
-            return orders.find(o => o.tableId === tableId || o.tableId?.toString() === tableId.toString());
+            order = orders.find(o => o.tableId === tableId || o.tableId?.toString() === tableId.toString());
+        } else {
+            order = orders[tableId.toString()];
         }
-        return orders[tableId.toString()];
+
+        if (!order || !filterType) return order;
+
+        // Clone and filter items by type if filterType is provided
+        const filteredItems = order.items.filter(item => {
+            // Note: In real API, product type might be at item.product.type
+            return (item.product?.type === filterType) || (item.type === filterType);
+        });
+
+        if (filteredItems.length === 0) return null;
+
+        return { ...order, items: filteredItems };
     };
 
     const isOrderServed = (order) => {
         if (!order) return false;
-        if (typeof order.served !== 'undefined') return order.served;
+        if (typeof order.served !== 'undefined' && !filterType) return order.served;
         if (order.items) {
             return order.items.every(item => item.done || item.status === 'ready' || item.status === 'served');
         }
@@ -44,21 +59,21 @@ const ActiveOrderTableList = ({
         return { statusClass, duration: `${diff} PHÚT` };
     };
 
-    // Filter tables to include only those with an active order or an entry in orders
+    // Filter tables to include only those with an active order (matching the filterType if any)
     const activeTables = tables.filter(table => {
         const order = getOrderForTable(table.id);
-        return order && (order.items?.length > 0 || table.active_order);
+        return !!order;
     });
 
     return (
-        <div className={`flex flex-col overflow-hidden h-full ${className}`}>
+        <div className={`flex flex-col lg:overflow-hidden lg:h-full ${className}`}>
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white text-orange-500">
                 <h5 className="m-0">{title}</h5>
                 <span className="text-xs font-black bg-orange-100 px-3 py-1 rounded-full">
                     {activeTables.length} BÀN
                 </span>
             </div>
-            <div className="p-4 md:px-2 overflow-y-auto flex-1 hide-scrollbar">
+            <div className="p-4 md:px-2 lg:overflow-y-auto flex-1 hide-scrollbar">
                 <TableGrid
                     tables={activeTables}
                     onTableClick={onTableClick}

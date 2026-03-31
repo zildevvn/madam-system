@@ -25,14 +25,19 @@ const Kitchen = () => {
                 tableId: t.id,
                 tableName: t.name || `Bàn ${t.id}`,
                 startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
-                items: t.active_order.items.map(item => ({
-                    id: item.id,
-                    name: item.product?.name || 'Unknown',
-                    quantity: item.quantity,
-                    status: item.status || 'pending',
-                    orderTime: new Date(item.created_at)
-                }))
-            }));
+                items: t.active_order.items
+                    .filter(item => !item.product || item.product.type === 'food' || item.type === 'food')
+                    .map(item => ({
+                        id: item.id,
+                        name: item.product?.name || 'Unknown',
+                        quantity: item.quantity,
+                        status: item.status || 'pending',
+                        orderTime: new Date(item.created_at),
+                        product: item.product,
+                        type: item.product?.type || item.type || 'food'
+                    }))
+            }))
+            .filter(o => o.items.length > 0);
     }, [tables]);
 
     useEffect(() => {
@@ -101,38 +106,37 @@ const Kitchen = () => {
         return Object.values(itemMap).sort((a, b) => b.quantity - a.quantity);
     }, [orders]);
 
-
     return (
-        <div className="md-management-page mdt-kitchen-page !pt-0 pb-20 min-h-screen bg-gray-50">
-            <div className="max-w-[1600px] mx-auto px-6 py-4 h-[calc(100vh-40px)] overflow-hidden">
-                <div className="grid grid-cols-12 gap-6 h-full">
+        <div className="md-management-page mdt-kitchen-page !pt-0 pb-20 min-h-screen bg-gray-50 overflow-x-hidden">
+            <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-4 lg:h-[calc(100vh-100px)] lg:overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 lg:gap-6 h-auto lg:h-full">
 
-                    {/* LEFT COLUMN: Table List (25%) */}
-                    <div className="col-span-3 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                    {/* LEFT COLUMN: Table List (Adaptive Width) */}
+                    <div className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:overflow-hidden lg:h-full">
                         <ActiveOrderTableList
                             tables={tables}
                             orders={orders}
                             currentTime={currentTime}
+                            filterType="food"
                         />
                     </div>
 
-                    {/* CENTER COLUMN: All Items Summary (50%) */}
-                    <div className="col-span-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                    {/* CENTER COLUMN: Dish List (Adaptive Width) */}
+                    <div className="col-span-12 md:col-span-8 lg:col-span-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:overflow-hidden h-[500px] md:h-auto lg:h-full">
                         <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                             <h5 className="tracking-widest m-0"> Danh sách món </h5>
-                            <span className="text-xs font-bold bg-orange-100 mdt-text-primary  px-3 py-1 rounded-full uppercase">
+                            <span className="text-xs font-bold bg-orange-100 mdt-text-primary px-3 py-1 rounded-full uppercase">
                                 {consolidatedItems.length} loại món
                             </span>
                         </div>
-                        <div className="p-6 overflow-y-auto flex-1 hide-scrollbar">
+                        <div className="p-6 lg:overflow-y-auto flex-1 hide-scrollbar">
                             {consolidatedItems.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                                     {consolidatedItems.map((item, idx) => (
                                         <div key={idx} className="flex items-center justify-between px-2 py-3 bg-gray-50 rounded-xl border border-transparent hover:border-orange-200 transition-colors group">
-                                            <div className="flex items-center gap-4 justify-between">
-                                                <h6 className="m-0">{item.name}</h6>
-
-                                                <div className="flex items-center justify-center text-sm font-black mdt-text-primary ">
+                                            <div className="flex items-center gap-4 justify-between w-full">
+                                                <h6 className="m-0 text-sm md:text-base">{item.name}</h6>
+                                                <div className="flex items-center justify-center text-sm font-black mdt-text-primary">
                                                     X{item.quantity}
                                                 </div>
                                             </div>
@@ -148,14 +152,16 @@ const Kitchen = () => {
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN: Time Warnings (25%) */}
-                    <div className="col-span-3">
+                    {/* RIGHT COLUMN: Time Warnings (Full width on Tablet, 1/4 on Desktop) */}
+                    <div className="col-span-12 lg:col-span-3 lg:h-full">
                         <DelayWarnings
                             tables={tables}
                             orders={orders}
                             currentTime={currentTime}
                             onItemClick={handleItemStatusChange}
                             statusConfig={STATUS_CONFIG}
+                            filterType="food"
+                            maxHeight="auto"
                         />
                     </div>
 

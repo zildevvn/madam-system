@@ -21,6 +21,7 @@ import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
 import Cashier from './pages/Cashier';
+import Bar from './pages/Bar';
 
 // Set base default header
 window.axios = axios;
@@ -86,6 +87,7 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={['order_staff']}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
                     <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['order_staff']}><DefaultLayout><Bar /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><Bills /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
