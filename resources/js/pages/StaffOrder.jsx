@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchTables } from '../store/slices/tableSlice';
+import { fetchTables, selectAllTables, selectBusyTablesCount, selectEmptyTablesCount, selectBusyTables } from '../store/slices/tableSlice';
 import { fetchActiveOrderAsync, createOrderAsync } from '../store/slices/orderSlice';
 import TableGrid from '../components/TableGrid';
 import OrderList from '../components/OrderList';
@@ -16,7 +16,10 @@ export default function StaffOrder() {
     }, []);
     const dispatch = useAppDispatch();
     const { status, error, activeTab } = useAppSelector(state => state.table);
-    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
+    const tables = useAppSelector(selectAllTables);
+    const busyTablesCount = useAppSelector(selectBusyTablesCount);
+    const emptyTablesCount = useAppSelector(selectEmptyTablesCount);
+    const busyTables = useAppSelector(selectBusyTables);
 
     useEffect(() => {
         if (status === 'idle') {
@@ -54,8 +57,7 @@ export default function StaffOrder() {
         }
     };
 
-    const emptyTablesCount = tables.filter(t => !t.active_order).length;
-    const busyTablesCount = tables.filter(t => !!t.active_order).length;
+
 
     if (loading) {
         return (
@@ -93,7 +95,7 @@ export default function StaffOrder() {
 
                     {activeTab === 'orders' ? (
                         <OrderList
-                            tables={tables.filter(t => !!t.active_order)}
+                            tables={busyTables}
                             allTables={tables}
                             onTableClick={handleTableClick}
                             now={now}

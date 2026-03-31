@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import tableService from '../../services/tableService';
 
 export const fetchTables = createAsyncThunk('table/fetchTables', async () => {
@@ -43,5 +43,28 @@ const tableSlice = createSlice({
 });
 
 export const { setActiveTab } = tableSlice.actions;
+
+// Selectors
+const selectTablesState = state => state.table;
+
+export const selectAllTables = createSelector(
+  [selectTablesState],
+  (tableState) => tableState.allIds.map(id => tableState.byId[id])
+);
+
+export const selectBusyTablesCount = createSelector(
+  [selectAllTables],
+  (tables) => tables.filter(t => !!t.active_order).length
+);
+
+export const selectEmptyTablesCount = createSelector(
+  [selectAllTables],
+  (tables) => tables.filter(t => !t.active_order).length
+);
+
+export const selectBusyTables = createSelector(
+  [selectAllTables],
+  (tables) => tables.filter(t => !!t.active_order)
+);
 
 export default tableSlice.reducer;

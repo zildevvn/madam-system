@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart } from '../store/slices/orderSlice';
+import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart, selectSelectedItems } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import ProductItem from '../components/ProductItem';
 
@@ -12,7 +12,7 @@ export default function Checkout() {
 
     const { activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
     const isConfirmed = orderStatus && orderStatus !== 'draft';
-    const selectedItems = useAppSelector(state => state.order.items.allIds.map(id => state.order.items.byId[id]));
+    const selectedItems = useAppSelector(selectSelectedItems);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
     const total = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -79,7 +79,7 @@ export default function Checkout() {
                             onClick={() => isConfirmed ? navigate('/staff-order') : navigate(`/order/${tableId}`)}
                             className="mdt-btn-back p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
                         >
-                            <svg width="24px" height="24px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            <svg width="24px" height="24px" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                         </button>
 
                         <h1 className="h6">{isConfirmed ? 'Chi tiết hóa đơn' : 'Tạo hóa đơn'}</h1>

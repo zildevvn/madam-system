@@ -37,7 +37,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
                         className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer"
                     >
-                        <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H18" stroke="#000000" stroke-width="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                        <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H18" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                     </button>
                     <span className="px-5 font-bold text-on-surface text-sm">{item.quantity}</span>
                     <button

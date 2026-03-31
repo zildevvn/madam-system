@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import orderApi from '../../services/orderApi';
 
 export const fetchActiveOrderAsync = createAsyncThunk('order/fetchActiveOrder', async (tableId) => {
@@ -147,5 +147,13 @@ export const {
   setTableId,
   clearCart
 } = orderSlice.actions;
+
+// Selectors
+const selectOrderState = state => state.order;
+
+export const selectSelectedItems = createSelector(
+  [selectOrderState],
+  (orderState) => orderState.items.allIds.map(id => orderState.items.byId[id])
+);
 
 export default orderSlice.reducer;
