@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchTables } from '../store/slices/tableSlice';
-import TableList from '../components/TableList';
+import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import DelayWarnings from '../components/DelayWarnings';
 
 const STATUS_CONFIG = {
@@ -109,7 +109,7 @@ const Kitchen = () => {
 
                     {/* LEFT COLUMN: Table List (25%) */}
                     <div className="col-span-3 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                        <TableList
+                        <ActiveOrderTableList
                             tables={tables}
                             orders={orders}
                             currentTime={currentTime}

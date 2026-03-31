@@ -1,0 +1,92 @@
+import React from 'react';
+import TableGrid from './TableGrid';
+
+const ActiveOrderTableList = ({
+    tables,
+    orders,
+    currentTime,
+    onTableClick,
+    title = "Danh sách bàn",
+    className = ""
+}) => {
+    const getOrderForTable = (tableId) => {
+        if (!orders) return null;
+        if (Array.isArray(orders)) {
+            return orders.find(o => o.tableId === tableId || o.tableId?.toString() === tableId.toString());
+        }
+        return orders[tableId.toString()];
+    };
+
+    const isOrderServed = (order) => {
+        if (!order) return false;
+        if (typeof order.served !== 'undefined') return order.served;
+        if (order.items) {
+            return order.items.every(item => item.done || item.status === 'ready' || item.status === 'served');
+        }
+        return false;
+    };
+
+    const getTableStatus = (tableId) => {
+        const order = getOrderForTable(tableId);
+        if (!order) return { statusClass: "", duration: "BÀN TRỐNG" };
+
+        if (isOrderServed(order)) return { statusClass: "!bg-green-400 !text-white", duration: "HOÀN TẤT" };
+
+        const diff = order.items && order.items.length > 0
+            ? Math.max(0, ...order.items
+                .filter(item => !item.done && item.status !== 'ready' && item.status !== 'served')
+                .map(item => Math.max(1, Math.floor((currentTime - new Date(item.orderTime)) / 60000))))
+            : 0;
+        let statusClass = "is-busy";
+        if (diff >= 15) statusClass = "!bg-red-400 !text-white";
+        else if (diff >= 10) statusClass = "!bg-yellow-100 !text-yellow-700";
+
+        return { statusClass, duration: `${diff} PHÚT` };
+    };
+
+    // Filter tables to include only those with an active order or an entry in orders
+    const activeTables = tables.filter(table => {
+        const order = getOrderForTable(table.id);
+        return order && (order.items?.length > 0 || table.active_order);
+    });
+
+    return (
+        <div className={`flex flex-col overflow-hidden h-full ${className}`}>
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white text-orange-500">
+                <h5 className="m-0">{title}</h5>
+                <span className="text-xs font-black bg-orange-100 px-3 py-1 rounded-full">
+                    {activeTables.length} BÀN
+                </span>
+            </div>
+            <div className="p-4 md:px-2 overflow-y-auto flex-1 hide-scrollbar">
+                <TableGrid
+                    tables={activeTables}
+                    onTableClick={onTableClick}
+                    gridClassName="list-tables grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4"
+                    renderCard={(table, index) => {
+                        const { statusClass, duration } = getTableStatus(table.id);
+                        const originalIndex = tables.findIndex(t => t.id === table.id);
+
+                        return (
+                            <div
+                                key={table.id}
+                                onClick={() => onTableClick && onTableClick(table)}
+                                className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
+                            >
+                                <span className={`text-lg font-black ${!statusClass ? 'text-gray-900' : ''}`}>
+                                    {originalIndex + 1}
+                                </span>
+                                <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
+                                <span className={`text-[8px] font-bold uppercase tracking-wider ${!statusClass ? 'text-gray-400' : ''}`}>
+                                    {duration}
+                                </span>
+                            </div>
+                        );
+                    }}
+                />
+            </div>
+        </div>
+    );
+};
+
+export default ActiveOrderTableList;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchTables } from '../store/slices/tableSlice';
-import TableList from '../components/TableList';
+import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import DelayWarnings from '../components/DelayWarnings';
 
 const Bills = () => {
@@ -151,7 +151,7 @@ const Bills = () => {
                                 </div>
                             )}
 
-                            <TableList
+                            <ActiveOrderTableList
                                 tables={tables}
                                 orders={mockOrders}
                                 currentTime={currentTime}
