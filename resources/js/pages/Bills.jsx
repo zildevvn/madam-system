@@ -29,7 +29,8 @@ const Bills = () => {
                         done: item.status === 'served',
                         status: item.status || 'pending',
                         product: item.product,
-                        type: item.type || item.product?.type
+                        type: item.type || item.product?.type,
+                        note: item.note
                     }))
                 };
             }
@@ -103,7 +104,7 @@ const Bills = () => {
                     counts.served++;
                 } else {
                     const diffMinutes = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
-                    if (diffMinutes >= 15) counts.critical++;
+                    if (diffMinutes >= 20) counts.critical++;
                     else if (diffMinutes >= 10) counts.warning++;
                     else if (diffMinutes >= 5) counts.alert++;
                     else counts.active++;
@@ -137,11 +138,11 @@ const Bills = () => {
                         </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-yellow-500 font-bold">
                             <span className="w-2 h-2 mdt-bg-yellow rounded-full"></span>
-                            <span>10-15p: <span className="text-gray-900">{statusCounts.warning} món</span></span>
+                            <span>10-20p: <span className="text-gray-900">{statusCounts.warning} món</span></span>
                         </p>
                         <p className="item-info flex items-center gap-1 m-0 text-sm text-red-500 font-bold">
                             <span className="w-2 h-2 mdt-bg-red rounded-full"></span>
-                            <span>&ge; 15p: <span className="text-gray-900">{statusCounts.critical} món</span></span>
+                            <span>&ge; 20p: <span className="text-gray-900">{statusCounts.critical} món</span></span>
                         </p>
                     </div>
                 </div>
@@ -230,12 +231,20 @@ const Bills = () => {
                                                             {itemDiff} phút trước
                                                         </span>
                                                         {itemDiff >= 10 && !item.done && (
-                                                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 ${itemDiff >= 15 ? 'bg-red-50 text-red-500' : 'bg-yellow-50 text-yellow-600'}`}>
-                                                                <span className={`w-1 h-1 rounded-full animate-pulse ${itemDiff >= 15 ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
+                                                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 ${itemDiff >= 20 ? 'bg-red-50 text-red-500' : 'bg-yellow-50 text-yellow-600'}`}>
+                                                                <span className={`w-1 h-1 rounded-full animate-pulse ${itemDiff >= 20 ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
                                                                 TRỄ
                                                             </span>
                                                         )}
                                                     </div>
+                                                    {item.note && (
+                                                        <div className="mt-2 bg-gray-50 border border-gray-100 rounded-xl p-2 flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                                                            <svg className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                            <p className="m-0 text-[11px] font-bold text-gray-500 leading-tight italic">
+                                                                {item.note}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

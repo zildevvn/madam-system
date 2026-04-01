@@ -13,8 +13,8 @@ const DelayWarnings = ({
         if (!orders || !currentTime) return { critical: [], warning: [], alert: [], active: [] };
 
         const result = {
-            critical: {}, // >= 15
-            warning: {},  // 10 - < 15
+            critical: {}, // >= 20
+            warning: {},  // 10 - < 20
             alert: {},    // 5 - < 10
             active: {}    // 1 - < 5
         };
@@ -36,7 +36,7 @@ const DelayWarnings = ({
             itemsToProcess.forEach((item, idx) => {
                 const diff = getElapsedTime(item.orderTime);
                 let bucketKey = 'active';
-                if (diff >= 15) bucketKey = 'critical';
+                if (diff >= 20) bucketKey = 'critical';
                 else if (diff >= 10) bucketKey = 'warning';
                 else if (diff >= 5) bucketKey = 'alert';
 
@@ -93,8 +93,8 @@ const DelayWarnings = ({
         if (items.length === 0) return null;
 
         const config = {
-            critical: { title: 'Món ăn trễ (>= 15p)', color: 'text-red-600', bg: 'mdt-bg-red ', border: 'mdt-border-red shadow-red-100', dot: 'mdt-bg-red ' },
-            warning: { title: 'Món ăn trễ (10p - 15p)', color: 'text-yellow-700', bg: 'bg-yellow-500', border: 'border-yellow-200 shadow-yellow-100', dot: 'bg-yellow-500' },
+            critical: { title: 'Món ăn trễ (>= 20p)', color: 'text-red-600', bg: 'mdt-bg-red ', border: 'mdt-border-red shadow-red-100', dot: 'mdt-bg-red ' },
+            warning: { title: 'Món ăn trễ (10p - 20p)', color: 'text-yellow-700', bg: 'bg-yellow-500', border: 'border-yellow-200 shadow-yellow-100', dot: 'bg-yellow-500' },
             alert: { title: 'Món ăn trễ (5p - 10p)', color: 'text-blue-600', bg: 'bg-blue-500', border: 'border-blue-200 shadow-blue-100', dot: 'bg-blue-500' },
             active: { title: 'Món ăn (1p - 5p)', color: 'text-gray-500', bg: 'bg-gray-400', border: 'border-gray-200 shadow-gray-100', dot: 'bg-gray-400' }
         }[type];
@@ -111,13 +111,13 @@ const DelayWarnings = ({
                     {items.map((item, idx) => (
                         <div
                             key={`${item.name}-${type}-${idx}`}
-                            className={`p-3 rounded-2xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] bg-white cursor-pointer group ${config.border}`}
+                            className={`p-3 rounded-2xl border-2 transition-all bg-white cursor-pointer group ${config.border}`}
                             onClick={() => onItemClick && onItemClick(item.orderId, item.itemIds[0])}
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[14px] font-black text-gray-800 leading-none">{item.name}</span>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg text-white shadow-sm transition-all duration-300 ${config.bg} ${type === 'critical' ? 'animate-pulse' : ''}`}>
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg text-white shadow-sm transition-all duration-300 ${config.bg}`}>
                                         {item.maxDiff}P
                                     </span>
                                 </div>
@@ -125,7 +125,7 @@ const DelayWarnings = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
                                     {item.tables.slice().sort((a, b) => new Date(a.orderTime) - new Date(b.orderTime)).map((t, tid) => (
-                                        <span key={tid} className="text-[12px] font-bold text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded uppercase">{t.name}</span>
+                                        <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase">{t.name}</span>
                                     ))}
                                 </div>
                                 <span className={`text-[14px] font-black group-hover:scale-110 transition-transform ${config.color}`}>x{item.totalQuantity}</span>
@@ -143,8 +143,8 @@ const DelayWarnings = ({
         <div className="mdt-delay-warnings bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:overflow-hidden lg:h-full">
             <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                 <h5 className="m-0 tracking-widest">{title}</h5>
-                {buckets.critical.length > 0 && <span className="flex h-2 w-2 rounded-full mdt-bg-red  animate-ping"></span>}
             </div>
+
             <div
                 className="p-4 md:px-2 overflow-y-auto lg:overflow-y-auto flex-1 mdt-scrollbar bg-gray-50/20"
                 style={{ maxHeight }}

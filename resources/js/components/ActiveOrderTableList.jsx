@@ -53,7 +53,7 @@ const ActiveOrderTableList = ({
                 .map(item => Math.max(1, Math.floor((currentTime - new Date(item.orderTime)) / 60000))))
             : 0;
         let statusClass = "is-busy";
-        if (diff >= 15) statusClass = "mdt-bg-red !text-white";
+        if (diff >= 20) statusClass = "mdt-bg-red !text-white";
         else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
         else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
 

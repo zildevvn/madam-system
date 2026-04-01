@@ -26,7 +26,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                 {showNoteButton && (
                     <button
                         onClick={() => setShowNote(!showNote)}
-                        className="btn-note flex items-center gap-1.5 text-[12px] text-gray-500 hover:text-gray-800 transition-colors border-none bg-transparent cursor-pointer font-medium"
+                        className="btn-note w-full py-2 flex items-center gap-1.5 text-[12px] text-gray-500 hover:text-gray-800 transition-colors border-none bg-transparent cursor-pointer font-medium"
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         Ghi chú
