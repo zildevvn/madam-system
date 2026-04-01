@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addToCart, cancelOrderAsync } from '../store/slices/orderSlice';
+import { addToCart } from '../store/slices/orderSlice';
 import DefaultProductImg from '../../images/default-product.png';
 
 const CATEGORY_ICONS = {
@@ -15,7 +15,7 @@ const CATEGORY_ICONS = {
 };
 
 const Order = () => {
-    const { tableId } = useParams();
+    useParams();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { activeOrderId } = useAppSelector(state => state.order);

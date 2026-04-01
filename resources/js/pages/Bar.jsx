@@ -4,13 +4,6 @@ import { fetchTables } from '../store/slices/tableSlice';
 import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import DelayWarnings from '../components/DelayWarnings';
 
-const STATUS_CONFIG = {
-    pending: { label: 'Chờ', colorClass: 'bg-blue-50 text-blue-600 border-blue-100', dotClass: 'bg-blue-500' },
-    cooking: { label: 'Pha chế', colorClass: 'bg-orange-50 text-orange-600 border-orange-100', dotClass: 'bg-orange-500 animate-pulse' },
-    ready: { label: 'Xong', colorClass: 'bg-green-50 text-green-600 border-green-100', dotClass: 'bg-green-500' },
-    served: { label: 'Đã giao', colorClass: 'bg-gray-50 text-gray-400 border-gray-100', dotClass: 'bg-gray-300' }
-};
-
 const Bar = () => {
     const dispatch = useAppDispatch();
     const { status: tableStatus } = useAppSelector(state => state.table);

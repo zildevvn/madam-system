@@ -159,7 +159,6 @@ const Kitchen = () => {
                             orders={orders}
                             currentTime={currentTime}
                             onItemClick={handleItemStatusChange}
-                            statusConfig={STATUS_CONFIG}
                             filterType="food"
                         />
                     </div>

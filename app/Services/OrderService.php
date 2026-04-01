@@ -53,11 +53,14 @@ class OrderService
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
-            // Map incoming items by product_id for easier lookup or processing
+            // PRE-FETCH all existing items for this order in ONE query
+            $existingItems = OrderItem::where('order_id', $orderId)
+                ->get()
+                ->keyBy('product_id');
+
             foreach ($items as $itemData) {
-                $orderItem = OrderItem::where('order_id', $orderId)
-                    ->where('product_id', $itemData['product_id'])
-                    ->first();
+                $productId = $itemData['product_id'];
+                $orderItem = $existingItems->get($productId);
 
                 if ($orderItem) {
                     // OVERWRITE quantity instead of accumulating
@@ -70,7 +73,7 @@ class OrderService
                 else {
                     $orderItem = OrderItem::create([
                         'order_id' => $orderId,
-                        'product_id' => $itemData['product_id'],
+                        'product_id' => $productId,
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
                         'note' => $itemData['note'] ?? null,
@@ -82,7 +85,6 @@ class OrderService
             }
 
             // Sync: Remove items that are no longer in the request
-            // (Optional: depending on if we want to support removal from Checkout)
             $itemProductIds = collect($items)->pluck('product_id')->toArray();
             OrderItem::where('order_id', $orderId)
                 ->whereNotIn('product_id', $itemProductIds)
@@ -100,6 +102,7 @@ class OrderService
 
             return ['order' => $order, 'wasDraft' => $wasDraft];
         });
+
 
         // Broadcast AFTER transaction commits to avoid race conditions
         try {

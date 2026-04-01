@@ -1,7 +1,6 @@
 import React from 'react';
 
 const DelayWarnings = ({
-    warningItems: externalWarningItems,
     onItemClick,
     title = "Cảnh báo trễ",
     maxHeight = "calc(100vh - 150px)",

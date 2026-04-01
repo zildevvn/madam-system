@@ -10,7 +10,7 @@ const Cashier = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [selectedTable, setSelectedTable] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card'
-    const [paymentHistory, setPaymentHistory] = useState([]); // For monthly reports
+
 
     // Mock orders with prices for payment demonstration
     const [mockOrders, setMockOrders] = useState(() => {
@@ -110,14 +110,6 @@ const Cashier = () => {
         const order = mockOrders[tableId.toString()];
         const total = getOrderTotal(order);
         // Record to payment history for reporting
-        setPaymentHistory(prev => [...prev, {
-            tableId,
-            tableNumber,
-            method: paymentMethod,
-            total,
-            items: order?.items || [],
-            paidAt: new Date().toISOString(),
-        }]);
         setMockOrders(prev => {
             const next = { ...prev };
             delete next[tableId.toString()];

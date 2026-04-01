@@ -100,14 +100,16 @@ const orderSlice = createSlice({
            state.items.allIds = [];
            if (order.items) {
                order.items.forEach(orderItem => {
-                   if (orderItem.product) {
-                       state.items.byId[orderItem.product.id] = { ...orderItem.product, quantity: orderItem.quantity };
-                       if (!state.items.allIds.includes(orderItem.product.id)) {
-                           state.items.allIds.push(orderItem.product.id);
+                   const product = orderItem.product;
+                   if (product) {
+                       state.items.byId[product.id] = { ...product, quantity: orderItem.quantity };
+                       if (!state.items.allIds.includes(product.id)) {
+                           state.items.allIds.push(product.id);
                        }
                    }
                });
            }
+
         } else {
            // No active order found for table
            state.activeOrderId = null;

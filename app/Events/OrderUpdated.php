@@ -41,10 +41,32 @@ class OrderUpdated implements ShouldBroadcastNow
     public function broadcastWith()
     {
         return [
-            'order' => $this->order,
+            'order' => [
+                'id' => $this->order->id,
+                'table_id' => $this->order->table_id,
+                'status' => $this->order->status,
+                'total_price' => $this->order->total_price,
+                'order_type' => $this->order->order_type,
+                'items' => $this->order->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'status' => $item->status,
+                        'note' => $item->note,
+                        'product' => $item->product ? [
+                            'id' => $item->product->id,
+                            'name' => $item->product->name,
+                            'image' => $item->product->image,
+                        ] : null
+                    ];
+                })
+            ],
             'action' => $this->action,
         ];
     }
+
 
     public function broadcastAs()
     {
