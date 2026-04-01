@@ -352,6 +352,31 @@ const total = calculateTotal(items)
 
 ---
 
+# 👥 Role-Based Development Rules
+
+## 1. Waiter (Phục vụ / Order)
+- **Status Lifecycle**: Mọi order mới phải bắt đầu bằng status `draft`.
+- **Table Integrity**: Luôn kiểm tra tính khả dụng của bàn (`available`) trước khi tạo order.
+- **Checkout Trigger**: Chuyển từ `draft` sang `pending` phải thông qua Service layer để đảm bảo tính toán `total_price` và cập nhật trạng thái bàn (`busy`).
+
+---
+
+## 2. Kitchen & Bar (Bếp / Pha chế)
+- **Item-Level Control**: Tuyệt đối không update trực tiếp status của `Order`. Chỉ update status của từng `OrderItem` (`pending` -> `cooking` -> `ready` -> `served`).
+- **Domain Separation**:
+  - `Kitchen`: Chỉ xử lý các item có `category_id` thuộc nhóm món ăn.
+  - `Bar`: Chỉ xử lý các item có `category_id` thuộc nhóm đồ uống.
+- **Real-time**: Mỗi thay đổi status phải trigger broadcast với payload tối giản lên channel tương ứng (`kitchen` hoặc `bar`).
+
+---
+
+## 3. Cashier & Admin (Thu ngân / Quản lý)
+- **Finality**: Chuyển order sang `completed` chỉ sau khi xác nhận thanh toán thành công.
+- **Table Release**: Đảm bảo trạng thái bàn được set về `available` ngay sau khi hoàn tất thanh toán.
+- **Security**: Các route quản lý (Thêm/Xóa/Sửa sản phẩm/bàn) phải được bảo vệ nghiêm ngặt bằng middleware `role:admin`.
+
+---
+
 # 🚀 Performance Best Practices
 
 ## Backend
@@ -406,6 +431,15 @@ const total = calculateTotal(items)
 * [ ] Event đúng flow
 * [ ] Redux update
 * [ ] Channel tách riêng
+
+---
+
+## 👥 Role Logic
+
+* [ ] Waiter: Kiểm tra table status & draft flow
+* [ ] Kitchen/Bar: Item-level status update & Separation
+* [ ] Cashier: Payment -> Completed -> Release table
+* [ ] Admin: Middleware protection checks
 
 ---
 
