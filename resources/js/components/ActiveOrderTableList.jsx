@@ -55,9 +55,10 @@ const ActiveOrderTableList = ({
         let statusClass = "is-busy";
         if (diff >= 15) statusClass = "mdt-bg-red !text-white";
         else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
-        else if (diff >= 5) statusClass = "bg-blue-500 !text-white";
+        else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
 
         return { statusClass, duration: `${diff} PHÚT` };
+
     };
 
     // Filter tables to include only those with an active order (matching the filterType if any)
