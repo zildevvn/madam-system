@@ -18,7 +18,7 @@ class OrderController extends Controller
     public function activeOrder($tableId)
     {
         $order = $this->orderService->getActiveOrder($tableId);
-        
+
         return response()->json([
             'data' => $order,
             'message' => 'Success',
@@ -79,7 +79,7 @@ class OrderController extends Controller
     public function destroy($id)
     {
         $deleted = $this->orderService->cancelOrder($id);
-        
+
         if ($deleted) {
             return response()->json([
                 'data' => null,

@@ -69,8 +69,7 @@ class OrderService
                         $orderItem->note = $itemData['note'];
                     }
                     $orderItem->save();
-                }
-                else {
+                } else {
                     $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $productId,
@@ -109,8 +108,7 @@ class OrderService
             $orderObj = $result['order'];
             $orderObj->load(['items.product', 'table']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Broadcast failed during checkout: ' . $e->getMessage());
         }
 
@@ -129,8 +127,7 @@ class OrderService
         // Broadcast the real-time event
         try {
             broadcast(new OrderUpdated($order, 'item_status_updated'));
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Broadcast failed during item status update: ' . $e->getMessage());
         }
 
