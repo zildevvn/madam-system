@@ -76,6 +76,21 @@ class OrderController extends Controller
         ]);
     }
 
+    public function updateTable(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'table_id' => 'required|exists:tables,id'
+        ]);
+
+        $order = $this->orderService->updateTable($id, $validated['table_id']);
+
+        return response()->json([
+            'data' => $order,
+            'message' => 'Table updated successfully',
+            'errors' => null
+        ]);
+    }
+
     public function destroy($id)
     {
         $deleted = $this->orderService->cancelOrder($id);

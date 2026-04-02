@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart, selectSelectedItems } from '../store/slices/orderSlice';
-import { fetchTables } from '../store/slices/tableSlice';
+import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart, selectSelectedItems, updateOrderTableAsync, clearCart } from '../store/slices/orderSlice';
+import { fetchTables, selectAllTables } from '../store/slices/tableSlice';
 import ProductItem from '../components/ProductItem';
 
 export default function Checkout() {
@@ -13,7 +13,14 @@ export default function Checkout() {
     const { activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
     const isConfirmed = orderStatus && orderStatus !== 'draft';
     const selectedItems = useAppSelector(selectSelectedItems);
+    const allTables = useAppSelector(selectAllTables);
+
+    // UI state 
+    const [selectedTableId, setSelectedTableId] = useState(tableId);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
+
+    const isTableChanged = isConfirmed && selectedTableId !== tableId;
 
     const total = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -36,10 +43,26 @@ export default function Checkout() {
         if (!activeOrderId) return;
         try {
 
-            await dispatch(checkoutOrderAsync({
-                orderId: activeOrderId,
-                items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, note: i.note }))
-            })).unwrap();
+            if (isTableChanged) {
+                await dispatch(updateOrderTableAsync({
+                    orderId: activeOrderId,
+                    tableId: selectedTableId
+                })).unwrap();
+                setSuccessMessage(`Đã chuyển sang Bàn số ${selectedTableId}`);
+            } else {
+                setSuccessMessage('Đơn hàng đã được lưu thành công.');
+            }
+
+            if (isModified || !isConfirmed) {
+                await dispatch(checkoutOrderAsync({
+                    orderId: activeOrderId,
+                    items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, note: i.note }))
+                })).unwrap();
+            } else if (isTableChanged) {
+                // If only the table was changed and no items modified, we can avoid the expensive checkout API call
+                dispatch(clearCart());
+            }
+
             dispatch(fetchTables());
 
             setShowSuccessPopup(true);
@@ -47,7 +70,7 @@ export default function Checkout() {
                 setShowSuccessPopup(false);
 
                 navigate('/staff-order');
-            }, 4000);
+            }, 1500);
 
         } catch (error) {
             alert("Lỗi Order");
@@ -87,9 +110,29 @@ export default function Checkout() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200">
-                            Bàn số {tableId}
-                        </span>
+                        {isConfirmed ? (
+                            <div className="relative flex items-center">
+                                <select
+                                    value={selectedTableId}
+                                    onChange={(e) => setSelectedTableId(e.target.value)}
+                                    className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-4 pr-8 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
+                                >
+                                    <option value={tableId}>Bàn {tableId}</option>
+                                    {allTables
+                                        .filter(t => !t.active_order && t.id.toString() !== tableId)
+                                        .map(t => (
+                                            <option key={t.id} value={t.id.toString()}>
+                                                Bàn {t.id}
+                                            </option>
+                                        ))}
+                                </select>
+                                <svg className="w-3.5 h-3.5 absolute right-3 pointer-events-none text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                        ) : (
+                            <span className="btn-number-table inline-flex items-center bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200">
+                                Bàn {tableId}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -144,8 +187,8 @@ export default function Checkout() {
                         </button>
                         <button
                             onClick={handleCheckout}
-                            disabled={selectedItems.length === 0 || (isConfirmed && !isModified)}
-                            className={`btn-save mdt-btn w-full ${(selectedItems.length === 0 || (isConfirmed && !isModified)) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
+                            disabled={selectedItems.length === 0 || (isConfirmed && !isModified && !isTableChanged)}
+                            className={`btn-save mdt-btn w-full ${(selectedItems.length === 0 || (isConfirmed && !isModified && !isTableChanged)) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
                         >
                             <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M3 19V5C3 3.89543 3.89543 3 5 3H16.1716C16.702 3 17.2107 3.21071 17.5858 3.58579L20.4142 6.41421C20.7893 6.78929 21 7.29799 21 7.82843V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#fff" strokeWidth="1.5"></path><path d="M8.6 9H15.4C15.7314 9 16 8.73137 16 8.4V3.6C16 3.26863 15.7314 3 15.4 3H8.6C8.26863 3 8 3.26863 8 3.6V8.4C8 8.73137 8.26863 9 8.6 9Z" stroke="#fff" strokeWidth="1.5"></path><path d="M6 13.6V21H18V13.6C18 13.2686 17.7314 13 17.4 13H6.6C6.26863 13 6 13.2686 6 13.6Z" stroke="#fff" strokeWidth="1.5"></path></svg>
                             Lưu
@@ -165,7 +208,7 @@ export default function Checkout() {
                             </svg>
                         </div>
                         <h5 className="text-[20px] mb-2">Thành công!</h5>
-                        <p className="!text-[13px]">Đơn hàng đã được lưu thành công.</p>
+                        <p className="!text-[13px]">{successMessage}</p>
                     </div>
                 </div>
             )}

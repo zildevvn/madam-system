@@ -136,4 +136,41 @@ class OrderService
 
         return $order;
     }
+
+    public function updateTable($orderId, $newTableId)
+    {
+        $order = Order::findOrFail($orderId);
+        $oldTableId = $order->table_id;
+
+        $result = DB::transaction(function () use ($order, $newTableId, $oldTableId) {
+            $order->update(['table_id' => $newTableId]);
+
+            // Update new table status
+            \App\Models\Table::where('id', $newTableId)->update(['status' => 'busy']);
+
+            // Update old table status if needed
+            if ($oldTableId) {
+                $stillBusy = Order::where('table_id', $oldTableId)
+                    ->whereIn('status', ['pending', 'processing', 'draft'])
+                    ->where('id', '!=', $order->id)
+                    ->exists();
+
+                if (!$stillBusy) {
+                    \App\Models\Table::where('id', $oldTableId)->update(['status' => 'empty']);
+                }
+            }
+
+            return $order;
+        });
+
+        $result->load(['items.product', 'table']);
+
+        try {
+            broadcast(new OrderUpdated($result, 'order_updated'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed during table update: ' . $e->getMessage());
+        }
+
+        return $result;
+    }
 }
