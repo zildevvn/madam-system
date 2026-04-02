@@ -16,6 +16,10 @@ const orderApi = {
   cancelOrder: async (orderId) => {
     const response = await axios.delete(`/api/orders/${orderId}`);
     return response.data;
+  },
+  updateOrderTable: async (orderId, tableId) => {
+    const response = await axios.put(`/api/orders/${orderId}/table`, { table_id: tableId });
+    return response.data;
   }
 };
 

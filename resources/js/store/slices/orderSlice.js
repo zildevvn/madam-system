@@ -21,6 +21,11 @@ export const cancelOrderAsync = createAsyncThunk('order/cancelOrder', async (ord
   return data.data;
 });
 
+export const updateOrderTableAsync = createAsyncThunk('order/updateTable', async ({ orderId, tableId }) => {
+    const data = await orderApi.updateOrderTable(orderId, tableId);
+    return data.data;
+});
+
 const initialState = {
   items: {
     byId: {},
@@ -136,6 +141,29 @@ const orderSlice = createSlice({
         state.activeOrderId = null;
         state.orderStatus = null;
         state.isModified = false;
+      })
+      .addCase(updateOrderTableAsync.fulfilled, (state, action) => {
+        const order = action.payload;
+        if (order) {
+            state.activeOrderId = order.id;
+            state.orderStatus = order.status;
+            state.orderType = order.order_type;
+            state.tableId = order.table_id;
+            state.isModified = false;
+            state.items.byId = {};
+            state.items.allIds = [];
+            if (order.items) {
+                order.items.forEach(orderItem => {
+                    const product = orderItem.product;
+                    if (product) {
+                        state.items.byId[product.id] = { ...product, quantity: orderItem.quantity };
+                        if (!state.items.allIds.includes(product.id)) {
+                            state.items.allIds.push(product.id);
+                        }
+                    }
+                });
+            }
+        }
       });
   },
 });
