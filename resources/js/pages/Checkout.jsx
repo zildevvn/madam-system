@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart, selectSelectedItems, updateOrderTableAsync, clearCart } from '../store/slices/orderSlice';
+import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart, selectSelectedItems, updateOrderTableAsync, clearCart, createOrderAsync } from '../store/slices/orderSlice';
 import { fetchTables, selectAllTables } from '../store/slices/tableSlice';
 import ProductItem from '../components/ProductItem';
 
@@ -20,7 +20,7 @@ export default function Checkout() {
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
 
-    const isTableChanged = isConfirmed && selectedTableId !== tableId;
+    const isTableChanged = selectedTableId !== tableId;
 
     const total = selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -39,26 +39,36 @@ export default function Checkout() {
     };
 
     const handleCheckout = async () => {
-        console.log("check activeOrderId", activeOrderId);
-        if (!activeOrderId) return;
         try {
+            const finalTableId = selectedTableId.toString();
+            const currentTableId = tableId.toString();
+            const hasChangedTable = finalTableId !== currentTableId;
 
-            if (isTableChanged) {
+            let currentOrderId = activeOrderId;
+
+            if (!currentOrderId) {
+                // Completely new order. Persist the creation on finalTableId now!
+                const newOrder = await dispatch(createOrderAsync({ table_id: finalTableId, order_type: 'dine-in' })).unwrap();
+                currentOrderId = newOrder.id;
+                setSuccessMessage('Đơn hàng đã được lưu thành công.');
+            } else if (hasChangedTable) {
+                // Existing order that was moved to another table
                 await dispatch(updateOrderTableAsync({
-                    orderId: activeOrderId,
-                    tableId: selectedTableId
+                    orderId: currentOrderId,
+                    tableId: finalTableId
                 })).unwrap();
-                setSuccessMessage(`Đã chuyển sang Bàn số ${selectedTableId}`);
+                setSuccessMessage(`Đã chuyển sang Bàn số ${finalTableId}`);
             } else {
+                // Existing order on same table
                 setSuccessMessage('Đơn hàng đã được lưu thành công.');
             }
 
             if (isModified || !isConfirmed) {
                 await dispatch(checkoutOrderAsync({
-                    orderId: activeOrderId,
+                    orderId: currentOrderId,
                     items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, note: i.note }))
                 })).unwrap();
-            } else if (isTableChanged) {
+            } else if (hasChangedTable) {
                 // If only the table was changed and no items modified, we can avoid the expensive checkout API call
                 dispatch(clearCart());
             }
@@ -110,29 +120,23 @@ export default function Checkout() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {isConfirmed ? (
-                            <div className="relative flex items-center">
-                                <select
-                                    value={selectedTableId}
-                                    onChange={(e) => setSelectedTableId(e.target.value)}
-                                    className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-4 pr-8 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
-                                >
-                                    <option value={tableId}>Bàn {tableId}</option>
-                                    {allTables
-                                        .filter(t => !t.active_order && t.id.toString() !== tableId)
-                                        .map(t => (
-                                            <option key={t.id} value={t.id.toString()}>
-                                                Bàn {t.id}
-                                            </option>
-                                        ))}
-                                </select>
-                                <svg className="w-3.5 h-3.5 absolute right-3 pointer-events-none text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                            </div>
-                        ) : (
-                            <span className="btn-number-table inline-flex items-center bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200">
-                                Bàn {tableId}
-                            </span>
-                        )}
+                        <div className="relative flex items-center">
+                            <select
+                                value={selectedTableId}
+                                onChange={(e) => setSelectedTableId(e.target.value)}
+                                className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-4 pr-8 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
+                            >
+                                <option value={tableId}>Bàn {tableId}</option>
+                                {allTables
+                                    .filter(t => !t.active_order && t.id.toString() !== tableId)
+                                    .map(t => (
+                                        <option key={t.id} value={t.id.toString()}>
+                                            Bàn {t.id}
+                                        </option>
+                                    ))}
+                            </select>
+                            <svg className="w-3.5 h-3.5 absolute right-3 pointer-events-none text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                     </div>
                 </div>
             </div>

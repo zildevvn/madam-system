@@ -26,6 +26,11 @@ export const updateOrderTableAsync = createAsyncThunk('order/updateTable', async
     return data.data;
 });
 
+export const updateItemStatusAsync = createAsyncThunk('order/updateItemStatus', async ({ itemId, status }) => {
+    const data = await orderApi.updateItemStatus(itemId, status);
+    return data.data;
+});
+
 const initialState = {
   items: {
     byId: {},
@@ -89,6 +94,13 @@ const orderSlice = createSlice({
     clearCart: (state) => {
       state.items = { byId: {}, allIds: [] };
       state.isModified = true;
+    },
+    startNewOrder: (state, action) => {
+      state.tableId = action.payload; // the table id
+      state.activeOrderId = null; // explicitly null since it's uncreated
+      state.orderStatus = 'draft'; 
+      state.isModified = true;
+      state.items = { byId: {}, allIds: [] };
     },
   },
   extraReducers: (builder) => {
@@ -175,7 +187,8 @@ export const {
   updateItemNote,
   setOrderType,
   setTableId,
-  clearCart
+  clearCart,
+  startNewOrder
 } = orderSlice.actions;
 
 // Selectors

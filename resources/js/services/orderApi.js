@@ -20,6 +20,10 @@ const orderApi = {
   updateOrderTable: async (orderId, tableId) => {
     const response = await axios.put(`/api/orders/${orderId}/table`, { table_id: tableId });
     return response.data;
+  },
+  updateItemStatus: async (itemId, status) => {
+    const response = await axios.put(`/api/order-items/${itemId}/status`, { status });
+    return response.data;
   }
 };
 
