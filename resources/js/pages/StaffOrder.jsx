@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchTables, selectAllTables, selectBusyTablesCount, selectEmptyTablesCount, selectBusyTables } from '../store/slices/tableSlice';
-import { fetchActiveOrderAsync, createOrderAsync } from '../store/slices/orderSlice';
+import { fetchActiveOrderAsync, createOrderAsync, startNewOrder } from '../store/slices/orderSlice';
 import TableGrid from '../components/TableGrid';
 import OrderList from '../components/OrderList';
 
@@ -45,7 +45,7 @@ export default function StaffOrder() {
     const handleTableClick = async (tableId) => {
         const resultAction = await dispatch(fetchActiveOrderAsync(tableId));
         if (!resultAction.payload) {
-            await dispatch(createOrderAsync({ table_id: tableId, order_type: 'dine-in' }));
+            dispatch(startNewOrder(tableId));
             navigate(`/order/${tableId}`);
         } else {
             const order = resultAction.payload;
