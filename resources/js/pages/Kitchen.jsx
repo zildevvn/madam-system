@@ -33,8 +33,13 @@ const Kitchen = () => {
         });
 
         // 2. Consolidate orders
+        const handledOrderIds = new Set();
         tables.forEach(t => {
             if (t.active_order && t.active_order.items) {
+                // Prevent processing the same order multiple times if it's attached to multiple tables
+                if (handledOrderIds.has(t.active_order.id)) return;
+                handledOrderIds.add(t.active_order.id);
+
                 const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
                 if (!consolidatedGroups[groupKey]) {
@@ -74,18 +79,12 @@ const Kitchen = () => {
             if (!t.active_order) return false;
             const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
-            // If it's a merged group, we only display the table that matches the first ID (initiator)
-            if (groupKey.includes('-')) {
-                const primaryId = groupKey.split('-')[0];
-                if (t.id.toString() !== primaryId) return false;
-            }
-
             if (displayedGroups.has(groupKey)) return false;
             displayedGroups.add(groupKey);
             return true;
         });
 
-        return { 
+        return {
             orders: Object.values(consolidatedGroups).filter(o => o.items.length > 0),
             activeTablesToDisplay: filteredTables
         };
@@ -148,10 +147,22 @@ const Kitchen = () => {
             order.items.forEach(item => {
                 if (item.status === 'served') return;
                 if (!itemMap[item.name]) {
-                    itemMap[item.name] = { name: item.name, quantity: 0, pending: 0, cooking: 0, ready: 0 };
+                    itemMap[item.name] = {
+                        name: item.name,
+                        quantity: 0,
+                        pending: 0,
+                        cooking: 0,
+                        ready: 0,
+                        tables: []
+                    };
                 }
                 itemMap[item.name].quantity += item.quantity;
                 itemMap[item.name][item.status] += item.quantity;
+
+                const tableIdentifier = order.mergedTables || order.tableName?.replace(/[^0-9]/g, '') || order.tableId;
+                if (!itemMap[item.name].tables.includes(tableIdentifier)) {
+                    itemMap[item.name].tables.push(tableIdentifier);
+                }
             });
         });
         return Object.values(itemMap).sort((a, b) => b.quantity - a.quantity);
@@ -185,11 +196,18 @@ const Kitchen = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                                     {consolidatedItems.map((item, idx) => (
                                         <div key={idx} className="flex items-center justify-between px-2 py-3 bg-gray-50 rounded-xl border border-transparent hover:border-orange-200 transition-colors group">
-                                            <div className="flex items-center gap-4 justify-between w-full">
-                                                <h6 className="m-0 text-sm md:text-base">{item.name}</h6>
-                                                <div className="flex items-center justify-center text-sm font-black mdt-text-primary">
-                                                    X{item.quantity}
+                                            <div className="flex flex-col gap-1 flex-1">
+                                                <h6 className="m-0 text-sm md:text-base font-bold text-gray">{item.name}</h6>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {item.tables.map((t, tid) => (
+                                                        <span key={tid} className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-700 uppercase tracking-tighter">
+                                                            Bàn {t}
+                                                        </span>
+                                                    ))}
                                                 </div>
+                                            </div>
+                                            <div className="flex items-center justify-center text-sm font-black mdt-text-primary bg-orange-50 w-10 h-10 rounded-xl shadow-sm border border-orange-100">
+                                                X{item.quantity}
                                             </div>
                                         </div>
                                     ))}

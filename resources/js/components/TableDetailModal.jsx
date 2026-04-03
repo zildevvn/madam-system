@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const TableDetailModal = ({
     tableId,
@@ -7,12 +7,35 @@ const TableDetailModal = ({
     orderItems,
     currentTime,
     onClose,
-    onToggleStatus
+    onToggleStatus // We'll keep this prop name but change its behavior to batch if needed, or pass selected IDs
 }) => {
+    // Keep track of which items have been toggled locally in the modal
+    const [toggledIds, setToggledIds] = useState(new Set());
+
+    const handleLocalToggle = (itemId) => {
+        setToggledIds(prev => {
+            const next = new Set(prev);
+            if (next.has(itemId)) next.delete(itemId);
+            else next.add(itemId);
+            return next;
+        });
+    };
+
+    const handleComplete = () => {
+        if (toggledIds.size > 0) {
+            // Map the set to an array of items with their actual IDs (including allIds for merged items)
+            const itemsToUpdate = orderItems.filter(item => toggledIds.has(item.id));
+
+            // Pass the items to the parent for batch processing
+            itemsToUpdate.forEach(item => onToggleStatus(item));
+        }
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center justify-between">
+                <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
                         <h5>Chi tiết bàn {mergedTables || tableId}</h5>
                     </div>
@@ -27,28 +50,29 @@ const TableDetailModal = ({
                 <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
                     <div className="space-y-4">
                         {orderItems.map((item, idx) => {
+                            const isToggled = toggledIds.has(item.id);
+                            const isCurrentlyDone = isToggled ? !item.done : item.done;
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
+
                             return (
-                                <div key={idx} className={`cursor-pointer flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}
-                                    onClick={() => onToggleStatus(item)}
+                                <div key={idx}
+                                    className={`cursor-pointer flex justify-between items-start p-2 rounded-2xl border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}
+                                    onClick={() => handleLocalToggle(item.id)}
                                 >
                                     <div className="flex items-center gap-4 flex-1">
-                                        <div
-
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${item.done ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}
-                                        >
-                                            {item.done && (
-                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div className={`w-4 h-4 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isCurrentlyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}>
+                                            {isCurrentlyDone && (
+                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                                                 </svg>
                                             )}
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className={`font-bold transition-all duration-300 ${item.done ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                                <span className={`text-[14px] font-bold transition-all duration-300 ${isCurrentlyDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
                                                     {item.name}
                                                 </span>
-                                                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${item.done ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
+                                                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
                                                     x{item.quantity}
                                                 </span>
                                             </div>
@@ -56,7 +80,7 @@ const TableDetailModal = ({
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                                     {itemDiff} phút trước
                                                 </span>
-                                                {itemDiff >= 10 && !item.done && (
+                                                {itemDiff >= 10 && !isCurrentlyDone && (
                                                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 ${itemDiff >= 20 ? 'bg-red-50 text-red-500' : 'bg-yellow-50 text-yellow-600'}`}>
                                                         <span className={`w-1 h-1 rounded-full animate-pulse ${itemDiff >= 20 ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
                                                         TRỄ
@@ -81,10 +105,10 @@ const TableDetailModal = ({
 
                 <div className="py-4 px-2 md:p-6 pt-0">
                     <button
-                        onClick={onClose}
+                        onClick={handleComplete}
                         className="w-full mdt-btn"
                     >
-                        Đóng
+                        Xong
                     </button>
                 </div>
             </div>

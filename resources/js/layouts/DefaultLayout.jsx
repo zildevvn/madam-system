@@ -1,10 +1,10 @@
 import React from 'react';
 import Header from '../components/Header';
 
-const DefaultLayout = ({ children }) => {
+const DefaultLayout = ({ children, hideHeader = false }) => {
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header />
+            {!hideHeader && <Header />}
             <main>{children}</main>
         </div>
     );

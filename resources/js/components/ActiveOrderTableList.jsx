@@ -91,7 +91,7 @@ const ActiveOrderTableList = ({
                                 onClick={() => onTableClick && onTableClick(table)}
                                 className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
                             >
-                                <span className={`text-lg font-black ${!statusClass ? 'text-gray-900' : ''}`}>
+                                <span className={`text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
                                     {order?.mergedTables || table.name?.replace(/[^0-9]/g, '') || table.id}
                                 </span>
                                 <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>

@@ -30,8 +30,13 @@ const Bills = () => {
         });
 
         // 2. Consolidate orders
+        const handledOrderIds = new Set();
         tables.forEach(t => {
             if (t.active_order && t.active_order.items) {
+                // Prevent processing the same order multiple times if it's attached to multiple tables
+                if (handledOrderIds.has(t.active_order.id)) return;
+                handledOrderIds.add(t.active_order.id);
+
                 const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
                 if (!consolidatedGroups[groupKey]) {
@@ -87,11 +92,7 @@ const Bills = () => {
             if (!t.active_order) return false;
             const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
             
-            // If it's a merged group, we only display the table that matches the first ID (initiator)
-            if (groupKey.includes('-')) {
-                const primaryId = groupKey.split('-')[0];
-                if (t.id.toString() !== primaryId) return false;
-            }
+
 
             if (consolidatedGroups[groupKey]) {
                 if (consolidatedGroups[groupKey].itemsMap) {
@@ -165,8 +166,13 @@ const Bills = () => {
     const statusCounts = React.useMemo(() => {
         const counts = { active: 0, alert: 0, warning: 0, critical: 0, served: 0, total: 0 };
 
+        const handledGroupIds = new Set();
         Object.values(activeOrders).forEach(order => {
-            if (!order || !order.items) return;
+            if (!order || !order.id) return;
+            // Deduplicate by order ID to handle the case where multiple tables point to the same group literal
+            if (handledGroupIds.has(order.id)) return;
+            handledGroupIds.add(order.id);
+
             order.items.forEach(item => {
                 if (item.type !== 'food') return; // Only count food items
                 counts.total++;
@@ -185,7 +191,7 @@ const Bills = () => {
         return counts;
     }, [activeOrders, currentTime]);
 
-    if (status === 'loading') {
+    if (status === 'loading' && tables.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
