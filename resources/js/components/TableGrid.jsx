@@ -38,11 +38,18 @@ const TableGrid = ({
                 // Default StaffOrder-style card implementation (Logic remains intact)
                 const groupKey = tableIdToGroupKey[table.id.toString()];
                 const isBusy = !!table.active_order || !!groupKey;
+                
+                // Identify if this table is the "primary" in a merge group
+                // In string-based merging, the first ID in the dash-separated string is the primary
+                const isPrimary = groupKey ? groupKey.split('-')[0] === table.id.toString() : true;
+
                 const statusText = (!isBusy)
                     ? 'Bàn Trống'
-                    : (table.active_order?.created_at 
-                        ? getElapsed(table.active_order.created_at) 
-                        : (groupKey ? 'Đang gộp' : 'Đang xử lý'));
+                    : (!isPrimary 
+                        ? 'Đang gộp' 
+                        : (table.active_order?.created_at 
+                            ? getElapsed(table.active_order.created_at) 
+                            : 'Đang xử lý'));
 
                 return (
                     <div
@@ -50,7 +57,7 @@ const TableGrid = ({
                         onClick={() => onTableClick && onTableClick(table.id)}
                         className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${isBusy ? 'is-busy' : 'border border-gray-100'}`}
                     >
-                        <span className="text-lg font-bold">{index + 1}</span>
+                        <span className="text-lg font-bold">{table.name?.replace(/[^0-9]/g, '') || table.id}</span>
                         <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
                         <span className={`mt-1 text-[10px] uppercase tracking-wider font-semibold ${isBusy ? 'text-white' : 'text-gray-400'}`}>
                             {statusText}

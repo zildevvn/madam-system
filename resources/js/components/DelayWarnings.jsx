@@ -42,8 +42,9 @@ const DelayWarnings = ({
 
                 const bucket = result[bucketKey];
                 const itemName = item.name;
-                const tableIndex = tables ? tables.findIndex(t => t.id.toString() === tableId.toString()) : -1;
-                const tableName = order.tableName || (tableIndex !== -1 ? `BÀN ${tableIndex + 1}` : `BÀN ${tableId}`);
+                const tableObj = tables?.find(t => t.id.toString() === tableId.toString());
+                const tableNumber = tableObj?.name?.replace(/[^0-9]/g, '') || tableId;
+                const tableName = order.mergedTables || tableNumber;
 
                 if (!bucket[itemName]) {
                     bucket[itemName] = {
@@ -125,7 +126,7 @@ const DelayWarnings = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
                                     {item.tables.slice().sort((a, b) => new Date(a.orderTime) - new Date(b.orderTime)).map((t, tid) => (
-                                        <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase">{t.name}</span>
+                                        <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase">Bàn {t.name}</span>
                                     ))}
                                 </div>
                                 <span className={`text-[14px] font-black group-hover:scale-110 transition-transform ${config.color}`}>x{item.totalQuantity}</span>

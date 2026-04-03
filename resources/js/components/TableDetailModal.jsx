@@ -1,20 +1,20 @@
 import React from 'react';
 
-const TableDetailModal = ({ 
-    tableId, 
-    tableIndex, 
+const TableDetailModal = ({
+    tableId,
+    tableIndex,
     mergedTables,
-    orderItems, 
-    currentTime, 
-    onClose, 
-    onToggleStatus 
+    orderItems,
+    currentTime,
+    onClose,
+    onToggleStatus
 }) => {
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="p-4 md:p-6 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h5>Chi tiết bàn {mergedTables || (tableIndex + 1)}</h5>
+                        <h5>Chi tiết bàn {mergedTables || tableId}</h5>
                     </div>
                     <button
                         onClick={onClose}
@@ -24,15 +24,17 @@ const TableDetailModal = ({
                     </button>
                 </div>
 
-                <div className="px-2 py-4 md:p-6">
+                <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
                     <div className="space-y-4">
                         {orderItems.map((item, idx) => {
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
                             return (
-                                <div key={idx} className={`flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}>
+                                <div key={idx} className={`cursor-pointer flex justify-between items-start p-4 rounded-2xl border transition-all duration-300 ${item.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}
+                                    onClick={() => onToggleStatus(item)}
+                                >
                                     <div className="flex items-center gap-4 flex-1">
                                         <div
-                                            onClick={() => onToggleStatus(item)}
+
                                             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${item.done ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}
                                         >
                                             {item.done && (
