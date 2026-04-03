@@ -17,7 +17,8 @@ const Bills = () => {
         activeTablesToDisplay,
         allTables,
         currentTime,
-        status
+        status,
+        error
     } = useConsolidatedOrders('food', true);
 
     const handleTableClick = (table) => {

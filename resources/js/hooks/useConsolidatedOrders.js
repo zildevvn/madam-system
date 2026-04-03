@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { fetchTables, selectTables, selectTableIdToGroupKey } from '../store/slices/tableSlice';
-import { selectTables as selectTablesFromSelector, selectTableIdToGroupKey as selectTableIdToGroupKeyFromSelector } from '../store/selectors/tableSelectors';
+import { fetchTables } from '../store/slices/tableSlice';
+import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 
 /**
  * useConsolidatedOrders: Groups tables by their merged_tables string and 
@@ -10,9 +10,9 @@ import { selectTables as selectTablesFromSelector, selectTableIdToGroupKey as se
  */
 export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = false) => {
     const dispatch = useAppDispatch();
-    const tables = useAppSelector(selectTablesFromSelector);
-    const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKeyFromSelector);
-    const { status: tableStatus } = useAppSelector(state => state.table);
+    const tables = useAppSelector(selectTables);
+    const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
+    const { status: tableStatus, error } = useAppSelector(state => state.table);
     const [currentTime, setCurrentTime] = useState(new Date());
 
     // 1. Fetch tables on mount if idle
@@ -137,7 +137,8 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
             allTables: tables,
             tableIdToGroupKey,
             currentTime,
-            status: tableStatus
+            status: tableStatus,
+            error
         };
-    }, [tables, tableIdToGroupKey, filterType, groupByCompositeKey, currentTime, tableStatus]);
+    }, [tables, tableIdToGroupKey, filterType, groupByCompositeKey, currentTime, tableStatus, error]);
 };

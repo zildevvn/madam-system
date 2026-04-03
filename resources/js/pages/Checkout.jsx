@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, removeFromCart, selectSelectedItems, updateOrderTableAsync, clearCart, createOrderAsync } from '../store/slices/orderSlice';
-import { fetchTables, selectAllTables } from '../store/slices/tableSlice';
+import { fetchTables } from '../store/slices/tableSlice';
+import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 import ProductItem from '../components/ProductItem';
 
 export default function Checkout() {
@@ -13,7 +14,8 @@ export default function Checkout() {
     const { activeOrderId, orderStatus, isModified } = useAppSelector(state => state.order);
     const isConfirmed = orderStatus && orderStatus !== 'draft';
     const selectedItems = useAppSelector(selectSelectedItems);
-    const allTables = useAppSelector(selectAllTables);
+    const allTables = useAppSelector(selectTables);
+    const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
 
     // UI state 
     const [selectedTableId, setSelectedTableId] = useState(tableId);
@@ -149,7 +151,7 @@ export default function Checkout() {
                             >
                                 <option value={tableId}>Bàn {tableId}</option>
                                 {allTables
-                                    .filter(t => !t.active_order && t.id.toString() !== tableId)
+                                    .filter(t => !t.active_order && !tableIdToGroupKey[t.id.toString()] && t.id.toString() !== tableId)
                                     .map(t => (
                                         <option key={t.id} value={t.id.toString()}>
                                             Bàn {t.id}
@@ -176,7 +178,7 @@ export default function Checkout() {
                                         <div className="px-3 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Chọn bàn để gộp</div>
                                         <div className="max-h-60 overflow-y-auto">
                                             {allTables
-                                                .filter(t => t.id.toString() !== tableId)
+                                                .filter(t => t.id.toString() !== tableId && !tableIdToGroupKey[t.id.toString()])
                                                 .map(t => (
                                                     <label
                                                         key={t.id}
