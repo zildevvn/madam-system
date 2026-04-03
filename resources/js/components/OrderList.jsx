@@ -50,7 +50,7 @@ const OrderList = ({ tables, allTables, onTableClick, now }) => {
                             {/* Table Number - Left Side */}
                             <div className="flex-1 flex justify-center items-center">
                                 <h2>
-                                    {originalIndex + 1}
+                                    {table.active_order?.merged_tables || originalIndex + 1}
                                 </h2>
                             </div>
 

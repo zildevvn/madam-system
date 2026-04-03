@@ -82,6 +82,7 @@ const ActiveOrderTableList = ({
                     gridClassName="list-tables grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4"
                     renderCard={(table, index) => {
                         const { statusClass, duration } = getTableStatus(table.id);
+                        const order = getOrderForTable(table.id);
                         const originalIndex = tables.findIndex(t => t.id === table.id);
 
                         return (
@@ -91,7 +92,7 @@ const ActiveOrderTableList = ({
                                 className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
                             >
                                 <span className={`text-lg font-black ${!statusClass ? 'text-gray-900' : ''}`}>
-                                    {originalIndex + 1}
+                                    {order?.mergedTables || originalIndex + 1}
                                 </span>
                                 <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
                                 <span className={`text-[8px] font-bold uppercase tracking-wider ${!statusClass ? 'text-gray-400' : ''}`}>

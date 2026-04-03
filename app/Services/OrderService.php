@@ -39,6 +39,7 @@ class OrderService
     {
         $order = new Order();
         $order->table_id = $data['table_id'] ?? null;
+        $order->merged_tables = $data['merged_tables'] ?? null;
         $order->order_type = $data['order_type'] ?? 'dine-in';
         $order->status = 'draft';
         $order->total_price = 0;
@@ -47,9 +48,9 @@ class OrderService
         return $order->load('items.product', 'table');
     }
 
-    public function checkoutOrder($orderId, array $items)
+    public function checkoutOrder($orderId, array $items, $mergedTables = null)
     {
-        $result = DB::transaction(function () use ($orderId, $items) {
+        $result = DB::transaction(function () use ($orderId, $items, $mergedTables) {
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
@@ -92,7 +93,8 @@ class OrderService
             $wasDraft = $order->status === 'draft';
             $order->update([
                 'total_price' => $totalPrice,
-                'status' => 'pending'
+                'status' => 'pending',
+                'merged_tables' => $mergedTables ?? $order->merged_tables
             ]);
 
             if ($order->table_id) {

@@ -14,36 +14,109 @@ const Bills = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     // Reactive map automatically compiled directly from the live API response mapped onto the Table Redux Store
-    const mockOrders = React.useMemo(() => {
-        const orderDict = {};
+    const { activeOrders, activeTablesToDisplay } = React.useMemo(() => {
+        const tableIdToGroupKey = {};
+        const consolidatedGroups = {};
+
+        // 1. Build global merge map
         tables.forEach(t => {
-            if (t.active_order && t.active_order.items) {
-                const allDone = t.active_order.items.every(item => item.status === 'served');
-                orderDict[t.id.toString()] = {
-                    id: t.active_order.id,
-                    startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
-                    served: allDone,
-                    items: t.active_order.items.map(item => ({
-                        id: item.id,
-                        name: item.product?.name || 'Unknown',
-                        quantity: item.quantity,
-                        orderTime: new Date(item.created_at),
-                        done: item.status === 'served',
-                        status: item.status || 'pending',
-                        product: item.product,
-                        type: item.type || item.product?.type,
-                        note: item.note
-                    }))
-                };
+            if (t.active_order && t.active_order.merged_tables) {
+                const groupKey = t.active_order.merged_tables;
+                const involvedIds = groupKey.split('-');
+                involvedIds.forEach(id => {
+                    tableIdToGroupKey[id] = groupKey;
+                });
             }
         });
-        return orderDict;
+
+        // 2. Consolidate orders
+        tables.forEach(t => {
+            if (t.active_order && t.active_order.items) {
+                const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+
+                if (!consolidatedGroups[groupKey]) {
+                    consolidatedGroups[groupKey] = {
+                        id: t.active_order.id,
+                        mergedTables: groupKey.includes('-') ? groupKey : null,
+                        startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
+                        items: [],
+                        itemsMap: {}
+                    };
+                }
+
+                t.active_order.items.forEach(item => {
+                    const productId = item.product_id;
+                    const note = item.note || '';
+                    const compositeKey = `${productId}-${note}`;
+                    const group = consolidatedGroups[groupKey];
+                    
+                    if (group.itemsMap[compositeKey]) {
+                        group.itemsMap[compositeKey].quantity += item.quantity;
+                        group.itemsMap[compositeKey].allIds.push(item.id);
+                        
+                        const itemTime = new Date(item.created_at);
+                        if (itemTime < group.itemsMap[compositeKey].orderTime) {
+                            group.itemsMap[compositeKey].orderTime = itemTime;
+                        }
+                    } else {
+                        group.itemsMap[compositeKey] = {
+                            id: item.id,
+                            allIds: [item.id],
+                            name: item.product?.name || 'Unknown',
+                            quantity: item.quantity,
+                            orderTime: new Date(item.created_at),
+                            done: item.status === 'served',
+                            status: item.status || 'pending',
+                            product: item.product,
+                            type: item.type || item.product?.type,
+                            note: item.note
+                        };
+                    }
+                });
+
+                const orderTime = new Date(t.active_order.created_at || t.active_order.updated_at);
+                if (orderTime < consolidatedGroups[groupKey].startTime) {
+                    consolidatedGroups[groupKey].startTime = orderTime;
+                }
+            }
+        });
+
+        const orderDict = {};
+        const displayedGroups = new Set();
+        const filteredTables = tables.filter(t => {
+            if (!t.active_order) return false;
+            const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+            
+            // If it's a merged group, we only display the table that matches the first ID (initiator)
+            if (groupKey.includes('-')) {
+                const primaryId = groupKey.split('-')[0];
+                if (t.id.toString() !== primaryId) return false;
+            }
+
+            if (consolidatedGroups[groupKey]) {
+                if (consolidatedGroups[groupKey].itemsMap) {
+                    consolidatedGroups[groupKey].items = Object.values(consolidatedGroups[groupKey].itemsMap);
+                    delete consolidatedGroups[groupKey].itemsMap;
+                }
+                orderDict[t.id.toString()] = {
+                    ...consolidatedGroups[groupKey],
+                    served: consolidatedGroups[groupKey].items.every(i => i.status === 'served')
+                };
+            }
+
+            if (displayedGroups.has(groupKey)) return false;
+            displayedGroups.add(groupKey);
+            return true;
+        });
+
+        return { activeOrders: orderDict, activeTablesToDisplay: filteredTables };
     }, [tables]);
 
     const handleToggleItemStatus = async (item) => {
         const nextStatus = item.status === 'served' ? 'ready' : 'served';
         try {
-            await dispatch(updateItemStatusAsync({ itemId: item.id, status: nextStatus })).unwrap();
+            const ids = item.allIds || [item.id];
+            await Promise.all(ids.map(id => dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus })).unwrap()));
         } catch (error) {
             console.error('Failed to sync item status:', error);
         }
@@ -81,7 +154,7 @@ const Bills = () => {
     }, []);
 
     const handleTableClick = (table) => {
-        const order = mockOrders[table.id.toString()];
+        const order = activeOrders[table.id.toString()];
         if (order) {
             setSelectedTable(table);
         }
@@ -92,7 +165,7 @@ const Bills = () => {
     const statusCounts = React.useMemo(() => {
         const counts = { active: 0, alert: 0, warning: 0, critical: 0, served: 0, total: 0 };
 
-        Object.values(mockOrders).forEach(order => {
+        Object.values(activeOrders).forEach(order => {
             if (!order || !order.items) return;
             order.items.forEach(item => {
                 if (item.type !== 'food') return; // Only count food items
@@ -110,7 +183,7 @@ const Bills = () => {
         });
 
         return counts;
-    }, [mockOrders, currentTime]);
+    }, [activeOrders, currentTime]);
 
     if (status === 'loading') {
         return (
@@ -157,8 +230,8 @@ const Bills = () => {
                             )}
 
                             <ActiveOrderTableList
-                                tables={tables}
-                                orders={mockOrders}
+                                tables={activeTablesToDisplay}
+                                orders={activeOrders}
                                 currentTime={currentTime}
                                 onTableClick={handleTableClick}
                                 filterType="food"
@@ -169,7 +242,7 @@ const Bills = () => {
                         <div className="col-span-12 md:col-span-4 lg:col-span-3">
                             <DelayWarnings
                                 tables={tables}
-                                orders={mockOrders}
+                                orders={activeOrders}
                                 currentTime={currentTime}
                                 title='Danh sách món'
                                 filterType="food"
@@ -184,7 +257,8 @@ const Bills = () => {
                 <TableDetailModal
                     tableId={selectedTable.id}
                     tableIndex={tables.findIndex(t => t.id === selectedTable.id)}
-                    orderItems={mockOrders[selectedTable.id.toString()]?.items.filter(item => item.type === 'food') || []}
+                    mergedTables={activeOrders[selectedTable.id.toString()]?.mergedTables}
+                    orderItems={activeOrders[selectedTable.id.toString()]?.items.filter(item => item.type === 'food') || []}
                     currentTime={currentTime}
                     onClose={() => setSelectedTable(null)}
                     onToggleStatus={handleToggleItemStatus}

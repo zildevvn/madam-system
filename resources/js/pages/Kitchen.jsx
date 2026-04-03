@@ -17,15 +17,38 @@ const Kitchen = () => {
     const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    const orders = useMemo(() => {
-        return tables
-            .filter(t => t.active_order && t.active_order.items)
-            .map(t => ({
-                id: t.active_order.id,
-                tableId: t.id,
-                tableName: t.name || `Bàn ${t.id}`,
-                startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
-                items: t.active_order.items
+    const { orders, activeTablesToDisplay } = useMemo(() => {
+        const tableIdToGroupKey = {};
+        const consolidatedGroups = {};
+
+        // 1. Build global merge map
+        tables.forEach(t => {
+            if (t.active_order && t.active_order.merged_tables) {
+                const groupKey = t.active_order.merged_tables;
+                const involvedIds = groupKey.split('-');
+                involvedIds.forEach(id => {
+                    tableIdToGroupKey[id] = groupKey;
+                });
+            }
+        });
+
+        // 2. Consolidate orders
+        tables.forEach(t => {
+            if (t.active_order && t.active_order.items) {
+                const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+
+                if (!consolidatedGroups[groupKey]) {
+                    consolidatedGroups[groupKey] = {
+                        id: t.active_order.id,
+                        tableId: t.id,
+                        tableName: t.name || `Bàn ${t.id}`,
+                        mergedTables: groupKey.includes('-') ? groupKey : null,
+                        startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
+                        items: []
+                    };
+                }
+
+                const groupItems = t.active_order.items
                     .filter(item => !item.product || item.product.type === 'food' || item.type === 'food')
                     .map(item => ({
                         id: item.id,
@@ -35,9 +58,37 @@ const Kitchen = () => {
                         orderTime: new Date(item.created_at),
                         product: item.product,
                         type: item.product?.type || item.type || 'food'
-                    }))
-            }))
-            .filter(o => o.items.length > 0);
+                    }));
+
+                consolidatedGroups[groupKey].items.push(...groupItems);
+
+                const orderTime = new Date(t.active_order.created_at || t.active_order.updated_at);
+                if (orderTime < consolidatedGroups[groupKey].startTime) {
+                    consolidatedGroups[groupKey].startTime = orderTime;
+                }
+            }
+        });
+
+        const displayedGroups = new Set();
+        const filteredTables = tables.filter(t => {
+            if (!t.active_order) return false;
+            const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+
+            // If it's a merged group, we only display the table that matches the first ID (initiator)
+            if (groupKey.includes('-')) {
+                const primaryId = groupKey.split('-')[0];
+                if (t.id.toString() !== primaryId) return false;
+            }
+
+            if (displayedGroups.has(groupKey)) return false;
+            displayedGroups.add(groupKey);
+            return true;
+        });
+
+        return { 
+            orders: Object.values(consolidatedGroups).filter(o => o.items.length > 0),
+            activeTablesToDisplay: filteredTables
+        };
     }, [tables]);
 
     useEffect(() => {
@@ -114,7 +165,7 @@ const Kitchen = () => {
                     {/* LEFT COLUMN: Table List (Adaptive Width) */}
                     <div className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:overflow-hidden lg:h-full">
                         <ActiveOrderTableList
-                            tables={tables}
+                            tables={activeTablesToDisplay}
                             orders={orders}
                             currentTime={currentTime}
                             filterType="food"

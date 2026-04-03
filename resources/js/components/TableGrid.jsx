@@ -17,6 +17,17 @@ const TableGrid = ({
 
     const getElapsed = (timestamp) => getElapsedString(timestamp, now);
 
+    // Build global merge map for visual status consistency
+    const tableIdToGroupKey = {};
+    tables.forEach(t => {
+        if (t.active_order && t.active_order.merged_tables) {
+            const groupKey = t.active_order.merged_tables;
+            groupKey.split('-').forEach(id => {
+                tableIdToGroupKey[id.toString()] = groupKey;
+            });
+        }
+    });
+
     return (
         <div className={gridClassName}>
             {tables.map((table, index) => {
@@ -25,11 +36,13 @@ const TableGrid = ({
                 }
 
                 // Default StaffOrder-style card implementation (Logic remains intact)
-                const effectiveStatus = (!table.active_order) ? 'empty' : table.status?.toLowerCase();
-                const isBusy = effectiveStatus === 'busy';
-                const statusText = (!effectiveStatus || effectiveStatus === 'available' || effectiveStatus === 'empty')
+                const groupKey = tableIdToGroupKey[table.id.toString()];
+                const isBusy = !!table.active_order || !!groupKey;
+                const statusText = (!isBusy)
                     ? 'Bàn Trống'
-                    : (table.active_order?.created_at ? getElapsed(table.active_order.created_at) : 'Đang xử lý');
+                    : (table.active_order?.created_at 
+                        ? getElapsed(table.active_order.created_at) 
+                        : (groupKey ? 'Đang gộp' : 'Đang xử lý'));
 
                 return (
                     <div

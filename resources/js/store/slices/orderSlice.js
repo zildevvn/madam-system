@@ -11,8 +11,8 @@ export const createOrderAsync = createAsyncThunk('order/createOrder', async (cre
   return response.data;
 });
 
-export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items }) => {
-  const data = await orderApi.checkoutOrder(orderId, items);
+export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null }) => {
+  const data = await orderApi.checkoutOrder(orderId, items, mergedTables);
   return data.data;
 });
 
@@ -38,6 +38,7 @@ const initialState = {
   },
   orderType: 'dine-in',
   tableId: null,
+  mergedTables: null,
   activeOrderId: null,
   orderStatus: 'draft',
   isModified: false,
@@ -112,6 +113,7 @@ const orderSlice = createSlice({
           state.orderStatus = order.status;
           state.orderType = order.order_type;
           state.tableId = order.table_id;
+          state.mergedTables = order.merged_tables;
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
@@ -161,6 +163,7 @@ const orderSlice = createSlice({
             state.orderStatus = order.status;
             state.orderType = order.order_type;
             state.tableId = order.table_id;
+            state.mergedTables = order.merged_tables;
             state.isModified = false;
             state.items.byId = {};
             state.items.allIds = [];

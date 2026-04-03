@@ -30,6 +30,7 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'table_id' => 'nullable|exists:tables,id',
+            'merged_tables' => 'nullable|string|max:255',
             'order_type' => 'string|in:dine-in,takeout'
         ]);
 
@@ -50,9 +51,10 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.note' => 'nullable|string|max:255',
+            'merged_tables' => 'nullable|string|max:255',
         ]);
 
-        $order = $this->orderService->checkoutOrder($id, $validated['items']);
+        $order = $this->orderService->checkoutOrder($id, $validated['items'], $validated['merged_tables'] ?? null);
 
         return response()->json([
             'data' => $order,

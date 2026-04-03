@@ -11,6 +11,7 @@ class Order extends Model
 
     protected $fillable = [
         'table_id',
+        'merged_tables',
         'order_type',
         'status',
         'total_price'

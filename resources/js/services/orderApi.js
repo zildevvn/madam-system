@@ -9,8 +9,8 @@ const orderApi = {
     const response = await axios.post('/api/orders', data);
     return response.data;
   },
-  checkoutOrder: async (orderId, items) => {
-    const response = await axios.post(`/api/orders/${orderId}/checkout`, { items });
+  checkoutOrder: async (orderId, items, mergedTables = null) => {
+    const response = await axios.post(`/api/orders/${orderId}/checkout`, { items, merged_tables: mergedTables });
     return response.data;
   },
   cancelOrder: async (orderId) => {
