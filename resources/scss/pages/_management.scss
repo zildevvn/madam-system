@@ -1,6 +1,18 @@
 .md-management-page {
     padding-top: 160px;
 
+    &.page-bill {
+        padding-top: 45px;
+
+        >div:first-child {
+            top: 10px;
+        }
+    }
+
+    &.page-kitchen {
+        padding-top: 0px !important;
+    }
+
     >div {
         &:first-child {
             position: fixed;

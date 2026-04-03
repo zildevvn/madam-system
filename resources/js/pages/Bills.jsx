@@ -54,11 +54,11 @@ const Bills = () => {
                     const note = item.note || '';
                     const compositeKey = `${productId}-${note}`;
                     const group = consolidatedGroups[groupKey];
-                    
+
                     if (group.itemsMap[compositeKey]) {
                         group.itemsMap[compositeKey].quantity += item.quantity;
                         group.itemsMap[compositeKey].allIds.push(item.id);
-                        
+
                         const itemTime = new Date(item.created_at);
                         if (itemTime < group.itemsMap[compositeKey].orderTime) {
                             group.itemsMap[compositeKey].orderTime = itemTime;
@@ -91,7 +91,7 @@ const Bills = () => {
         const filteredTables = tables.filter(t => {
             if (!t.active_order) return false;
             const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
-            
+
 
 
             if (consolidatedGroups[groupKey]) {
@@ -200,7 +200,7 @@ const Bills = () => {
     }
 
     return (
-        <div className="md-management-page pb-20 bg-gray-50">
+        <div className="page-bill md-management-page pb-20 bg-gray-50">
             <div className="bg-white py-3 border-t border-b border-gray-200">
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between overflow-x-auto no-scrollbar">
                     <div className="flex items-center gap-4">
