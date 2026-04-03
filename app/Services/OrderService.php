@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Table;
 use App\Events\OrderUpdated;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -98,7 +100,7 @@ class OrderService
             ]);
 
             if ($order->table_id) {
-                \App\Models\Table::where('id', $order->table_id)->update(['status' => 'busy']);
+                Table::where('id', $order->table_id)->update(['status' => 'busy']);
             }
 
             return ['order' => $order, 'wasDraft' => $wasDraft];
@@ -111,7 +113,7 @@ class OrderService
             $orderObj->load(['items.product', 'table']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Broadcast failed during checkout: ' . $e->getMessage());
+            Log::error('Broadcast failed during checkout: ' . $e->getMessage());
         }
 
         return $orderObj;
@@ -130,7 +132,7 @@ class OrderService
         try {
             broadcast(new OrderUpdated($order, 'item_status_updated'));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Broadcast failed during item status update: ' . $e->getMessage());
+            Log::error('Broadcast failed during item status update: ' . $e->getMessage());
         }
 
         return $order;
@@ -145,7 +147,7 @@ class OrderService
             $order->update(['table_id' => $newTableId]);
 
             // Update new table status
-            \App\Models\Table::where('id', $newTableId)->update(['status' => 'busy']);
+            Table::where('id', $newTableId)->update(['status' => 'busy']);
 
             // Update old table status if needed
             if ($oldTableId) {
@@ -155,7 +157,7 @@ class OrderService
                     ->exists();
 
                 if (!$stillBusy) {
-                    \App\Models\Table::where('id', $oldTableId)->update(['status' => 'empty']);
+                    Table::where('id', $oldTableId)->update(['status' => 'empty']);
                 }
             }
 
@@ -167,7 +169,7 @@ class OrderService
         try {
             broadcast(new OrderUpdated($result, 'order_updated'));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Broadcast failed during table update: ' . $e->getMessage());
+            Log::error('Broadcast failed during table update: ' . $e->getMessage());
         }
 
         return $result;

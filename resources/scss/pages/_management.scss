@@ -1,3 +1,9 @@
+.page-kitchen {
+    .list-tables {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
 .md-management-page {
     padding-top: 160px;
 
@@ -7,10 +13,6 @@
         >div:first-child {
             top: 10px;
         }
-    }
-
-    &.page-kitchen {
-        padding-top: 0px !important;
     }
 
     >div {
@@ -43,11 +45,11 @@
             }
         }
     }
+}
 
-    .list-tables {
-        .is-busy {
-            background-color: $color-blue-light;
-            color: #fff;
-        }
+.list-tables {
+    .is-busy {
+        background-color: $color-blue-light;
+        color: #fff;
     }
 }
