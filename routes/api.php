@@ -11,6 +11,7 @@ Route::post('/tables', [TableController::class, 'store']);
 Route::get('/tables/{id}/active-order', [OrderController::class, 'activeOrder']);
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/{id}/checkout', [OrderController::class, 'checkout']);
+Route::post('/orders/{id}/complete', [OrderController::class, 'complete']);
 Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 Route::put('/orders/{id}/table', [OrderController::class, 'updateTable']);
 Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);

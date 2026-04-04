@@ -1,100 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchTables } from '../store/slices/tableSlice';
+import React, { useState } from 'react';
 import TableGrid from '../components/TableGrid';
+import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
+import axios from 'axios';
 
 const Cashier = () => {
-    const dispatch = useAppDispatch();
-    const { status, error } = useAppSelector(state => state.table);
-    const tables = useAppSelector(state => state.table.allIds.map(id => state.table.byId[id]));
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const {
+        allTables: tables,
+        orderDict,
+        status,
+        error
+    } = useConsolidatedOrders();
+
     const [selectedTable, setSelectedTable] = useState(null);
-    const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card'
-
-
-    // Mock orders with prices for payment demonstration
-    const [mockOrders, setMockOrders] = useState(() => {
-        const now = new Date();
-        return {
-            "4": {
-                startTime: new Date(now - 12 * 60000),
-                served: false,
-                items: [
-                    { name: "Bún bò đặc biệt", quantity: 2, price: 65000, done: true },
-                    { name: "Cơm Chiên", quantity: 1, price: 45000, done: true }
-                ]
-            },
-            "2": {
-                startTime: new Date(now - 25 * 60000),
-                served: false,
-                items: [
-                    { name: "Set menu gia đình", quantity: 1, price: 250000, done: true },
-                    { name: "Bún bò đặc biệt", quantity: 2, price: 65000, done: true },
-                    { name: "Cơm Chiên", quantity: 1, price: 45000, done: true }
-                ]
-            },
-            "8": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            },
-            "9": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            },
-            "10": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            },
-            "12": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            },
-            "14": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            },
-            "16": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            },
-            "18": {
-                startTime: new Date(now - 4 * 60000),
-                served: false,
-                items: [
-                    { name: "Trà đào", quantity: 2, price: 25000, done: false }
-                ]
-            }
-        };
-    });
-
-    useEffect(() => {
-        if (status === 'idle') {
-            dispatch(fetchTables());
-        }
-    }, [status, dispatch]);
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
-    }, []);
+    const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card' | 'cash'
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const handleTableClick = (tableId) => {
         const table = tables.find(t => t.id === tableId || t.id === parseInt(tableId));
@@ -104,19 +23,21 @@ const Cashier = () => {
         }
     };
 
-    const handlePayment = (tableId) => {
-        if (!paymentMethod) return; // Must select a method
-        const tableNumber = tables.findIndex(t => t.id === tableId) + 1;
-        const order = mockOrders[tableId.toString()];
-        const total = getOrderTotal(order);
-        // Record to payment history for reporting
-        setMockOrders(prev => {
-            const next = { ...prev };
-            delete next[tableId.toString()];
-            return next;
-        });
-        setSelectedTable(null);
-        setPaymentMethod(null);
+    const handlePayment = async (tableId) => {
+        const order = orderDict[tableId.toString()];
+        if (!order || !paymentMethod || isProcessing) return;
+
+        setIsProcessing(true);
+        try {
+            await axios.post(`/api/orders/${order.id}/complete`);
+            setSelectedTable(null);
+            setPaymentMethod(null);
+        } catch (err) {
+            console.error('Payment failed:', err);
+            alert('Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const getOrderTotal = (order) => {
@@ -124,9 +45,10 @@ const Cashier = () => {
         return order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
     };
 
-    const emptyTablesCount = tables.filter(t => !mockOrders[t.id.toString()]).length;
+    const activeOrdersCount = Object.keys(orderDict).length;
+    const emptyTablesCount = tables.filter(t => !orderDict[t.id.toString()]).length;
 
-    if (status === 'loading') {
+    if (status === 'loading' && tables.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
@@ -134,7 +56,7 @@ const Cashier = () => {
         );
     }
 
-    const currentOrder = selectedTable ? mockOrders[selectedTable.id.toString()] : null;
+    const currentOrder = selectedTable ? orderDict[selectedTable.id.toString()] : null;
 
     return (
         <div className="md-management-page pb-20">
@@ -143,7 +65,7 @@ const Cashier = () => {
                 <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between">
                     <p className="item-info flex items-center gap-1 m-0 text-sm">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                        Tổng đơn chờ thanh toán: {Object.keys(mockOrders).length}
+                        Tổng đơn chờ thanh toán: {activeOrdersCount}
                     </p>
 
                     <p className="item-info flex items-center gap-1 m-0 text-sm">
@@ -179,7 +101,7 @@ const Cashier = () => {
                                 <div>
                                     <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn thanh toán</p>
                                     <h4 className="m-0 text-lg font-black text-gray-900">
-                                        Bàn {tables.findIndex(t => t.id === selectedTable.id) + 1}
+                                    Bàn {selectedTable.name || selectedTable.id}
                                     </h4>
                                 </div>
                             </div>
@@ -256,12 +178,16 @@ const Cashier = () => {
                                 Hủy
                             </button>
                             <button
-                                disabled={!currentOrder || !paymentMethod}
+                                disabled={!currentOrder || !paymentMethod || isProcessing}
                                 onClick={() => handlePayment(selectedTable.id)}
-                                className={`mdt-btn cursor-pointer ${!currentOrder || !paymentMethod ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                className={`mdt-btn cursor-pointer ${(!currentOrder || !paymentMethod || isProcessing) ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                                Xác nhận
+                                {isProcessing ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                )}
+                                {isProcessing ? 'Đang xử lý...' : 'Xác nhận'}
                             </button>
                         </div>
                     </div>

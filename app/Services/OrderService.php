@@ -138,6 +138,38 @@ class OrderService
         return $order;
     }
 
+    public function completeOrder($orderId)
+    {
+        $result = DB::transaction(function () use ($orderId) {
+            $order = Order::findOrFail($orderId);
+            $order->update(['status' => 'completed']);
+
+            // Free the primary table
+            if ($order->table_id) {
+                Table::where('id', $order->table_id)->update(['status' => 'empty']);
+            }
+
+            // Free merged tables if any (e.g. "3-4-5")
+            if ($order->merged_tables) {
+                $ids = explode('-', $order->merged_tables);
+                Table::whereIn('id', $ids)->update(['status' => 'empty']);
+            }
+
+            return $order;
+        });
+
+        $result->load(['items.product', 'table']);
+
+        try {
+            // Broadcast so other views (StaffOrder, Kitchen) reflect that this table is now empty
+            broadcast(new OrderUpdated($result, 'order_updated'));
+        } catch (\Exception $e) {
+            Log::error('Broadcast failed during order completion: ' . $e->getMessage());
+        }
+
+        return $result;
+    }
+
     public function updateTable($orderId, $newTableId)
     {
         $order = Order::findOrFail($orderId);

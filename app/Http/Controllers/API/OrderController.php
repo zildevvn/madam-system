@@ -43,6 +43,17 @@ class OrderController extends Controller
         ], 201);
     }
 
+    public function complete(Request $request, $id)
+    {
+        $order = $this->orderService->completeOrder($id);
+
+        return response()->json([
+            'data' => $order,
+            'message' => 'Order completed successfully',
+            'errors' => null
+        ]);
+    }
+
     public function checkout(Request $request, $id)
     {
         $validated = $request->validate([
