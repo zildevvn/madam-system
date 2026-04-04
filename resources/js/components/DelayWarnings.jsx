@@ -113,7 +113,7 @@ const DelayWarnings = ({
                         <div
                             key={`${item.name}-${type}-${idx}`}
                             className={`p-3 rounded-2xl border-2 transition-all bg-white cursor-pointer group ${config.border}`}
-                            onClick={() => onItemClick && onItemClick(item.orderId, item.itemIds[0])}
+                            onClick={() => onItemClick && onItemClick(item.orderId, item.itemIds)}
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[14px] font-black text-gray-800 leading-none">{item.name}</span>

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateItemStatusAsync } from '../store/slices/orderSlice';
+import { patchItemsStatus } from '../store/slices/tableSlice';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import TableDetailModal from '../components/TableDetailModal';
 import BillsStatusBar from '../components/Bills/BillsStatusBar';
@@ -27,12 +28,26 @@ const Bills = () => {
         }
     };
 
-    const handleToggleItemStatus = async (item) => {
-        const nextStatus = item.status === 'served' ? 'ready' : 'served';
+    const handleToggleItemStatus = async (item, nextStatus) => {
+        const ids = item.allIds || [item.id];
+        const tableId = selectedTable.id;
+
+        // 1. Optimistic Redux update — instant UI response, no waiting for API.
+        //    patchItemsStatus also registers tableId in pendingTableIds to guard
+        //    against stale fetchTables overwrites (race condition fix).
+        dispatch(patchItemsStatus({ tableId, itemIds: ids, status: nextStatus }));
+
         try {
-            const ids = item.allIds || [item.id];
-            await Promise.all(ids.map(id => dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus })).unwrap()));
+            // 2. Confirm via API. tableSlice.addMatcher handles the surgical store patch
+            //    and clears the pendingTableIds counter on fulfillment.
+            //    tableId is passed so the rejected matcher can also clear the guard.
+            await Promise.all(ids.map(id =>
+                dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, tableId })).unwrap()
+            ));
         } catch (error) {
+            // 3. Revert optimistic patch on failure.
+            const revertStatus = nextStatus === 'served' ? 'ready' : 'served';
+            dispatch(patchItemsStatus({ tableId, itemIds: ids, status: revertStatus }));
             console.error('Failed to sync item status:', error);
         }
     };

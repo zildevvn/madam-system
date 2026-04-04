@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
+import { useAppDispatch } from '../store/hooks';
+import { updateItemStatusAsync } from '../store/slices/orderSlice';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import DelayWarnings from '../components/DelayWarnings';
 import KitchenDishList from '../components/Kitchen/KitchenDishList';
 
 const Kitchen = () => {
+    const dispatch = useAppDispatch();
     // Use consolidated logic hook
     const {
         orders,
@@ -15,21 +18,24 @@ const Kitchen = () => {
         status: tableStatus
     } = useConsolidatedOrders('food');
 
-    const handleItemStatusChange = async (orderId, itemId) => {
+    const handleItemStatusChange = async (orderId, itemIds) => {
+        const ids = Array.isArray(itemIds) ? itemIds : [itemIds];
         const targetOrder = orders.find(o => o.id === orderId);
         if (!targetOrder) return;
-        const targetItem = targetOrder.items.find(i => i.id === itemId);
-        if (!targetItem) return;
+        
+        // Find the first item to determine the next status cycle for the whole group
+        const firstItem = targetOrder.items.find(i => ids.includes(i.id));
+        if (!firstItem) return;
 
         let nextStatus = 'pending';
-        if (targetItem.status === 'pending') nextStatus = 'cooking';
-        else if (targetItem.status === 'cooking') nextStatus = 'ready';
-        else if (targetItem.status === 'ready') nextStatus = 'served';
+        if (firstItem.status === 'pending') nextStatus = 'cooking';
+        else if (firstItem.status === 'cooking') nextStatus = 'ready';
+        else if (firstItem.status === 'ready') nextStatus = 'served';
 
         try {
-            await window.axios.put(`/api/order-items/${itemId}/status`, { status: nextStatus });
+            await Promise.all(ids.map(id => dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus })).unwrap()));
         } catch (error) {
-            console.error('Failed to update item status:', error);
+            console.error('Failed to batch update item status:', error);
         }
     };
 

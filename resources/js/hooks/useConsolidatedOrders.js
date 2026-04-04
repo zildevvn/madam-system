@@ -80,6 +80,7 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                         quantity: item.quantity,
                         price: item.price || item.product?.price || 0,
                         status: item.status || 'pending',
+                        done: item.status === 'ready' || item.status === 'served',
                         orderTime: new Date(item.created_at),
                         product: item.product,
                         type: productType || filterType,

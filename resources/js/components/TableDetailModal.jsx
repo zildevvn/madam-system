@@ -1,35 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 const TableDetailModal = ({
     tableId,
-    tableIndex,
     mergedTables,
     orderItems,
     currentTime,
     onClose,
-    onToggleStatus // We'll keep this prop name but change its behavior to batch if needed, or pass selected IDs
+    onToggleStatus
 }) => {
-    // Keep track of which items have been toggled locally in the modal
-    const [toggledIds, setToggledIds] = useState(new Set());
-
-    const handleLocalToggle = (itemId) => {
-        setToggledIds(prev => {
-            const next = new Set(prev);
-            if (next.has(itemId)) next.delete(itemId);
-            else next.add(itemId);
-            return next;
-        });
-    };
-
-    const handleComplete = () => {
-        if (toggledIds.size > 0) {
-            // Map the set to an array of items with their actual IDs (including allIds for merged items)
-            const itemsToUpdate = orderItems.filter(item => toggledIds.has(item.id));
-
-            // Pass the items to the parent for batch processing
-            itemsToUpdate.forEach(item => onToggleStatus(item));
-        }
-        onClose();
+    // No local state needed — orderItems comes directly from Redux via useConsolidatedOrders.
+    // The parent (Bills) dispatches a patchItemsStatus optimistic Redux action on toggle,
+    // which immediately re-renders this component with the updated status.
+    const handleToggle = (item) => {
+        if (item.status === 'served') return;
+        onToggleStatus(item, 'served');
     };
 
     return (
@@ -50,14 +34,14 @@ const TableDetailModal = ({
                 <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
                     <div className="space-y-4">
                         {orderItems.map((item, idx) => {
-                            const isToggled = toggledIds.has(item.id);
-                            const isCurrentlyDone = isToggled ? !item.done : item.done;
+                            // Single source of truth: read status directly from Redux-backed prop.
+                            const isCurrentlyDone = item.status === 'served';
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
 
                             return (
                                 <div key={idx}
-                                    className={`cursor-pointer flex justify-between items-start p-2 rounded-2xl border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}
-                                    onClick={() => handleLocalToggle(item.id)}
+                                    className={`flex justify-between items-start p-2 rounded-2xl border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group cursor-pointer'}`}
+                                    onClick={() => !isCurrentlyDone && handleToggle(item)}
                                 >
                                     <div className="flex items-center gap-4 flex-1">
                                         <div className={`w-4 h-4 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isCurrentlyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}>
@@ -105,7 +89,7 @@ const TableDetailModal = ({
 
                 <div className="py-4 px-2 md:p-6 pt-0">
                     <button
-                        onClick={handleComplete}
+                        onClick={onClose}
                         className="w-full mdt-btn"
                     >
                         Xong
