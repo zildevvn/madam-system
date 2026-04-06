@@ -15,13 +15,13 @@ class OrderService
     {
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
-            ->with(['items.product', 'table'])
+            ->with(['items.product', 'table', 'server', 'cashier'])
             ->first();
     }
 
     public function getOrder($id)
     {
-        return Order::with(['items.product', 'table'])->findOrFail($id);
+        return Order::with(['items.product', 'table', 'server', 'cashier'])->findOrFail($id);
     }
 
     public function cancelOrder($id)
@@ -46,13 +46,14 @@ class OrderService
     {
         $order = new Order();
         $order->table_id = $data['table_id'] ?? null;
+        $order->user_id = $data['user_id'] ?? null;
         $order->merged_tables = $data['merged_tables'] ?? null;
         $order->order_type = $data['order_type'] ?? 'dine-in';
         $order->status = 'draft';
         $order->total_price = 0;
         $order->save();
 
-        return $order->load('items.product', 'table');
+        return $order->load('items.product', 'table', 'server', 'cashier');
     }
 
     public function checkoutOrder($orderId, array $items, $mergedTables = null)
@@ -73,6 +74,7 @@ class OrderService
                 if ($orderItem) {
                     // OVERWRITE quantity instead of accumulating
                     $orderItem->quantity = $itemData['quantity'];
+                    $orderItem->table_id = $itemData['table_id'] ?? $order->table_id;
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
@@ -81,6 +83,7 @@ class OrderService
                     $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $productId,
+                        'table_id' => $itemData['table_id'] ?? $order->table_id,
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
                         'note' => $itemData['note'] ?? null,
@@ -115,7 +118,7 @@ class OrderService
         // Broadcast AFTER transaction commits to avoid race conditions
         try {
             $orderObj = $result['order'];
-            $orderObj->load(['items.product', 'table']);
+            $orderObj->load(['items.product', 'table', 'server', 'cashier']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during checkout: ' . $e->getMessage());
@@ -131,7 +134,7 @@ class OrderService
         $item->save();
 
         $order = $item->order;
-        $order->load(['items.product', 'table']);
+        $order->load(['items.product', 'table', 'server', 'cashier']);
 
         // Broadcast the real-time event
         try {
@@ -143,13 +146,14 @@ class OrderService
         return $order;
     }
 
-    public function completeOrder($orderId, $paymentMethod = null)
+    public function completeOrder($orderId, $data)
     {
-        $result = DB::transaction(function () use ($orderId, $paymentMethod) {
+        $result = DB::transaction(function () use ($orderId, $data) {
             $order = Order::findOrFail($orderId);
             $order->update([
                 'status' => 'completed',
-                'payment_method' => $paymentMethod
+                'payment_method' => $data['payment_method'] ?? null,
+                'cashier_id' => $data['cashier_id'] ?? null,
             ]);
 
             // Free the primary table
@@ -166,7 +170,7 @@ class OrderService
             return $order;
         });
 
-        $result->load(['items.product', 'table']);
+        $result->load(['items.product', 'table', 'server', 'cashier']);
 
         try {
             // Broadcast so other views (StaffOrder, Kitchen) reflect that this table is now empty

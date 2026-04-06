@@ -87,7 +87,13 @@ export default function Checkout() {
             if (isModified || !isConfirmed) {
                 await dispatch(checkoutOrderAsync({
                     orderId: currentOrderId,
-                    items: selectedItems.map(i => ({ product_id: i.id, quantity: i.quantity, price: i.price, note: i.note })),
+                    items: selectedItems.map(i => ({ 
+                        product_id: i.id, 
+                        quantity: i.quantity, 
+                        price: i.price, 
+                        note: i.note,
+                        table_id: selectedTableId
+                    })),
                     mergedTables: mergedTablesString
                 })).unwrap();
             } else if (hasChangedTable) {
@@ -149,7 +155,7 @@ export default function Checkout() {
                                 onChange={(e) => setSelectedTableId(e.target.value)}
                                 className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-4 pr-8 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
                             >
-                                <option value={tableId}>Bàn {tableId}</option>
+                                <option value={tableId}>Bàn {tableId.toString().replace(/^Bàn\s+/i, '')}</option>
                                 {allTables
                                     .filter(t => !t.active_order && !tableIdToGroupKey[t.id.toString()] && t.id.toString() !== tableId)
                                     .map(t => (

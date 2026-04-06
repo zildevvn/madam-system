@@ -18,7 +18,7 @@ const Receipt = ({ order, tableName }) => {
                 <div className="receipt-meta">
                     <div className="receipt-meta-row">
                         <span>Tại bàn</span>
-                        <span>{tableName || order.table?.name || order.table?.id || '-'}</span>
+                        <span>{(order.mergedTables || tableName || order.table?.name || order.table?.id.toString() || '-').replace(/^Bàn\s+/i, '')}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>Giờ vào</span>
@@ -36,11 +36,11 @@ const Receipt = ({ order, tableName }) => {
                     </div>
                     <div className="receipt-meta-row">
                         <span>Thu ngân</span>
-                        <span>Nhân viên</span>
+                        <span>{order.cashier?.name || 'Nhân viên'}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>Phục vụ</span>
-                        <span>Phục vụ</span>
+                        <span>{order.server?.name || order.user?.name || 'Phục vụ'}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>*Ghi chú</span>
@@ -57,15 +57,43 @@ const Receipt = ({ order, tableName }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {orderItems.map((item, idx) => (
-                            <tr key={idx}>
-                                <td align="left">
-                                    <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
-                                    <div className="receipt-item-price">{(item.price || 0).toLocaleString()}</div>
-                                </td>
-                                <td align="center">{item.quantity}</td>
-                                <td align="right">{((item.price || 0) * item.quantity).toLocaleString()}</td>
-                            </tr>
+                        {Object.entries(
+                            orderItems.reduce((acc, item) => {
+                                const tId = item.tableId || order.tableId;
+                                if (!acc[tId]) acc[tId] = [];
+                                acc[tId].push(item);
+                                return acc;
+                            }, {})
+                        ).sort(([a], [b]) => a - b).map(([tId, tableItems]) => (
+                            <React.Fragment key={tId}>
+                                {order.mergedTables && (
+                                    <tr className="receipt-table-header-row">
+                                        <td colSpan="3" align="left" style={{ fontWeight: 'bold', backgroundColor: '#f9f9f9', padding: '4px 8px', fontSize: '12px' }}>
+                                            Bàn {tId}
+                                        </td>
+                                    </tr>
+                                )}
+                                {tableItems.map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td align="left">
+                                            <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
+                                            <div className="receipt-item-price">{(item.price || 0).toLocaleString()}</div>
+                                        </td>
+                                        <td align="center">{item.quantity}</td>
+                                        <td align="right">{((item.price || 0) * item.quantity).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                                {order.mergedTables && (
+                                    <tr className="receipt-subtotal-row">
+                                        <td colSpan="2" align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '11px', fontStyle: 'italic', color: '#666' }}>
+                                            Cộng bàn {tId}:
+                                        </td>
+                                        <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '11px', fontWeight: 'bold' }}>
+                                            {tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         ))}
                         <tr className="receipt-total-row">
                             <td align="left">Tiền hàng ({totalQuantity})</td>

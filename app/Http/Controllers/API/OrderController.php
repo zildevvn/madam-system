@@ -45,7 +45,8 @@ class OrderController extends Controller
             'order_type' => 'string|in:dine-in,takeout'
         ]);
 
-        $order = $this->orderService->createOrder($validated);
+        $data = array_merge($validated, ['user_id' => $request->user()?->id]);
+        $order = $this->orderService->createOrder($data);
 
         return response()->json([
             'data' => $order,
@@ -60,7 +61,8 @@ class OrderController extends Controller
             'payment_method' => 'required|string|in:cash,bank,card'
         ]);
 
-        $order = $this->orderService->completeOrder($id, $validated['payment_method']);
+        $data = array_merge($validated, ['cashier_id' => $request->user()?->id]);
+        $order = $this->orderService->completeOrder($id, $data);
 
         return response()->json([
             'data' => $order,

@@ -16,6 +16,7 @@ export default function Header() {
         const baseNav = [
             { name: 'Staff Order', href: '/staff-order', roles: ['order_staff'] },
             { name: 'Kitchen', href: '/kitchen', roles: ['kitchen'] },
+            { name: 'Bar', href: '/bar', roles: ['order_staff'] },
             { name: 'Bills', href: '/bills', roles: ['order_staff', 'cashier'] },
             { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
             { name: 'Admin', href: '/admin', roles: [] },

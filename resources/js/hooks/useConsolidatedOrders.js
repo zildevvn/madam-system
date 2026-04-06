@@ -65,6 +65,12 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                         items: [],
                         itemsMap: {}
                     };
+                } else if (t.active_order.merged_tables === groupKey) {
+                    // This is the authoritative order of the merge group — update metadata from this one
+                    consolidatedGroups[groupKey].id = t.active_order.id;
+                    consolidatedGroups[groupKey].startTime = new Date(t.active_order.created_at || t.active_order.updated_at);
+                    consolidatedGroups[groupKey].tableId = t.id;
+                    consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
                 }
 
                 const group = consolidatedGroups[groupKey];
@@ -84,11 +90,12 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                         orderTime: new Date(item.created_at),
                         product: item.product,
                         type: productType || filterType,
-                        note: item.note || ''
+                        note: item.note || '',
+                        tableId: item.table_id // Preserve the original table ID
                     };
 
                     if (groupByCompositeKey) {
-                        const compositeKey = `${item.product_id}-${itemData.note}`;
+                        const compositeKey = `${item.product_id}-${itemData.note}-${item.table_id}`;
                         if (group.itemsMap[compositeKey]) {
                             group.itemsMap[compositeKey].quantity += itemData.quantity;
                             group.itemsMap[compositeKey].allIds.push(item.id);
