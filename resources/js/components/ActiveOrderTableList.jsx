@@ -8,7 +8,8 @@ const ActiveOrderTableList = ({
     onTableClick,
     title = "Danh sách bàn",
     className = "",
-    filterType = null // 'food' or 'drink'
+    filterType = null, // 'food' or 'drink'
+    showNewOrderHighlight = false
 }) => {
     // Standardized: orders must be a dictionary keyed by table ID
     const getOrderForTable = (tableId) => {
@@ -44,6 +45,16 @@ const ActiveOrderTableList = ({
         if (diff >= 20) statusClass = "mdt-bg-red !text-white";
         else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
         else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
+
+        // Add highlight for new orders (items added within the last 2 minutes)
+        if (showNewOrderHighlight && order.items && order.items.length > 0) {
+            const minDiff = Math.min(...order.items.map(item => 
+                Math.floor((currentTime - new Date(item.orderTime)) / 60000)
+            ));
+            if (minDiff < 2) {
+                statusClass += " is-new-order";
+            }
+        }
 
         return { statusClass, duration: `${diff} PHÚT` };
     };

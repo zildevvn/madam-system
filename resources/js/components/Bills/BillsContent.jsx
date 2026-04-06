@@ -31,6 +31,7 @@ const BillsContent = ({
                             currentTime={currentTime}
                             onTableClick={handleTableClick}
                             filterType="food"
+                            showNewOrderHighlight={true}
                         />
                     </div>
 

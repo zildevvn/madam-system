@@ -52,4 +52,23 @@
         background-color: $color-blue-light;
         color: #fff;
     }
+
+    .is-new-order {
+        animation: blink-bounce 1.5s infinite ease-in-out;
+    }
+}
+
+@keyframes blink-bounce {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 0.6;
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
