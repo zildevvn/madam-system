@@ -26,6 +26,17 @@ class OrderController extends Controller
         ]);
     }
 
+    public function show($id)
+    {
+        $order = $this->orderService->getOrder($id);
+
+        return response()->json([
+            'data' => $order,
+            'message' => 'Success',
+            'errors' => null
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -45,7 +56,11 @@ class OrderController extends Controller
 
     public function complete(Request $request, $id)
     {
-        $order = $this->orderService->completeOrder($id);
+        $validated = $request->validate([
+            'payment_method' => 'required|string|in:cash,bank,card'
+        ]);
+
+        $order = $this->orderService->completeOrder($id, $validated['payment_method']);
 
         return response()->json([
             'data' => $order,

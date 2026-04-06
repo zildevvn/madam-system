@@ -14,9 +14,14 @@ class OrderService
     public function getActiveOrder($tableId)
     {
         return Order::where('table_id', $tableId)
-            ->whereIn('status', ['draft', 'pending', 'processing'])
+            ->whereIn('status', ['draft', 'pending', 'processing', 'completed'])
             ->with(['items.product', 'table'])
             ->first();
+    }
+
+    public function getOrder($id)
+    {
+        return Order::with(['items.product', 'table'])->findOrFail($id);
     }
 
     public function cancelOrder($id)
@@ -138,11 +143,14 @@ class OrderService
         return $order;
     }
 
-    public function completeOrder($orderId)
+    public function completeOrder($orderId, $paymentMethod = null)
     {
-        $result = DB::transaction(function () use ($orderId) {
+        $result = DB::transaction(function () use ($orderId, $paymentMethod) {
             $order = Order::findOrFail($orderId);
-            $order->update(['status' => 'completed']);
+            $order->update([
+                'status' => 'completed',
+                'payment_method' => $paymentMethod
+            ]);
 
             // Free the primary table
             if ($order->table_id) {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TableGrid from '../components/TableGrid';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import axios from 'axios';
+import Receipt from '../components/Receipt';
 
 const Cashier = () => {
     const {
@@ -14,13 +15,19 @@ const Cashier = () => {
     const [selectedTable, setSelectedTable] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card' | 'cash'
     const [isProcessing, setIsProcessing] = useState(false);
+    const [step, setStep] = useState(1); // 1: Preview, 2: Payment
 
     const handleTableClick = (tableId) => {
         const table = tables.find(t => t.id === tableId || t.id === parseInt(tableId));
         if (table) {
             setSelectedTable(table);
             setPaymentMethod(null); // Reset selection each time modal opens
+            setStep(1); // Reset to preview step 
         }
+    };
+
+    const handlePrintBill = () => {
+        window.print();
     };
 
     const handlePayment = async (tableId) => {
@@ -29,7 +36,9 @@ const Cashier = () => {
 
         setIsProcessing(true);
         try {
-            await axios.post(`/api/orders/${order.id}/complete`);
+            await axios.post(`/api/orders/${order.id}/complete`, {
+                payment_method: paymentMethod
+            });
             setSelectedTable(null);
             setPaymentMethod(null);
         } catch (err) {
@@ -101,19 +110,19 @@ const Cashier = () => {
                                 <div>
                                     <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn thanh toán</p>
                                     <h4 className="m-0 text-lg font-black text-gray-900">
-                                    Bàn {selectedTable.name || selectedTable.id}
+                                        Bàn {selectedTable.name || selectedTable.id}
                                     </h4>
                                 </div>
                             </div>
                             <button
-                                onClick={() => { setSelectedTable(null); setPaymentMethod(null); }}
+                                onClick={() => { setSelectedTable(null); setPaymentMethod(null); setStep(1); }}
                                 className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
                             </button>
                         </div>
 
-                        {/* Items List */}
+                        {/* Items List  */}
                         <div className="px-6 pt-5 pb-2 max-h-[30vh] overflow-y-auto hide-scrollbar">
                             {!currentOrder ? (
                                 <div className="text-center py-8 text-gray-400 italic text-sm">Bàn này chưa có món nào.</div>
@@ -145,53 +154,76 @@ const Cashier = () => {
                             <span className="text-lg font-black text-orange-500">{getOrderTotal(currentOrder).toLocaleString()}đ</span>
                         </div>
 
-                        {/* Payment Methods */}
-                        <div className="px-6 pb-3">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Phương thức thanh toán</p>
-                            <div className="flex gap-2">
-                                {[
-                                    { key: 'cash', label: 'Tiền mặt', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /> },
-                                    { key: 'bank', label: 'Chuyển khoản', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
-                                    { key: 'card', label: 'Thẻ ngân hàng', icon: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6" /></> },
-                                ].map(({ key, label, icon }) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setPaymentMethod(key)}
-                                        className={`flex-1 flex justify-center items-center gap-1 py-2 px-2 rounded-xl border-1 transition-all duration-150 cursor-pointer ${paymentMethod === key
-                                            ? 'border-orange-500 bg-orange-50 text-orange-600'
-                                            : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-orange-200 hover:text-gray-600'
-                                            }`}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icon}</svg>
-                                        <span className="text-[9px] font-black uppercase tracking-wide leading-tight text-center">{label}</span>
-                                    </button>
-                                ))}
+                        {/* Payment Methods - Step 2 Only */}
+                        {step === 2 && (
+                            <div className="px-6 pb-3">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Phương thức thanh toán</p>
+                                <div className="flex gap-2">
+                                    {[
+                                        { key: 'cash', label: 'Tiền mặt', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /> },
+                                        { key: 'bank', label: 'Chuyển khoản', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /> },
+                                        { key: 'card', label: 'Cà thẻ', icon: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6" /></> },
+                                    ].map(({ key, label, icon }) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setPaymentMethod(key)}
+                                            className={`flex-1 flex justify-center items-center gap-1 py-2 px-2 rounded-xl border-1 transition-all duration-150 cursor-pointer ${paymentMethod === key
+                                                ? 'border-orange-500 bg-orange-50 text-orange-600'
+                                                : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-orange-200 hover:text-gray-600'
+                                                }`}
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icon}</svg>
+                                            <span className="text-[9px] font-black uppercase tracking-wide leading-tight text-center">{label}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Actions */}
                         <div className="px-6 pb-6 pt-4 grid grid-cols-2 gap-3">
                             <button
-                                onClick={() => { setSelectedTable(null); setPaymentMethod(null); }}
+                                onClick={handlePrintBill}
                                 className="mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer border-none"
                             >
-                                Hủy
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2m8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                In hóa đơn
                             </button>
-                            <button
-                                disabled={!currentOrder || !paymentMethod || isProcessing}
-                                onClick={() => handlePayment(selectedTable.id)}
-                                className={`mdt-btn cursor-pointer ${(!currentOrder || !paymentMethod || isProcessing) ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
-                            >
-                                {isProcessing ? (
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                                )}
-                                {isProcessing ? 'Đang xử lý...' : 'Xác nhận'}
-                            </button>
+
+                            {step === 1 ? (
+                                <button
+                                    disabled={!currentOrder}
+                                    onClick={() => setStep(2)}
+                                    className={`mdt-btn cursor-pointer ${!currentOrder ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                >
+                                    Tiếp theo
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                </button>
+                            ) : (
+                                <button
+                                    disabled={!currentOrder || !paymentMethod || isProcessing}
+                                    onClick={() => handlePayment(selectedTable.id)}
+                                    className={`mdt-btn cursor-pointer ${(!currentOrder || !paymentMethod || isProcessing) ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                >
+                                    {isProcessing ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                    )}
+                                    {isProcessing ? 'Đang xử lý...' : 'Xác Nhận'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Hidden Print Area */}
+            {currentOrder && (
+                <Receipt
+                    order={currentOrder}
+                    tableName={selectedTable?.name}
+                />
             )}
         </div>
     );

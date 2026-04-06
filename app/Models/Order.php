@@ -14,7 +14,8 @@ class Order extends Model
         'merged_tables',
         'order_type',
         'status',
-        'total_price'
+        'total_price',
+        'payment_method',
     ];
 
     public function table()
