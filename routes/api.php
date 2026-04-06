@@ -9,6 +9,7 @@ Route::get('/tables', [TableController::class, 'index']);
 Route::post('/tables', [TableController::class, 'store']);
 
 Route::get('/tables/{id}/active-order', [OrderController::class, 'activeOrder']);
+Route::get('/orders/{id}', [OrderController::class, 'show']);
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/orders/{id}/checkout', [OrderController::class, 'checkout']);
 Route::post('/orders/{id}/complete', [OrderController::class, 'complete']);

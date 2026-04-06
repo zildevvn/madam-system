@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('orders', 'merged_tables')) {
+        if (!Schema::hasColumn('orders', 'payment_method')) {
             Schema::table('orders', function (Blueprint $table) {
-                $table->string('merged_tables')->nullable()->after('table_id');
+                $table->string('payment_method')->nullable()->after('total_price');
             });
         }
     }
@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropColumn('merged_tables');
+            $table->dropColumn('payment_method');
         });
     }
 };
