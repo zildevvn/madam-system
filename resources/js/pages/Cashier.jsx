@@ -1,29 +1,28 @@
 import React, { useState } from 'react';
-import TableGrid from '../components/TableGrid';
+import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import axios from 'axios';
 import Receipt from '../components/Receipt';
 
 const Cashier = () => {
     const {
-        allTables: tables,
+        activeTablesToDisplay,
         orderDict,
+        currentTime,
+        allTables,
         status,
         error
-    } = useConsolidatedOrders();
+    } = useConsolidatedOrders(null, true);
 
     const [selectedTable, setSelectedTable] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card' | 'cash'
     const [isProcessing, setIsProcessing] = useState(false);
     const [step, setStep] = useState(1); // 1: Preview, 2: Payment
 
-    const handleTableClick = (tableId) => {
-        const table = tables.find(t => t.id === tableId || t.id === parseInt(tableId));
-        if (table) {
-            setSelectedTable(table);
-            setPaymentMethod(null); // Reset selection each time modal opens
-            setStep(1); // Reset to preview step 
-        }
+    const handleTableClick = (table) => {
+        setSelectedTable(table);
+        setPaymentMethod(null); // Reset selection each time modal opens
+        setStep(1); // Reset to preview step 
     };
 
     const handlePrintBill = () => {
@@ -55,9 +54,9 @@ const Cashier = () => {
     };
 
     const activeOrdersCount = Object.keys(orderDict).length;
-    const emptyTablesCount = tables.filter(t => !orderDict[t.id.toString()]).length;
+    const emptyTablesCount = allTables.filter(t => !orderDict[t.id.toString()]).length;
 
-    if (status === 'loading' && tables.length === 0) {
+    if (status === 'loading' && allTables.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
@@ -78,19 +77,22 @@ const Cashier = () => {
                     </p>
 
                     <p className="item-info flex items-center gap-1 m-0 text-sm">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                        Bàn trống {emptyTablesCount}/{tables.length}
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 00-2 2v6a2 2 0 00-2-2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        Bàn trống {emptyTablesCount}/{allTables.length}
                     </p>
                 </div>
             </div>
 
             <div className="md-management-page__content py-8">
                 <div className="w-full max-w-[1200px] mx-auto px-[20px] flex flex-col gap-6">
-                    <TableGrid
-                        tables={tables}
-                        onTableClick={handleTableClick}
-                        error={error}
-                    />
+                    <div className="bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                        <ActiveOrderTableList
+                            tables={activeTablesToDisplay}
+                            orders={orderDict}
+                            currentTime={currentTime}
+                            onTableClick={handleTableClick}
+                        />
+                    </div>
                 </div>
             </div>
 
