@@ -14,7 +14,7 @@ class OrderService
     public function getActiveOrder($tableId)
     {
         return Order::where('table_id', $tableId)
-            ->whereIn('status', ['draft', 'pending', 'processing', 'completed'])
+            ->whereIn('status', ['draft', 'pending', 'processing'])
             ->with(['items.product', 'table'])
             ->first();
     }
