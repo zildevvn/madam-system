@@ -112,7 +112,7 @@ const Cashier = () => {
                                 <div>
                                     <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn thanh toán</p>
                                     <h4 className="m-0 text-lg font-black text-gray-900">
-                                        Bàn {selectedTable.name || selectedTable.id}
+                                        Bàn {(currentOrder?.mergedTables || selectedTable.name || selectedTable.id.toString()).replace(/^Bàn\s+/i, '')}
                                     </h4>
                                 </div>
                             </div>
@@ -125,18 +125,38 @@ const Cashier = () => {
                         </div>
 
                         {/* Items List  */}
-                        <div className="px-6 pt-5 pb-2 max-h-[30vh] overflow-y-auto hide-scrollbar">
+                        <div className="px-6 pt-5 pb-2 max-h-[40vh] overflow-y-auto hide-scrollbar">
                             {!currentOrder ? (
                                 <div className="text-center py-8 text-gray-400 italic text-sm">Bàn này chưa có món nào.</div>
                             ) : (
-                                <div className="space-y-1">
-                                    {currentOrder.items.map((item, idx) => (
-                                        <div key={idx} className="flex justify-between items-center py-2.5 border-b border-gray-50">
-                                            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                                <span className="text-sm font-bold text-gray-800 truncate">{item.name}</span>
-                                                <span className="shrink-0 text-[10px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md">×{item.quantity}</span>
-                                            </div>
-                                            <span className="text-sm font-black text-gray-900 ml-3">{(item.price * item.quantity).toLocaleString()}đ</span>
+                                <div className="space-y-4">
+                                    {/* Group items by tableId if it's a merged order */}
+                                    {Object.entries(
+                                        currentOrder.items.reduce((acc, item) => {
+                                            const tId = item.tableId || currentOrder.tableId;
+                                            if (!acc[tId]) acc[tId] = [];
+                                            acc[tId].push(item);
+                                            return acc;
+                                        }, {})
+                                    ).sort(([a], [b]) => a - b).map(([tId, tableItems]) => (
+                                        <div key={tId} className="space-y-1">
+                                            {currentOrder.mergedTables && (
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+                                                        Bàn {tId}
+                                                    </span>
+                                                    <div className="flex-1 h-[1px] bg-gray-100"></div>
+                                                </div>
+                                            )}
+                                            {tableItems.map((item, idx) => (
+                                                <div key={idx} className="flex justify-between items-center py-1.5">
+                                                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                                        <span className="text-sm font-bold text-gray-800 truncate">{item.name}</span>
+                                                        <span className="shrink-0 text-[10px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md">×{item.quantity}</span>
+                                                    </div>
+                                                    <span className="text-sm font-black text-gray-900 ml-3">{(item.price * item.quantity).toLocaleString()}đ</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
                                 </div>

@@ -62,4 +62,21 @@ class UserController extends Controller
             'message' => 'Login successful',
         ]);
     }
+
+    /**
+     * Update the user's role.
+     */
+    public function updateRole(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'role' => 'required|string|in:admin,order_staff,kitchen,bar,cashier'
+        ]);
+
+        $user = $this->userService->updateRole($id, $validated['role']);
+
+        return response()->json([
+            'data' => $user,
+            'message' => 'User role updated successfully'
+        ]);
+    }
 }

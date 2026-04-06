@@ -27,4 +27,12 @@ class UserService
 
         return $user;
     }
+
+    public function updateRole($id, $role)
+    {
+        $user = User::findOrFail($id);
+        $user->role = $role;
+        $user->save();
+        return $user;
+    }
 }

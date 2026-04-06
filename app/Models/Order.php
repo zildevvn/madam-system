@@ -11,12 +11,24 @@ class Order extends Model
 
     protected $fillable = [
         'table_id',
+        'user_id',
+        'cashier_id',
         'merged_tables',
         'order_type',
         'status',
         'total_price',
         'payment_method',
     ];
+
+    public function server()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function cashier()
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
 
     public function table()
     {
