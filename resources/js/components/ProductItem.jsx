@@ -13,7 +13,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                         Đơn giá: {new Intl.NumberFormat('vi-VN').format(item.price)}đ
                     </p>
                     {item.note && !showNote && (
-                        <p className="text-[12px] text-gray-500 italic mt-0.5 break-words line-clamp-2">
+                        <p className="product-item__note text-[12px] text-gray-500 italic mt-0.5 break-words line-clamp-2">
                             Ghi chú: {item.note}
                         </p>
                     )}
@@ -22,7 +22,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                     {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)}đ
                 </span>
             </div>
-            <div className={`flex items-center gap-2 mt-1 ${showNoteButton ? 'justify-between' : 'justify-end'}`}>
+            <div className={`product-item__actions flex items-center gap-2 mt-1 ${showNoteButton ? 'justify-between' : 'justify-end'}`}>
                 {showNoteButton && (
                     <button
                         onClick={() => setShowNote(!showNote)}
@@ -32,7 +32,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                         Ghi chú
                     </button>
                 )}
-                <div className="flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm">
+                <div className="product-item__quantity flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm">
                     <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
                         className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer"

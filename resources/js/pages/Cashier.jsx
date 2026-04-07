@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import axios from 'axios';
 import Receipt from '../components/Receipt';
+import ProductItem from '../components/ProductItem';
 
 const Cashier = () => {
     const {
@@ -19,10 +20,25 @@ const Cashier = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [step, setStep] = useState(1); // 1: Preview, 2: Payment
 
+    // Local editing state
+    const [draftItems, setDraftItems] = useState([]);
+    const [allProducts, setAllProducts] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showProductSearch, setShowProductSearch] = useState(false);
+
+    // Fetch products for "Add new items"
+    useEffect(() => {
+        axios.get('/api/products').then(res => setAllProducts(res.data)).catch(console.error);
+    }, []);
+
     const handleTableClick = (table) => {
+        const order = orderDict[table.id.toString()];
         setSelectedTable(table);
-        setPaymentMethod(null); // Reset selection each time modal opens
-        setStep(1); // Reset to preview step 
+        setPaymentMethod(null);
+        setStep(1);
+        setDraftItems(order ? [...order.items] : []);
+        setSearchQuery('');
+        setShowProductSearch(false);
     };
 
     const handlePrintBill = () => {
@@ -35,11 +51,26 @@ const Cashier = () => {
 
         setIsProcessing(true);
         try {
+            // 1. Persist changes to DB if draft items changed
+            await axios.post(`/api/orders/${order.id}/checkout`, {
+                items: draftItems.map(i => ({
+                    product_id: i.product_id || i.id, // now i.product_id is available from hook
+                    quantity: i.quantity,
+                    price: i.price,
+                    note: i.note,
+                    table_id: i.tableId || order.tableId
+                })),
+                merged_tables: currentOrder?.mergedTables || selectedTable.merged_tables || null
+            });
+
+            // 2. Complete payment
             await axios.post(`/api/orders/${order.id}/complete`, {
                 payment_method: paymentMethod
             });
+
             setSelectedTable(null);
             setPaymentMethod(null);
+            setDraftItems([]);
         } catch (err) {
             console.error('Payment failed:', err);
             alert('Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.');
@@ -47,6 +78,51 @@ const Cashier = () => {
             setIsProcessing(false);
         }
     };
+
+    const handleUpdateQuantity = (productId, quantity) => {
+        if (quantity < 1) {
+            setDraftItems(prev => prev.filter(i => (i.product_id || i.id) !== productId));
+        } else {
+            setDraftItems(prev => prev.map(i =>
+                (i.product_id || i.id) === productId ? { ...i, quantity } : i
+            ));
+        }
+    };
+
+    const handleUpdateNote = (productId, note) => {
+        setDraftItems(prev => prev.map(i =>
+            (i.product_id || i.id) === productId ? { ...i, note } : i
+        ));
+    };
+
+    const handleAddProduct = (product) => {
+        const existing = draftItems.find(i => (i.product_id || i.id) === product.id);
+        if (existing) {
+            handleUpdateQuantity(product.id, existing.quantity + 1);
+        } else {
+            setDraftItems(prev => [...prev, {
+                id: product.id,
+                product_id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+                note: '',
+                tableId: selectedTable.id
+            }]);
+        }
+        setShowProductSearch(false);
+        setSearchQuery('');
+    };
+
+    const draftTotal = useMemo(() => {
+        return draftItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    }, [draftItems]);
+
+    const filteredProducts = useMemo(() => {
+        if (!searchQuery) return [];
+        const query = searchQuery.toLowerCase();
+        return allProducts.filter(p => p.name.toLowerCase().includes(query)).slice(0, 5);
+    }, [allProducts, searchQuery]);
 
     const getOrderTotal = (order) => {
         if (!order) return 0;
@@ -67,25 +143,10 @@ const Cashier = () => {
     const currentOrder = selectedTable ? orderDict[selectedTable.id.toString()] : null;
 
     return (
-        <div className="md-management-page pb-20">
-            {/* Header Info Bar (matching StaffOrder layout) */}
-            <div className="bg-white py-3 border-t border-b border-gray-200 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 w-full max-w-[1200px] mx-auto px-[20px] justify-between">
-                    <p className="item-info flex items-center gap-1 m-0 text-sm">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                        Tổng đơn chờ thanh toán: {activeOrdersCount}
-                    </p>
-
-                    <p className="item-info flex items-center gap-1 m-0 text-sm">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 00-2 2v6a2 2 0 00-2-2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                        Bàn trống {emptyTablesCount}/{allTables.length}
-                    </p>
-                </div>
-            </div>
-
+        <div className="cashier-page md-management-page pb-20">
             <div className="md-management-page__content py-8">
                 <div className="w-full max-w-[1200px] mx-auto px-[20px] flex flex-col gap-6">
-                    <div className="bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                    <div className="cashier-page__list-tables bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                         <ActiveOrderTableList
                             tables={activeTablesToDisplay}
                             orders={orderDict}
@@ -126,21 +187,58 @@ const Cashier = () => {
 
                         {/* Items List  */}
                         <div className="px-6 pt-5 pb-2 max-h-[40vh] overflow-y-auto hide-scrollbar">
-                            {!currentOrder ? (
-                                <div className="text-center py-8 text-gray-400 italic text-sm">Bàn này chưa có món nào.</div>
+                            <div className="mb-4 relative">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Điều chỉnh món</p>
+                                    <button
+                                        onClick={() => setShowProductSearch(!showProductSearch)}
+                                        className="ml-auto w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center border-none cursor-pointer hover:bg-orange-600 transition-colors"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" /></svg>
+                                    </button>
+                                </div>
+                                {showProductSearch && (
+                                    <div className="relative mb-4">
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            placeholder="Tìm món thêm..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+                                        />
+                                        {filteredProducts.length > 0 && (
+                                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-10 py-1 overflow-hidden">
+                                                {filteredProducts.map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        onClick={() => handleAddProduct(p)}
+                                                        className="w-full px-4 py-2.5 text-left hover:bg-orange-50 flex items-center justify-between border-none bg-transparent cursor-pointer transition-colors group"
+                                                    >
+                                                        <span className="text-sm font-bold text-gray-700 group-hover:text-orange-600">{p.name}</span>
+                                                        <span className="text-xs font-black text-gray-400">{p.price.toLocaleString()}đ</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {draftItems.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400 italic text-sm">Chưa có món nào.</div>
                             ) : (
-                                <div className="space-y-4">
-                                    {/* Group items by tableId if it's a merged order */}
+                                <div className="space-y-1">
                                     {Object.entries(
-                                        currentOrder.items.reduce((acc, item) => {
-                                            const tId = item.tableId || currentOrder.tableId;
+                                        draftItems.reduce((acc, item) => {
+                                            const tId = item.tableId || selectedTable.id;
                                             if (!acc[tId]) acc[tId] = [];
                                             acc[tId].push(item);
                                             return acc;
                                         }, {})
                                     ).sort(([a], [b]) => a - b).map(([tId, tableItems]) => (
                                         <div key={tId} className="space-y-1">
-                                            {currentOrder.mergedTables && (
+                                            {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
                                                         Bàn {tId}
@@ -149,13 +247,13 @@ const Cashier = () => {
                                                 </div>
                                             )}
                                             {tableItems.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between items-center py-1.5">
-                                                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                                        <span className="text-sm font-bold text-gray-800 truncate">{item.name}</span>
-                                                        <span className="shrink-0 text-[10px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md">×{item.quantity}</span>
-                                                    </div>
-                                                    <span className="text-sm font-black text-gray-900 ml-3">{(item.price * item.quantity).toLocaleString()}đ</span>
-                                                </div>
+                                                <ProductItem
+                                                    key={item.product_id || item.id}
+                                                    item={item}
+                                                    onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, q)}
+                                                    onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, n)}
+                                                    showNoteButton={true}
+                                                />
                                             ))}
                                         </div>
                                     ))}
@@ -164,16 +262,16 @@ const Cashier = () => {
                         </div>
 
                         {/* Total Row */}
-                        <div className="mx-6 mb-5 mt-3 flex justify-between items-center bg-orange-50 rounded-2xl px-5 py-3">
+                        <div className="mx-3 mb-3 mt-3 flex justify-between items-center bg-orange-50 rounded-xl px-2 py-2">
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-gray-700 text-sm">Tổng cộng</span>
-                                {currentOrder && (
+                                {draftItems.length > 0 && (
                                     <span className="text-[10px] font-black text-orange-500 bg-orange-100 px-2 py-0.5 rounded-full">
-                                        {currentOrder.items.reduce((s, i) => s + i.quantity, 0)} món
+                                        {draftItems.reduce((s, i) => s + i.quantity, 0)} món
                                     </span>
                                 )}
                             </div>
-                            <span className="text-lg font-black text-orange-500">{getOrderTotal(currentOrder).toLocaleString()}đ</span>
+                            <span className="text-md font-black text-orange-500">{draftTotal.toLocaleString()}đ</span>
                         </div>
 
                         {/* Payment Methods - Step 2 Only */}
@@ -206,7 +304,7 @@ const Cashier = () => {
                         <div className="px-6 pb-6 pt-4 grid grid-cols-2 gap-3">
                             <button
                                 onClick={handlePrintBill}
-                                className="mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer border-none"
+                                className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer border-none"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2m8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                 In hóa đơn
@@ -214,18 +312,18 @@ const Cashier = () => {
 
                             {step === 1 ? (
                                 <button
-                                    disabled={!currentOrder}
+                                    disabled={draftItems.length === 0}
                                     onClick={() => setStep(2)}
-                                    className={`mdt-btn cursor-pointer ${!currentOrder ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                    className={`mdt-btn cursor-pointer ${draftItems.length === 0 ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
                                 >
                                     Tiếp theo
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                                 </button>
                             ) : (
                                 <button
-                                    disabled={!currentOrder || !paymentMethod || isProcessing}
+                                    disabled={draftItems.length === 0 || !paymentMethod || isProcessing}
                                     onClick={() => handlePayment(selectedTable.id)}
-                                    className={`mdt-btn cursor-pointer ${(!currentOrder || !paymentMethod || isProcessing) ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                    className={`mdt-btn cursor-pointer ${(draftItems.length === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
                                 >
                                     {isProcessing ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -241,9 +339,14 @@ const Cashier = () => {
             )}
 
             {/* Hidden Print Area */}
-            {currentOrder && (
+            {selectedTable && (
                 <Receipt
-                    order={currentOrder}
+                    order={{
+                        ...currentOrder,
+                        items: draftItems,
+                        total_price: draftTotal,
+                        tableId: selectedTable.id
+                    }}
                     tableName={selectedTable?.name}
                 />
             )}
