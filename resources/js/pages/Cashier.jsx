@@ -24,9 +24,6 @@ const Cashier = () => {
         setSelectedTable(null);
     };
 
-    const activeOrdersCount = Object.keys(orderDict).length;
-    const emptyTablesCount = allTables.filter(t => !orderDict[t.id.toString()]).length;
-
     if (status === 'loading' && allTables.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">

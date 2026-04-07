@@ -15,13 +15,13 @@ class OrderService
     {
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
-            ->with(['items.product', 'table', 'server', 'cashier'])
+            ->with(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name'])
             ->first();
     }
 
     public function getOrder($id)
     {
-        return Order::with(['items.product', 'table', 'server', 'cashier'])->findOrFail($id);
+        return Order::with(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name'])->findOrFail($id);
     }
 
     public function cancelOrder($id)
@@ -53,7 +53,7 @@ class OrderService
         $order->total_price = 0;
         $order->save();
 
-        return $order->load('items.product', 'table', 'server', 'cashier');
+        return $order->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
     }
 
     public function checkoutOrder($orderId, array $items, $mergedTables = null)
@@ -118,7 +118,7 @@ class OrderService
         // Broadcast AFTER transaction commits to avoid race conditions
         try {
             $orderObj = $result['order'];
-            $orderObj->load(['items.product', 'table', 'server', 'cashier']);
+            $orderObj->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during checkout: ' . $e->getMessage());
@@ -134,7 +134,7 @@ class OrderService
         $item->save();
 
         $order = $item->order;
-        $order->load(['items.product', 'table', 'server', 'cashier']);
+        $order->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
 
         // Broadcast the real-time event
         try {
@@ -176,7 +176,7 @@ class OrderService
             return $order;
         });
 
-        $result->load(['items.product', 'table', 'server', 'cashier']);
+        $result->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
 
         try {
             // Broadcast so other views (StaffOrder, Kitchen) reflect that this table is now empty
@@ -214,7 +214,7 @@ class OrderService
             return $order;
         });
 
-        $result->load(['items.product', 'table']);
+        $result->load(['items.product:id,name,price', 'table:id,name']);
 
         try {
             broadcast(new OrderUpdated($result, 'order_updated'));
