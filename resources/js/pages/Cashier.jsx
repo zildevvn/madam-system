@@ -47,10 +47,12 @@ const Cashier = () => {
                 <div className="w-full max-w-[1200px] mx-auto px-[20px] flex flex-col gap-6">
                     <div className="cashier-page__list-tables bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                         <ActiveOrderTableList
+                            title="Bàn đang có khách"
                             tables={activeTablesToDisplay}
                             orders={orderDict}
                             currentTime={currentTime}
                             onTableClick={handleTableClick}
+                            showSimpleView={true}
                         />
                     </div>
                 </div>

@@ -9,7 +9,8 @@ const ActiveOrderTableList = ({
     title = "Danh sách bàn",
     className = "",
     filterType = null, // 'food' or 'drink'
-    showNewOrderHighlight = false
+    showNewOrderHighlight = false,
+    showSimpleView = false
 }) => {
     // Standardized: orders must be a dictionary keyed by table ID
     const getOrderForTable = (tableId) => {
@@ -33,6 +34,10 @@ const ActiveOrderTableList = ({
     const getTableStatus = (tableId) => {
         const order = getOrderForTable(tableId);
         if (!order) return { statusClass: "", duration: "BÀN TRỐNG" };
+
+        if (showSimpleView) {
+            return { statusClass: "is-busy", duration: "" };
+        }
 
         if (isOrderServed(order)) return { statusClass: "mdt-bg-green !text-white", duration: "HOÀN TẤT" };
 
@@ -59,12 +64,15 @@ const ActiveOrderTableList = ({
         return { statusClass, duration: `${diff} PHÚT` };
     };
 
-    const activeTables = tables.filter(table => !!getOrderForTable(table.id));
+    const activeTables = tables.filter(table => {
+        const order = getOrderForTable(table.id);
+        return order && order.items && order.items.length > 0;
+    });
 
     return (
         <div className={`flex flex-col lg:overflow-hidden lg:h-full ${className}`}>
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white text-orange-500">
-                <h5 className="m-0">{title}</h5>
+                <h5 className="m-0 font-black">{title}</h5>
                 <span className="text-xs font-black bg-orange-100 px-3 py-1 rounded-full">
                     {activeTables.length} BÀN
                 </span>
@@ -82,15 +90,19 @@ const ActiveOrderTableList = ({
                             <div
                                 key={table.id}
                                 onClick={() => onTableClick && onTableClick(table)}
-                                className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
+                                className={`bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
                             >
-                                <span className={`text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
+                                <span className={`text-[20px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
                                     {order?.mergedTables || table.name?.replace(/[^0-9]/g, '') || table.id}
                                 </span>
-                                <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
-                                <span className={`text-[8px] font-bold uppercase tracking-wider ${!statusClass ? 'text-gray-400' : ''}`}>
-                                    {duration}
-                                </span>
+                                {duration && (
+                                    <>
+                                        <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
+                                        <span className={`text-[8px] font-bold uppercase tracking-wider ${!statusClass ? 'text-gray-400' : ''}`}>
+                                            {duration}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         );
                     }}

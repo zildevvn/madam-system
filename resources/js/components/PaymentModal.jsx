@@ -194,7 +194,7 @@ const PaymentModal = ({
                             value={discountValue || ''}
                             onChange={(e) => setDiscountValue(Math.max(0, parseFloat(e.target.value) || 0))}
                             placeholder="Nhập mức giảm..."
-                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
+                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-xs uppercase">
                             {discountType === 'percent' ? '%' : 'vnđ'}
@@ -203,7 +203,7 @@ const PaymentModal = ({
                 </div>
 
                 {/* Total Row */}
-                <div className="mx-3 flex flex-col bg-orange-50 rounded-2xl px-4 py-3 gap-1">
+                <div className="mx-3 flex flex-col bg-orange-50 rounded-2xl px-3 py-2 gap-1">
                     {discountAmount > 0 && (
                         <div className="flex justify-between items-center opacity-60">
                             <span className="text-xs font-bold text-gray-600">Tạm tính</span>
@@ -219,7 +219,7 @@ const PaymentModal = ({
                                 </span>
                             )}
                         </div>
-                        <span className="text-xl font-black text-orange-500">{finalTotal.toLocaleString()}đ</span>
+                        <span className="text-lg font-black text-orange-500">{finalTotal.toLocaleString()}đ</span>
                     </div>
                     {discountAmount > 0 && (
                         <div className="flex justify-between items-center">
