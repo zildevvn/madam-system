@@ -24,6 +24,10 @@ const orderApi = {
   updateItemStatus: async (itemId, status) => {
     const response = await axios.put(`/api/order-items/${itemId}/status`, { status });
     return response.data;
+  },
+  completeOrder: async (orderId, paymentMethod) => {
+    const response = await axios.post(`/api/orders/${orderId}/complete`, { payment_method: paymentMethod });
+    return response.data;
   }
 };
 

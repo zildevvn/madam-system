@@ -10,6 +10,14 @@ class ProductController extends Controller
 {
     public function index()
     {
-        return response()->json(Product::with('category')->get());
+        $products = Product::select('id', 'name', 'price', 'category_id', 'image')
+            ->with(['category:id,name'])
+            ->get();
+
+        return response()->json([
+            'data' => $products,
+            'message' => 'Success',
+            'errors' => null
+        ]);
     }
 }

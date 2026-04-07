@@ -150,21 +150,27 @@ class OrderService
     {
         $result = DB::transaction(function () use ($orderId, $data) {
             $order = Order::findOrFail($orderId);
-            $order->update([
-                'status' => 'completed',
-                'payment_method' => $data['payment_method'] ?? null,
-                'cashier_id' => $data['cashier_id'] ?? null,
-            ]);
 
-            // Free the primary table
-            if ($order->table_id) {
-                Table::where('id', $order->table_id)->update(['status' => 'empty']);
-            }
-
-            // Free merged tables if any (e.g. "3-4-5")
+            // Identify all involved table IDs in the merge group
+            $involvedTableIds = [$order->table_id];
             if ($order->merged_tables) {
-                $ids = explode('-', $order->merged_tables);
-                Table::whereIn('id', $ids)->update(['status' => 'empty']);
+                $mergedIds = explode('-', $order->merged_tables);
+                $involvedTableIds = array_merge($involvedTableIds, $mergedIds);
+            }
+            $involvedTableIds = array_unique(array_filter($involvedTableIds));
+
+            // 1. Finalize all active orders for these tables with the same payment info
+            Order::whereIn('table_id', $involvedTableIds)
+                ->whereIn('status', ['draft', 'pending', 'processing'])
+                ->update([
+                    'status' => 'completed',
+                    'payment_method' => $data['payment_method'] ?? null,
+                    'cashier_id' => $data['cashier_id'] ?? null,
+                ]);
+
+            // 2. Free all tables in the group
+            if (!empty($involvedTableIds)) {
+                Table::whereIn('id', $involvedTableIds)->update(['status' => 'empty']);
             }
 
             return $order;
