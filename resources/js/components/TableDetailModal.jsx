@@ -8,6 +8,32 @@ const TableDetailModal = ({
     onClose,
     onToggleStatus
 }) => {
+    // 1. Consolidate items: merge if same product + same note + same status
+    const consolidatedItems = React.useMemo(() => {
+        const groups = {};
+        
+        orderItems.forEach(item => {
+            // Using a composite key to identify identical items
+            const key = `${item.product_id || item.name}-${item.note || ''}-${item.status}`;
+            
+            if (groups[key]) {
+                groups[key].quantity += item.quantity;
+                groups[key].allIds = [...(groups[key].allIds || []), ...(item.allIds || [item.id])];
+                // Keep the oldest orderTime for the "elapsed time" display
+                if (item.orderTime < groups[key].orderTime) {
+                    groups[key].orderTime = item.orderTime;
+                }
+            } else {
+                groups[key] = {
+                    ...item,
+                    allIds: item.allIds || [item.id]
+                };
+            }
+        });
+        
+        return Object.values(groups);
+    }, [orderItems]);
+
     // No local state needed — orderItems comes directly from Redux via useConsolidatedOrders.
     // The parent (Bills) dispatches a patchItemsStatus optimistic Redux action on toggle,
     // which immediately re-renders this component with the updated status.
@@ -33,7 +59,7 @@ const TableDetailModal = ({
 
                 <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
                     <div className="space-y-4">
-                        {orderItems.map((item, idx) => {
+                        {consolidatedItems.map((item, idx) => {
                             // Single source of truth: read status directly from Redux-backed prop.
                             const isCurrentlyDone = item.status === 'served';
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
@@ -73,7 +99,7 @@ const TableDetailModal = ({
                                             </div>
                                             {item.note && (
                                                 <div className="mt-2 bg-gray-50 border border-gray-100 rounded-xl p-2 flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                                                    <svg className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                    <svg className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" /></svg>
                                                     <p className="m-0 text-[11px] font-bold text-gray-500 leading-tight italic">
                                                         {item.note}
                                                     </p>
