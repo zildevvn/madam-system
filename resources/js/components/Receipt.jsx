@@ -1,11 +1,17 @@
 import React from 'react';
 
-const Receipt = ({ order, tableName }) => {
+const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }) => {
     if (!order) return null;
 
-    const totalAmount = order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const subtotal = order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
     const totalQuantity = order.items.reduce((total, item) => total + item.quantity, 0);
     const orderItems = order.items || [];
+
+    const discountAmount = discountType === 'percent' 
+        ? Math.min(subtotal, (subtotal * discountValue) / 100) 
+        : Math.min(subtotal, discountValue);
+    
+    const finalTotal = Math.max(0, subtotal - discountAmount);
 
     return (
         <div id="receipt-print-area" className="receipt-print-only">
@@ -97,14 +103,20 @@ const Receipt = ({ order, tableName }) => {
                         ))}
                         <tr className="receipt-total-row">
                             <td align="left">Tiền hàng ({totalQuantity})</td>
-                            <td colSpan="2" align="right">{totalAmount.toLocaleString()}</td>
+                            <td colSpan="2" align="right">{subtotal.toLocaleString()}</td>
                         </tr>
+                        {discountAmount > 0 && (
+                            <tr className="receipt-total-row">
+                                <td align="left">Giảm giá {discountType === 'percent' ? `(${discountValue}%)` : ''}</td>
+                                <td colSpan="2" align="right">-{discountAmount.toLocaleString()}</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
 
                 <div className="receipt-final">
                     <span>THANH TOÁN</span>
-                    <span className="receipt-final-amount">{totalAmount.toLocaleString()} đ</span>
+                    <span className="receipt-final-amount">{finalTotal.toLocaleString()} đ</span>
                 </div>
 
                 <div className="receipt-footer">
@@ -114,5 +126,4 @@ const Receipt = ({ order, tableName }) => {
         </div>
     );
 };
-
 export default Receipt;

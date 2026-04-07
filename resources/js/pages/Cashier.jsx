@@ -15,13 +15,20 @@ const Cashier = () => {
     } = useConsolidatedOrders(null, true);
 
     const [selectedTable, setSelectedTable] = useState(null);
+    const [discountType, setDiscountType] = useState('fixed'); // 'fixed' | 'percent'
+    const [discountValue, setDiscountValue] = useState(0);
 
     const handleTableClick = (table) => {
         setSelectedTable(table);
+        // Reset discount when switching tables
+        setDiscountType('fixed');
+        setDiscountValue(0);
     };
 
     const handlePaymentSuccess = () => {
         setSelectedTable(null);
+        setDiscountType('fixed');
+        setDiscountValue(0);
     };
 
     if (status === 'loading' && allTables.length === 0) {
@@ -56,6 +63,10 @@ const Cashier = () => {
                     currentOrder={currentOrder}
                     onClose={() => setSelectedTable(null)}
                     onPaymentSuccess={handlePaymentSuccess}
+                    discountType={discountType}
+                    setDiscountType={setDiscountType}
+                    discountValue={discountValue}
+                    setDiscountValue={setDiscountValue}
                 />
             )}
 
@@ -65,6 +76,8 @@ const Cashier = () => {
                     <Receipt
                         order={currentOrder}
                         tableName={selectedTable?.name}
+                        discountType={discountType}
+                        discountValue={discountValue}
                     />
                 </div>
             )}

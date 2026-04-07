@@ -38,17 +38,17 @@ const TableGrid = ({
                 // Default StaffOrder-style card implementation (Logic remains intact)
                 const groupKey = tableIdToGroupKey[table.id.toString()];
                 const isBusy = !!table.active_order || !!groupKey;
-                
+
                 // Identify if this table is the "primary" in a merge group
                 // In string-based merging, the first ID in the dash-separated string is the primary
                 const isPrimary = groupKey ? groupKey.split('-')[0] === table.id.toString() : true;
 
                 const statusText = (!isBusy)
                     ? 'Bàn Trống'
-                    : (!isPrimary 
-                        ? 'Đang gộp' 
-                        : (table.active_order?.created_at 
-                            ? getElapsed(table.active_order.created_at) 
+                    : (!isPrimary
+                        ? 'Đang gộp'
+                        : (table.active_order?.created_at
+                            ? getElapsed(table.active_order.created_at)
                             : 'Đang xử lý'));
 
                 return (

@@ -2,13 +2,13 @@ import React from 'react';
 import ActiveOrderTableList from '../ActiveOrderTableList';
 import DelayWarnings from '../DelayWarnings';
 
-const BillsContent = ({ 
-    activeTablesToDisplay, 
-    activeOrders, 
-    currentTime, 
-    handleTableClick, 
-    allTables, 
-    error 
+const BillsContent = ({
+    activeTablesToDisplay,
+    activeOrders,
+    currentTime,
+    handleTableClick,
+    allTables,
+    error
 }) => {
     return (
         <div className="md-management-page__content py-4 md:py-8">

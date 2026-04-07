@@ -159,11 +159,32 @@ class OrderService
             }
             $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
-            // 1. Finalize all active orders for these tables with the same payment info
+            // 1. Calculate discount for the primary order
+            $subtotal = $order->total_price;
+            $discountType = $data['discount_type'] ?? null;
+            $discountValue = $data['discount_value'] ?? 0;
+            $discountAmount = 0;
+
+            if ($discountType === 'percent') {
+                $discountAmount = floor(($subtotal * $discountValue) / 100);
+            } elseif ($discountType === 'fixed') {
+                $discountAmount = $discountValue;
+            }
+            
+            // Ensure discount doesn't exceed subtotal
+            $discountAmount = min($subtotal, $discountAmount);
+            $finalPrice = $subtotal - $discountAmount;
+
+            // 2. Finalize all active orders for these tables with the same payment info
             Order::whereIn('table_id', $involvedTableIds)
                 ->whereIn('status', ['draft', 'pending', 'processing'])
                 ->update([
                     'status' => 'completed',
+                    'subtotal' => $subtotal,
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
+                    'discount_amount' => $discountAmount,
+                    'total_price' => $finalPrice,
                     'payment_method' => $data['payment_method'] ?? null,
                     'cashier_id' => $data['cashier_id'] ?? null,
                 ]);
