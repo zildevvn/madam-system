@@ -46,12 +46,12 @@ const ActiveOrderTableList = ({
         else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
         else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
 
-        // Add highlight for new orders (items added within the last 2 minutes)
+        // Add highlight for new orders (items added within the last 30 seconds)
         if (showNewOrderHighlight && order.items && order.items.length > 0) {
-            const minDiff = Math.min(...order.items.map(item => 
-                Math.floor((currentTime - new Date(item.orderTime)) / 60000)
+            const minDiffSeconds = Math.min(...order.items.map(item => 
+                (currentTime - new Date(item.orderTime)) / 1000
             ));
-            if (minDiff < 2) {
+            if (minDiffSeconds < 30) {
                 statusClass += " is-new-order";
             }
         }

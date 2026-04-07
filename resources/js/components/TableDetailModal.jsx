@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const TableDetailModal = ({
     tableId,
@@ -11,11 +11,11 @@ const TableDetailModal = ({
     // 1. Consolidate items: merge if same product + same note + same status
     const consolidatedItems = React.useMemo(() => {
         const groups = {};
-        
+
         orderItems.forEach(item => {
             // Using a composite key to identify identical items
             const key = `${item.product_id || item.name}-${item.note || ''}-${item.status}`;
-            
+
             if (groups[key]) {
                 groups[key].quantity += item.quantity;
                 groups[key].allIds = [...(groups[key].allIds || []), ...(item.allIds || [item.id])];
@@ -30,16 +30,36 @@ const TableDetailModal = ({
                 };
             }
         });
-        
+
         return Object.values(groups);
     }, [orderItems]);
 
-    // No local state needed — orderItems comes directly from Redux via useConsolidatedOrders.
-    // The parent (Bills) dispatches a patchItemsStatus optimistic Redux action on toggle,
-    // which immediately re-renders this component with the updated status.
-    const handleToggle = (item) => {
+    // 2. Transactional state: track internal changes before confirming
+    const [localChanges, setLocalChanges] = useState({}); // key -> status
+
+    const getItemKey = (item) => `${item.product_id || item.name}-${item.note || ''}-${item.status}`;
+
+    const handleLocalToggle = (item) => {
         if (item.status === 'served') return;
-        onToggleStatus(item, 'served');
+        const key = getItemKey(item);
+        setLocalChanges(prev => ({
+            ...prev,
+            [key]: prev[key] === 'served' ? 'pending' : 'served'
+        }));
+    };
+
+    const handleConfirm = () => {
+        // Apply all local changes to the parent
+        consolidatedItems.forEach(item => {
+            const key = getItemKey(item);
+            const currentStatus = localChanges[key];
+            
+            // Only call update if specifically changed to 'served' in this modal session
+            if (currentStatus === 'served' && item.status !== 'served') {
+                onToggleStatus(item, 'served');
+            }
+        });
+        onClose();
     };
 
     return (
@@ -51,7 +71,7 @@ const TableDetailModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
+                        className="btn-close p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
@@ -60,14 +80,14 @@ const TableDetailModal = ({
                 <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
                     <div className="space-y-4">
                         {consolidatedItems.map((item, idx) => {
-                            // Single source of truth: read status directly from Redux-backed prop.
-                            const isCurrentlyDone = item.status === 'served';
+                            const key = getItemKey(item);
+                            const isCurrentlyDone = (localChanges[key] || item.status) === 'served';
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
 
                             return (
                                 <div key={idx}
                                     className={`flex justify-between items-start p-2 rounded-2xl border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group cursor-pointer'}`}
-                                    onClick={() => !isCurrentlyDone && handleToggle(item)}
+                                    onClick={() => handleLocalToggle(item)}
                                 >
                                     <div className="flex items-center gap-4 flex-1">
                                         <div className={`w-4 h-4 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isCurrentlyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}>
@@ -115,8 +135,8 @@ const TableDetailModal = ({
 
                 <div className="py-4 px-2 md:p-6 pt-0">
                     <button
-                        onClick={onClose}
-                        className="w-full mdt-btn"
+                        onClick={handleConfirm}
+                        className="w-full mdt-btn btn-confirm"
                     >
                         Xong
                     </button>

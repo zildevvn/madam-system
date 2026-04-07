@@ -96,7 +96,7 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                     };
 
                     if (groupByCompositeKey) {
-                        const compositeKey = `${item.product_id}-${itemData.note}-${item.table_id}`;
+                        const compositeKey = `${item.product_id}-${itemData.note}-${item.status}`;
                         if (group.itemsMap[compositeKey]) {
                             group.itemsMap[compositeKey].quantity += itemData.quantity;
                             group.itemsMap[compositeKey].allIds.push(item.id);
