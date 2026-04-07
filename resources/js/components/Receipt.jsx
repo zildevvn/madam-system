@@ -22,16 +22,16 @@ const Receipt = ({ order, tableName }) => {
                     </div>
                     <div className="receipt-meta-row">
                         <span>Giờ vào</span>
-                        <span>{new Intl.DateTimeFormat('vi-VN', { 
-                            hour: '2-digit', minute: '2-digit', 
-                            day: '2-digit', month: '2-digit', year: 'numeric' 
+                        <span>{new Intl.DateTimeFormat('vi-VN', {
+                            hour: '2-digit', minute: '2-digit',
+                            day: '2-digit', month: '2-digit', year: 'numeric'
                         }).format(new Date(order.startTime || order.created_at)).replace(',', '')}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>Giờ in</span>
-                        <span>{new Intl.DateTimeFormat('vi-VN', { 
-                            hour: '2-digit', minute: '2-digit', 
-                            day: '2-digit', month: '2-digit', year: 'numeric' 
+                        <span>{new Intl.DateTimeFormat('vi-VN', {
+                            hour: '2-digit', minute: '2-digit',
+                            day: '2-digit', month: '2-digit', year: 'numeric'
                         }).format(new Date()).replace(',', '')}</span>
                     </div>
                     <div className="receipt-meta-row">

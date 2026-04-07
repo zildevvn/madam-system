@@ -18,8 +18,11 @@ Route::put('/orders/{id}/table', [OrderController::class, 'updateTable']);
 Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
 
 use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\API\ProductController;
 
 Route::post('/login', [UserController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
 Route::get('/users/{id}', [UserController::class, 'show']);
 Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
+
+Route::get('/products', [ProductController::class, 'index']);

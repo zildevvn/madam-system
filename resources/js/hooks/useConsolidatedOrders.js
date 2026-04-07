@@ -89,6 +89,7 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                         done: item.status === 'ready' || item.status === 'served',
                         orderTime: new Date(item.created_at),
                         product: item.product,
+                        product_id: item.product_id,
                         type: productType || filterType,
                         note: item.note || '',
                         tableId: item.table_id // Preserve the original table ID
