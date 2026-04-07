@@ -16,7 +16,11 @@ class Order extends Model
         'merged_tables',
         'order_type',
         'status',
+        'subtotal',
         'total_price',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
         'payment_method',
     ];
 

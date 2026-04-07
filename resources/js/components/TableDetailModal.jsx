@@ -53,7 +53,7 @@ const TableDetailModal = ({
         consolidatedItems.forEach(item => {
             const key = getItemKey(item);
             const currentStatus = localChanges[key];
-            
+
             // Only call update if specifically changed to 'served' in this modal session
             if (currentStatus === 'served' && item.status !== 'served') {
                 onToggleStatus(item, 'served');

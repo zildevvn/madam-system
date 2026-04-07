@@ -50,10 +50,10 @@ const tableSlice = createSlice({
         state.status = 'succeeded';
         const tables = action.payload;
         tables.forEach(table => {
-            // Skip tables that have in-flight optimistic patches.
-            // Their confirmed data will arrive via updateItemStatusAsync.fulfilled addMatcher.
-            if (state.pendingTableIds[table.id] > 0) return;
-            state.byId[table.id] = table;
+          // Skip tables that have in-flight optimistic patches.
+          // Their confirmed data will arrive via updateItemStatusAsync.fulfilled addMatcher.
+          if (state.pendingTableIds[table.id] > 0) return;
+          state.byId[table.id] = table;
         });
         state.allIds = tables.map(table => table.id);
       })
@@ -68,55 +68,55 @@ const tableSlice = createSlice({
       .addMatcher(
         isAnyOf(updateItemStatusAsync.fulfilled),
         (state, action) => {
-            const order = action.payload;
-            if (!order || !order.table_id) return;
-            const tableId = order.table_id;
-            if (!state.byId[tableId]) return;
+          const order = action.payload;
+          if (!order || !order.table_id) return;
+          const tableId = order.table_id;
+          if (!state.byId[tableId]) return;
 
-            // Clear one pending count for this table
-            if (state.pendingTableIds[tableId] > 0) {
-                state.pendingTableIds[tableId] -= 1;
-            }
+          // Clear one pending count for this table
+          if (state.pendingTableIds[tableId] > 0) {
+            state.pendingTableIds[tableId] -= 1;
+          }
 
-            const existingOrder = state.byId[tableId].active_order;
-            if (!existingOrder) {
-                state.byId[tableId].active_order = order;
-                return;
-            }
-            // Surgical patch with server-confirmed statuses
-            if (order.items && existingOrder.items) {
-                order.items.forEach(updatedItem => {
-                    const idx = existingOrder.items.findIndex(i => i.id === updatedItem.id);
-                    if (idx !== -1) {
-                        existingOrder.items[idx] = updatedItem;
-                    } else {
-                        existingOrder.items.push(updatedItem);
-                    }
-                });
-            }
+          const existingOrder = state.byId[tableId].active_order;
+          if (!existingOrder) {
+            state.byId[tableId].active_order = order;
+            return;
+          }
+          // Surgical patch with server-confirmed statuses
+          if (order.items && existingOrder.items) {
+            order.items.forEach(updatedItem => {
+              const idx = existingOrder.items.findIndex(i => i.id === updatedItem.id);
+              if (idx !== -1) {
+                existingOrder.items[idx] = updatedItem;
+              } else {
+                existingOrder.items.push(updatedItem);
+              }
+            });
+          }
         }
       )
       .addMatcher(
         isAnyOf(updateItemStatusAsync.rejected),
         (state, action) => {
-            // On failure, clear the pending guard.
-            // Bills.jsx will dispatch a revert patchItemsStatus separately.
-            const tableId = action.meta?.arg?.tableId;
-            if (tableId && state.pendingTableIds[tableId] > 0) {
-                state.pendingTableIds[tableId] -= 1;
-            }
+          // On failure, clear the pending guard.
+          // Bills.jsx will dispatch a revert patchItemsStatus separately.
+          const tableId = action.meta?.arg?.tableId;
+          if (tableId && state.pendingTableIds[tableId] > 0) {
+            state.pendingTableIds[tableId] -= 1;
+          }
         }
       )
       .addMatcher(
         isAnyOf(checkoutOrderAsync.fulfilled, fetchActiveOrderAsync.fulfilled),
         (state, action) => {
-            const order = action.payload;
-            if (order && order.table_id && state.byId[order.table_id]) {
-                state.byId[order.table_id].active_order = order;
-                if (action.type === checkoutOrderAsync.fulfilled.type) {
-                    state.byId[order.table_id].status = 'busy';
-                }
+          const order = action.payload;
+          if (order && order.table_id && state.byId[order.table_id]) {
+            state.byId[order.table_id].active_order = order;
+            if (action.type === checkoutOrderAsync.fulfilled.type) {
+              state.byId[order.table_id].status = 'busy';
             }
+          }
         }
       );
   },
@@ -171,13 +171,13 @@ export const selectBusyTables = createSelector(
 
     return tables.filter(t => {
       if (!t.active_order) {
-          // If table has no order but is part of a merge, it's busy but consolidated (hidden in list)
-          return false;
+        // If table has no order but is part of a merge, it's busy but consolidated (hidden in list)
+        return false;
       }
       const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
       if (groupKey.includes('-')) {
-          const primaryId = groupKey.split('-')[0];
-          if (t.id.toString() !== primaryId) return false;
+        const primaryId = groupKey.split('-')[0];
+        if (t.id.toString() !== primaryId) return false;
       }
       if (consolidatedGroups.has(groupKey)) return false;
       consolidatedGroups.add(groupKey);
