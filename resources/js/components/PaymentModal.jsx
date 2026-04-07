@@ -9,17 +9,19 @@ const PaymentModal = ({
     currentOrder,
     onClose,
     onPaymentSuccess,
-    discountType,
-    setDiscountType,
-    discountValue,
-    setDiscountValue
+    draftItems = [],
+    onUpdateDraftItems,
+    discountType = 'fixed',
+    onUpdateDiscountType,
+    discountValue = 0,
+    onUpdateDiscountValue,
+    step = 1,
+    onUpdateStep
 }) => {
-    const [step, setStep] = useState(1); // 1: Preview, 2: Payment
     const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card' | 'cash'
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Local editing state
-    const [draftItems, setDraftItems] = useState(currentOrder ? [...currentOrder.items] : []);
+    // Metadata state (still local as they are transient UI helpers)
     const [allProducts, setAllProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showProductSearch, setShowProductSearch] = useState(false);
@@ -74,26 +76,30 @@ const PaymentModal = ({
             setIsProcessing(false);
         }
     };
+
     const handleUpdateQuantity = (productId, tableId, quantity) => {
+        let newItems;
         if (quantity < 1) {
-            setDraftItems(prev => prev.filter(i =>
+            newItems = draftItems.filter(i =>
                 !((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
-            ));
+            );
         } else {
-            setDraftItems(prev => prev.map(i =>
+            newItems = draftItems.map(i =>
                 ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
                     ? { ...i, quantity }
                     : i
-            ));
+            );
         }
+        onUpdateDraftItems(newItems);
     };
 
     const handleUpdateNote = (productId, tableId, note) => {
-        setDraftItems(prev => prev.map(i =>
+        const newItems = draftItems.map(i =>
             ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
                 ? { ...i, note }
                 : i
-        ));
+        );
+        onUpdateDraftItems(newItems);
     };
 
     const handleAddProduct = (product) => {
@@ -103,12 +109,13 @@ const PaymentModal = ({
             (i.tableId || selectedTable.id) === activeTId
         );
 
+        let newItems;
         if (existing) {
-            setDraftItems(prev => prev.map(i =>
+            newItems = draftItems.map(i =>
                 (i === existing) ? { ...i, quantity: i.quantity + 1 } : i
-            ));
+            );
         } else {
-            setDraftItems(prev => [...prev, {
+            newItems = [...draftItems, {
                 id: product.id,
                 product_id: product.id,
                 name: product.name,
@@ -116,11 +123,13 @@ const PaymentModal = ({
                 quantity: 1,
                 note: '',
                 tableId: activeTId
-            }]);
+            }];
         }
+        onUpdateDraftItems(newItems);
         setShowProductSearch(false);
         setSearchQuery('');
     };
+
     const filteredProducts = useMemo(() => {
         if (!searchQuery) return [];
         const query = searchQuery.toLowerCase();
@@ -167,6 +176,7 @@ const PaymentModal = ({
                     handleUpdateNote={handleUpdateNote}
                     handleAddProduct={handleAddProduct}
                     filteredProducts={filteredProducts}
+                    compact={true}
                 />
 
                 {/* Discount Section */}
@@ -175,13 +185,13 @@ const PaymentModal = ({
                         <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Giảm giá</span>
                         <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
                             <button
-                                onClick={() => setDiscountType('fixed')}
+                                onClick={() => onUpdateDiscountType('fixed')}
                                 className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${discountType === 'fixed' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400'}`}
                             >
                                 VNĐ
                             </button>
                             <button
-                                onClick={() => setDiscountType('percent')}
+                                onClick={() => onUpdateDiscountType('percent')}
                                 className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${discountType === 'percent' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400'}`}
                             >
                                 %
@@ -192,7 +202,7 @@ const PaymentModal = ({
                         <input
                             type="number"
                             value={discountValue || ''}
-                            onChange={(e) => setDiscountValue(Math.max(0, parseFloat(e.target.value) || 0))}
+                            onChange={(e) => onUpdateDiscountValue(Math.max(0, parseFloat(e.target.value) || 0))}
                             placeholder="Nhập mức giảm..."
                             className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
                         />
@@ -239,9 +249,9 @@ const PaymentModal = ({
                     </button>
 
                     {step === 1 ? (
-                        <button disabled={draftItems.length === 0} onClick={() => setStep(2)} className={`mdt-btn cursor-pointer ${draftItems.length === 0 ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>
+                        <button disabled={draftItems.length === 0} onClick={() => onUpdateStep(2)} className={`mdt-btn cursor-pointer ${draftItems.length === 0 ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>
                             Tiếp theo
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                         </button>
                     ) : (
                         <button disabled={draftItems.length === 0 || !paymentMethod || isProcessing} onClick={handlePayment} className={`mdt-btn cursor-pointer ${(draftItems.length === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>

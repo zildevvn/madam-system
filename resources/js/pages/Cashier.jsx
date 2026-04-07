@@ -15,20 +15,47 @@ const Cashier = () => {
     } = useConsolidatedOrders(null, true);
 
     const [selectedTable, setSelectedTable] = useState(null);
-    const [discountType, setDiscountType] = useState('fixed'); // 'fixed' | 'percent'
-    const [discountValue, setDiscountValue] = useState(0);
+    const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
 
     const handleTableClick = (table) => {
+        const tableIdStr = table.id.toString();
+        const currentOrder = orderDict[tableIdStr];
+
+        // Initialize context for this table if it doesn't already exist
+        if (!tableContexts[tableIdStr]) {
+            setTableContexts(prev => ({
+                ...prev,
+                [tableIdStr]: {
+                    step: 1,
+                    discountType: 'fixed',
+                    discountValue: 0,
+                    draftItems: currentOrder ? [...currentOrder.items] : []
+                }
+            }));
+        }
         setSelectedTable(table);
-        // Reset discount when switching tables
-        setDiscountType('fixed');
-        setDiscountValue(0);
+    };
+
+    const updateTableContext = (tableId, updates) => {
+        setTableContexts(prev => ({
+            ...prev,
+            [tableId]: {
+                ...(prev[tableId] || {}),
+                ...updates
+            }
+        }));
     };
 
     const handlePaymentSuccess = () => {
+        if (selectedTable) {
+            const tableId = selectedTable.id.toString();
+            setTableContexts(prev => {
+                const newState = { ...prev };
+                delete newState[tableId];
+                return newState;
+            });
+        }
         setSelectedTable(null);
-        setDiscountType('fixed');
-        setDiscountValue(0);
     };
 
     if (status === 'loading' && allTables.length === 0) {
@@ -39,7 +66,9 @@ const Cashier = () => {
         );
     }
 
-    const currentOrder = selectedTable ? orderDict[selectedTable.id.toString()] : null;
+    const currentTableId = selectedTable?.id.toString();
+    const currentContext = currentTableId ? tableContexts[currentTableId] : null;
+    const currentOrder = currentTableId ? orderDict[currentTableId] : null;
 
     return (
         <div className="cashier-page md-management-page pb-20">
@@ -59,27 +88,36 @@ const Cashier = () => {
             </div>
 
             {/* Payment Popup Modal */}
-            {selectedTable && (
+            {selectedTable && currentContext && (
                 <PaymentModal
                     selectedTable={selectedTable}
                     currentOrder={currentOrder}
                     onClose={() => setSelectedTable(null)}
                     onPaymentSuccess={handlePaymentSuccess}
-                    discountType={discountType}
-                    setDiscountType={setDiscountType}
-                    discountValue={discountValue}
-                    setDiscountValue={setDiscountValue}
+                    
+                    // Controlled Props from context
+                    draftItems={currentContext.draftItems}
+                    onUpdateDraftItems={(items) => updateTableContext(currentTableId, { draftItems: items })}
+                    
+                    discountType={currentContext.discountType}
+                    onUpdateDiscountType={(type) => updateTableContext(currentTableId, { discountType: type })}
+                    
+                    discountValue={currentContext.discountValue}
+                    onUpdateDiscountValue={(val) => updateTableContext(currentTableId, { discountValue: val })}
+                    
+                    step={currentContext.step}
+                    onUpdateStep={(s) => updateTableContext(currentTableId, { step: s })}
                 />
             )}
 
             {/* Hidden Print Area */}
-            {selectedTable && currentOrder && (
+            {selectedTable && currentOrder && currentContext && (
                 <div className="hidden-print">
                     <Receipt
                         order={currentOrder}
                         tableName={selectedTable?.name}
-                        discountType={discountType}
-                        discountValue={discountValue}
+                        discountType={currentContext.discountType}
+                        discountValue={currentContext.discountValue}
                     />
                 </div>
             )}
