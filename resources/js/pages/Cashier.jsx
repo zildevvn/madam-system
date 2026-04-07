@@ -25,6 +25,7 @@ const Cashier = () => {
     const [allProducts, setAllProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showProductSearch, setShowProductSearch] = useState(false);
+    const [targetTableId, setTargetTableId] = useState(null);
 
     // Fetch products for "Add new items"
     useEffect(() => {
@@ -39,6 +40,7 @@ const Cashier = () => {
         setDraftItems(order ? [...order.items] : []);
         setSearchQuery('');
         setShowProductSearch(false);
+        setTargetTableId(table.id);
     };
 
     const handlePrintBill = () => {
@@ -79,26 +81,40 @@ const Cashier = () => {
         }
     };
 
-    const handleUpdateQuantity = (productId, quantity) => {
+    const handleUpdateQuantity = (productId, tableId, quantity) => {
         if (quantity < 1) {
-            setDraftItems(prev => prev.filter(i => (i.product_id || i.id) !== productId));
+            setDraftItems(prev => prev.filter(i => 
+                !((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+            ));
         } else {
             setDraftItems(prev => prev.map(i =>
-                (i.product_id || i.id) === productId ? { ...i, quantity } : i
+                ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+                    ? { ...i, quantity } 
+                    : i
             ));
         }
     };
 
-    const handleUpdateNote = (productId, note) => {
+    const handleUpdateNote = (productId, tableId, note) => {
         setDraftItems(prev => prev.map(i =>
-            (i.product_id || i.id) === productId ? { ...i, note } : i
+            ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+                ? { ...i, note } 
+                : i
         ));
     };
 
     const handleAddProduct = (product) => {
-        const existing = draftItems.find(i => (i.product_id || i.id) === product.id);
+        const activeTId = targetTableId || selectedTable.id;
+        const existing = draftItems.find(i => 
+            (i.product_id || i.id) === product.id && 
+            (i.tableId || selectedTable.id) === activeTId
+        );
+
         if (existing) {
-            handleUpdateQuantity(product.id, existing.quantity + 1);
+            // Update quantity of existing item on the target table
+            setDraftItems(prev => prev.map(i => 
+                (i === existing) ? { ...i, quantity: i.quantity + 1 } : i
+            ));
         } else {
             setDraftItems(prev => [...prev, {
                 id: product.id,
@@ -107,7 +123,7 @@ const Cashier = () => {
                 price: product.price,
                 quantity: 1,
                 note: '',
-                tableId: selectedTable.id
+                tableId: targetTableId || selectedTable.id
             }]);
         }
         setShowProductSearch(false);
@@ -190,13 +206,39 @@ const Cashier = () => {
                             <div className="mb-4 relative">
                                 <div className="flex items-center gap-2 mb-2">
                                     <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Điều chỉnh món</p>
+                                    
                                     <button
                                         onClick={() => setShowProductSearch(!showProductSearch)}
-                                        className="ml-auto w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center border-none cursor-pointer hover:bg-orange-600 transition-colors"
+                                        className={`ml-auto w-6 h-6 rounded-lg ${showProductSearch ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'} flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-colors`}
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" /></svg>
                                     </button>
                                 </div>
+
+                                {/* Table Selector for Merged Orders */}
+                                {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
+                                    <div className="flex flex-wrap gap-1.5 mb-3 bg-gray-50/80 p-1.5 rounded-xl border border-gray-100">
+                                        {(currentOrder?.mergedTables || selectedTable.merged_tables)
+                                            .split('-')
+                                            .map(tId => tId.trim())
+                                            .map(id => (
+                                                <button
+                                                    key={id}
+                                                    onClick={() => setTargetTableId(parseInt(id))}
+                                                    className={`
+                                                        px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border-none cursor-pointer
+                                                        ${targetTableId === parseInt(id)
+                                                            ? 'bg-orange-500 text-white shadow-sm shadow-orange-200'
+                                                            : 'bg-white text-gray-400 hover:text-gray-600'
+                                                        }
+                                                    `}
+                                                >
+                                                    Bàn {id}
+                                                </button>
+                                            ))}
+                                    </div>
+                                )}
+
                                 {showProductSearch && (
                                     <div className="relative mb-4">
                                         <input
@@ -236,27 +278,33 @@ const Cashier = () => {
                                             acc[tId].push(item);
                                             return acc;
                                         }, {})
-                                    ).sort(([a], [b]) => a - b).map(([tId, tableItems]) => (
-                                        <div key={tId} className="space-y-1">
-                                            {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
-                                                        Bàn {tId}
-                                                    </span>
-                                                    <div className="flex-1 h-[1px] bg-gray-100"></div>
-                                                </div>
-                                            )}
-                                            {tableItems.map((item, idx) => (
-                                                <ProductItem
-                                                    key={item.product_id || item.id}
-                                                    item={item}
-                                                    onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, q)}
-                                                    onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, n)}
-                                                    showNoteButton={true}
-                                                />
-                                            ))}
-                                        </div>
-                                    ))}
+                                    ).sort(([a], [b]) => a - b).map(([tId, tableItems]) => {
+                                        const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                                        return (
+                                            <div key={tId} className="space-y-1 mb-4 last:mb-0">
+                                                {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100 italic">
+                                                            Bàn {tId}
+                                                        </span>
+                                                        <div className="flex-1 h-[1px] bg-gray-100"></div>
+                                                        <span className="text-[10px] font-black text-gray-400 tracking-tighter">
+                                                            {subtotal.toLocaleString()}đ
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {tableItems.map((item, idx) => (
+                                                    <ProductItem
+                                                        key={`${item.product_id || item.id}-${tId}`}
+                                                        item={item}
+                                                        onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(tId), q)}
+                                                        onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(tId), n)}
+                                                        showNoteButton={true}
+                                                    />
+                                                ))}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
