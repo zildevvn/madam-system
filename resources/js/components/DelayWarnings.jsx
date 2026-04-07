@@ -12,6 +12,7 @@ const DelayWarnings = ({
     const buckets = React.useMemo(() => {
         if (!orders || !currentTime) return { critical: [], warning: [], alert: [], active: [] };
 
+        const handledOrderIds = new Set();
         const result = {
             critical: {}, // >= 20
             warning: {},  // 10 - < 20
@@ -25,6 +26,9 @@ const DelayWarnings = ({
         };
 
         const processOrder = (tableId, order) => {
+            if (!order || !order.id || handledOrderIds.has(order.id)) return;
+            handledOrderIds.add(order.id);
+
             if (order.served && !filterType) return;
 
             const itemsToProcess = order.items.filter(item => {
