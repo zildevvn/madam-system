@@ -5,7 +5,6 @@ import { updateQuantity, checkoutOrderAsync, cancelOrderAsync, updateItemNote, r
 import { fetchTables } from '../store/slices/tableSlice';
 import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 import ProductItem from '../components/ProductItem';
-import DrinkOrderPrint from '../components/DrinkOrderPrint';
 
 export default function Checkout() {
     const { tableId } = useParams();
@@ -23,8 +22,6 @@ export default function Checkout() {
     const [mergedTableIds, setMergedTableIds] = useState([]);
     const [showMergeDropdown, setShowMergeDropdown] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-    const [drinksToPrint, setDrinksToPrint] = useState([]);
-    const [printTitle, setPrintTitle] = useState('');
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
     const originalItems = useAppSelector(selectOriginalItems);
 
@@ -120,19 +117,17 @@ export default function Checkout() {
                 // Handle specialized title for Table Change
                 const isTableMove = wasConfirmed && hasChangedTable;
 
-                // Prepare print if needed BEFORE the async call
+                // Prepare print title if needed
+                let drinkPrintTitle = null;
                 if ((hasDrinkChanges || isTableMove) && allDrinks.length > 0) {
                     const tableText = selectedTableId.toString().replace(/^Bàn\s+/i, '');
-                    let finalTitle = wasConfirmed ? `Bill đổi món bàn số ${tableText}` : '';
+                    drinkPrintTitle = wasConfirmed ? `Bill đổi món bàn số ${tableText}` : '';
 
                     if (isTableMove) {
                         const oldTable = currentTableId.replace(/^Bàn\s+/i, '');
                         const newTable = finalTableId.replace(/^Bàn\s+/i, '');
-                        finalTitle = `Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`;
+                        drinkPrintTitle = `Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`;
                     }
-
-                    setPrintTitle(finalTitle);
-                    setDrinksToPrint([...allDrinks]);
                 }
 
                 await dispatch(checkoutOrderAsync({
@@ -147,9 +142,29 @@ export default function Checkout() {
                     mergedTables: mergedTablesString
                 })).unwrap();
 
-                // Set the delay based on localized print requirement
-                const isPrinting = (hasDrinkChanges || isTableMove) && allDrinks.length > 0;
-                const navigationDelay = isPrinting ? 4000 : 1500;
+                // Trigger Backend Print if needed
+                if (drinkPrintTitle) {
+                    fetch(`/api/orders/${currentOrderId}/print-drinks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: drinkPrintTitle })
+                    })
+                        .then(res => {
+                            if (!res.ok) {
+                                throw new Error(`HTTP error: ${res.status}`);
+                            }
+                            return res.json(); // nếu BE có return JSON
+                        })
+                        .then(data => {
+                            console.log("✅ In bill thành công", data);
+                        })
+                        .catch(err => {
+                            console.error("❌ In bill thất bại:", err);
+                        });
+                }
+
+                // Small delay for UX success message
+                const navigationDelay = 1500;
 
                 dispatch(fetchTables());
                 setShowSuccessPopup(true);
@@ -165,11 +180,16 @@ export default function Checkout() {
                 if (allDrinks.length > 0) {
                     const oldTable = currentTableId.replace(/^Bàn\s+/i, '');
                     const newTable = finalTableId.replace(/^Bàn\s+/i, '');
-                    setPrintTitle(`Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`);
-                    setDrinksToPrint([...allDrinks]);
+                    const drinkPrintTitle = `Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`;
+
+                    fetch(`/api/orders/${currentOrderId}/print-drinks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: drinkPrintTitle })
+                    }).catch(err => console.error("Printing failed:", err));
                 }
 
-                const navigationDelay = allDrinks.length > 0 ? 4000 : 1500;
+                const navigationDelay = 1500;
 
                 dispatch(clearCart());
                 dispatch(fetchTables());
@@ -185,17 +205,6 @@ export default function Checkout() {
         }
     };
 
-    // Effect to handle the actual printing once the component is rendered with data
-    React.useEffect(() => {
-        if (drinksToPrint.length > 0) {
-            // Small delay to ensure React has rendered the DrinkOrderPrint component
-            const timer = setTimeout(() => {
-                window.print();
-                setDrinksToPrint([]); // Clear after printing
-            }, 500);
-            return () => clearTimeout(timer);
-        }
-    }, [drinksToPrint]);
 
     const handleCancelOrder = async () => {
         if (activeOrderId) {
@@ -375,8 +384,6 @@ export default function Checkout() {
                 )}
             </div>
 
-            {/* Drink Print Template (Hidden on screen) */}
-            <DrinkOrderPrint items={drinksToPrint} table={selectedTableId} title={printTitle} />
         </>
     );
 }

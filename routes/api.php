@@ -15,6 +15,7 @@ Route::post('/orders/{id}/checkout', [OrderController::class, 'checkout']);
 Route::post('/orders/{id}/complete', [OrderController::class, 'complete']);
 Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 Route::put('/orders/{id}/table', [OrderController::class, 'updateTable']);
+Route::post('/orders/{id}/print-drinks', [OrderController::class, 'printDrinkBill']);
 Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
 
 use App\Http\Controllers\API\UserController;

@@ -4,15 +4,18 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\OrderService;
+use App\Services\PrintService;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     protected $orderService;
+    protected $printService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderService $orderService, PrintService $printService)
     {
         $this->orderService = $orderService;
+        $this->printService = $printService;
     }
 
     public function activeOrder($tableId)
@@ -140,5 +143,19 @@ class OrderController extends Controller
             'message' => 'Order could not be cancelled or was not draft',
             'errors' => 'Deletion failed'
         ], 400);
+    }
+
+    public function printDrinkBill(Request $request, $id)
+    {
+        $order = $this->orderService->getOrder($id);
+        $title = $request->input('title', '');
+
+        $success = $this->printService->printDrinkBill($order, $title);
+
+        return response()->json([
+            'data' => $success,
+            'message' => $success ? 'Print job sent successfully' : 'Printing failed',
+            'errors' => $success ? null : 'Printer communication error'
+        ], $success ? 200 : 500);
     }
 }
