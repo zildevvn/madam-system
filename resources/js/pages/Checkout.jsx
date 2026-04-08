@@ -117,10 +117,20 @@ export default function Checkout() {
 
                 const hasDrinkChanges = hasModifiedDrinks || hasRemovedDrinks;
 
+                // Handle specialized title for Table Change
+                const isTableMove = wasConfirmed && hasChangedTable;
+
                 // Prepare print if needed BEFORE the async call
-                if (hasDrinkChanges && allDrinks.length > 0) {
+                if ((hasDrinkChanges || isTableMove) && allDrinks.length > 0) {
                     const tableText = selectedTableId.toString().replace(/^Bàn\s+/i, '');
-                    const finalTitle = wasConfirmed ? `Bill đổi món bàn số ${tableText}` : '';
+                    let finalTitle = wasConfirmed ? `Bill đổi món bàn số ${tableText}` : '';
+
+                    if (isTableMove) {
+                        const oldTable = currentTableId.replace(/^Bàn\s+/i, '');
+                        const newTable = finalTableId.replace(/^Bàn\s+/i, '');
+                        finalTitle = `Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`;
+                    }
+
                     setPrintTitle(finalTitle);
                     setDrinksToPrint([...allDrinks]);
                 }
@@ -137,8 +147,9 @@ export default function Checkout() {
                     mergedTables: mergedTablesString
                 })).unwrap();
 
-                // Set the delay based on the LOCALLY determined hasDrinkChanges
-                const navigationDelay = (hasDrinkChanges && allDrinks.length > 0) ? 4000 : 1500;
+                // Set the delay based on localized print requirement
+                const isPrinting = (hasDrinkChanges || isTableMove) && allDrinks.length > 0;
+                const navigationDelay = isPrinting ? 4000 : 1500;
 
                 dispatch(fetchTables());
                 setShowSuccessPopup(true);
@@ -150,13 +161,23 @@ export default function Checkout() {
 
             } else if (hasChangedTable) {
                 // If only the table was changed and no items modified, we can avoid the expensive checkout API call
+                const allDrinks = selectedItems.filter(item => item.type === 'drink');
+                if (allDrinks.length > 0) {
+                    const oldTable = currentTableId.replace(/^Bàn\s+/i, '');
+                    const newTable = finalTableId.replace(/^Bàn\s+/i, '');
+                    setPrintTitle(`Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`);
+                    setDrinksToPrint([...allDrinks]);
+                }
+
+                const navigationDelay = allDrinks.length > 0 ? 4000 : 1500;
+
                 dispatch(clearCart());
                 dispatch(fetchTables());
                 setShowSuccessPopup(true);
                 setTimeout(() => {
                     setShowSuccessPopup(false);
                     navigate('/staff-order');
-                }, 1500);
+                }, navigationDelay);
             }
 
         } catch (error) {
