@@ -42,6 +42,7 @@ const initialState = {
   activeOrderId: null,
   orderStatus: 'draft',
   isModified: false,
+  originalItems: {}, // Snapshot of items [id]: { quantity, note, type }
   status: 'idle',
 };
 
@@ -121,7 +122,9 @@ const orderSlice = createSlice({
             order.items.forEach(orderItem => {
               const product = orderItem.product;
               if (product) {
-                state.items.byId[product.id] = { ...product, quantity: orderItem.quantity };
+                const itemData = { ...product, quantity: Number(orderItem.quantity), note: orderItem.note || '' };
+                state.items.byId[product.id] = itemData;
+                state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
                 if (!state.items.allIds.includes(product.id)) {
                   state.items.allIds.push(product.id);
                 }
@@ -171,7 +174,9 @@ const orderSlice = createSlice({
                 order.items.forEach(orderItem => {
                     const product = orderItem.product;
                     if (product) {
-                        state.items.byId[product.id] = { ...product, quantity: orderItem.quantity };
+                        const itemData = { ...product, quantity: Number(orderItem.quantity), note: orderItem.note || '' };
+                        state.items.byId[product.id] = itemData;
+                        state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
                         if (!state.items.allIds.includes(product.id)) {
                             state.items.allIds.push(product.id);
                         }
@@ -200,6 +205,11 @@ const selectOrderState = state => state.order;
 export const selectSelectedItems = createSelector(
   [selectOrderState],
   (orderState) => orderState.items.allIds.map(id => orderState.items.byId[id])
+);
+
+export const selectOriginalItems = createSelector(
+    [selectOrderState],
+    (orderState) => orderState.originalItems
 );
 
 export default orderSlice.reducer;

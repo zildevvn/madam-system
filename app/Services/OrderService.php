@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Table;
@@ -15,13 +16,13 @@ class OrderService
     {
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
-            ->with(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name'])
+            ->with(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name'])
             ->first();
     }
 
     public function getOrder($id)
     {
-        return Order::with(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name'])->findOrFail($id);
+        return Order::with(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name'])->findOrFail($id);
     }
 
     public function cancelOrder($id)
@@ -67,9 +68,14 @@ class OrderService
                 ->get()
                 ->keyBy('product_id');
 
+            // Pre-fetch product types for items
+            $productIds = collect($items)->pluck('product_id')->toArray();
+            $productTypes = Product::whereIn('id', $productIds)->pluck('type', 'id');
+
             foreach ($items as $itemData) {
                 $productId = $itemData['product_id'];
                 $orderItem = $existingItems->get($productId);
+                $productType = $productTypes->get($productId);
 
                 if ($orderItem) {
                     // OVERWRITE quantity instead of accumulating
@@ -78,6 +84,12 @@ class OrderService
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
+                    
+                    // If it's a drink and was pending, move to served (to skip Bar page)
+                    if ($productType === 'drink' && $orderItem->status === 'pending') {
+                        $orderItem->status = 'served';
+                    }
+                    
                     $orderItem->save();
                 } else {
                     $orderItem = OrderItem::create([
@@ -87,7 +99,7 @@ class OrderService
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
                         'note' => $itemData['note'] ?? null,
-                        'status' => 'pending'
+                        'status' => $productType === 'drink' ? 'served' : 'pending'
                     ]);
                 }
 
@@ -118,7 +130,7 @@ class OrderService
         // Broadcast AFTER transaction commits to avoid race conditions
         try {
             $orderObj = $result['order'];
-            $orderObj->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+            $orderObj->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during checkout: ' . $e->getMessage());
@@ -197,7 +209,7 @@ class OrderService
             return $order;
         });
 
-        $result->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
 
         try {
             // Broadcast so other views (StaffOrder, Kitchen) reflect that this table is now empty
@@ -235,7 +247,7 @@ class OrderService
             return $order;
         });
 
-        $result->load(['items.product:id,name,price', 'table:id,name']);
+        $result->load(['items.product:id,name,price,type', 'table:id,name']);
 
         try {
             broadcast(new OrderUpdated($result, 'order_updated'));

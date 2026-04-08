@@ -62,7 +62,8 @@
     .fixed, 
     footer,
     button,
-    .md-management-page__content {
+    .md-management-page__content,
+    .no-print {
         display: none !important;
     }
 }
