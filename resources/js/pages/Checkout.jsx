@@ -22,6 +22,8 @@ export default function Checkout() {
     const [mergedTableIds, setMergedTableIds] = useState([]);
     const [showMergeDropdown, setShowMergeDropdown] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [showWarningPopup, setShowWarningPopup] = useState(false);
+    const [warningMessage, setWarningMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
     const originalItems = useAppSelector(selectOriginalItems);
 
@@ -47,6 +49,27 @@ export default function Checkout() {
 
     const handleUpdateNote = (id, note) => {
         dispatch(updateItemNote({ id, note }));
+    };
+
+    const triggerBackendPrint = async (orderId, title) => {
+        if (!title) return;
+        
+        try {
+            const response = await fetch(`/api/orders/${orderId}/print-drinks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            
+            if (!response.ok) {
+                setWarningMessage('Món đã lưu nhưng KHÔNG IN ĐƯỢC BILL BAR. Vui lòng báo Bar thủ công!');
+                setShowWarningPopup(true);
+            }
+        } catch (err) {
+            console.error("Printing failed:", err);
+            setWarningMessage('Lỗi kết nối máy in Bar. Vui lòng báo Bar thủ công!');
+            setShowWarningPopup(true);
+        }
     };
 
     const handleCheckout = async () => {
@@ -121,12 +144,12 @@ export default function Checkout() {
                 let drinkPrintTitle = null;
                 if ((hasDrinkChanges || isTableMove) && allDrinks.length > 0) {
                     const tableText = selectedTableId.toString().replace(/^Bàn\s+/i, '');
-                    drinkPrintTitle = wasConfirmed ? `Bill đổi món bàn số ${tableText}` : '';
+                    drinkPrintTitle = wasConfirmed ? `Bill doi mon ban so ${tableText}` : '';
 
                     if (isTableMove) {
                         const oldTable = currentTableId.replace(/^Bàn\s+/i, '');
                         const newTable = finalTableId.replace(/^Bàn\s+/i, '');
-                        drinkPrintTitle = `Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`;
+                        drinkPrintTitle = `Bill Chuyen Ban - Tu Ban ${oldTable} den Ban ${newTable}`;
                     }
                 }
 
@@ -144,23 +167,7 @@ export default function Checkout() {
 
                 // Trigger Backend Print if needed
                 if (drinkPrintTitle) {
-                    fetch(`/api/orders/${currentOrderId}/print-drinks`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title: drinkPrintTitle })
-                    })
-                        .then(res => {
-                            if (!res.ok) {
-                                throw new Error(`HTTP error: ${res.status}`);
-                            }
-                            return res.json(); // nếu BE có return JSON
-                        })
-                        .then(data => {
-                            console.log("✅ In bill thành công", data);
-                        })
-                        .catch(err => {
-                            console.error("❌ In bill thất bại:", err);
-                        });
+                    triggerBackendPrint(currentOrderId, drinkPrintTitle);
                 }
 
                 // Small delay for UX success message
@@ -180,13 +187,9 @@ export default function Checkout() {
                 if (allDrinks.length > 0) {
                     const oldTable = currentTableId.replace(/^Bàn\s+/i, '');
                     const newTable = finalTableId.replace(/^Bàn\s+/i, '');
-                    const drinkPrintTitle = `Bill Chuyển Bàn - Từ Bàn ${oldTable} đến Bàn ${newTable}`;
-
-                    fetch(`/api/orders/${currentOrderId}/print-drinks`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ title: drinkPrintTitle })
-                    }).catch(err => console.error("Printing failed:", err));
+                    const drinkPrintTitle = `Bill Chuyen Ban - Tu Ban ${oldTable} den Ban ${newTable}`;
+                    
+                    triggerBackendPrint(currentOrderId, drinkPrintTitle);
                 }
 
                 const navigationDelay = 1500;
@@ -379,6 +382,27 @@ export default function Checkout() {
                             </div>
                             <h5 className="text-[20px] mb-2">Thành công!</h5>
                             <p className="!text-[13px]">{successMessage}</p>
+                        </div>
+                    </div>
+                )}
+
+                {showWarningPopup && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center py-4 px-2 no-print">
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"></div>
+                        <div className="bg-white rounded-[20px] p-8 max-w-[320px] w-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] flex flex-col items-center text-center relative z-10 animate-[in_0.2s_ease-out]">
+                            <div className="w-[48px] h-[48px] bg-red-100 rounded-full flex items-center justify-center mb-4">
+                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h5 className="text-[18px] mb-2 font-bold text-red-700">Lỗi in Bill Bar!</h5>
+                            <p className="!text-[14px] text-gray-600 mb-6">{warningMessage}</p>
+                            <button 
+                                onClick={() => setShowWarningPopup(false)}
+                                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors"
+                            >
+                                Đã hiểu
+                            </button>
                         </div>
                     </div>
                 )}
