@@ -32,6 +32,10 @@ const orderApi = {
       discount_value: discountValue
     });
     return response.data;
+  },
+  printDrinks: async (orderId, title) => {
+    const response = await axios.post(`/api/orders/${orderId}/print-drinks`, { title });
+    return response.data;
   }
 };
 

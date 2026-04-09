@@ -1,49 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { getUsersApi, updateUserRoleApi } from '../services/userService';
-import { useAppSelector } from '../store/hooks';
+import React from 'react';
+import { useAdminLogic } from '../hooks/useAdminLogic';
 
 export default function Admin() {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [updating, setUpdating] = useState(null);
-    const { user: currentUser } = useAppSelector(state => state.auth);
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const response = await getUsersApi();
-            setUsers(response.data || []);
-        } catch (error) {
-            console.error('Failed to fetch users:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleRoleChange = async (userId, newRole) => {
-        try {
-            setUpdating(userId);
-            await updateUserRoleApi(userId, newRole);
-            await fetchUsers(); // Refresh list
-        } catch (error) {
-            console.error('Failed to update role:', error);
-            alert('Failed to update role');
-        } finally {
-            setUpdating(null);
-        }
-    };
-
-    const roles = [
-        { value: 'admin', label: 'Admin' },
-        { value: 'order_staff', label: 'Order Staff' },
-        { value: 'kitchen', label: 'Kitchen' },
-        { value: 'bar', label: 'Bar' },
-        { value: 'cashier', label: 'Cashier' }
-    ];
+    const {
+        users,
+        loading,
+        updating,
+        currentUser,
+        testingPrinter,
+        testingWS,
+        logs,
+        setLogs,
+        testPrinter,
+        testWebsocket,
+        fetchUsers,
+        handleRoleChange,
+        roles
+    } = useAdminLogic();
 
     if (loading) {
         return (
@@ -76,57 +49,104 @@ export default function Admin() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-50">
-                        <h2 className="text-xl font-bold text-gray-800">Quản lý nhân sự</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-gray-50/50">
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nhân viên</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Vai trò hiện tại</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Thay đổi quyền</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {users.map((u) => (
-                                    <tr key={u.id} className="hover:bg-gray-50/30 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold">
-                                                    {u.name.charAt(0)}
-                                                </div>
-                                                <div className="font-bold text-gray-800">{u.name} {u.id === currentUser?.id && '(Tôi)'}</div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600">{u.email}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter ${
-                                                u.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                                                u.role === 'cashier' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-gray-100 text-gray-600'
-                                            }`}>
-                                                {u.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <select
-                                                disabled={updating === u.id || u.id === currentUser?.id}
-                                                className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-all disabled:opacity-50"
-                                                value={u.role}
-                                                onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                                            >
-                                                {roles.map(r => (
-                                                    <option key={r.value} value={r.value}>{r.label}</option>
-                                                ))}
-                                            </select>
-                                        </td>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-800">Quản lý nhân sự</h2>
+                            <button onClick={fetchUsers} className="text-orange-500 hover:text-orange-600">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-gray-50/50">
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nhân viên</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Quyền</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {users.map((u) => (
+                                        <tr key={u.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold">{u.name.charAt(0)}</div>
+                                                    <span className="text-sm font-bold text-gray-700">{u.name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <select
+                                                    disabled={updating === u.id || u.id === currentUser?.id}
+                                                    className="bg-gray-50 border-none rounded-lg px-2 py-1 text-xs font-bold"
+                                                    value={u.role}
+                                                    onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                                                >
+                                                    {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div className="p-6 border-b border-gray-50 bg-gray-900">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                Hệ thống & Kết nối
+                            </h2>
+                        </div>
+                        
+                        <div className="p-6 space-y-6 flex-1 bg-gray-950 font-mono text-sm leading-relaxed">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between group">
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Thermal Printer</span>
+                                        <span className="text-white text-xs">PRINTER_DRINK (Port 9100)</span>
+                                    </div>
+                                    <button 
+                                        onClick={testPrinter}
+                                        disabled={testingPrinter}
+                                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                                    >
+                                        {testingPrinter ? 'Checking...' : 'Test Connection'}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between group">
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">WebSocket (Pusher)</span>
+                                        <span className="text-white text-xs">system-diagnostics channel</span>
+                                    </div>
+                                    <button 
+                                        onClick={testWebsocket}
+                                        disabled={testingWS}
+                                        className="px-4 py-2 bg-orange-500/80 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                                    >
+                                        {testingWS ? 'Sending...' : 'Test Broadcast'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 border-t border-white/5 pt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Logs</span>
+                                    <button onClick={() => setLogs([])} className="text-gray-600 hover:text-gray-400 text-[10px] font-bold">Clear</button>
+                                </div>
+                                <div className="bg-black/40 rounded-xl p-4 h-48 overflow-y-auto space-y-1.5 custom-scrollbar selection:bg-orange-500/30">
+                                    {logs.length === 0 && <div className="text-gray-700 italic">No events recorded. Waiting for diagnostics...</div>}
+                                    {logs.map((log, idx) => (
+                                        <div key={idx} className={`text-[11px] ${log.type === 'error' ? 'text-red-400' : log.type === 'success' ? 'text-green-400' : 'text-blue-400'}`}>
+                                            <span className="text-gray-600 mr-2">[{log.time}]</span>
+                                            <span className="font-bold mr-1">{log.prefix}:</span>
+                                            {log.message}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

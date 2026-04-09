@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addToCart } from '../store/slices/orderSlice';
+import React from 'react';
+import { useOrderLogic } from '../hooks/useOrderLogic';
 import DefaultProductImg from '../../images/default-product.png';
 
 const CATEGORY_ICONS = {
@@ -15,112 +13,17 @@ const CATEGORY_ICONS = {
 };
 
 const Order = () => {
-    useParams();
-    const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-    const { activeOrderId } = useAppSelector(state => state.order);
-    const products = useAppSelector(state => state.product.products.allIds.map(id => state.product.products.byId[id]));
-    const categories = useAppSelector(state => state.product.categories.allIds.map(id => state.product.categories.byId[id]));
-    const searchQuery = useAppSelector(state => state.product.searchQuery) || '';
-
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const filteredCategories = categories.filter(category =>
-        filteredProducts.some(product => product.category_id === category.id)
-    );
-
-    const [activeCategoryId, setActiveCategoryId] = useState(filteredCategories[0]?.id);
-    const [animatingItems, setAnimatingItems] = useState({});
-    const scrollContainerRef = useRef(null);
-    const sidebarRef = useRef(null);
-    const observerRef = useRef(null);
-    const isManualScrolling = useRef(false);
-
-    useEffect(() => {
-        const options = {
-            root: scrollContainerRef.current,
-            rootMargin: '0px 0px -80% 0px',
-            threshold: 0
-        };
-
-        const callback = (entries) => {
-            if (isManualScrolling.current) return;
-
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const id = parseInt(entry.target.getAttribute('data-category-id'));
-                    setActiveCategoryId(id);
-                }
-            });
-        };
-
-        observerRef.current = new IntersectionObserver(callback, options);
-
-        const sections = document.querySelectorAll('.product-category-section');
-        sections.forEach(section => observerRef.current.observe(section));
-
-        return () => {
-            if (observerRef.current) observerRef.current.disconnect();
-        };
-    }, []);
-
-    // Restrict body scroll on this page
-    useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, []);
-
-    // Sync sidebar scroll with active category
-    useEffect(() => {
-        if (!activeCategoryId || !sidebarRef.current) return;
-
-        const activeItem = sidebarRef.current.querySelector('.item-category.is-active');
-        if (activeItem) {
-            activeItem.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest',
-            });
-        }
-    }, [activeCategoryId]);
-
-    const handleCategoryClick = (categoryId) => {
-        setActiveCategoryId(categoryId);
-        isManualScrolling.current = true;
-
-        const element = document.getElementById(`category-section-${categoryId}`);
-        if (element && scrollContainerRef.current) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            // Re-enable observer after smooth scroll completes
-            setTimeout(() => {
-                isManualScrolling.current = false;
-            }, 800);
-        }
-    };
-
-    const handleAddToCart = (product) => {
-        dispatch(addToCart(product));
-
-        // Trigger micro-animation
-        setAnimatingItems(prev => ({ ...prev, [product.id]: true }));
-        setTimeout(() => {
-            setAnimatingItems(prev => ({ ...prev, [product.id]: false }));
-        }, 600); // Extended slightly for softer fade
-    };
-
-    React.useEffect(() => {
-        const handleBeforeUnload = () => {
-            if (activeOrderId) {
-                navigator.sendBeacon(`/api/orders/${activeOrderId}`);
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [activeOrderId]);
+    const {
+        categories,
+        filteredCategories,
+        filteredProducts,
+        activeCategoryId,
+        animatingItems,
+        scrollContainerRef,
+        sidebarRef,
+        handleCategoryClick,
+        handleAddToCart,
+    } = useOrderLogic();
 
     return (
         <div className="flex flex-col w-full h-[calc(100vh-134px)]">
@@ -179,7 +82,6 @@ const Order = () => {
                                                     className='relative product-item cursor-pointer rounded-[0px_10px_0px_10px] bg-white transition-all duration-300 select-none group'
                                                     onClick={() => handleAddToCart(product)}
                                                 >
-                                                    {/* Image Container with targeted hover/active zoom */}
                                                     <div className="relative overflow-hidden w-full aspect-square bg-gray-50 rounded-tr-[10px]">
                                                         <img
                                                             src={product.image || DefaultProductImg}
@@ -188,9 +90,7 @@ const Order = () => {
                                                             className={`w-full h-full object-cover object-center transition-transform duration-500 ease-out ${animatingItems[product.id] ? 'scale-110 blur-[1px]' : 'group-hover:scale-105 group-active:scale-95'}`}
                                                         />
 
-                                                        {/* Glassmorphic Success Overlay */}
                                                         <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${animatingItems[product.id] ? 'opacity-100 bg-black/20 backdrop-blur-[2px]' : 'opacity-0 bg-transparent pointer-events-none'}`}>
-                                                            {/* Success Check Badge */}
                                                             <div className={`flex flex-col items-center justify-center transition-all duration-500 transform ${animatingItems[product.id] ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-50 opacity-0'}`}>
                                                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-[#03b879] rounded-full flex items-center justify-center shadow-lg shadow-[#03b879]/40 mb-1">
                                                                     <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
@@ -202,7 +102,6 @@ const Order = () => {
                                                         </div>
                                                     </div>
 
-                                                    {/* Product Info Card Overlap */}
                                                     <div className="relative z-8 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] rounded-[0px_10px_0px_10px]  transition-transform duration-300 group-active:translate-y-1">
                                                         <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>
                                                             {new Intl.NumberFormat('vi-VN').format(product.price)}đ

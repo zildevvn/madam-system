@@ -72,6 +72,40 @@ class PrintService
     }
 
     /**
+     * Print a minimal diagnostic page to verify hardware connectivity.
+     */
+    public function printTestPage()
+    {
+        $ip = env('PRINTER_DRINK_IP', '192.168.1.100');
+        $port = env('PRINTER_DRINK_PORT', 9100);
+
+        try {
+            $connector = new NetworkPrintConnector($ip, $port, 3);
+            $printer = new Printer($connector);
+
+            $printer->setJustification(Printer::JUSTIFY_CENTER);
+            $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
+            $printer->text("DIAGNOSTIC TEST\n");
+            $printer->feed();
+            
+            $printer->selectPrintMode(Printer::MODE_FONT_A);
+            $printer->text("Ket noi: THANH CONG\n");
+            $printer->text("Thoi gian: " . now()->format('H:i:s d/m/Y') . "\n");
+            $printer->text(str_repeat("-", 32) . "\n");
+            $printer->text("MADAM SYSTEM - BAR PRINTER\n");
+            
+            $printer->feed(3);
+            $printer->cut();
+            $printer->close();
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error("Test print failed: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Remove accents from Vietnamese text for thermal printer compatibility.
      */
     private function normalizeText($text)

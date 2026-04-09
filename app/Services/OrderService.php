@@ -12,19 +12,40 @@ use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
+    // [WHY] Get active order to display on tablet/pos
+    // [RULE] Only status: draft, pending, processing are considered active
+    // [RULE] Eager load only required fields for performance
     public function getActiveOrder($tableId)
     {
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
-            ->with(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name'])
+            ->with([
+                'items.product' => function($query) {
+                    $query->select('id', 'name', 'price', 'type');
+                },
+                'table:id,name', 
+                'server:id,name', 
+                'cashier:id,name'
+            ])
             ->first();
     }
 
+    // [WHY] Fetch full details for a specific order
+    // [RULE] Use findOrFail to catch missing orders early
     public function getOrder($id)
     {
-        return Order::with(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name'])->findOrFail($id);
+        return Order::with([
+            'items.product' => function($query) {
+                $query->select('id', 'name', 'price', 'type');
+            },
+            'table:id,name', 
+            'server:id,name', 
+            'cashier:id,name'
+        ])->findOrFail($id);
     }
 
+    // [WHY] Delete orders that were never finalized
+    // [RULE] Only 'draft' orders can be deleted
     public function cancelOrder($id)
     {
         $order = Order::find($id);
@@ -43,6 +64,9 @@ class OrderService
             ->delete();
     }
 
+    // [WHY] Initialize a new order session
+    // [RULE] Default status is 'draft'
+    // [NOTE] items are empty on creation
     public function createOrder(array $data)
     {
         $order = new Order();
@@ -54,21 +78,29 @@ class OrderService
         $order->total_price = 0;
         $order->save();
 
-        return $order->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        return $order->load([
+            'items.product:id,name,price', 
+            'table:id,name', 
+            'server:id,name', 
+            'cashier:id,name'
+        ]);
     }
 
+    // [WHY] Submit kitchen order and sync items
+    // [RULE] Transactional safety for items and status updates
+    // [RULE] No N+1 queries by pre-fetching existing items and types
     public function checkoutOrder($orderId, array $items, $mergedTables = null)
     {
         $result = DB::transaction(function () use ($orderId, $items, $mergedTables) {
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
-            // PRE-FETCH all existing items for this order in ONE query
+            // [PERF] PRE-FETCH all existing items for this order in ONE query
             $existingItems = OrderItem::where('order_id', $orderId)
                 ->get()
                 ->keyBy('product_id');
 
-            // Pre-fetch product types for items
+            // [PERF] Pre-fetch product types for items
             $productIds = collect($items)->pluck('product_id')->toArray();
             $productTypes = Product::whereIn('id', $productIds)->pluck('type', 'id');
 
@@ -78,14 +110,14 @@ class OrderService
                 $productType = $productTypes->get($productId);
 
                 if ($orderItem) {
-                    // OVERWRITE quantity instead of accumulating
+                    // [RULE] OVERWRITE quantity instead of accumulating
                     $orderItem->quantity = $itemData['quantity'];
                     $orderItem->table_id = $itemData['table_id'] ?? $order->table_id;
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
                     
-                    // If it's a drink and was pending, move to served (to skip Bar page)
+                    // [BUSINESS] If it's a drink and was pending, move to served (to skip Bar page)
                     if ($productType === 'drink' && $orderItem->status === 'pending') {
                         $orderItem->status = 'served';
                     }
@@ -106,7 +138,7 @@ class OrderService
                 $totalPrice += ($orderItem->price * $orderItem->quantity);
             }
 
-            // Sync: Remove items that are no longer in the request
+            // [RULE] Cleanup orphaned items
             $itemProductIds = collect($items)->pluck('product_id')->toArray();
             OrderItem::where('order_id', $orderId)
                 ->whereNotIn('product_id', $itemProductIds)
@@ -127,7 +159,7 @@ class OrderService
         });
 
 
-        // Broadcast AFTER transaction commits to avoid race conditions
+        // [WHY] Broadcast AFTER transaction commits to avoid race conditions
         try {
             $orderObj = $result['order'];
             $orderObj->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
@@ -139,6 +171,8 @@ class OrderService
         return $orderObj;
     }
 
+    // [WHY] Update progress of a specific item
+    // [RULE] Updates trigger realtime events for Kitchen/Bar/Waiter
     public function updateItemStatus($itemId, $status)
     {
         $item = OrderItem::findOrFail($itemId);
@@ -146,9 +180,14 @@ class OrderService
         $item->save();
 
         $order = $item->order;
-        $order->load(['items.product:id,name,price', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        $order->load([
+            'items.product:id,name,price', 
+            'table:id,name', 
+            'server:id,name', 
+            'cashier:id,name'
+        ]);
 
-        // Broadcast the real-time event
+        // [REALTIME] Broadcast the update
         try {
             broadcast(new OrderUpdated($order, 'item_status_updated'));
         } catch (\Exception $e) {
@@ -158,12 +197,15 @@ class OrderService
         return $order;
     }
 
+    // [WHY] Close order and release tables
+    // [RULE] Handles merged tables by finalizing all orders in the group
+    // [RULE] Transactional safety for payment data
     public function completeOrder($orderId, $data)
     {
         $result = DB::transaction(function () use ($orderId, $data) {
             $order = Order::findOrFail($orderId);
 
-            // Identify all involved table IDs in the merge group
+            // [WHY] Identify all involved table IDs in the merge group
             $involvedTableIds = [$order->table_id];
             if ($order->merged_tables) {
                 $mergedIds = explode('-', $order->merged_tables);
@@ -171,7 +213,7 @@ class OrderService
             }
             $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
-            // 1. Calculate discount for the primary order
+            // [CALC] 1. Calculate discount for the primary order
             $subtotal = $order->total_price;
             $discountType = $data['discount_type'] ?? null;
             $discountValue = $data['discount_value'] ?? 0;
@@ -183,11 +225,11 @@ class OrderService
                 $discountAmount = $discountValue;
             }
             
-            // Ensure discount doesn't exceed subtotal
+            // [RULE] Ensure discount doesn't exceed subtotal
             $discountAmount = min($subtotal, $discountAmount);
             $finalPrice = $subtotal - $discountAmount;
 
-            // 2. Finalize all active orders for these tables with the same payment info
+            // [WHY] 2. Finalize all active orders for these tables with the same payment info
             Order::whereIn('table_id', $involvedTableIds)
                 ->whereIn('status', ['draft', 'pending', 'processing'])
                 ->update([
@@ -201,7 +243,7 @@ class OrderService
                     'cashier_id' => $data['cashier_id'] ?? null,
                 ]);
 
-            // 2. Free all tables in the group
+            // [WHY] 2. Free all tables in the group
             if (!empty($involvedTableIds)) {
                 Table::whereIn('id', $involvedTableIds)->update(['status' => 'empty']);
             }
@@ -209,10 +251,15 @@ class OrderService
             return $order;
         });
 
-        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        $result->load([
+            'items.product:id,name,price,type', 
+            'table:id,name', 
+            'server:id,name', 
+            'cashier:id,name'
+        ]);
 
         try {
-            // Broadcast so other views (StaffOrder, Kitchen) reflect that this table is now empty
+            // [REALTIME] Broadcast so other views (StaffOrder, Kitchen) reflect table is now empty
             broadcast(new OrderUpdated($result, 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during order completion: ' . $e->getMessage());
@@ -221,6 +268,8 @@ class OrderService
         return $result;
     }
 
+    // [WHY] Transfer order from one table to another
+    // [RULE] Correctly updates both old and new table statuses
     public function updateTable($orderId, $newTableId)
     {
         $order = Order::findOrFail($orderId);
@@ -229,10 +278,10 @@ class OrderService
         $result = DB::transaction(function () use ($order, $newTableId, $oldTableId) {
             $order->update(['table_id' => $newTableId]);
 
-            // Update new table status
+            // [WHY] Update new table status
             Table::where('id', $newTableId)->update(['status' => 'busy']);
 
-            // Update old table status if needed
+            // [WHY] Update old table status ONLY if no other active orders remain
             if ($oldTableId) {
                 $stillBusy = Order::where('table_id', $oldTableId)
                     ->whereIn('status', ['pending', 'processing', 'draft'])
