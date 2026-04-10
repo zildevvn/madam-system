@@ -10,30 +10,37 @@ const ReservationDishesForm = ({ fields, register, append, remove, inputClasses,
             <div className="space-y-4">
                 {fields.map((field, index) => (
                     <div key={field.id} className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm md:shadow-none md:border-none md:p-0 md:bg-transparent flex flex-col md:flex-row gap-3 items-stretch md:items-end animate-in fade-in slide-in-from-left-2 duration-200">
-                        <div className="md:w-24">
-                            <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>ID</label>
-                            <input
-                                type="number"
-                                {...register(`dishes.${index}.product_id`)}
-                                className={`${inputClasses} bg-gray-50/50 cursor-not-allowed text-gray-500`}
-                                placeholder="ID"
-                                readOnly
-                            />
-                        </div>
-                        <div className="flex-1">
+                        <div className="flex-[2]">
                             <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Dish Name</label>
-                            <input {...register(`dishes.${index}.name`)} className={inputClasses} placeholder="Dish Name" />
+                            <input {...register(`dishes.${index}.name`, { required: true })} className={inputClasses} placeholder="Enter dish name..." />
                         </div>
+
+                        <div className="md:w-32">
+                            <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Category</label>
+                            <div className="relative group">
+                                <select
+                                    {...register(`dishes.${index}.type`)}
+                                    className={`${inputClasses} appearance-none pr-10 bg-orange-50/30 border-orange-100/50 text-orange-600 font-bold`}
+                                >
+                                    <option value="food">Food</option>
+                                    <option value="drink">Drink</option>
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-orange-400 group-hover:text-orange-600 transition-colors">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="flex md:w-52 gap-3">
                             <div className="flex-1 md:w-20">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Qty</label>
-                                <input type="number" {...register(`dishes.${index}.quantity`)} className={inputClasses} />
+                                <input type="number" {...register(`dishes.${index}.quantity`, { required: true, min: 1 })} className={inputClasses} />
                             </div>
                             <div className="flex-[2] md:w-32 relative">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Price (VND)</label>
                                 <div className="relative">
-                                    <input type="number" {...register(`dishes.${index}.price`)} className={`${inputClasses} pr-10`} />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">₫</div>
+                                    <input type="number" {...register(`dishes.${index}.price`, { required: true, min: 0 })} className={`${inputClasses}`} />
+
                                 </div>
                             </div>
                             <button
@@ -49,16 +56,12 @@ const ReservationDishesForm = ({ fields, register, append, remove, inputClasses,
                 <button
                     type="button"
                     onClick={() => {
-                        const maxId = fields.reduce((max, item) => {
-                            const pid = parseInt(item.product_id);
-                            return isNaN(pid) ? max : Math.max(max, pid);
-                        }, 1000);
-                        append({ product_id: maxId + 1, name: '', quantity: 1, price: 0 });
+                        append({ name: '', quantity: 1, price: 0, type: 'food' });
                     }}
                     className="w-full py-3.5 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl text-xs font-black text-gray-400 hover:border-orange-300 hover:text-orange-500 hover:bg-white transition-all cursor-pointer flex items-center justify-center gap-2 group"
                 >
                     <svg className="group-hover:rotate-90 transition-transform duration-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-                    ADD CUSTOM DISH
+                    ADD NEW DISH
                 </button>
             </div>
         </div>

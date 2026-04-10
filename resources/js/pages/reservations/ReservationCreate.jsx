@@ -2,23 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { reservationApi } from '../../services/reservationApi';
+import { useAppSelector } from '../../store/hooks';
 import ReservationDishesForm from '../../components/reservations/ReservationDishesForm';
 import ReservationTableSelector from '../../components/reservations/ReservationTableSelector';
 
 const ReservationCreate = () => {
     const { id } = useParams();
     const isEdit = !!id;
+    const { user } = useAppSelector(state => state.auth);
+    const [viewingReservation, setViewingReservation] = useState(null);
     const [activeTab, setActiveTab] = useState('individual'); // 'individual' | 'group'
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(isEdit);
     const [message, setMessage] = useState(null);
     const navigate = useNavigate();
 
+    const isManager = user?.role === 'cashier' || user?.role === 'admin';
+
     const { register, handleSubmit, control, setValue, watch, reset, formState: { errors } } = useForm({
         defaultValues: {
             type: 'individual',
             number_of_guests: 1,
-            dishes: [{ product_id: 1001, name: '', quantity: 1, price: 0 }],
+            dishes: [{ name: '', quantity: 1, price: 0, type: 'food' }],
             table_ids: [],
             status: 'pending'
         }
@@ -32,12 +37,15 @@ const ReservationCreate = () => {
     const selectedTables = watch('table_ids') || [];
 
     useEffect(() => {
-
         // If editing, fetch existing reservation
         if (isEdit) {
             reservationApi.getById(id)
                 .then(res => {
                     const data = res.data;
+                    // [WHY] Format date to YYYY-MM-DD for HTML5 date input compatibility
+                    if (data.reservation_date) {
+                        data.reservation_date = data.reservation_date.split('T')[0];
+                    }
                     reset(data);
                     setActiveTab(data.type);
                     setFetching(false);
@@ -59,28 +67,41 @@ const ReservationCreate = () => {
         setLoading(true);
         setMessage(null);
 
-        // Clean up data based on type
+        // [WHY] Sanitization & Normalization before sending to API
         const payload = { ...data };
+
+        // 1. Clean up Date Format (Ensure strictly YYYY-MM-DD)
+        if (payload.reservation_date) {
+            payload.reservation_date = payload.reservation_date.toString().split('T')[0];
+        }
+
+        // 2. Convert empty strings to null for IDs
+        if (payload.table_id === "") payload.table_id = null;
+
+        // 3. Clean up data based on type
         if (payload.type === 'individual') {
             payload.dishes = [];
-            payload.table_ids = [];
             delete payload.tour_guide_name;
             delete payload.company_name;
             delete payload.set_menu;
         } else if (payload.type === 'group') {
-            // Filter out dishes that don't have an ID or name
+            // [WHY] Map and sanitize dishes for the API
             if (payload.dishes && Array.isArray(payload.dishes)) {
                 payload.dishes = payload.dishes.filter(dish =>
-                    dish.product_id && String(dish.product_id).trim() !== '' &&
                     dish.name && String(dish.name).trim() !== ''
-                ).map(dish => ({
+                ).map((dish, index) => ({
                     ...dish,
-                    product_id: parseInt(dish.product_id, 10),
                     quantity: parseInt(dish.quantity, 10),
-                    price: parseFloat(dish.price)
+                    price: parseFloat(dish.price),
+                    type: dish.type || 'food'
                 }));
             }
         }
+
+        // 4. Remove any transient UI fields or undefined values
+        Object.keys(payload).forEach(key => {
+            if (payload[key] === undefined) delete payload[key];
+        });
 
         try {
             if (isEdit) {
@@ -181,21 +202,21 @@ const ReservationCreate = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                         <label className={labelClasses}>Date</label>
-                        <input 
-                            type="date" 
-                            {...register('reservation_date', { required: 'Required' })} 
-                            className={`${inputClasses} cursor-pointer`} 
-                            onClick={(e) => e.target.showPicker()} 
+                        <input
+                            type="date"
+                            {...register('reservation_date', { required: 'Required' })}
+                            className={`${inputClasses} cursor-pointer`}
+                            onClick={(e) => e.target.showPicker()}
                         />
                         {errors.reservation_date && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{errors.reservation_date.message}</p>}
                     </div>
                     <div>
                         <label className={labelClasses}>Time</label>
-                        <input 
-                            type="time" 
-                            {...register('reservation_time', { required: 'Required' })} 
-                            className={`${inputClasses} cursor-pointer`} 
-                            onClick={(e) => e.target.showPicker()} 
+                        <input
+                            type="time"
+                            {...register('reservation_time', { required: 'Required' })}
+                            className={`${inputClasses} cursor-pointer`}
+                            onClick={(e) => e.target.showPicker()}
                         />
                         {errors.reservation_time && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{errors.reservation_time.message}</p>}
                     </div>
@@ -247,15 +268,28 @@ const ReservationCreate = () => {
                                 sectionTitle={sectionTitle}
                             />
 
-                            <div className="pt-6 border-t border-gray-200/50">
-                                <div className={sectionTitle}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><path d="M9 3v18M15 3v18M3 9h18M3 15h18" /></svg>
-                                    Table Assignment
-                                </div>
-                                <ReservationTableSelector
-                                    selectedTables={selectedTables}
-                                    register={register}
-                                />
+                            {/* Table Assignment Section */}
+                            <div className="section-container">
+                                {isManager ? (
+                                    <div className="space-y-6">
+                                        <ReservationTableSelector
+                                            selectedTables={selectedTables}
+                                            onToggle={(tableId) => {
+                                                const current = selectedTables;
+                                                const updated = current.includes(tableId)
+                                                    ? current.filter(id => id !== tableId)
+                                                    : [...current, tableId];
+                                                setValue('table_ids', updated);
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="p-8 border-2 border-dashed border-gray-100 rounded-[32px] text-center bg-gray-50/50">
+                                        <p className="text-sm text-gray-400 font-bold max-w-sm mx-auto">
+                                            You can proceed with saving the reservation. A manager will assign the tables in the Table Assignment section later.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -274,7 +308,7 @@ const ReservationCreate = () => {
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                 Saving...
                             </div>
-                        ) : 'Confirm Reservation'}
+                        ) : (isEdit ? 'Update' : 'Save')}
                     </button>
                 </div>
             </form>

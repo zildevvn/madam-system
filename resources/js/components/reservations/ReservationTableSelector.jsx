@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectTables, selectTableIdToGroupKey } from '../../store/selectors/tableSelectors';
 import { fetchTables } from '../../store/slices/tableSlice';
 
-const ReservationTableSelector = ({ selectedTables, register }) => {
+const ReservationTableSelector = ({ selectedTables, onToggle }) => {
     const dispatch = useAppDispatch();
     const allTables = useAppSelector(selectTables);
     const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
@@ -47,7 +47,7 @@ const ReservationTableSelector = ({ selectedTables, register }) => {
                                             type="checkbox"
                                             value={table.id}
                                             checked={selectedTables.includes(table.id.toString())}
-                                            {...register('table_ids')}
+                                            onChange={() => onToggle(table.id.toString())}
                                             className="w-5 h-5 rounded-lg border-gray-200 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
                                         />
                                     </div>

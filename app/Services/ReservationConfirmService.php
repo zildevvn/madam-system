@@ -13,11 +13,14 @@ class ReservationConfirmService
      * [WHY] Confirms a group reservation, creating the necessary orders exactly like the existing flow.
      * [RULE] Converts pre-ordered items into order items collectively shared across the merged orders.
      */
-    public function confirmGroupReservation(Reservation $reservation, array $tableIds, $userId = null)
+    public function confirmGroupReservation(Reservation $reservation, array $tableIds, $staffId = null)
     {
-        return DB::transaction(function () use ($reservation, $tableIds, $userId) {
-            // [WHY] Mark reservation as confirmed
-            $reservation->update(['status' => 'confirmed']);
+        return DB::transaction(function () use ($reservation, $tableIds, $staffId) {
+            // [WHY] Mark reservation as confirmed and save staff assignment
+            $reservation->update([
+                'status' => 'confirmed',
+                'staff_id' => $staffId
+            ]);
 
             // [WHY] Sort table ids to make it deterministic (e.g., lowest ID is main order)
             sort($tableIds);
@@ -40,10 +43,11 @@ class ReservationConfirmService
                     $order = $existingOrders->get($tableId);
                     
                     // [WHY] Update to link to reservation if not linked
-                    if (!$order->reservation_id || $order->merged_tables !== $mergedTablesString) {
+                    if (!$order->reservation_id || $order->merged_tables !== $mergedTablesString || $order->user_id !== $staffId) {
                         $order->update([
                             'reservation_id' => $reservation->id,
-                            'merged_tables' => $mergedTablesString
+                            'merged_tables' => $mergedTablesString,
+                            'user_id' => $staffId
                         ]);
                     }
                 } else {
@@ -51,7 +55,7 @@ class ReservationConfirmService
                         'table_id' => $tableId,
                         'reservation_id' => $reservation->id,
                         'merged_tables' => $mergedTablesString,
-                        'user_id' => $userId,
+                        'user_id' => $staffId,
                         'status' => 'pending',
                         'subtotal' => 0,
                         'total_price' => 0,
@@ -68,10 +72,11 @@ class ReservationConfirmService
             $now = now();
             
             foreach ($reservation->items as $resItem) {
-                // [NOTE] table_id is intentionally null to denote collective/shared items in checkout GUI
                 $orderItemsToInsert[] = [
                     'order_id' => $mainOrder->id,
-                    'product_id' => $resItem->product_id,
+                    'product_id' => null, // [WHY] IDs removed as per user request
+                    'name' => $resItem->name,
+                    'type' => $resItem->type ?? 'food', // [WHY] Use type from reservation item
                     'table_id' => null, 
                     'quantity' => $resItem->quantity,
                     'price' => $resItem->price,
@@ -85,6 +90,12 @@ class ReservationConfirmService
 
             if (!empty($orderItemsToInsert)) {
                 OrderItem::insert($orderItemsToInsert);
+            }
+
+            // [WHY] Trigger real-time data push to Kitchen and Bill systems
+            // We broadcast on the main order specifically to refresh the dashboard
+            if ($mainOrder) {
+                event(new \App\Events\OrderUpdated($mainOrder, 'order_created'));
             }
 
             return $orders;

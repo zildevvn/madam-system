@@ -86,6 +86,7 @@ const PaymentModal = ({
                     handleAddProduct={handleAddProduct}
                     filteredProducts={filteredProducts}
                     compact={true}
+                    isReadOnly={!!currentOrder?.isGroup}
                 />
 
                 <div className="px-6 py-3 border-t border-gray-50">

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useReservations } from '../../hooks/useReservations';
+import { useAppSelector } from '../../store/hooks';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
 
 const ReservationList = () => {
     const { reservations, tables, loading } = useReservations();
+    const { user } = useAppSelector(state => state.auth);
     const [viewingReservation, setViewingReservation] = useState(null);
     const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
     const navigate = useNavigate();
+
+    const isManager = user?.role === 'cashier' || user?.role === 'admin';
 
     const filteredReservations = reservations.filter(r => {
         if (filterType === 'all') return true;
@@ -87,7 +91,13 @@ const ReservationList = () => {
                                 </tr>
                             ) : (
                                 filteredReservations.map((r) => (
-                                    <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <tr 
+                                        key={r.id} 
+                                        className={`
+                                            transition-colors
+                                            ${r.type === 'group' ? 'bg-purple-50/20 hover:bg-purple-50/50' : 'bg-blue-50/20 hover:bg-blue-50/50'}
+                                        `}
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm font-bold text-gray-700">{r.lead_name}</span>
                                         </td>
@@ -114,6 +124,14 @@ const ReservationList = () => {
                                                 >
                                                     View
                                                 </button>
+                                                {(!r.table_id && (!r.table_ids || r.table_ids.length === 0)) && isManager && (
+                                                    <button
+                                                        onClick={() => navigate(`/reservations/edit/${r.id}`)}
+                                                        className="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-orange-200 transition-all border-none cursor-pointer animate-pulse"
+                                                    >
+                                                        Assign Table
+                                                    </button>
+                                                )}
                                                 {r.type === 'group' && (
                                                     <button
                                                         onClick={() => navigate(`/reservations/edit/${r.id}`)}
@@ -140,7 +158,13 @@ const ReservationList = () => {
                     </div>
                 ) : (
                     filteredReservations.map((r) => (
-                        <div key={r.id} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
+                        <div 
+                            key={r.id} 
+                            className={`
+                                rounded-3xl p-5 shadow-sm border transition-all space-y-4
+                                ${r.type === 'group' ? 'bg-purple-50/30 border-purple-100/50' : 'bg-blue-50/30 border-blue-100/50'}
+                            `}
+                        >
                             <div className="flex justify-between items-start">
                                 <div className="flex flex-col">
                                     <span className="text-base font-black text-gray-900">{r.lead_name}</span>

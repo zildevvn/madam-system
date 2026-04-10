@@ -23,9 +23,8 @@ class ReservationService
                 $reservation->items()->createMany($dishes);
             }
 
-            // [WHY] Reload items to match frontend expectations
+            // [WHY] Reload items to ensure they are available via the 'items' relation
             $reservation->load('items');
-            $reservation->dishes = $reservation->items;
 
             return $reservation;
         });
@@ -52,9 +51,8 @@ class ReservationService
                 }
             }
 
-            // [WHY] Reload items to match frontend expectations
+            // [WHY] Reload items to ensure they are available via the 'items' relation
             $reservation->load('items');
-            $reservation->dishes = $reservation->items;
 
             return $reservation;
         });

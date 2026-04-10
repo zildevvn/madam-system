@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, showNoteButton = false }) {
+export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, showNoteButton = false, isReadOnly = false }) {
     const [showNote, setShowNote] = useState(false);
     const [noteValue, setNoteValue] = useState(item.note || '');
 
@@ -18,12 +18,19 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                         </p>
                     )}
                 </div>
-                <span className="font-bold text-on-surface text-[14px]">
-                    {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)}đ
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                    <span className="font-bold text-on-surface text-[14px]">
+                        {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)}đ
+                    </span>
+                    {isReadOnly && (
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
+                            x{item.quantity} món
+                        </span>
+                    )}
+                </div>
             </div>
             <div className={`product-item__actions flex items-center gap-2 mt-1 ${showNoteButton ? 'justify-between' : 'justify-end'}`}>
-                {showNoteButton && (
+                {showNoteButton && !isReadOnly && (
                     <button
                         onClick={() => setShowNote(!showNote)}
                         className="btn-note w-full py-2 flex items-center gap-1.5 text-[12px] text-gray-500 hover:text-gray-800 transition-colors border-none bg-transparent cursor-pointer font-medium"
@@ -32,25 +39,27 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                         Ghi chú
                     </button>
                 )}
-                <div className="product-item__quantity flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm">
-                    <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                        className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer"
-                    >
-                        <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H18" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                    </button>
-                    <span className="px-5 font-bold text-on-surface text-sm">{item.quantity}</span>
-                    <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        className="btn-plus w-6 h-6 flex items-center justify-center rounded-full text-white shadow-md active:scale-90 transition-all hover:brightness-110 cursor-pointer"
-                    >
-                        <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                    </button>
-                </div>
+                {!isReadOnly && (
+                    <div className="product-item__quantity flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm">
+                        <button
+                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer"
+                        >
+                            <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 12H18" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                        </button>
+                        <span className="px-5 font-bold text-on-surface text-sm">{item.quantity}</span>
+                        <button
+                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            className="btn-plus w-6 h-6 flex items-center justify-center rounded-full text-white shadow-md active:scale-90 transition-all hover:brightness-110 cursor-pointer"
+                        >
+                            <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/*      */}
-            {showNote && (
+            {/* Note Input (Only if not read-only or note exists) */}
+            {showNote && !isReadOnly && (
                 <div className="mt-1 pb-1 transform transition-all animate-[pulse_0.2s_ease-out]">
                     <div className="relative flex items-center">
                         <input

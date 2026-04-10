@@ -56,24 +56,45 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                 const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
                 if (!consolidatedGroups[groupKey]) {
+                    const reservation = t.active_order.reservation;
+                    const groupName = reservation ? (reservation.company_name || reservation.lead_name) : null;
+                    
                     consolidatedGroups[groupKey] = {
                         id: t.active_order.id,
                         tableId: t.id,
                         tableName: t.name || `Bàn ${t.id}`,
+                        groupName: groupName,
+                        isGroup: !!reservation,
                         mergedTables: groupKey.includes('-') ? groupKey : null,
+                        tableNames: [t.name || t.id.toString()],
                         startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
                         items: [],
                         itemsMap: {}
                     };
-                } else if (t.active_order.merged_tables === groupKey) {
-                    // This is the authoritative order of the merge group — update metadata from this one
-                    consolidatedGroups[groupKey].id = t.active_order.id;
-                    consolidatedGroups[groupKey].startTime = new Date(t.active_order.created_at || t.active_order.updated_at);
-                    consolidatedGroups[groupKey].tableId = t.id;
-                    consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
+                } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
+                    consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
+                    
+                    if (t.active_order.merged_tables === groupKey) {
+                        const reservation = t.active_order.reservation;
+                        consolidatedGroups[groupKey].id = t.active_order.id;
+                        consolidatedGroups[groupKey].startTime = new Date(t.active_order.created_at || t.active_order.updated_at);
+                        consolidatedGroups[groupKey].tableId = t.id;
+                        consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
+                        if (reservation) {
+                            consolidatedGroups[groupKey].groupName = reservation.company_name || reservation.lead_name;
+                            consolidatedGroups[groupKey].isGroup = true;
+                            consolidatedGroups[groupKey].reservation_id = reservation.id;
+                        }
+                    }
                 }
 
                 const group = consolidatedGroups[groupKey];
+                
+                // Ensure reservation_id is set if available
+                if (t.active_order.reservation_id && !group.reservation_id) {
+                    group.reservation_id = t.active_order.reservation_id;
+                    group.isGroup = true;
+                }
 
                 t.active_order.items.forEach(item => {
                     const productType = item.product?.type || item.type;
@@ -82,7 +103,7 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                     const itemData = {
                         id: item.id,
                         allIds: [item.id],
-                        name: item.product?.name || 'Unknown',
+                        name: item.product?.name || item.name || 'Unknown',
                         quantity: item.quantity,
                         price: item.price || item.product?.price || 0,
                         status: item.status || 'pending',
@@ -96,7 +117,9 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                     };
 
                     if (groupByCompositeKey) {
-                        const compositeKey = `${item.product_id}-${itemData.note}-${item.status}`;
+                        // [WHY] include name in key if product_id is null to avoid merging different custom dishes
+                        const idKey = item.product_id || itemData.name;
+                        const compositeKey = `${idKey}-${itemData.note}-${item.status}`;
                         if (group.itemsMap[compositeKey]) {
                             group.itemsMap[compositeKey].quantity += itemData.quantity;
                             group.itemsMap[compositeKey].allIds.push(item.id);
@@ -129,6 +152,16 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                 if (groupByCompositeKey && group.itemsMap) {
                     group.items = Object.values(group.itemsMap);
                 }
+
+                // [WHY] Format group table name (e.g. ACB - Tables 2-3-4)
+                if (group.isGroup) {
+                    const tablesString = group.tableNames
+                        .map(name => (name || '').toString().replace(/[^0-9]/g, ''))
+                        .sort((a, b) => parseInt(a) - parseInt(b))
+                        .join('-');
+                    group.tableName = `${group.groupName} - Bàn ${tablesString}`;
+                }
+
                 group.served = group.items.length > 0 && group.items.every(i => i.status === 'served');
                 orderDict[t.id.toString()] = group;
             }
