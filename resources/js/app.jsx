@@ -22,12 +22,35 @@ import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
 import Cashier from './pages/Cashier';
 import Bar from './pages/Bar';
+import ReservationList from './pages/reservations/ReservationList';
+import ReservationCreate from './pages/reservations/ReservationCreate';
 
 // Set base default header
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 import { useAppSelector } from "./store/hooks";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
+const RouteBodyClass = () => {
+    const location = useLocation();
+
+    useEffect(() => {
+        // Preserve common classes, remove existing page-* classes
+        const existingClasses = document.body.className.split(' ').filter(c => c && !c.startsWith('page-'));
+        
+        // Sanitize path (e.g., /reservations/edit/1 -> reservations-edit)
+        const pathSegments = location.pathname === '/' 
+            ? ['home'] 
+            : location.pathname.split('/').filter(p => p && isNaN(p));
+            
+        const pageClass = `page-${pathSegments.join('-')}`;
+        document.body.className = [...existingClasses, pageClass].join(' ');
+    }, [location]);
+
+    return null;
+};
 
 const ProtectedRoute = ({ children }) => {
     const { user } = useAppSelector(state => state.auth);
@@ -82,6 +105,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 function App() {
     return (
         <BrowserRouter>
+            <RouteBodyClass />
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route element={<ProtectedRoute />}>
@@ -91,6 +115,9 @@ function App() {
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
                     <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={['order_staff']}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
                     <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><Checkout /></RoleProtectedRoute>} />
                 </Route>

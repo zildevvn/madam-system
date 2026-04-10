@@ -1,0 +1,15 @@
+.page-reservations-create {
+
+    main {
+        padding: 0 15px;
+    }
+}
+
+.page-reservations,
+.page-reservations-create {
+    #app {
+        >.min-h-screen {
+            background: $color-bg-light;
+        }
+    }
+}

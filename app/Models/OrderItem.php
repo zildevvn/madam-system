@@ -16,7 +16,9 @@ class OrderItem extends Model
         'quantity',
         'price',
         'note',
-        'status'
+        'status',
+        'source',
+        'reservation_item_id'
     ];
 
     public function order()
@@ -27,5 +29,10 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function reservationItem()
+    {
+        return $this->belongsTo(ReservationItem::class);
     }
 }

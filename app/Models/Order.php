@@ -11,6 +11,7 @@ class Order extends Model
 
     protected $fillable = [
         'table_id',
+        'reservation_id',
         'user_id',
         'cashier_id',
         'merged_tables',
@@ -37,6 +38,11 @@ class Order extends Model
     public function table()
     {
         return $this->belongsTo(Table::class);
+    }
+
+    public function reservation()
+    {
+        return $this->belongsTo(Reservation::class);
     }
 
     public function items()

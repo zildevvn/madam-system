@@ -19,6 +19,7 @@ export default function Header() {
             { name: 'Bar', href: '/bar', roles: ['order_staff'] },
             { name: 'Bills', href: '/bills', roles: ['order_staff', 'cashier'] },
             { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
+            { name: 'Reservations', href: '/reservations', roles: ['order_staff', 'cashier'] },
             { name: 'Admin', href: '/admin', roles: [] },
         ];
         
