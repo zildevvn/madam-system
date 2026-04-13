@@ -21,16 +21,11 @@ class ReservationController extends Controller
      */
     public function index(Request $request)
     {
-        // [WHY] Allow filtering for table assignment workflow.
-        $query = Reservation::with(['table:id,name', 'items']);
+        // [WHY] Allow filtering by type for dashboard scannability.
+        $query = Reservation::with(['table:id,name', 'items', 'updater:id,name']);
 
-        if ($request->query('filter') === 'unassigned') {
-            $query->whereNull('table_id')
-                  ->where(function($q) {
-                      $q->whereNull('table_ids')
-                        ->orWhere('table_ids', '[]')
-                        ->orWhere('table_ids', 'like', '[]');
-                  });
+        if ($request->query('type')) {
+            $query->where('type', $request->query('type'));
         }
 
         $reservations = $query->orderBy('reservation_time', 'asc')
@@ -67,7 +62,8 @@ class ReservationController extends Controller
             'reservation_date' => 'required|date',
             'reservation_time' => 'required|string',
             'note' => 'nullable|string',
-            'staff_id' => 'nullable|exists:users,id'
+            'staff_id' => 'nullable|exists:users,id',
+            'updated_by' => 'nullable|exists:users,id'
         ]);
 
         try {
@@ -89,13 +85,6 @@ class ReservationController extends Controller
 
             // [WHY] Broadcast real-time event for dashboard synchronization
             broadcast(new \App\Events\ReservationUpdated($reservation, 'created'))->toOthers();
-
-            // [WHY] If tables were assigned during creation for a group, trigger the confirmation flow
-            // to create live orders immediately.
-            if ($validated['type'] === 'group' && !empty($validated['table_ids'])) {
-                $confirmService = app(\App\Services\ReservationConfirmService::class);
-                $confirmService->confirmGroupReservation($reservation, $validated['table_ids'], $validated['staff_id'] ?? null);
-            }
 
             return response()->json([
                 'data' => $reservation,
@@ -122,7 +111,7 @@ class ReservationController extends Controller
      */
     public function show($id)
     {
-        $reservation = Reservation::with('items')->findOrFail($id);
+        $reservation = Reservation::with(['items', 'updater:id,name'])->findOrFail($id);
         $reservation->dishes = $reservation->items;
         
         return response()->json([
@@ -160,7 +149,8 @@ class ReservationController extends Controller
             'reservation_time' => 'required|string',
             'note' => 'nullable|string',
             'status' => 'nullable|in:pending,confirmed,cancelled,completed',
-            'staff_id' => 'nullable|exists:users,id'
+            'staff_id' => 'nullable|exists:users,id',
+            'updated_by' => 'nullable|exists:users,id'
         ]);
 
         $hasDishesKey = in_array('dishes', array_keys($request->all()));
@@ -186,15 +176,6 @@ class ReservationController extends Controller
             // [WHY] Broadcast real-time event for dashboard synchronization
             broadcast(new \App\Events\ReservationUpdated($reservation, 'updated'))->toOthers();
             
-            // [WHY] Clean up transient properties to avoid SQL SET error in confirmGroupReservation
-            unset($reservation->dishes);
-
-            // [WHY] If tables were just assigned/updated, we trigger the confirmation flow
-            if (!empty($validated['table_ids'])) {
-                $confirmService = app(\App\Services\ReservationConfirmService::class);
-                $confirmService->confirmGroupReservation($reservation, $validated['table_ids'], $validated['staff_id'] ?? null);
-            }
-
             return response()->json([
                 'data' => $reservation,
                 'message' => 'Reservation updated successfully!',

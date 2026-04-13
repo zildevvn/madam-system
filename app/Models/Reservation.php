@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use App\Models\Table;
+use App\Models\ReservationItem;
 
 class Reservation extends Model
 {
@@ -22,6 +25,7 @@ class Reservation extends Model
         'reservation_time',
         'note',
         'status',
+        'updated_by',
         'staff_id'
     ];
 
@@ -40,6 +44,11 @@ class Reservation extends Model
     public function table()
     {
         return $this->belongsTo(Table::class);
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function items()

@@ -29,9 +29,10 @@ import ReservationCreate from './pages/reservations/ReservationCreate';
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-import { useAppSelector } from "./store/hooks";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { updateReservationFromSocket } from "./store/slices/reservationSlice";
+import { useAppDispatch, useAppSelector } from "./store/hooks";
 
 const RouteBodyClass = () => {
     const location = useLocation();
@@ -103,6 +104,30 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 function App() {
+    const dispatch = useAppDispatch();
+
+    // [WHY] Global Real-time Listeners for Reservations
+    // [RULE] Real-time updates must go through Redux (Rule 412)
+    useEffect(() => {
+        if (window.Echo) {
+            const channel = window.Echo.channel('orders');
+            
+            channel.listen('.reservation_updated', (data) => {
+                // [WHY] Update the normalized Redux store directly from the socket payload
+                // The backend sends { id: ..., action: ..., reservation: ... }
+                // Note: The backend event might need a small update to include the full reservation if it doesn't already
+                // but for now we follow the 'id' + 'reservation' payload structure.
+                dispatch(updateReservationFromSocket({ 
+                    id: data.id.toString(), 
+                    reservation: data.reservation,
+                    action: data.action 
+                }));
+            });
+
+            return () => window.Echo.leaveChannel('orders');
+        }
+    }, [dispatch]);
+
     return (
         <BrowserRouter>
             <RouteBodyClass />

@@ -2,45 +2,44 @@ import React from 'react';
 
 const ReservationDishesForm = ({ fields, register, append, remove, inputClasses, sectionTitle }) => {
     return (
-        <div>
-            <div className={sectionTitle}>
+        <>
+            <div className="mb-1">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20v-6M9 20v-4M15 20v-8M18 20V4M6 20v-2" /></svg>
                 Dishes Selection
             </div>
             <div className="space-y-4">
                 {fields.map((field, index) => (
                     <div key={field.id} className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm md:shadow-none md:border-none md:p-0 md:bg-transparent flex flex-col md:flex-row gap-3 items-stretch md:items-end animate-in fade-in slide-in-from-left-2 duration-200">
-                        <div className="flex-[2]">
+                        <div className="flex-[1.5]">
                             <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Dish Name</label>
                             <input {...register(`dishes.${index}.name`, { required: true })} className={inputClasses} placeholder="Enter dish name..." />
                         </div>
 
-                        <div className="md:w-32">
+                        <div className="md:w-28">
                             <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Category</label>
                             <div className="relative group">
                                 <select
                                     {...register(`dishes.${index}.type`)}
-                                    className={`${inputClasses} appearance-none pr-10 bg-orange-50/30 border-orange-100/50 text-orange-600 font-bold`}
+                                    className={`${inputClasses} appearance-none pr-10 bg-orange-50/30 border-orange-100/50 text-orange-600 font-bold px-2`}
                                 >
                                     <option value="food">Food</option>
                                     <option value="drink">Drink</option>
                                 </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-orange-400 group-hover:text-orange-600 transition-colors">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-orange-400 group-hover:text-orange-600 transition-colors">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex md:w-52 gap-3">
-                            <div className="flex-1 md:w-20">
+                        <div className="flex md:w-60 gap-3">
+                            <div className="flex-1 md:w-16">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Qty</label>
-                                <input type="number" {...register(`dishes.${index}.quantity`, { required: true, min: 1 })} className={inputClasses} />
+                                <input type="number" {...register(`dishes.${index}.quantity`, { required: true, min: 1 })} className={`${inputClasses} px-2`} />
                             </div>
-                            <div className="flex-[2] md:w-32 relative">
+                            <div className="flex-[3] md:w-40 relative">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Price (VND)</label>
                                 <div className="relative">
-                                    <input type="number" {...register(`dishes.${index}.price`, { required: true, min: 0 })} className={`${inputClasses}`} />
-
+                                    <input type="number" {...register(`dishes.${index}.price`, { required: true, min: 0 })} className={inputClasses} />
                                 </div>
                             </div>
                             <button
@@ -64,7 +63,7 @@ const ReservationDishesForm = ({ fields, register, append, remove, inputClasses,
                     ADD NEW DISH
                 </button>
             </div>
-        </div>
+        </>
     );
 };
 

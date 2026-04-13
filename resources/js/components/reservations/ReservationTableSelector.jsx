@@ -16,8 +16,7 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
         }
     }, [tableStatus, dispatch]);
 
-    // Exactly identical to MergeTableSelector logic to find available tables!
-    // It filters out tables that have active orders and tables wrapped inside groups.
+    // [WHY] Only show tables that are truly free (no active order and not part of a merged set)
     const availableTables = allTables.filter(t => !t.active_order && !tableIdToGroupKey[t.id.toString()]);
 
     return (
@@ -38,7 +37,33 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                 <>
                     <div className="fixed inset-0 z-[60]" onClick={() => setShowTableDropdown(false)}></div>
                     <div className="absolute bottom-full mb-3 left-0 w-72 bg-white border border-gray-100 rounded-[30px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] z-[70] py-4 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-                        <div className="px-5 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Assign Tables</div>
+                        <div className="px-5 py-2 flex items-center justify-between border-b border-gray-50 mb-2 pb-3">
+                            <div className="flex items-center gap-2 group cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    id="select-all-available"
+                                    className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
+                                    checked={availableTables.length > 0 && availableTables.every(t => selectedTables.includes(t.id.toString()))}
+                                    onChange={(e) => {
+                                        const allAvailableIds = availableTables.map(t => t.id.toString());
+                                        const isAllSelected = allAvailableIds.every(id => selectedTables.includes(id));
+                                        
+                                        if (e.target.checked && !isAllSelected) {
+                                            allAvailableIds.forEach(id => {
+                                                if (!selectedTables.includes(id)) onToggle(id);
+                                            });
+                                        } else if (!e.target.checked && isAllSelected) {
+                                            allAvailableIds.forEach(id => {
+                                                if (selectedTables.includes(id)) onToggle(id);
+                                            });
+                                        }
+                                    }}
+                                />
+                                <label htmlFor="select-all-available" className="text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer group-hover:text-gray-600 transition-colors">
+                                    Select All Available
+                                </label>
+                            </div>
+                        </div>
                         <div className="max-h-64 overflow-y-auto px-2 mt-2 custom-scrollbar">
                             {availableTables.map(table => (
                                 <label key={table.id} className="flex items-center px-4 py-3 hover:bg-orange-50/50 rounded-2xl cursor-pointer transition-all group">
@@ -48,7 +73,7 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                                             value={table.id}
                                             checked={selectedTables.includes(table.id.toString())}
                                             onChange={() => onToggle(table.id.toString())}
-                                            className="w-5 h-5 rounded-lg border-gray-200 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
+                                            className="w-4 h-4 rounded border-gray-200 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
                                         />
                                     </div>
                                     <div className="ml-4 flex flex-col">
@@ -67,3 +92,4 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
 };
 
 export default ReservationTableSelector;
+
