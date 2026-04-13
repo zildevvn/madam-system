@@ -53,9 +53,17 @@ const Cashier = () => {
         }
     }, [loadReservations]);
 
-    // [WHY] Exploded Data: We transform the unified orders array into two segmented billing lanes:
-    // 1. groupLaneOrderDict: Contains only shared pre-ordered items.
-    // 2. individualLaneOrderDict: Contains only local extra items per table.
+    // [WHY] Route each order into one of two billing lanes based on its type.
+    //
+    // Spec (Flow 3, Case B) — Key insight:
+    //   Extra orders placed by staff on group tables are SEPARATE order records
+    //   with NO reservation_id. They appear in `orders` as their own entry and
+    //   belong in the Individual lane, paid independently (Flow 1 logic).
+    //   There is no item-level splitting within a shared order record.
+    //
+    // Lane rules:
+    //   1. groupLaneOrderDict  — orders WITH reservation_id (type=group)
+    //   2. individualLaneOrderDict — all other orders (no reservation_id)
     const explodedData = useMemo(() => {
         const groupLaneOrderDict = {};
         const individualLaneOrderDict = {};
@@ -66,73 +74,44 @@ const Cashier = () => {
             if (processedOrderIds.has(order.id)) return;
             processedOrderIds.add(order.id);
 
-            // [RULE] Split logic applies strictly to group reservations
-            const isGroupSplitRequired = order.reservation_id && order.reservation && order.reservation.type === 'group';
+            const isGroupOrder = order.reservation_id &&
+                order.reservation &&
+                order.reservation.type === 'group';
 
-            if (isGroupSplitRequired) {
+            if (isGroupOrder) {
+                // ── GROUP LANE ────────────────────────────────────────────────────
+                // Key by mergedTables string (e.g. "3-4-5") or single tableId.
+                // All items in this order are pre-ordered via reservation — pass them as-is.
                 const groupKey = order.mergedTables || order.tableId.toString();
-
-                // A. MASTER GROUP PART (Pre-orders only)
-                // [WHY] Per user request: In the Group section, only display the pre-ordered (shared) items.
-                const preOrderItems = order.items.filter(item => !!item.reservation_item_id);
-
-                // Fallback: If no pre-orders exist, show everything to avoid empty card if system data is incomplete
-                const groupItems = preOrderItems.length > 0 ? preOrderItems : order.items;
-
                 groupLaneOrderDict[groupKey] = {
                     ...order,
-                    items: groupItems,
-                    isGroupMaster: true
+                    isGroupMaster: true,
+                    isGroup: true,
                 };
-
-                // B. INDIVIDUAL TABLE PARTS (Extras only)
-                // [WHY] Each table in the group gets a separate card for their extras.
-                const allTableIds = order.mergedTables ? order.mergedTables.split('-') : [order.tableId.toString()];
-                allTableIds.forEach(tId => {
-                    const extraItems = order.items.filter(item => !item.reservation_item_id && item.tableId?.toString() === tId.toString());
-                    if (extraItems.length > 0) {
-                        const extraKey = `extra-${tId}`;
-                        const tableObj = allTables.find(tbl => tbl.id.toString() === tId.toString());
-
-                        individualLaneOrderDict[extraKey] = {
-                            ...order,
-                            id: order.id,
-                            tableId: parseInt(tId),
-                            tableName: `Table ${tId}`,
-                            mergedTables: null,
-                            items: extraItems,
-                            isTableExtra: true,
-                            isGroup: false
-                        };
-
-                        individualTablesList.push({
-                            ...tableObj || { id: parseInt(tId), name: `Table ${tId}` },
-                            id: extraKey,
-                            originalTableId: parseInt(tId),
-                            name: `Table ${tId}`,
-                            groupKey: extraKey
-                        });
-                    }
-                });
             } else {
-                // REGULAR INDIVIDUAL TABLE
-                const tableIdStr = order.tableId.toString();
+                // ── INDIVIDUAL LANE ───────────────────────────────────────────────
+                // Covers:
+                //   1. Plain staff orders on any table (Flow 1 & 2)
+                //   2. Extra orders placed on group tables by staff (Flow 3, Case B)
+                //      → their own DB records, no reservation_id, paid independently.
+                const tableIdStr = order.mergedTables || order.tableId.toString();
                 individualLaneOrderDict[tableIdStr] = order;
+
                 const tableObj = allTables.find(tbl => tbl.id === order.tableId);
                 if (tableObj) {
-                    individualTablesList.push(tableObj);
+                    const alreadyAdded = individualTablesList.some(
+                        t => (t.groupKey || t.id?.toString()) === tableIdStr
+                    );
+                    if (!alreadyAdded) {
+                        individualTablesList.push(
+                            order.mergedTables
+                                ? { ...tableObj, id: tableIdStr, groupKey: tableIdStr }
+                                : tableObj
+                        );
+                    }
                 }
             }
         });
-
-        // [SAFETY] Global Fallback: Ensure UI stability if split logic returns nothing but data exists
-        if (Object.keys(groupLaneOrderDict).length === 0 && Object.keys(individualLaneOrderDict).length === 0 && orders.length > 0) {
-            orders.forEach(o => {
-                individualLaneOrderDict[o.tableId.toString()] = o;
-                const tableObj = allTables.find(tbl => tbl.id === o.tableId);
-                if (tableObj) individualTablesList.push(tableObj);
-            });
-        }
 
         return { groupLaneOrderDict, individualLaneOrderDict, individualTablesList };
     }, [orders, allTables]);

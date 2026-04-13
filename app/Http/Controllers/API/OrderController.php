@@ -85,9 +85,17 @@ class OrderController extends Controller
             'items.*.price' => 'required|numeric|min:0',
             'items.*.note' => 'nullable|string|max:255',
             'merged_tables' => 'nullable|string|max:255',
+            // [WHY] Optional: passed when paying for a single table's extras inside a shared group order.
+            // Scopes item upsert and orphan cleanup to only that table's items.
+            'table_id' => 'nullable|exists:tables,id',
         ]);
 
-        $order = $this->orderService->checkoutOrder($id, $validated['items'], $validated['merged_tables'] ?? null);
+        $order = $this->orderService->checkoutOrder(
+            $id,
+            $validated['items'],
+            $validated['merged_tables'] ?? null,
+            $validated['table_id'] ?? null  // [WHY] Forward table scope to service
+        );
 
         return response()->json([
             'data' => $order,

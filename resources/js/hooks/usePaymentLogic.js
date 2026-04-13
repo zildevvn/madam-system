@@ -46,7 +46,11 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            // 1. Persist changes to DB if draft items changed (Skip for group reservations which are read-only and lack product_ids)
+            // 1. Persist changes to DB if draft items changed.
+            //    Skip for group reservation orders (isGroup=true) — they are read-only
+            //    with no product_ids (items created from reservation_item_id records).
+            //    All other orders (including extra orders on group tables) are editable
+            //    and have their own independent order record — no scoping needed.
             if (!currentOrder.isGroup) {
                 await orderApi.checkoutOrder(
                     currentOrder.id,

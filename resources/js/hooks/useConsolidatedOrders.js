@@ -49,100 +49,108 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
 
         // 1. Consolidate into groups
         tables.forEach(t => {
-            if (t.active_order && t.active_order.items) {
-                if (handledOrderIds.has(t.active_order.id)) return;
-                handledOrderIds.add(t.active_order.id);
+            // [WHY] [CHANGE] Handle multiple active orders per table (e.g. 1 Group order + 1 Extra order)
+            // [RULE] Independent flows: Distinct database records ensure distinct UI cards
+            const ordersToProcess = t.active_orders?.length > 0 
+                ? t.active_orders 
+                : (t.active_order ? [t.active_order] : []);
 
-                const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+            ordersToProcess.forEach(activeOrder => {
+                if (activeOrder && activeOrder.items) {
+                    if (handledOrderIds.has(activeOrder.id)) return;
+                    handledOrderIds.add(activeOrder.id);
 
-                if (!consolidatedGroups[groupKey]) {
-                    const reservation = t.active_order.reservation;
-                    const groupName = reservation ? (reservation.company_name || reservation.lead_name) : null;
+                    const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
-                    consolidatedGroups[groupKey] = {
-                        id: t.active_order.id,
-                        tableId: t.id,
-                        tableName: t.name || `Bàn ${t.id}`,
-                        groupName: groupName,
-                        isGroup: !!reservation,
-                        mergedTables: groupKey.includes('-') ? groupKey : null,
-                        tableNames: [t.name || t.id.toString()],
-                        startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
-                        items: [],
-                        itemsMap: {},
-                        reservation: t.active_order.reservation
-                    };
-                } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
-                    consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
+                    if (!consolidatedGroups[groupKey]) {
+                        const reservation = activeOrder.reservation;
+                        const groupName = reservation ? (reservation.company_name || reservation.lead_name) : null;
 
-                    if (t.active_order.merged_tables === groupKey) {
-                        const reservation = t.active_order.reservation;
-                        consolidatedGroups[groupKey].id = t.active_order.id;
-                        consolidatedGroups[groupKey].startTime = new Date(t.active_order.created_at || t.active_order.updated_at);
-                        consolidatedGroups[groupKey].tableId = t.id;
-                        consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
-                        if (reservation) {
-                            consolidatedGroups[groupKey].groupName = reservation.company_name || reservation.lead_name;
-                            consolidatedGroups[groupKey].isGroup = true;
-                            consolidatedGroups[groupKey].reservation_id = reservation.id;
-                            consolidatedGroups[groupKey].reservation = reservation;
+                        consolidatedGroups[groupKey] = {
+                            id: activeOrder.id,
+                            tableId: t.id,
+                            tableName: t.name || `Bàn ${t.id}`,
+                            groupName: groupName,
+                            isGroup: !!reservation,
+                            mergedTables: groupKey.includes('-') ? groupKey : null,
+                            tableNames: [t.name || t.id.toString()],
+                            startTime: new Date(activeOrder.created_at || activeOrder.updated_at),
+                            items: [],
+                            itemsMap: {},
+                            reservation: activeOrder.reservation
+                        };
+                    } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
+                        consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
+
+                        if (activeOrder.merged_tables === groupKey) {
+                            const reservation = activeOrder.reservation;
+                            consolidatedGroups[groupKey].id = activeOrder.id;
+                            consolidatedGroups[groupKey].startTime = new Date(activeOrder.created_at || activeOrder.updated_at);
+                            consolidatedGroups[groupKey].tableId = t.id;
+                            consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
+                            if (reservation) {
+                                consolidatedGroups[groupKey].groupName = reservation.company_name || reservation.lead_name;
+                                consolidatedGroups[groupKey].isGroup = true;
+                                consolidatedGroups[groupKey].reservation_id = reservation.id;
+                                consolidatedGroups[groupKey].reservation = reservation;
+                            }
                         }
                     }
-                }
 
-                const group = consolidatedGroups[groupKey];
+                    const group = consolidatedGroups[groupKey];
 
-                // Ensure reservation_id and reservation are set if available
-                if (t.active_order.reservation_id && !group.reservation_id) {
-                    group.reservation_id = t.active_order.reservation_id;
-                    group.isGroup = true;
-                    if (!group.reservation) group.reservation = t.active_order.reservation;
-                }
+                    // Ensure reservation_id and reservation are set if available
+                    if (activeOrder.reservation_id && !group.reservation_id) {
+                        group.reservation_id = activeOrder.reservation_id;
+                        group.isGroup = true;
+                        if (!group.reservation) group.reservation = activeOrder.reservation;
+                    }
 
-                t.active_order.items.forEach(item => {
-                    const productType = item.product?.type || item.type;
-                    if (filterType && productType !== filterType) return;
+                    activeOrder.items.forEach(item => {
+                        const productType = item.product?.type || item.type;
+                        if (filterType && productType !== filterType) return;
 
-                    const itemData = {
-                        id: item.id,
-                        allIds: [item.id],
-                        name: item.product?.name || item.name || 'Unknown',
-                        quantity: item.quantity,
-                        price: item.price || item.product?.price || 0,
-                        status: item.status || 'pending',
-                        done: item.status === 'ready' || item.status === 'served',
-                        orderTime: new Date(item.created_at),
-                        product: item.product,
-                        product_id: item.product_id,
-                        type: productType || filterType,
-                        note: item.note || '',
-                        tableId: item.table_id, // Preserve the original table ID
-                        reservation_item_id: item.reservation_item_id // Preserved for UI split logic
-                    };
+                        const itemData = {
+                            id: item.id,
+                            allIds: [item.id],
+                            name: item.product?.name || item.name || 'Unknown',
+                            quantity: item.quantity,
+                            price: item.price || item.product?.price || 0,
+                            status: item.status || 'pending',
+                            done: item.status === 'ready' || item.status === 'served',
+                            orderTime: new Date(item.created_at),
+                            product: item.product,
+                            product_id: item.product_id,
+                            type: productType || filterType,
+                            note: item.note || '',
+                            tableId: item.table_id, // Preserve the original table ID
+                            reservation_item_id: item.reservation_item_id // Preserved for UI split logic
+                        };
 
-                    if (groupByCompositeKey) {
-                        // [WHY] include name in key if product_id is null to avoid merging different custom dishes
-                        const idKey = item.product_id || itemData.name;
-                        const compositeKey = `${idKey}-${itemData.note}-${item.status}`;
-                        if (group.itemsMap[compositeKey]) {
-                            group.itemsMap[compositeKey].quantity += itemData.quantity;
-                            group.itemsMap[compositeKey].allIds.push(item.id);
-                            if (itemData.orderTime < group.itemsMap[compositeKey].orderTime) {
-                                group.itemsMap[compositeKey].orderTime = itemData.orderTime;
+                        if (groupByCompositeKey) {
+                            // [WHY] include name in key if product_id is null to avoid merging different custom dishes
+                            const idKey = item.product_id || itemData.name;
+                            const compositeKey = `${idKey}-${itemData.note}-${item.status}`;
+                            if (group.itemsMap[compositeKey]) {
+                                group.itemsMap[compositeKey].quantity += itemData.quantity;
+                                group.itemsMap[compositeKey].allIds.push(item.id);
+                                if (itemData.orderTime < group.itemsMap[compositeKey].orderTime) {
+                                    group.itemsMap[compositeKey].orderTime = itemData.orderTime;
+                                }
+                            } else {
+                                group.itemsMap[compositeKey] = itemData;
                             }
                         } else {
-                            group.itemsMap[compositeKey] = itemData;
+                            group.items.push(itemData);
                         }
-                    } else {
-                        group.items.push(itemData);
-                    }
-                });
+                    });
 
-                const orderTime = new Date(t.active_order.created_at || t.active_order.updated_at);
-                if (orderTime < group.startTime) {
-                    group.startTime = orderTime;
+                    const orderTime = new Date(activeOrder.created_at || activeOrder.updated_at);
+                    if (orderTime < group.startTime) {
+                        group.startTime = orderTime;
+                    }
                 }
-            }
+            });
         });
 
         // 2. Finalize groups and build dictionary

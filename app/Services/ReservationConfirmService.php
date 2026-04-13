@@ -30,36 +30,17 @@ class ReservationConfirmService
 
             $mergedTablesString = count($tableIds) > 1 ? implode('-', $tableIds) : null;
 
-            // [WHY] Load existing active orders outside the loop to avoid N+1 queries
-            $existingOrders = Order::whereIn('table_id', $tableIds)
-                ->whereIn('status', ['pending', 'processing'])
-                ->get()
-                ->keyBy('table_id');
-
-            // [WHY] Create standard orders for ALL assigned tables
-            // [WHY] Create ONE standard order for the combined group
-            if ($existingOrders->has($mainTableId)) {
-                $mainOrder = $existingOrders->get($mainTableId);
-                
-                // [WHY] Update to link to reservation if not linked
-                if (!$mainOrder->reservation_id || $mainOrder->merged_tables !== $mergedTablesString || $mainOrder->user_id !== $staffId) {
-                    $mainOrder->update([
-                        'reservation_id' => $reservation->id,
-                        'merged_tables' => $mergedTablesString,
-                        'user_id' => $staffId
-                    ]);
-                }
-            } else {
-                $mainOrder = Order::create([
-                    'table_id' => $mainTableId,
-                    'reservation_id' => $reservation->id,
-                    'merged_tables' => $mergedTablesString,
-                    'user_id' => $staffId,
-                    'status' => 'pending',
-                    'subtotal' => 0,
-                    'total_price' => 0,
-                ]);
-            }
+            // [WHY] [CHANGE] ALWAYS create a NEW order for the group reservation items
+            // [RULE] Independent flows: Group pre-orders must not mix with existing Individual extras
+            $mainOrder = Order::create([
+                'table_id' => $mainTableId,
+                'reservation_id' => $reservation->id,
+                'merged_tables' => $mergedTablesString,
+                'user_id' => $staffId,
+                'status' => 'pending',
+                'subtotal' => 0,
+                'total_price' => 0,
+            ]);
 
             // [WHY] Convert reservation_items -> order_items
             // [RULE] We generate an array to do a bulk insert, avoiding N+1 INSERTS

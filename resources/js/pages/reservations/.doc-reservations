@@ -1,0 +1,50 @@
+Implement 3-Way Payment Flow Logic (Cashier System Refactor):
+
+🔵 1. Staff-order Individual Payment
+Trigger: single order from staff-order
+Action:
+Mark order as PAID
+Update database only for that order
+Hide only that order in UI
+Result:
+Table status = available ONLY if no other active orders exist
+🟣 2. Staff-order Merged Tables Payment
+Trigger: merged tables from staff-order (e.g. 3-4)
+Action:
+Mark all orders in table_ids as PAID
+Update all related tables in database
+Hide merged card (e.g. “3-4”)
+Result:
+All involved tables become available ONLY when no other active orders remain
+🟡 3. Group Reservation Payment (type = group)
+Case A: No individual orders in group tables
+Example: group 3-4-5 only has group order
+Action:
+Pay group reservation via reservation_id
+Mark group as PAID
+Hide group card (3-4-5)
+Update all tables → set to available
+Case B: Has individual orders inside group tables
+Example: table 3 in group 3-4-5 has extra order
+Flow:
+Individual order exists → shown in “Individual Tables”
+Pay individual order:
+Mark only that order as PAID
+Hide only that order
+DO NOT release table yet
+Pay group reservation:
+Check remaining unpaid individual orders in group
+If ALL cleared:
+Mark group as PAID
+Hide group card
+Set all tables (3-4-5) → available
+⚠️ Core Rules (IMPORTANT)
+Never release table if ANY unpaid order still exists (group or individual)
+Group payment and individual payment are independent but share final table state
+Table becomes “available” only when:
+Group is paid (if exists)
+AND all individual orders are paid
+🎯 Expected Result
+No cross-update between flows
+Group + Individual can coexist safely
+Table only becomes free when ALL related payments are completed

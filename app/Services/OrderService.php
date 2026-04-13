@@ -17,8 +17,13 @@ class OrderService
     // [RULE] Eager load only required fields for performance
     public function getActiveOrder($tableId)
     {
+        // [WHY] Prioritize non-reservation orders (extras) for the tablet view
+        // [RULE] If a table has both a group pre-order and local extras, 
+        // the waiter should see/add to the extras order by default.
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
+            ->orderByRaw('reservation_id IS NULL DESC') 
+            ->orderBy('id', 'desc')
             ->with([
                 'items.product' => function($query) {
                     $query->select('id', 'name', 'price', 'type');
@@ -89,16 +94,22 @@ class OrderService
     // [WHY] Submit kitchen order and sync items
     // [RULE] Transactional safety for items and status updates
     // [RULE] No N+1 queries by pre-fetching existing items and types
-    public function checkoutOrder($orderId, array $items, $mergedTables = null)
+    // [PARAM] $tableId — optional; when set, scopes upsert+cleanup to only items for that table.
+    //          Used when paying a single table's extras inside a shared group order, so sibling
+    //          tables' items on the same order record are NOT touched.
+    public function checkoutOrder($orderId, array $items, $mergedTables = null, $tableId = null)
     {
-        $result = DB::transaction(function () use ($orderId, $items, $mergedTables) {
+        $result = DB::transaction(function () use ($orderId, $items, $mergedTables, $tableId) {
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
             // [PERF] PRE-FETCH all existing items for this order in ONE query
-            $existingItems = OrderItem::where('order_id', $orderId)
-                ->get()
-                ->keyBy('product_id');
+            // [RULE] If $tableId is provided, only scope to that table's existing items
+            $existingItemsQuery = OrderItem::where('order_id', $orderId);
+            if ($tableId) {
+                $existingItemsQuery->where('table_id', $tableId);
+            }
+            $existingItems = $existingItemsQuery->get()->keyBy('product_id');
 
             // [PERF] Pre-fetch product types for items
             $productIds = collect($items)->pluck('product_id')->toArray();
@@ -139,10 +150,15 @@ class OrderService
             }
 
             // [RULE] Cleanup orphaned items
+            // [RULE] When $tableId is set, ONLY delete orphans belonging to that table to avoid
+            //        clobbering sibling tables' items in the same shared group order record.
             $itemProductIds = collect($items)->pluck('product_id')->toArray();
-            OrderItem::where('order_id', $orderId)
-                ->whereNotIn('product_id', $itemProductIds)
-                ->delete();
+            $orphanQuery = OrderItem::where('order_id', $orderId)
+                ->whereNotIn('product_id', $itemProductIds);
+            if ($tableId) {
+                $orphanQuery->where('table_id', $tableId);
+            }
+            $orphanQuery->delete();
 
             $wasDraft = $order->status === 'draft';
             $order->update([
@@ -170,6 +186,7 @@ class OrderService
 
         return $orderObj;
     }
+
 
     // [WHY] Update progress of a specific item
     // [RULE] Updates trigger realtime events for Kitchen/Bar/Waiter
@@ -203,7 +220,8 @@ class OrderService
     public function completeOrder($orderId, $data)
     {
         $result = DB::transaction(function () use ($orderId, $data) {
-            $order = Order::findOrFail($orderId);
+            // [WHY] 1. Load the order with reservation info to identify if it's a group pre-order
+            $order = Order::with('reservation')->findOrFail($orderId);
 
             // [WHY] Identify all involved table IDs in the merge group
             $involvedTableIds = [$order->table_id];
@@ -229,23 +247,55 @@ class OrderService
             $discountAmount = min($subtotal, $discountAmount);
             $finalPrice = $subtotal - $discountAmount;
 
-            // [WHY] 2. Finalize all active orders for these tables with the same payment info
-            Order::whereIn('table_id', $involvedTableIds)
-                ->whereIn('status', ['draft', 'pending', 'processing'])
-                ->update([
-                    'status' => 'completed',
-                    'subtotal' => $subtotal,
-                    'discount_type' => $discountType,
-                    'discount_value' => $discountValue,
-                    'discount_amount' => $discountAmount,
-                    'total_price' => $finalPrice,
-                    'payment_method' => $data['payment_method'] ?? null,
-                    'cashier_id' => $data['cashier_id'] ?? null,
-                ]);
+            // [WHY] [CHANGE] Standardized 3-Way Payment Independence logic
+            $isGroupRes = $order->reservation_id && $order->reservation && $order->reservation->type === 'group';
+            
+            $paymentData = [
+                'status' => 'completed',
+                'subtotal' => $subtotal,
+                'discount_type' => $discountType,
+                'discount_value' => $discountValue,
+                'discount_amount' => $discountAmount,
+                'total_price' => $finalPrice,
+                'payment_method' => $data['payment_method'] ?? null,
+                'cashier_id' => $data['cashier_id'] ?? null,
+            ];
 
-            // [WHY] 2. Free all tables in the group
+            if ($isGroupRes) {
+                // FLOW 1: Group Reservation (Matched by reservation_id)
+                // [RULE] Close all orders specifically linked to this group reservation
+                Order::where('reservation_id', $order->reservation_id)
+                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->update($paymentData);
+            } elseif ($order->merged_tables) {
+                // FLOW 3: Staff Merge (Matched by table_ids)
+                // [RULE] Close all orders on these tables EXCEPT group reservations
+                Order::whereIn('table_id', $involvedTableIds)
+                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->where(function($q) {
+                        $q->whereNull('reservation_id')
+                          ->orWhereHas('reservation', function($sq) {
+                              $sq->where('type', '!=', 'group');
+                          });
+                    })
+                    ->update($paymentData);
+            } else {
+                // FLOW 2: Individual (Matched by order_id only)
+                // [RULE] Maximum isolation: Only affects this specific order record
+                $order->update($paymentData);
+            }
+
+            // [WHY] 2. Free all tables in the group ONLY if no other active orders remain
             if (!empty($involvedTableIds)) {
-                Table::whereIn('id', $involvedTableIds)->update(['status' => 'empty']);
+                foreach ($involvedTableIds as $tableId) {
+                    $stillActive = Order::where('table_id', $tableId)
+                        ->whereIn('status', ['draft', 'pending', 'processing'])
+                        ->exists();
+                    
+                    if (!$stillActive) {
+                        Table::where('id', $tableId)->update(['status' => 'empty']);
+                    }
+                }
             }
 
             // [WHY] 3. Update reservation status if it's a group reservation

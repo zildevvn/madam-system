@@ -84,7 +84,9 @@ export const useReservationForm = (id = null, user = null) => {
                 ).map(dish => ({
                     ...dish,
                     quantity: parseInt(dish.quantity, 10),
-                    price: parseFloat(dish.price),
+                    // [WHY] Sanitize price: Convert formatted strings (e.g. 30.000) to clean numbers (30000) 
+                    // before parseFloat to prevent truncation at the thousand separator dot.
+                    price: parseFloat(String(dish.price).replace(/[^0-9]/g, '')) || 0,
                     type: dish.type || 'food'
                 }));
             }

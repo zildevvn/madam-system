@@ -25,6 +25,10 @@ class TableService
             'activeOrder.reservation',
             'activeOrder.items.product' => function($query) {
                 $query->select('id', 'name', 'price', 'type');
+            },
+            'activeOrders.reservation',
+            'activeOrders.items.product' => function($query) {
+                $query->select('id', 'name', 'price', 'type');
             }
         ])->get();
     }

@@ -9,8 +9,13 @@ const orderApi = {
     const response = await axios.post('/api/orders', data);
     return response.data;
   },
-  checkoutOrder: async (orderId, items, mergedTables = null) => {
-    const response = await axios.post(`/api/orders/${orderId}/checkout`, { items, merged_tables: mergedTables });
+  checkoutOrder: async (orderId, items, mergedTables = null, tableId = null) => {
+    const response = await axios.post(`/api/orders/${orderId}/checkout`, {
+      items,
+      merged_tables: mergedTables,
+      table_id: tableId, // [WHY] Passed when paying extras for a single table inside a shared group order.
+                         // Scopes orphan cleanup on the backend to avoid deleting sibling tables' items.
+    });
     return response.data;
   },
   cancelOrder: async (orderId) => {
