@@ -19,6 +19,7 @@ const Cashier = () => {
     const [selectedTable, setSelectedTable] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
     const [reservations, setReservations] = useState([]);
+    const [isGroupVisible, setIsGroupVisible] = useState(true); // [NEW] Toggle state for Group lane
     const [isLoadingRes, setIsLoadingRes] = useState(false);
 
     const loadReservations = React.useCallback(async () => {
@@ -60,7 +61,7 @@ const Cashier = () => {
         const individualLaneOrderDict = {};
         const individualTablesList = [];
         const processedOrderIds = new Set();
-        
+
         orders.forEach(order => {
             if (processedOrderIds.has(order.id)) return;
             processedOrderIds.add(order.id);
@@ -74,7 +75,7 @@ const Cashier = () => {
                 // A. MASTER GROUP PART (Pre-orders only)
                 // [WHY] Per user request: In the Group section, only display the pre-ordered (shared) items.
                 const preOrderItems = order.items.filter(item => !!item.reservation_item_id);
-                
+
                 // Fallback: If no pre-orders exist, show everything to avoid empty card if system data is incomplete
                 const groupItems = preOrderItems.length > 0 ? preOrderItems : order.items;
 
@@ -184,7 +185,7 @@ const Cashier = () => {
     // [RULE] Must be called before any early returns to avoid "Rendered fewer hooks than expected"
     const groupTables = useMemo(() => {
         // console.log("[Cashier Group Split] Recalculating groupTables:", reservations.length, Object.keys(groupLaneOrderDict).length);
-        
+
         const resBased = reservations
             .filter(r => r.type === 'group')
             .map(r => {
@@ -196,8 +197,8 @@ const Cashier = () => {
                     const order = groupLaneOrderDict[key];
                     if (!order) return false;
                     const rTableIdStr = r.table_id?.toString();
-                    return order.tableId?.toString() === rTableIdStr || 
-                           (order.mergedTables && order.mergedTables.split('-').includes(rTableIdStr));
+                    return order.tableId?.toString() === rTableIdStr ||
+                        (order.mergedTables && order.mergedTables.split('-').includes(rTableIdStr));
                 });
 
                 if (!matchingOrderKey) {
@@ -207,7 +208,7 @@ const Cashier = () => {
 
                 const order = groupLaneOrderDict[matchingOrderKey];
                 return {
-                    id: matchingOrderKey, 
+                    id: matchingOrderKey,
                     name: order.tableName,
                     isVirtual: true,
                     reservation_id: r.id,
@@ -255,54 +256,97 @@ const Cashier = () => {
     // [WHY] Individual tables: Segmented list from explodedData
     const individualTables = individualTablesList;
 
+
+
+
     return (
-        <div className="cashier-page md-management-page pb-20">
-            <div className="md-management-page__content py-8">
+        <div className="cashier-page pb-20">
+            {/* [NON-INTRUSIVE FIX] Invisible spacer to satisfy global SCSS first-child:fixed rule without changing layout */}
+            <div className="hidden" aria-hidden="true"></div>
+
+            <div className="py-8 relative overflow-x-hidden">
+                {/* [NEW] Floating Tab to restore Group section */}
+                {!isGroupVisible && (
+                    <div
+                        onClick={() => setIsGroupVisible(true)}
+                        className="fixed right-0 top-1/2 -translate-y-1/2 bg-orange-500 text-white p-4 rounded-l-2xl shadow-[0_4px_20px_rgba(255,165,0,0.3)] cursor-pointer hover:pr-6 transition-all duration-300 z-50 flex items-center gap-2"
+                        title="Show Group Section"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                        <span className="text-[11px] font-black uppercase tracking-widest vertical-text hidden lg:block">Khách Đoàn</span>
+                    </div>
+                )}
+
                 <div className="w-full max-w-[1600px] mx-auto px-[20px]">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="flex flex-col lg:flex-row gap-4 relative items-start">
                         {/* LEFT: Individual Tables */}
-                        <div className="flex flex-col gap-6">
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-[16px] font-black text-gray-800 tracking-tight uppercase">Khách Lẻ (Individual)</h3>
-                                <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{individualTables.length} Bàn</span>
-                            </div>
-                            <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[200px]">
-                                <ActiveOrderTableList
-                                    tables={individualTables}
-                                    orders={individualLaneOrderDict}
-                                    currentTime={currentTime}
-                                    onTableClick={handleTableClick}
-                                    showSimpleView={true}
-                                />
-                                {individualTables.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3zM9 9h6v6H9z" /></svg>
-                                        <p className="text-[12px] font-bold mt-4 uppercase tracking-widest">Không có khách lẻ</p>
+                        <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] ${isGroupVisible ? 'w-full lg:w-1/2' : 'w-full'}`}>
+                            <div className="py-4 px-2 flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden min-h-[500px]">
+                                <div className="flex items-center justify-between px-2">
+                                    <div className="flex flex-col">
+                                        <h5 className="mb-0 text-gray-900 font-black text-[15px] uppercase tracking-tight">Khách Lẻ</h5>
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Individual Tables</span>
                                     </div>
-                                )}
+                                    <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{individualTables.length} Bàn</span>
+                                </div>
+
+                                <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[400px]">
+                                    <ActiveOrderTableList
+                                        tables={individualTables}
+                                        orders={individualLaneOrderDict}
+                                        currentTime={currentTime}
+                                        onTableClick={handleTableClick}
+                                        showSimpleView={true}
+                                    />
+                                    {individualTables.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-24 opacity-30">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3zM9 9h6v6H9z" /></svg>
+                                            <p className="text-[11px] font-bold mt-4 uppercase tracking-widest">Không có khách lẻ</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        {/* RIGHT: Group Tables */}
-                        <div className="flex flex-col gap-6">
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-[16px] font-black text-orange-600 tracking-tight uppercase">Khách Đoàn (Group)</h3>
-                                <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{groupTables.length} Đoàn</span>
-                            </div>
-                            <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-orange-100 flex flex-col overflow-hidden min-h-[200px]">
-                                <ActiveOrderTableList
-                                    tables={groupTables}
-                                    orders={groupLaneOrderDict}
-                                    currentTime={currentTime}
-                                    onTableClick={handleTableClick}
-                                    showSimpleView={true}
-                                />
-                                {groupTables.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                                        <p className="text-[12px] font-bold mt-4 uppercase tracking-widest">Không có loại khách đoàn</p>
+                        {/* RIGHT: Group Tables (Sliding) */}
+                        <div
+                            className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] transform 
+                            ${isGroupVisible
+                                    ? 'w-full lg:w-1/2 translate-x-0 opacity-100'
+                                    : 'w-0 lg:w-0 translate-x-full opacity-0 pointer-events-none absolute right-0'}`}
+                        >
+                            <div className="py-4 px-2 flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-orange-100 overflow-hidden min-h-[500px] min-w-full lg:min-w-[400px]">
+                                <div className="flex items-center justify-between px-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex flex-col">
+                                            <h5 className="mb-0 text-orange-600 font-black text-[15px] uppercase tracking-tight">Khách Đoàn</h5>
+                                            <span className="text-[10px] text-orange-300 font-bold uppercase tracking-widest">Group Reservations</span>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsGroupVisible(false)}
+                                            className="p-2 hover:bg-orange-50 rounded-lg text-orange-400 hover:text-orange-600 transition-colors"
+                                            title="Hide Group View"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                        </button>
                                     </div>
-                                )}
+                                    <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{groupTables.length} Đoàn</span>
+                                </div>
+                                <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-orange-50 flex flex-col overflow-hidden min-h-[400px]">
+                                    <ActiveOrderTableList
+                                        tables={groupTables}
+                                        orders={groupLaneOrderDict}
+                                        currentTime={currentTime}
+                                        onTableClick={handleTableClick}
+                                        showSimpleView={true}
+                                    />
+                                    {groupTables.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center py-24 opacity-30">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                            <p className="text-[11px] font-bold mt-4 uppercase tracking-widest text-orange-400">Không có khách đoàn</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
