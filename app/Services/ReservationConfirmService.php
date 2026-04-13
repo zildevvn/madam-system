@@ -37,39 +37,35 @@ class ReservationConfirmService
                 ->keyBy('table_id');
 
             // [WHY] Create standard orders for ALL assigned tables
-            foreach ($tableIds as $tableId) {
-                if ($existingOrders->has($tableId)) {
-                    // [NOTE] Safety check, usually tables should be free, but POS is dynamic
-                    $order = $existingOrders->get($tableId);
-                    
-                    // [WHY] Update to link to reservation if not linked
-                    if (!$order->reservation_id || $order->merged_tables !== $mergedTablesString || $order->user_id !== $staffId) {
-                        $order->update([
-                            'reservation_id' => $reservation->id,
-                            'merged_tables' => $mergedTablesString,
-                            'user_id' => $staffId
-                        ]);
-                    }
-                } else {
-                    $order = Order::create([
-                        'table_id' => $tableId,
+            // [WHY] Create ONE standard order for the combined group
+            if ($existingOrders->has($mainTableId)) {
+                $mainOrder = $existingOrders->get($mainTableId);
+                
+                // [WHY] Update to link to reservation if not linked
+                if (!$mainOrder->reservation_id || $mainOrder->merged_tables !== $mergedTablesString || $mainOrder->user_id !== $staffId) {
+                    $mainOrder->update([
                         'reservation_id' => $reservation->id,
                         'merged_tables' => $mergedTablesString,
-                        'user_id' => $staffId,
-                        'status' => 'pending',
-                        'subtotal' => 0,
-                        'total_price' => 0,
+                        'user_id' => $staffId
                     ]);
                 }
-
-                $orders[$tableId] = $order;
+            } else {
+                $mainOrder = Order::create([
+                    'table_id' => $mainTableId,
+                    'reservation_id' => $reservation->id,
+                    'merged_tables' => $mergedTablesString,
+                    'user_id' => $staffId,
+                    'status' => 'pending',
+                    'subtotal' => 0,
+                    'total_price' => 0,
+                ]);
             }
 
             // [WHY] Convert reservation_items -> order_items
             // [RULE] We generate an array to do a bulk insert, avoiding N+1 INSERTS
-            $mainOrder = $orders[$mainTableId];
             $orderItemsToInsert = [];
             $now = now();
+            $totalPrice = $mainOrder->total_price;
             
             foreach ($reservation->items as $resItem) {
                 $orderItemsToInsert[] = [
@@ -86,19 +82,23 @@ class ReservationConfirmService
                     'created_at' => $now,
                     'updated_at' => $now
                 ];
+                $totalPrice += ($resItem->price * $resItem->quantity);
             }
 
             if (!empty($orderItemsToInsert)) {
                 OrderItem::insert($orderItemsToInsert);
+                $mainOrder->update([
+                    'total_price' => $totalPrice,
+                    'subtotal' => $totalPrice
+                ]);
             }
 
             // [WHY] Trigger real-time data push to Kitchen and Bill systems
-            // We broadcast on the main order specifically to refresh the dashboard
             if ($mainOrder) {
                 event(new \App\Events\OrderUpdated($mainOrder, 'order_created'));
             }
 
-            return $orders;
+            return [$mainTableId => $mainOrder];
         });
     }
 }

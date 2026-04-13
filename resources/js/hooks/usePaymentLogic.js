@@ -46,18 +46,20 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            // 1. Persist changes to DB if draft items changed
-            await orderApi.checkoutOrder(
-                currentOrder.id,
-                draftItems.map(i => ({
-                    product_id: i.product_id || i.id,
-                    quantity: i.quantity,
-                    price: i.price,
-                    note: i.note,
-                    table_id: i.tableId || currentOrder.tableId
-                })),
-                currentOrder?.mergedTables || selectedTable.merged_tables || null
-            );
+            // 1. Persist changes to DB if draft items changed (Skip for group reservations which are read-only and lack product_ids)
+            if (!currentOrder.isGroup) {
+                await orderApi.checkoutOrder(
+                    currentOrder.id,
+                    draftItems.map(i => ({
+                        product_id: i.product_id || i.id,
+                        quantity: i.quantity,
+                        price: i.price,
+                        note: i.note,
+                        table_id: i.tableId || currentOrder.tableId
+                    })),
+                    currentOrder?.mergedTables || selectedTable.merged_tables || null
+                );
+            }
 
             // 2. Complete payment with discount info
             await orderApi.completeOrder(currentOrder.id, paymentMethod, discountType, discountValue);

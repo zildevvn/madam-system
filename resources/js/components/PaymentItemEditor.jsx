@@ -96,19 +96,24 @@ const PaymentItemEditor = ({
                     <div className="space-y-1">
                         {Object.entries(
                             draftItems.reduce((acc, item) => {
-                                const tId = item.tableId || selectedTable.id;
-                                if (!acc[tId]) acc[tId] = [];
-                                acc[tId].push(item);
+                                const tGroup = currentOrder?.isGroup ? 'GROUP' : (item.tableId || selectedTable.id);
+                                if (!acc[tGroup]) acc[tGroup] = [];
+                                acc[tGroup].push(item);
                                 return acc;
                             }, {})
-                        ).sort(([a], [b]) => a - b).map(([tId, tableItems]) => {
+                        ).sort(([a], [b]) => a === 'GROUP' ? -1 : a - b).map(([tGroup, tableItems]) => {
                             const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                            const mergedStr = currentOrder?.mergedTables || selectedTable.merged_tables;
+                            const displayTableTitle = tGroup === 'GROUP'
+                                ? `Table ${mergedStr ? mergedStr.split('-').map(id => id.trim()).join(' - ') : selectedTable.id}`
+                                : `Bàn ${tGroup}`;
+
                             return (
-                                <div key={tId} className="space-y-1 mb-4 last:mb-0">
-                                    {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
+                                <div key={tGroup} className="space-y-1 mb-4 last:mb-0">
+                                    {(mergedStr || tGroup === 'GROUP') && (
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100 italic">
-                                                Bàn {tId}
+                                                {displayTableTitle}
                                             </span>
                                             <div className="flex-1 h-[1px] bg-gray-100"></div>
                                             <span className="text-[10px] font-black text-gray-400 tracking-tighter">
@@ -116,16 +121,19 @@ const PaymentItemEditor = ({
                                             </span>
                                         </div>
                                     )}
-                                    {tableItems.map((item, idx) => (
-                                        <ProductItem
-                                            key={`${item.product_id || item.id}-${tId}`}
-                                            item={item}
-                                            onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(tId), q)}
-                                            onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(tId), n)}
-                                            showNoteButton={!isReadOnly}
-                                            isReadOnly={isReadOnly}
-                                        />
-                                    ))}
+                                    {tableItems.map((item, idx) => {
+                                        const actualTableId = item.tableId || selectedTable.id;
+                                        return (
+                                            <ProductItem
+                                                key={`${item.product_id || item.id}-${actualTableId}`}
+                                                item={item}
+                                                onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q)}
+                                                onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n)}
+                                                showNoteButton={!isReadOnly}
+                                                isReadOnly={isReadOnly}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             );
                         })}
