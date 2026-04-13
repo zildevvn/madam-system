@@ -53,7 +53,7 @@ const ActiveOrderTableList = ({
 
         // Add highlight for new orders (items added within the last 30 seconds)
         if (showNewOrderHighlight && order.items && order.items.length > 0) {
-            const minDiffSeconds = Math.min(...order.items.map(item => 
+            const minDiffSeconds = Math.min(...order.items.map(item =>
                 (currentTime - new Date(item.orderTime)) / 1000
             ));
             if (minDiffSeconds < 30) {
