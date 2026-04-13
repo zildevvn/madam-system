@@ -58,7 +58,7 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                 if (!consolidatedGroups[groupKey]) {
                     const reservation = t.active_order.reservation;
                     const groupName = reservation ? (reservation.company_name || reservation.lead_name) : null;
-                    
+
                     consolidatedGroups[groupKey] = {
                         id: t.active_order.id,
                         tableId: t.id,
@@ -69,11 +69,12 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                         tableNames: [t.name || t.id.toString()],
                         startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
                         items: [],
-                        itemsMap: {}
+                        itemsMap: {},
+                        reservation: t.active_order.reservation
                     };
                 } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
                     consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
-                    
+
                     if (t.active_order.merged_tables === groupKey) {
                         const reservation = t.active_order.reservation;
                         consolidatedGroups[groupKey].id = t.active_order.id;
@@ -84,16 +85,18 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                             consolidatedGroups[groupKey].groupName = reservation.company_name || reservation.lead_name;
                             consolidatedGroups[groupKey].isGroup = true;
                             consolidatedGroups[groupKey].reservation_id = reservation.id;
+                            consolidatedGroups[groupKey].reservation = reservation;
                         }
                     }
                 }
 
                 const group = consolidatedGroups[groupKey];
-                
-                // Ensure reservation_id is set if available
+
+                // Ensure reservation_id and reservation are set if available
                 if (t.active_order.reservation_id && !group.reservation_id) {
                     group.reservation_id = t.active_order.reservation_id;
                     group.isGroup = true;
+                    if (!group.reservation) group.reservation = t.active_order.reservation;
                 }
 
                 t.active_order.items.forEach(item => {
@@ -113,7 +116,8 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                         product_id: item.product_id,
                         type: productType || filterType,
                         note: item.note || '',
-                        tableId: item.table_id // Preserve the original table ID
+                        tableId: item.table_id, // Preserve the original table ID
+                        reservation_item_id: item.reservation_item_id // Preserved for UI split logic
                     };
 
                     if (groupByCompositeKey) {
