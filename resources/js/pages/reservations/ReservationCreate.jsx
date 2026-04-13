@@ -74,7 +74,15 @@ const ReservationCreate = () => {
                         </div>
 
                         <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100 flex flex-col gap-6">
-                            <ReservationDishesForm fields={fields} register={register} append={append} remove={remove} inputClasses={inputClasses} />
+                            <ReservationDishesForm 
+                                fields={fields} 
+                                register={register} 
+                                watch={watch}
+                                setValue={setValue}
+                                append={append} 
+                                remove={remove} 
+                                inputClasses={inputClasses} 
+                            />
 
                             <div className="section-container">
                                 {isManager ? (

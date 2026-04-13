@@ -1,6 +1,21 @@
 import React from 'react';
+import { useWatch } from 'react-hook-form';
 
-const ReservationDishesForm = ({ fields, register, append, remove, inputClasses, sectionTitle }) => {
+const ReservationDishesForm = ({ fields, register, watch, setValue, append, remove, inputClasses, sectionTitle }) => {
+    const formatPrice = (val) => {
+        if (val === undefined || val === null || val === '') return '';
+        const numericStr = val.toString().replace(/[^0-9]/g, '');
+        if (!numericStr) return '';
+        // Use Vietnamese locale convention (dots as thousand separators) for VND familiarity
+        return parseInt(numericStr).toLocaleString('vi-VN');
+    };
+
+    const handlePriceChange = (index, value) => {
+        // Strip everything except numbers
+        const cleanValue = value.replace(/[^0-9]/g, '');
+        // Update the actual form state with the integer
+        setValue(`dishes.${index}.price`, cleanValue ? parseInt(cleanValue) : 0);
+    };
     return (
         <>
             <div className="mb-1">
@@ -10,12 +25,12 @@ const ReservationDishesForm = ({ fields, register, append, remove, inputClasses,
             <div className="space-y-4">
                 {fields.map((field, index) => (
                     <div key={field.id} className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm md:shadow-none md:border-none md:p-0 md:bg-transparent flex flex-col md:flex-row gap-3 items-stretch md:items-end animate-in fade-in slide-in-from-left-2 duration-200">
-                        <div className="flex-[1.5]">
+                        <div className="flex-1">
                             <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Dish Name</label>
                             <input {...register(`dishes.${index}.name`, { required: true })} className={inputClasses} placeholder="Enter dish name..." />
                         </div>
 
-                        <div className="md:w-28">
+                        <div className="md:w-24">
                             <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Category</label>
                             <div className="relative group">
                                 <select
@@ -31,15 +46,22 @@ const ReservationDishesForm = ({ fields, register, append, remove, inputClasses,
                             </div>
                         </div>
 
-                        <div className="flex md:w-60 gap-3">
-                            <div className="flex-1 md:w-16">
+                        <div className="flex md:w-72 gap-3">
+                            <div className="flex-1 md:w-24">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Qty</label>
-                                <input type="number" {...register(`dishes.${index}.quantity`, { required: true, min: 1 })} className={`${inputClasses} px-2`} />
+                                <input type="number" {...register(`dishes.${index}.quantity`, { required: true, min: 1 })} className={`${inputClasses} px-2 text-center font-bold`} />
                             </div>
                             <div className="flex-[3] md:w-40 relative">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Price (VND)</label>
                                 <div className="relative">
-                                    <input type="number" {...register(`dishes.${index}.price`, { required: true, min: 0 })} className={inputClasses} />
+                                    <input 
+                                        type="text" 
+                                        {...register(`dishes.${index}.price`, { required: true })} 
+                                        value={formatPrice(watch(`dishes.${index}.price`))}
+                                        onChange={(e) => handlePriceChange(index, e.target.value)}
+                                        className={inputClasses} 
+                                        placeholder="0"
+                                    />
                                 </div>
                             </div>
                             <button
