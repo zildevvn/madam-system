@@ -21,10 +21,10 @@ const ReservationList = () => {
 
         return [...reservations]
             .filter(r => {
-                // [RULE] Hide past bookings (compare full datetime)
+                // [RULE] Hide past bookings (compare full datetime) and completed bookings
                 const datePart = typeof r.reservation_date === 'string' ? r.reservation_date.split('T')[0] : '';
                 const timestamp = new Date(`${datePart}T${r.reservation_time}`).getTime();
-                return timestamp >= now;
+                return timestamp >= now && r.status !== 'completed';
             })
             .sort((a, b) => {
                 const parseToTimestamp = (d, t) => {

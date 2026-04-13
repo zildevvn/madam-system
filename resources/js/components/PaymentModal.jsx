@@ -147,7 +147,7 @@ const PaymentModal = ({
                     )}
                 </div>
 
-                {step === 2 && <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />}
+                {step === 2 && <PaymentMethodSelector paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} isGroup={!!currentOrder?.isGroup} />}
 
                 <div className="px-6 pb-6 pt-4 grid grid-cols-2 gap-3">
                     <button onClick={() => window.print()} className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer border-none">

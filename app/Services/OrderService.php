@@ -248,6 +248,14 @@ class OrderService
                 Table::whereIn('id', $involvedTableIds)->update(['status' => 'empty']);
             }
 
+            // [WHY] 3. Update reservation status if it's a group reservation
+            if ($order->reservation_id) {
+                $reservation = \App\Models\Reservation::find($order->reservation_id);
+                if ($reservation && $reservation->type === 'group') {
+                    $reservation->update(['status' => 'completed']);
+                }
+            }
+
             return $order;
         });
 
@@ -261,6 +269,14 @@ class OrderService
         try {
             // [REALTIME] Broadcast so other views (StaffOrder, Kitchen) reflect table is now empty
             broadcast(new OrderUpdated($result, 'order_updated'));
+
+            // [REALTIME] Broadcast reservation update so ReservationList can filter it out instantly
+            if ($result->reservation_id) {
+                $reservation = \App\Models\Reservation::find($result->reservation_id);
+                if ($reservation && $reservation->type === 'group') {
+                    broadcast(new \App\Events\ReservationUpdated($reservation, 'updated'));
+                }
+            }
         } catch (\Exception $e) {
             Log::error('Broadcast failed during order completion: ' . $e->getMessage());
         }

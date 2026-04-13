@@ -61,7 +61,7 @@ class OrderController extends Controller
     public function complete(Request $request, $id)
     {
         $validated = $request->validate([
-            'payment_method' => 'required|string|in:cash,bank,card',
+            'payment_method' => 'required|string|in:cash,bank,card,debt',
             'discount_type' => 'nullable|string|in:fixed,percent',
             'discount_value' => 'nullable|numeric|min:0'
         ]);
