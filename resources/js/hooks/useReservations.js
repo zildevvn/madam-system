@@ -1,39 +1,32 @@
-import { useState, useCallback, useEffect } from 'react';
-import { reservationApi } from '../services/reservationApi';
-// Importing tableApi if it exists, or just direct axios for now since we haven't ported tables to API service layer fully, but let's assume raw axios or we create a small one.
-import axios from 'axios';
+import { useCallback, useEffect } from 'react';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { fetchReservationsAsync, selectAllReservations } from '../store/slices/reservationSlice';
+import { fetchTables } from '../store/slices/tableSlice';
+import { selectTables } from '../store/selectors/tableSelectors';
 
-export const useReservations = () => {
-    const [reservations, setReservations] = useState([]);
-    const [tables, setTables] = useState([]);
-    const [loading, setLoading] = useState(true);
+export const useReservations = (type = null) => {
+    const dispatch = useAppDispatch();
+    const reservations = useAppSelector(selectAllReservations);
+    const tables = useAppSelector(selectTables);
+    const reservationStatus = useAppSelector(state => state.reservation.status);
+    const tableStatus = useAppSelector(state => state.table.status);
 
     const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const [resData, tablesRes] = await Promise.all([
-                reservationApi.getAll(),
-                axios.get('/api/tables') // Keeping this simple for this scope, ideally tableApi.getAll()
-            ]);
-            
-            // Due to standard JSON response array is in data.data
-            setReservations(resData.data || []);
-            setTables(tablesRes.data.data || []);
-        } catch (err) {
-            console.error('Failed to fetch reservations data:', err);
-        } finally {
-            setLoading(false);
+        dispatch(fetchReservationsAsync(type));
+        if (tableStatus === 'idle') {
+            dispatch(fetchTables());
         }
-    }, []);
+    }, [dispatch, type, tableStatus]);
 
     useEffect(() => {
+        // [WHY] Only fetch if idle or if we want a specific type (type might have changed)
         fetchData();
-    }, [fetchData]);
+    }, [dispatch, type]); // Dependency on type ensures refetch if type changes
 
     return {
-        reservations,
+        reservations: type ? reservations.filter(r => r.type === type) : reservations,
         tables,
-        loading,
+        loading: reservationStatus === 'loading' || tableStatus === 'loading',
         refetch: fetchData
     };
 };

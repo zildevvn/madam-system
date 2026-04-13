@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 export const reservationApi = {
-    getAll: async () => {
-        const response = await axios.get('/api/reservations');
+    getAll: async (type = null) => {
+        const url = type ? `/api/reservations?type=${type}` : '/api/reservations';
+        const response = await axios.get(url);
         return response.data; // Expected format: { data: [...], message: '...', errors: null }
     },
     getById: async (id) => {

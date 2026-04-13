@@ -1,22 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useReservations } from '../../hooks/useReservations';
 import { useAppSelector } from '../../store/hooks';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
+import ReservationTable from '../../components/reservations/ReservationTable';
+import ReservationMobileCards from '../../components/reservations/ReservationMobileCards';
 
 const ReservationList = () => {
-    const { reservations, tables, loading } = useReservations();
+    const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
+    const { reservations, tables, loading } = useReservations(filterType === 'all' ? null : filterType);
     const { user } = useAppSelector(state => state.auth);
     const [viewingReservation, setViewingReservation] = useState(null);
-    const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
     const navigate = useNavigate();
 
-    const isManager = user?.role === 'cashier' || user?.role === 'admin';
+    // [WHY] Filter out past reservations and sort chronologically by full datetime
+    const sortedReservations = useMemo(() => {
+        if (!reservations || reservations.length === 0) return [];
+        
+        const now = new Date().getTime();
 
-    const filteredReservations = reservations.filter(r => {
-        if (filterType === 'all') return true;
-        return r.type === filterType;
-    });
+        return [...reservations]
+            .filter(r => {
+                // [RULE] Hide past bookings (compare full datetime)
+                const datePart = typeof r.reservation_date === 'string' ? r.reservation_date.split('T')[0] : '';
+                const timestamp = new Date(`${datePart}T${r.reservation_time}`).getTime();
+                return timestamp >= now;
+            })
+            .sort((a, b) => {
+                const parseToTimestamp = (d, t) => {
+                    const datePart = typeof d === 'string' ? d.split('T')[0] : '';
+                    return new Date(`${datePart}T${t}`).getTime();
+                };
+
+                const timestampA = parseToTimestamp(a.reservation_date, a.reservation_time);
+                const timestampB = parseToTimestamp(b.reservation_date, b.reservation_time);
+
+                // [RULE] Earlier time comes first (ascending chronological)
+                return timestampA - timestampB;
+            });
+    }, [reservations]);
+
+    const isManager = user?.role === 'cashier' || user?.role === 'admin';
 
     const formatTime = (time) => {
         if (!time) return '';
@@ -25,7 +49,12 @@ const ReservationList = () => {
 
     const formatDate = (date) => {
         if (!date) return '';
-        return date.split('T')[0]; // Return YYYY-MM-DD
+        return typeof date === 'string' ? date.split('T')[0] : ''; 
+    };
+
+    const handlers = {
+        onView: (r) => setViewingReservation(r),
+        onEdit: (id) => navigate(`/reservations/edit/${id}`)
     };
 
     if (loading) {
@@ -49,165 +78,35 @@ const ReservationList = () => {
             </div>
 
             <div className="flex bg-gray-100/80 p-1 rounded-[18px] w-fit mb-6 shadow-inner border border-gray-200/50">
-                <button
-                    onClick={() => setFilterType('all')}
-                    className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === 'all' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => setFilterType('individual')}
-                    className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === 'individual' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    Individual
-                </button>
-                <button
-                    onClick={() => setFilterType('group')}
-                    className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === 'group' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    Group
-                </button>
+                {['all', 'individual', 'group'].map((type) => (
+                    <button
+                        key={type}
+                        onClick={() => setFilterType(type)}
+                        className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </button>
+                ))}
             </div>
 
-            {/* Desktop View - Table */}
-            <div className="hidden md:block bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-gray-50/50">
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Name</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Booking Time</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Note</th>
-                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {filteredReservations.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="px-6 py-10 text-center text-gray-500 italic">
-                                        No {filterType !== 'all' ? filterType : ''} reservations found.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredReservations.map((r) => (
-                                    <tr 
-                                        key={r.id} 
-                                        className={`
-                                            transition-colors
-                                            ${r.type === 'group' ? 'bg-purple-50/20 hover:bg-purple-50/50' : 'bg-blue-50/20 hover:bg-blue-50/50'}
-                                        `}
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-sm font-bold text-gray-700">{r.lead_name}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black text-gray-700">{formatDate(r.reservation_date)} - {formatTime(r.reservation_time)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${r.type === 'group' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                                                    {r.type}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-xs text-gray-500 truncate block max-w-[150px]">{r.note || '-'}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setViewingReservation(r)}
-                                                    className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-gray-200 transition-all border-none cursor-pointer"
-                                                >
-                                                    View
-                                                </button>
-                                                {(!r.table_id && (!r.table_ids || r.table_ids.length === 0)) && isManager && (
-                                                    <button
-                                                        onClick={() => navigate(`/reservations/edit/${r.id}`)}
-                                                        className="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-orange-200 transition-all border-none cursor-pointer animate-pulse"
-                                                    >
-                                                        Assign Table
-                                                    </button>
-                                                )}
-                                                {r.type === 'group' && (
-                                                    <button
-                                                        onClick={() => navigate(`/reservations/edit/${r.id}`)}
-                                                        className="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-orange-200 transition-all border-none cursor-pointer"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            {/* Desktop View */}
+            <ReservationTable 
+                reservations={sortedReservations}
+                isManager={isManager}
+                formatDate={formatDate}
+                formatTime={formatTime}
+                onView={handlers.onView}
+                onEdit={handlers.onEdit}
+            />
 
-            {/* Mobile View - Card List */}
-            <div className="md:hidden space-y-4">
-                {filteredReservations.length === 0 ? (
-                    <div className="bg-white rounded-3xl p-10 text-center text-gray-500 italic border border-gray-100">
-                        No {filterType !== 'all' ? filterType : ''} reservations found.
-                    </div>
-                ) : (
-                    filteredReservations.map((r) => (
-                        <div 
-                            key={r.id} 
-                            className={`
-                                rounded-3xl p-5 shadow-sm border transition-all space-y-4
-                                ${r.type === 'group' ? 'bg-purple-50/30 border-purple-100/50' : 'bg-blue-50/30 border-blue-100/50'}
-                            `}
-                        >
-                            <div className="flex justify-between items-start">
-                                <div className="flex flex-col">
-                                    <span className="text-base font-black text-gray-900">{r.lead_name}</span>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${r.type === 'group' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                                        {r.type}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl">
-                                <div className="flex flex-col flex-1">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</span>
-                                    <span className="text-sm font-black text-gray-700">{formatDate(r.reservation_date)}</span>
-                                </div>
-                                <div className="w-[1px] h-8 bg-gray-200"></div>
-                                <div className="flex flex-col flex-1">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Time</span>
-                                    <span className="text-sm font-black text-gray-700">{formatTime(r.reservation_time)}</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 pt-2">
-                                <button
-                                    onClick={() => setViewingReservation(r)}
-                                    className="py-3 bg-gray-100 text-gray-600 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all border-none cursor-pointer"
-                                >
-                                    View Detail
-                                </button>
-                                {r.type === 'group' && (
-                                    <button
-                                        onClick={() => navigate(`/reservations/edit/${r.id}`)}
-                                        className="py-3 bg-orange-100 text-orange-600 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer"
-                                    >
-                                        Edit Booking
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
+            {/* Mobile View */}
+            <ReservationMobileCards 
+                reservations={sortedReservations}
+                filterType={filterType}
+                formatDate={formatDate}
+                formatTime={formatTime}
+                {...handlers}
+            />
 
             <ReservationDetailModal
                 reservation={viewingReservation}
@@ -219,3 +118,4 @@ const ReservationList = () => {
 };
 
 export default ReservationList;
+

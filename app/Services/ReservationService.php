@@ -15,16 +15,24 @@ class ReservationService
     {
         return DB::transaction(function () use ($data) {
             $dishes = $data['dishes'] ?? [];
+            $tableIds = $data['table_ids'] ?? [];
             unset($data['dishes']);
 
+            $data['updated_by'] = $data['updated_by'] ?? auth()->id();
             $reservation = Reservation::create($data);
 
             if (!empty($dishes)) {
                 $reservation->items()->createMany($dishes);
             }
 
-            // [WHY] Reload items to ensure they are available via the 'items' relation
-            $reservation->load('items');
+            // [WHY] Orchestrate group confirmation if tables are assigned
+            if ($reservation->type === 'group' && !empty($tableIds)) {
+                $confirmService = app(\App\Services\ReservationConfirmService::class);
+                $confirmService->confirmGroupReservation($reservation, $tableIds, $data['staff_id'] ?? null);
+            }
+
+            // [WHY] Reload items and audit info to ensure they are available in the response
+            $reservation->load(['items', 'table', 'updater:id,name']);
 
             return $reservation;
         });
@@ -40,8 +48,10 @@ class ReservationService
             $reservation = Reservation::findOrFail($id);
 
             $dishes = $data['dishes'] ?? [];
+            $tableIds = $data['table_ids'] ?? [];
             unset($data['dishes']);
 
+            $data['updated_by'] = $data['updated_by'] ?? auth()->id();
             $reservation->update($data);
 
             if ($hasDishesKey) {
@@ -51,8 +61,16 @@ class ReservationService
                 }
             }
 
-            // [WHY] Reload items to ensure they are available via the 'items' relation
-            $reservation->load('items');
+            // [WHY] Orchestrate group confirmation if tables are assigned
+            if (!empty($tableIds)) {
+                // Ensure dishes is cleared before confirmGroupReservation to avoid transient data conflicts
+                $reservation->unsetRelation('items');
+                $confirmService = app(\App\Services\ReservationConfirmService::class);
+                $confirmService->confirmGroupReservation($reservation, $tableIds, $data['staff_id'] ?? null);
+            }
+
+            // [WHY] Reload items and audit info to ensure they are available in the response
+            $reservation->load(['items', 'table', 'updater:id,name']);
 
             return $reservation;
         });
