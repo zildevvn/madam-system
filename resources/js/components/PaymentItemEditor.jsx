@@ -34,12 +34,13 @@ const PaymentItemEditor = ({
                             </button>
                         </div>
 
-                        {/* Table Selector for Merged Orders */}
+                        {/* Table Selector (Visible only for merged orders) */}
                         {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
-                            <div className="flex flex-wrap gap-1.5 mb-3 bg-gray-50/80 p-1.5 rounded-xl border border-gray-100">
+                            <div className="select-tables flex flex-wrap gap-1.5 mb-3 bg-gray-50/80 p-1.5 rounded-xl border border-gray-100">
                                 {(currentOrder?.mergedTables || selectedTable.merged_tables)
                                     .split('-')
                                     .map(tId => tId.trim())
+                                    .filter(id => id && !isNaN(parseInt(id)))
                                     .map(id => (
                                         <button
                                             key={id}
@@ -52,7 +53,7 @@ const PaymentItemEditor = ({
                                                 }
                                             `}
                                         >
-                                            Bàn {id}
+                                            {id.toString().split('-')[0]}
                                         </button>
                                     ))}
                             </div>
@@ -96,7 +97,11 @@ const PaymentItemEditor = ({
                     <div className="space-y-1">
                         {Object.entries(
                             draftItems.reduce((acc, item) => {
-                                const tGroup = currentOrder?.isGroup ? 'GROUP' : (item.tableId || selectedTable.id);
+                                // [RULE] For standard group reservations, we unify everything into one 'GROUP' bucket.
+                                // [RULE] For staff-merges (Individual flow), we maintain per-table separation.
+                                const isGroupReservation = currentOrder?.reservation && currentOrder?.reservation.type === 'group';
+                                const tGroup = isGroupReservation ? 'GROUP' : (item.tableId || selectedTable.originalTableId || selectedTable.id);
+
                                 if (!acc[tGroup]) acc[tGroup] = [];
                                 acc[tGroup].push(item);
                                 return acc;
@@ -105,8 +110,8 @@ const PaymentItemEditor = ({
                             const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
                             const mergedStr = currentOrder?.mergedTables || selectedTable.merged_tables;
                             const displayTableTitle = tGroup === 'GROUP'
-                                ? `Table ${mergedStr ? mergedStr.split('-').map(id => id.trim()).join(' - ') : selectedTable.id}`
-                                : `Bàn ${tGroup}`;
+                                ? `Bàn ${mergedStr ? mergedStr.split('-group-')[0].split('-').filter(id => id && !isNaN(parseInt(id))).join(' - ') : (selectedTable.originalTableId || selectedTable.id)}`
+                                : `Bàn ${tGroup.toString().split('-')[0]}`;
 
                             return (
                                 <div key={tGroup} className="space-y-1 mb-4 last:mb-0">

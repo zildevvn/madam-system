@@ -61,7 +61,9 @@ const PaymentModal = ({
                         <div>
                             <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn thanh toán</p>
                             <h4 className="m-0 !text-[18px] font-black text-gray-900">
-                                Bàn {(currentOrder?.mergedTables || selectedTable.name || selectedTable.id.toString()).replace(/^Bàn\s+/i, '')}
+                                Bàn {((currentOrder?.tableName || selectedTable.name || selectedTable.id.toString())
+                                    .split('-')[0] // Mask internal session suffixes (e.g. 10-indiv-609 -> 10)
+                                    .replace(/^Bàn\s+/i, ''))}
                             </h4>
                         </div>
                     </div>

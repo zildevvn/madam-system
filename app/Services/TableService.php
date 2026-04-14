@@ -23,7 +23,8 @@ class TableService
         $this->orderService->cleanupDrafts();
         return Table::with([
             'activeOrder.reservation',
-            'activeOrder.items.product' => function($query) {
+            'activeOrders.reservation',
+            'activeOrders.items.product' => function($query) {
                 $query->select('id', 'name', 'price', 'type');
             }
         ])->get();

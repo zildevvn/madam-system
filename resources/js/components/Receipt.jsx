@@ -24,7 +24,9 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                 <div className="receipt-meta">
                     <div className="receipt-meta-row">
                         <span>Tại bàn</span>
-                        <span>{(order.mergedTables || tableName || order.table?.name || order.table?.id.toString() || '-').replace(/^Bàn\s+/i, '')}</span>
+                        <span>{((order.tableName || tableName || order.table?.name || order.table?.id.toString() || '-')
+                            .split('-')[0] // Mask internal session suffixes (e.g. 10-indiv-609 -> 10)
+                            .replace(/^Bàn\s+/i, ''))}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>Giờ vào</span>

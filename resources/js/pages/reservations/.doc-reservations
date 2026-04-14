@@ -1,0 +1,105 @@
+💳 CASHIER SYSTEM – 3-WAY PAYMENT FLOW (FINAL)
+🔵 1. STAFF-ORDER – INDIVIDUAL PAYMENT
+Trigger:
+
+Thanh toán 1 order riêng lẻ
+
+Action:
+Mark order = PAID
+Update DB chỉ order đó
+Hide order đó trên UI
+Rule:
+Nếu bàn không còn order nào chưa thanh toán → set AVAILABLE
+🟣 2. STAFF-ORDER – MERGED TABLE PAYMENT
+Trigger:
+
+Thanh toán bàn gộp (vd: 3-4)
+
+Action:
+Mark tất cả orders trong table_ids = PAID
+Update DB tất cả orders liên quan
+Hide merged card (3-4)
+Rule:
+Nếu tất cả orders của các bàn đã PAID → set tất cả tables AVAILABLE
+🟡 3. GROUP RESERVATION PAYMENT (type = group)
+🟡 CASE A: CHỈ CÓ GROUP ORDER
+Trigger:
+
+Thanh toán group reservation
+
+Action:
+Pay group via reservation_id
+Mark group = PAID
+Hide group card (3-4-5)
+Set all tables AVAILABLE
+🟡 CASE B: CÓ INDIVIDUAL ORDERS TRONG GROUP
+🔵 Step 1: Pay Individual Order
+Action:
+Mark order = PAID
+Hide order
+❌ KHÔNG release table
+🟡 Step 2: Pay Group Reservation
+Action:
+Mark group = PAID
+Hide group card
+Check:
+Nếu ALL individual orders = PAID
+→ set tables AVAILABLE
+⚠️ CORE RULES
+❗ Rule 1:
+
+Không bao giờ release table nếu còn bất kỳ order nào chưa paid
+
+❗ Rule 2:
+
+Table chỉ AVAILABLE khi:
+
+groupPaid = true (nếu có group)
+AND
+tất cả individual orders = PAID
+❗ Rule 3:
+
+Group payment và individual payment hoạt động độc lập nhưng chung trạng thái bàn
+
+🎯 RESULT EXPECTED
+Không conflict giữa group và individual
+Không release nhầm bàn
+Order pay độc lập nhưng vẫn sync table state chính xác
+ 
+ --------------------------------------------------------------------------------
+ 👨‍💻 DEVELOPER: TECHNICAL IMPLEMENTATION
+ --------------------------------------------------------------------------------
+ 
+ 1. HOOK: useConsolidatedOrders
+    - Parameter 'splitByFlow': 
+      - FALSE (Default): Consolidates all orders into one card (Bar/Kitchen/Bills).
+      - TRUE (Cashier): Splits Group vs Individual into different lanes.
+ 
+ 2. GROUPING LOGIC (The groupKey)
+    - Base Key: Derived from table merging (e.g. "9-10" or "5").
+    - Individual Lane Key: `${groupKeyBase}-indiv`
+      - Purpose: Consolidates all staff-orders/extras into one card on that table.
+      - Result: Table 9-10 merged in staff-order show as one "9-10" card.
+    - Group Lane Key: `${groupKeyBase}-group-${reservation_id}`
+      - Purpose: Isolates the group booking from any individual extras.
+ 
+ 3. UI MASKING
+    - Friendly Name: Always use order.tableName or selectedTable.name.
+    - Technical ID Scrubbing: 
+      - (string).split('-')[0].replace(/^Bàn\s+/i, '')
+      - Removes session-aware suffixes (-indiv, -group) for the user.
+      - Result: "5-indiv-609" -> Displays as "5".
+    - Lane Titles: Dashboard cards now exclude Company/Organization names 
+      to favor pure table numbers (e.g. "Bàn 7-8-9").
+    - Table Selector Visibility: The .select-tables row is now ONLY visible for 
+      merged orders. For single individual tables, this section is hidden.
+    - Interactive Labels: Buttons within the merged selector now display pure 
+      numeric IDs (e.g. "3", "4") for a cleaner and more compact interface.
+    - Dish List Headers: Group Reservation headers are also stripped of 
+      technical tags (e.g. "group-53") and prefixes, displaying only the 
+      numeric table range (e.g. "7 - 8 - 9").
+ 
+ 4. DATA INTEGRITY
+    - Dictionary (orderDict): Populated during consolidation to ensure components 
+      always find the correct session regardless of the split lanes.
+    - multi-order support: table.active_orders (plural) is prioritized over active_order.

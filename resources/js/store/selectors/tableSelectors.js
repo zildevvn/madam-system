@@ -17,13 +17,20 @@ export const selectTableIdToGroupKey = createSelector(
   (tables) => {
     const tableIdToGroupKey = {};
     tables.forEach(t => {
-      if (t.active_order && t.active_order.merged_tables) {
-        const groupKey = t.active_order.merged_tables;
-        const involvedIds = groupKey.split('-');
-        involvedIds.forEach(id => {
-          tableIdToGroupKey[id] = groupKey;
-        });
-      }
+      // [FIX] Support both active_order and plural active_orders (casing normalized)
+      const rawPlural = t.active_orders || t.activeOrders;
+      const rawSingular = t.active_order || t.activeOrder;
+      const allActiveOrders = rawPlural || (rawSingular ? [rawSingular] : []);
+
+      allActiveOrders.forEach(order => {
+        if (order && order.merged_tables && typeof order.merged_tables === 'string') {
+          const groupKey = order.merged_tables;
+          const involvedIds = groupKey.split('-');
+          involvedIds.forEach(id => {
+            if (id) tableIdToGroupKey[id.toString()] = groupKey;
+          });
+        }
+      });
     });
     return tableIdToGroupKey;
   }

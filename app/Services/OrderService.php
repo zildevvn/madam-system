@@ -19,6 +19,14 @@ class OrderService
     {
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
+            ->where(function($query) {
+                // [RULE] Exclude group reservations from individual ordering flow
+                // This ensures "extras" are created as separate orders
+                $query->whereDoesntHave('reservation')
+                    ->orWhereHas('reservation', function($q) {
+                        $q->where('type', '!=', 'group');
+                    });
+            })
             ->with([
                 'items.product' => function($query) {
                     $query->select('id', 'name', 'price', 'type');
@@ -27,6 +35,7 @@ class OrderService
                 'server:id,name', 
                 'cashier:id,name'
             ])
+            ->latest()
             ->first();
     }
 
@@ -229,26 +238,33 @@ class OrderService
             $discountAmount = min($subtotal, $discountAmount);
             $finalPrice = $subtotal - $discountAmount;
 
-            // [WHY] 2. Finalize all active orders for these tables with the same payment info
-            Order::whereIn('table_id', $involvedTableIds)
-                ->whereIn('status', ['draft', 'pending', 'processing'])
-                ->update([
-                    'status' => 'completed',
-                    'subtotal' => $subtotal,
-                    'discount_type' => $discountType,
-                    'discount_value' => $discountValue,
-                    'discount_amount' => $discountAmount,
-                    'total_price' => $finalPrice,
-                    'payment_method' => $data['payment_method'] ?? null,
-                    'cashier_id' => $data['cashier_id'] ?? null,
-                ]);
+            // [WHY] 2. Finalize ONLY the requested order
+            // [RULE] Adhere to 3-way payment flow: Paying for one order should not close sibling orders on the same table
+            $order->update([
+                'status' => 'completed',
+                'subtotal' => $subtotal,
+                'discount_type' => $discountType,
+                'discount_value' => $discountValue,
+                'discount_amount' => $discountAmount,
+                'total_price' => $finalPrice,
+                'payment_method' => $data['payment_method'] ?? null,
+                'cashier_id' => $data['cashier_id'] ?? null,
+            ]);
 
-            // [WHY] 2. Free all tables in the group
-            if (!empty($involvedTableIds)) {
-                Table::whereIn('id', $involvedTableIds)->update(['status' => 'empty']);
+            // [WHY] 3. Free tables ONLY if no more active orders remain
+            // [RULE] Rule 1: "Không bao giờ release table nếu còn bất kỳ order nào chưa paid"
+            foreach ($involvedTableIds as $tId) {
+                $stillBusy = Order::where('table_id', $tId)
+                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->where('id', '!=', $orderId)
+                    ->exists();
+
+                if (!$stillBusy) {
+                    Table::where('id', $tId)->update(['status' => 'empty']);
+                }
             }
 
-            // [WHY] 3. Update reservation status if it's a group reservation
+            // [WHY] 4. Update reservation status if it's a group reservation
             if ($order->reservation_id) {
                 $reservation = \App\Models\Reservation::find($order->reservation_id);
                 if ($reservation && $reservation->type === 'group') {

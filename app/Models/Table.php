@@ -12,4 +12,9 @@ class Table extends Model
     {
         return $this->hasOne(Order::class)->whereIn('status', ['draft', 'pending', 'processing'])->latestOfMany();
     }
+
+    public function activeOrders()
+    {
+        return $this->hasMany(Order::class)->whereIn('status', ['draft', 'pending', 'processing']);
+    }
 }

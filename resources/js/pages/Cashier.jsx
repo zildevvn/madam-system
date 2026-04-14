@@ -14,7 +14,7 @@ const Cashier = () => {
         allTables,
         status,
         error
-    } = useConsolidatedOrders(null, true);
+    } = useConsolidatedOrders(null, true, true);
 
     const [selectedTable, setSelectedTable] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
@@ -53,95 +53,53 @@ const Cashier = () => {
         }
     }, [loadReservations]);
 
-    // [WHY] Exploded Data: We transform the unified orders array into two segmented billing lanes:
-    // 1. groupLaneOrderDict: Contains only shared pre-ordered items.
-    // 2. individualLaneOrderDict: Contains only local extra items per table.
-    const explodedData = useMemo(() => {
-        const groupLaneOrderDict = {};
-        const individualLaneOrderDict = {};
+    // [WHY] Segment the consolidated orders into two billing lanes:
+    // 1. groupOrders: Orders linked to a group reservation (Master Pre-orders).
+    // 2. individualOrders: Standard orders (including extras on group tables).
+    const segmentedData = useMemo(() => {
+        const groupOrders = {};
+        const individualOrders = {};
         const individualTablesList = [];
-        const processedOrderIds = new Set();
 
         orders.forEach(order => {
-            if (processedOrderIds.has(order.id)) return;
-            processedOrderIds.add(order.id);
+            const isGroup = order.reservation && order.reservation.type === 'group';
+            const lookupKey = order.id.toString();
 
-            // [RULE] Split logic applies strictly to group reservations
-            const isGroupSplitRequired = order.reservation_id && order.reservation && order.reservation.type === 'group';
-
-            if (isGroupSplitRequired) {
-                const groupKey = order.mergedTables || order.tableId.toString();
-
-                // A. MASTER GROUP PART (Pre-orders only)
-                // [WHY] Per user request: In the Group section, only display the pre-ordered (shared) items.
-                const preOrderItems = order.items.filter(item => !!item.reservation_item_id);
-
-                // Fallback: If no pre-orders exist, show everything to avoid empty card if system data is incomplete
-                const groupItems = preOrderItems.length > 0 ? preOrderItems : order.items;
-
-                groupLaneOrderDict[groupKey] = {
-                    ...order,
-                    items: groupItems,
-                    isGroupMaster: true
-                };
-
-                // B. INDIVIDUAL TABLE PARTS (Extras only)
-                // [WHY] Each table in the group gets a separate card for their extras.
-                const allTableIds = order.mergedTables ? order.mergedTables.split('-') : [order.tableId.toString()];
-                allTableIds.forEach(tId => {
-                    const extraItems = order.items.filter(item => !item.reservation_item_id && item.tableId?.toString() === tId.toString());
-                    if (extraItems.length > 0) {
-                        const extraKey = `extra-${tId}`;
-                        const tableObj = allTables.find(tbl => tbl.id.toString() === tId.toString());
-
-                        individualLaneOrderDict[extraKey] = {
-                            ...order,
-                            id: order.id,
-                            tableId: parseInt(tId),
-                            tableName: `Table ${tId}`,
-                            mergedTables: null,
-                            items: extraItems,
-                            isTableExtra: true,
-                            isGroup: false
-                        };
-
+            if (isGroup) {
+                groupOrders[lookupKey] = order;
+            } else {
+                individualOrders[lookupKey] = order;
+                // [WHY] We need to provide table data structures that ActiveOrderTableList expects
+                if (order.mergedTables) {
+                    individualTablesList.push({
+                        id: lookupKey,
+                        name: order.tableName,
+                        merged_tables: order.mergedTables,
+                        groupKey: lookupKey
+                    });
+                } else {
+                    const tableObj = allTables.find(tbl => tbl.id === order.tableId);
+                    if (tableObj) {
                         individualTablesList.push({
-                            ...tableObj || { id: parseInt(tId), name: `Table ${tId}` },
-                            id: extraKey,
-                            originalTableId: parseInt(tId),
-                            name: `Table ${tId}`,
-                            groupKey: extraKey
+                            ...tableObj,
+                            name: order.tableName || tableObj.name,
+                            id: lookupKey, // [FIX] Overwrite ID with Order ID for UI lookup consistency
+                            originalTableId: tableObj.id,
+                            groupKey: lookupKey
                         });
                     }
-                });
-            } else {
-                // REGULAR INDIVIDUAL TABLE
-                const tableIdStr = order.tableId.toString();
-                individualLaneOrderDict[tableIdStr] = order;
-                const tableObj = allTables.find(tbl => tbl.id === order.tableId);
-                if (tableObj) {
-                    individualTablesList.push(tableObj);
                 }
             }
         });
 
-        // [SAFETY] Global Fallback: Ensure UI stability if split logic returns nothing but data exists
-        if (Object.keys(groupLaneOrderDict).length === 0 && Object.keys(individualLaneOrderDict).length === 0 && orders.length > 0) {
-            orders.forEach(o => {
-                individualLaneOrderDict[o.tableId.toString()] = o;
-                const tableObj = allTables.find(tbl => tbl.id === o.tableId);
-                if (tableObj) individualTablesList.push(tableObj);
-            });
-        }
-
-        return { groupLaneOrderDict, individualLaneOrderDict, individualTablesList };
+        return { groupOrders, individualOrders, individualTablesList };
     }, [orders, allTables]);
 
-    const { groupLaneOrderDict, individualLaneOrderDict, individualTablesList } = explodedData;
+    const { groupOrders, individualOrders, individualTablesList } = segmentedData;
 
     const handleTableClick = (table) => {
         const lookupKey = (table.groupKey || table.id).toString();
-        const currentOrder = individualLaneOrderDict[lookupKey] || groupLaneOrderDict[lookupKey];
+        const currentOrder = individualOrders[lookupKey] || groupOrders[lookupKey];
 
         // Initialize context for this table if it doesn't already exist
         if (!tableContexts[lookupKey]) {
@@ -180,66 +138,16 @@ const Cashier = () => {
         setSelectedTable(null);
     };
 
-    // [WHY] Group Tables: Derived from reservations where type === 'group'
-    // We match these reservations with the segmented orders in groupLaneOrderDict.
-    // [RULE] Must be called before any early returns to avoid "Rendered fewer hooks than expected"
+    // [WHY] Group Tables: Directly mapped from groupOrders
     const groupTables = useMemo(() => {
-        // console.log("[Cashier Group Split] Recalculating groupTables:", reservations.length, Object.keys(groupLaneOrderDict).length);
-
-        const resBased = reservations
-            .filter(r => r.type === 'group')
-            .map(r => {
-                // [RULE] High-fidelity match: reservation_id
-                const matchingOrderKeyByRes = Object.keys(groupLaneOrderDict).find(key => groupLaneOrderDict[key].reservation_id === r.id);
-
-                // [FALLBACK] Table-based match: check table ID or merged string mapping
-                const matchingOrderKey = matchingOrderKeyByRes || Object.keys(groupLaneOrderDict).find(key => {
-                    const order = groupLaneOrderDict[key];
-                    if (!order) return false;
-                    const rTableIdStr = r.table_id?.toString();
-                    return order.tableId?.toString() === rTableIdStr ||
-                        (order.mergedTables && order.mergedTables.split('-').includes(rTableIdStr));
-                });
-
-                if (!matchingOrderKey) {
-                    // console.warn(`[Cashier Group Split] No matching order found for reservation ${r.id}`);
-                    return null;
-                }
-
-                const order = groupLaneOrderDict[matchingOrderKey];
-                return {
-                    id: matchingOrderKey,
-                    name: order.tableName,
-                    isVirtual: true,
-                    reservation_id: r.id,
-                    groupKey: matchingOrderKey
-                };
-            })
-            .filter(Boolean);
-
-        // [SAFETY] Final Fallback: If no reservations matched but we have "Group Master" cards in our dict,
-        // we display them anyway to ensure data is never "lost" from the UI.
-        const orphanGroupKeys = Object.keys(groupLaneOrderDict).filter(key => {
-            const order = groupLaneOrderDict[key];
-            const isMatched = resBased.some(rb => rb.id === key);
-            return order.isGroupMaster && !isMatched;
-        });
-
-        const orphanGroups = orphanGroupKeys.map(key => {
-            const order = groupLaneOrderDict[key];
-            return {
-                id: key,
-                name: order.tableName,
-                isVirtual: true,
-                reservation_id: order.reservation_id,
-                groupKey: key
-            };
-        });
-
-        const finalGroupList = [...resBased, ...orphanGroups];
-        // console.log("[Cashier Group Split] Final List:", finalGroupList.length);
-        return finalGroupList;
-    }, [reservations, groupLaneOrderDict]);
+        return Object.values(groupOrders).map(order => ({
+            id: order.id.toString(),
+            name: order.tableName,
+            isVirtual: false,
+            reservation_id: order.reservation_id,
+            groupKey: order.id.toString()
+        }));
+    }, [groupOrders]);
 
     if (status === 'loading' && allTables.length === 0) {
         return (
@@ -251,7 +159,7 @@ const Cashier = () => {
 
     const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
     const currentContext = currentLookupKey ? tableContexts[currentLookupKey] : null;
-    const currentOrder = currentLookupKey ? (individualLaneOrderDict[currentLookupKey] || groupLaneOrderDict[currentLookupKey]) : null;
+    const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
 
     // [WHY] Individual tables: Segmented list from explodedData
     const individualTables = individualTablesList;
@@ -293,7 +201,7 @@ const Cashier = () => {
                                 <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[400px]">
                                     <ActiveOrderTableList
                                         tables={individualTables}
-                                        orders={individualLaneOrderDict}
+                                        orders={individualOrders}
                                         currentTime={currentTime}
                                         onTableClick={handleTableClick}
                                         showSimpleView={true}
@@ -335,7 +243,7 @@ const Cashier = () => {
                                 <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-orange-50 flex flex-col overflow-hidden min-h-[400px]">
                                     <ActiveOrderTableList
                                         tables={groupTables}
-                                        orders={groupLaneOrderDict}
+                                        orders={groupOrders}
                                         currentTime={currentTime}
                                         onTableClick={handleTableClick}
                                         showSimpleView={true}

@@ -7,8 +7,10 @@ import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableS
  * useConsolidatedOrders: Groups tables by their merged_tables string and 
  * consolidates order items. Now handles data fetching and real-time Echo subscriptions.
  * @param {string} filterType - 'food' | 'drink' | null
+ * @param {boolean} groupByCompositeKey - whether to group same items together
+ * @param {boolean} splitByFlow - if true, separates group reservations from individual extras (Cashier only)
  */
-export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = false) => {
+export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = false, splitByFlow = false) => {
     const dispatch = useAppDispatch();
     const tables = useAppSelector(selectTables);
     const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
@@ -49,37 +51,62 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
 
         // 1. Consolidate into groups
         tables.forEach(t => {
-            if (t.active_order && t.active_order.items) {
-                if (handledOrderIds.has(t.active_order.id)) return;
-                handledOrderIds.add(t.active_order.id);
+            // [FIX] Normalize casing: Backend might send activeOrders or active_orders / activeOrder or active_order
+            const rawPlural = t.active_orders || t.activeOrders;
+            const rawSingular = t.active_order || t.activeOrder;
+            const ordersToProcess = rawPlural || (rawSingular ? [rawSingular] : []);
 
-                const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+            ordersToProcess.forEach(order => {
+                if (!order || !order.items || handledOrderIds.has(order.id)) return;
+                handledOrderIds.add(order.id);
+
+                const groupKeyBase = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+                let groupKey = groupKeyBase;
+
+                // [WHY] For Cashier, we must keep Group Reservations and Individual Extras as separate cards.
+                // [RULE] If splitByFlow is true, we incorporate session metadata into the groupKey.
+                if (splitByFlow) {
+                    const reservation = order.reservation;
+                    if (reservation && reservation.type === 'group') {
+                        groupKey = `${groupKeyBase}-group-${reservation.id}`;
+                    } else {
+                        // [FIX] Use the table-wide merge awareness from tableIdToGroupKey.
+                        // This ensures Tables 9 and 10 (sharing a "9-10" merge) get the same key
+                        // regardless of internal order ID mismatches (e.g. 612 vs 609).
+                        groupKey = `${groupKeyBase}-indiv`;
+                    }
+
+
+
+
+                }
 
                 if (!consolidatedGroups[groupKey]) {
-                    const reservation = t.active_order.reservation;
+                    const reservation = order.reservation;
                     const groupName = reservation ? (reservation.company_name || reservation.lead_name) : null;
 
                     consolidatedGroups[groupKey] = {
-                        id: t.active_order.id,
+                        id: order.id,
                         tableId: t.id,
                         tableName: t.name || `Bàn ${t.id}`,
                         groupName: groupName,
                         isGroup: !!reservation,
-                        mergedTables: groupKey.includes('-') ? groupKey : null,
+                        mergedTables: (groupKey.split('-').filter(p => p && !isNaN(parseInt(p))).length > 1) ? groupKey : null,
                         tableNames: [t.name || t.id.toString()],
-                        startTime: new Date(t.active_order.created_at || t.active_order.updated_at),
+                        startTime: new Date(order.created_at || order.updated_at),
                         items: [],
                         itemsMap: {},
-                        reservation: t.active_order.reservation
+                        reservation: order.reservation,
+                        groupKey: groupKey // [NEW] Essential for sync between loops
                     };
                 } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
                     consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
 
-                    if (t.active_order.merged_tables === groupKey) {
-                        const reservation = t.active_order.reservation;
-                        consolidatedGroups[groupKey].id = t.active_order.id;
-                        consolidatedGroups[groupKey].startTime = new Date(t.active_order.created_at || t.active_order.updated_at);
-                        consolidatedGroups[groupKey].tableId = t.id;
+                    if (order.merged_tables === groupKey) {
+                        const reservation = order.reservation;
+                        consolidatedGroups[groupKey].id = order.id;
+                        consolidatedGroups[groupKey].startTime = new Date(order.created_at || order.updated_at),
+                            consolidatedGroups[groupKey].tableId = t.id;
                         consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
                         if (reservation) {
                             consolidatedGroups[groupKey].groupName = reservation.company_name || reservation.lead_name;
@@ -92,14 +119,19 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
 
                 const group = consolidatedGroups[groupKey];
 
+                // [WHY] Register this table's primary active session.
+                // For Bar/Kitchen (splitByFlow:false), this maps all orders to one unified group.
+                // For Cashier (splitByFlow:true), this helps with initial mapping.
+                orderDict[t.id.toString()] = group;
+
                 // Ensure reservation_id and reservation are set if available
-                if (t.active_order.reservation_id && !group.reservation_id) {
-                    group.reservation_id = t.active_order.reservation_id;
+                if (order.reservation_id && !group.reservation_id) {
+                    group.reservation_id = order.reservation_id;
                     group.isGroup = true;
-                    if (!group.reservation) group.reservation = t.active_order.reservation;
+                    if (!group.reservation) group.reservation = order.reservation;
                 }
 
-                t.active_order.items.forEach(item => {
+                order.items.forEach(item => {
                     const productType = item.product?.type || item.type;
                     if (filterType && productType !== filterType) return;
 
@@ -138,36 +170,42 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                     }
                 });
 
-                const orderTime = new Date(t.active_order.created_at || t.active_order.updated_at);
+                const orderTime = new Date(order.created_at || order.updated_at);
                 if (orderTime < group.startTime) {
                     group.startTime = orderTime;
                 }
-            }
+            });
         });
 
         // 2. Finalize groups and build dictionary
         const displayedGroups = new Set();
         const activeTablesToDisplay = tables.filter(t => {
-            if (!t.active_order) return false;
-            const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+            const group = orderDict[t.id.toString()];
+            if (!group) return false;
 
-            const group = consolidatedGroups[groupKey];
+            const groupKey = group.groupKey;
+
             if (group) {
                 if (groupByCompositeKey && group.itemsMap) {
                     group.items = Object.values(group.itemsMap);
                 }
 
-                // [WHY] Format group table name (e.g. ACB - Tables 2-3-4)
-                if (group.isGroup) {
-                    const tablesString = group.tableNames
-                        .map(name => (name || '').toString().replace(/[^0-9]/g, ''))
-                        .sort((a, b) => parseInt(a) - parseInt(b))
-                        .join('-');
-                    group.tableName = `${group.groupName} - Bàn ${tablesString}`;
+                // [WHY] Format table name with range (e.g. Bàn 3-4 or Googlers - Bàn 3-4-5)
+                const tablesString = group.tableNames
+                    .map(name => (name || '').toString().replace(/[^0-9]/g, ''))
+                    .filter(Boolean)
+                    .sort((a, b) => parseInt(a) - parseInt(b))
+                    .join('-');
+
+                if (group.isGroup || (tablesString && tablesString.includes('-'))) {
+                    // [CLEANUP] Remove groupName/Company from the dashboard card title as requested.
+                    // Prioritize clean table range (e.g. Bàn 7-8-9).
+                    group.tableName = `Bàn ${tablesString || group.tableId}`;
+                } else {
+                    group.tableName = group.tableName || `Bàn ${group.tableId}`;
                 }
 
                 group.served = group.items.length > 0 && group.items.every(i => i.status === 'served');
-                orderDict[t.id.toString()] = group;
             }
 
             if (displayedGroups.has(groupKey)) return false;
