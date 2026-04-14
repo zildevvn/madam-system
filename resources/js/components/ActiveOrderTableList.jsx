@@ -10,7 +10,8 @@ const ActiveOrderTableList = ({
     className = "",
     filterType = null, // 'food' or 'drink'
     showNewOrderHighlight = false,
-    showSimpleView = false
+    showSimpleView = false,
+    isBar = false
 }) => {
     // Standardized: orders must be a dictionary keyed by table ID
     const getOrderForTable = (tableId) => {
@@ -47,9 +48,13 @@ const ActiveOrderTableList = ({
             : 0;
 
         let statusClass = "is-busy";
-        if (diff >= 20) statusClass = "mdt-bg-red !text-white";
-        else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
-        else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
+        if (isBar) {
+            if (diff >= 5) statusClass = "mdt-bg-red !text-white";
+        } else {
+            if (diff >= 20) statusClass = "mdt-bg-red !text-white";
+            else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";
+            else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
+        }
 
         // Add highlight for new orders (items added within the last 30 seconds)
         if (showNewOrderHighlight && order.items && order.items.length > 0) {

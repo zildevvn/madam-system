@@ -117,6 +117,12 @@ class OrderService
                 $productId = $itemData['product_id'];
                 $orderItem = $existingItems->get($productId);
                 $productType = $productTypes->get($productId);
+                
+                // [ERROR CHECKING] Ensure we have a valid product type for status assignment
+                if (!$productType) {
+                    Log::warning("Order item checkout: Product ID {$productId} has no type defined. Defaulting to 'food'.");
+                    $productType = 'food';
+                }
 
                 if ($orderItem) {
                     // [RULE] OVERWRITE quantity instead of accumulating
@@ -126,10 +132,8 @@ class OrderService
                         $orderItem->note = $itemData['note'];
                     }
                     
-                    // [BUSINESS] If it's a drink and was pending, move to served (to skip Bar page)
-                    if ($productType === 'drink' && $orderItem->status === 'pending') {
-                        $orderItem->status = 'served';
-                    }
+                    // [BUSINESS] Standardized behavior: All items start as pending to ensure they appear on Bar/Kitchen monitors
+                    // Previously, drinks were auto-served here, which we have now removed to support Bar tracking.
                     
                     $orderItem->save();
                 } else {
@@ -140,7 +144,7 @@ class OrderService
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
                         'note' => $itemData['note'] ?? null,
-                        'status' => $productType === 'drink' ? 'served' : 'pending'
+                        'status' => 'pending'
                     ]);
                 }
 

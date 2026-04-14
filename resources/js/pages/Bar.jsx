@@ -1,137 +1,111 @@
-import React, { useMemo } from 'react';
-import { useAppDispatch } from '../store/hooks';
+import React, { useState, useMemo } from 'react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateItemStatusAsync } from '../store/slices/orderSlice';
+import { patchItemsStatus } from '../store/slices/tableSlice';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
-import ActiveOrderTableList from '../components/ActiveOrderTableList';
-import DelayWarnings from '../components/DelayWarnings';
+import TableDetailModal from '../components/TableDetailModal';
+import BillsStatusBar from '../components/Bills/BillsStatusBar';
+import BillsContent from '../components/Bills/BillsContent';
 
 const Bar = () => {
     const dispatch = useAppDispatch();
-    // Use consolidated logic hook for drinks
-    const { 
-        orders, 
-        orderDict: activeOrders, 
-        activeTablesToDisplay, 
+    const [selectedTable, setSelectedTable] = useState(null);
+
+    // Use consolidated logic hook for drinks with composite key grouping
+    const {
+        orders,
+        orderDict: activeOrders,
+        activeTablesToDisplay,
         allTables,
         currentTime,
-        status: tableStatus
-    } = useConsolidatedOrders('drink');
+        status,
+        error
+    } = useConsolidatedOrders('drink', true);
 
-    const handleItemStatusChange = async (orderId, itemIds) => {
-        const ids = Array.isArray(itemIds) ? itemIds : [itemIds];
-        const targetOrder = orders.find(o => o.id === orderId);
-        if (!targetOrder) return;
-        
-        // Find the first item to determine the next status cycle for the whole group
-        const firstItem = targetOrder.items.find(i => ids.includes(i.id));
-        if (!firstItem) return;
-
-        let nextStatus = 'pending';
-        if (firstItem.status === 'pending') nextStatus = 'cooking';
-        else if (firstItem.status === 'cooking') nextStatus = 'ready';
-        else if (firstItem.status === 'ready') nextStatus = 'served';
-
-        try {
-            await Promise.all(ids.map(id => dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus })).unwrap()));
-        } catch (error) {
-            console.error('Failed to batch update item status:', error);
+    const handleTableClick = (table) => {
+        if (activeOrders[table.id.toString()]) {
+            setSelectedTable(table);
         }
     };
 
-    const consolidatedItems = useMemo(() => {
-        const itemMap = {};
+    const handleToggleItemStatus = async (item, nextStatus) => {
+        const ids = item.allIds || [item.id];
+        const tableId = selectedTable.id;
+
+        // Optimistic Redux update
+        dispatch(patchItemsStatus({ tableId, itemIds: ids, status: nextStatus }));
+
+        try {
+            // Confirm via API
+            await Promise.all(ids.map(id =>
+                dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, tableId })).unwrap()
+            ));
+        } catch (error) {
+            // Revert optimistic patch on failure
+            const revertStatus = nextStatus === 'served' ? 'ready' : (nextStatus === 'ready' ? 'cooking' : 'pending');
+            dispatch(patchItemsStatus({ tableId, itemIds: ids, status: revertStatus }));
+            console.error('Failed to sync item status:', error);
+        }
+    };
+
+    const statusCounts = useMemo(() => {
+        const counts = { active: 0, alert: 0, warning: 0, critical: 0, served: 0, total: 0 };
+        const handledOrderIds = new Set();
+
         orders.forEach(order => {
+            if (handledOrderIds.has(order.id)) return;
+            handledOrderIds.add(order.id);
+
             order.items.forEach(item => {
-                if (item.status === 'served') return;
-                if (!itemMap[item.name]) {
-                    itemMap[item.name] = { name: item.name, quantity: 0, tables: [] };
-                }
-                itemMap[item.name].quantity += item.quantity;
-                const tableIdentifier = order.mergedTables || order.tableName?.replace(/[^0-9]/g, '') || order.tableId;
-                if (!itemMap[item.name].tables.includes(tableIdentifier)) {
-                    itemMap[item.name].tables.push(tableIdentifier);
+                if (item.product?.type !== 'drink' && item.type !== 'drink') return;
+                
+                counts.total += item.quantity;
+                if (item.status === 'ready' || item.status === 'served') {
+                    counts.served += item.quantity;
+                } else {
+                    const diffMinutes = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
+                    // Bar logic: >= 5 mins is critical
+                    if (diffMinutes >= 5) counts.critical++;
+                    else counts.active++;
                 }
             });
         });
-        return Object.values(itemMap).sort((a, b) => b.quantity - a.quantity);
-    }, [orders]);
+        return counts;
+    }, [orders, currentTime]);
+
+    if (status === 'loading' && allTables.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="md-management-page mdt-bar-page pb-20 bg-gray-50 min-h-screen">
-            <div className="bg-white py-3 border-t border-b border-gray-200">
-                <div className="flex items-center gap-2 w-full max-w-[1600px] mx-auto px-4 lg:px-6 justify-between overflow-x-auto no-scrollbar">
-                    <div className="flex items-center gap-4">
-                        <p className="item-info flex items-center gap-1 m-0 text-sm mdt-text-primary font-bold">
-                            <span className="w-2 h-2 mdt-bg-red rounded-full"></span>
-                            <span>Bar: <span className="text-gray-900">{consolidatedItems.length} loại đồ uống</span></span>
-                        </p>
-                    </div>
-                </div>
-            </div>
+        <div className="md-management-page mdt-bar-page pb-20 bg-gray-50">
+            <BillsStatusBar statusCounts={statusCounts} isBar={true} />
 
-            <div className="md-management-page__content py-4 lg:py-8">
-                <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
-                    <div className="grid grid-cols-12 gap-4 lg:gap-6">
-                        <div className="col-span-12 md:col-span-4 lg:col-span-3 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <ActiveOrderTableList
-                                tables={activeTablesToDisplay}
-                                orders={activeOrders}
-                                currentTime={currentTime}
-                                filterType="drink"
-                                title="Quầy Bar"
-                            />
-                        </div>
+            <BillsContent
+                activeTablesToDisplay={activeTablesToDisplay}
+                activeOrders={activeOrders}
+                currentTime={currentTime}
+                handleTableClick={handleTableClick}
+                allTables={allTables}
+                error={error}
+                isBar={true}
+            />
 
-                        <div className="col-span-12 md:col-span-8 lg:col-span-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                                <h5 className="tracking-widest m-0"> Danh sách Thức uống </h5>
-                                <span className="text-xs font-bold bg-orange-100 mdt-text-primary px-3 py-1 rounded-full uppercase">
-                                    {consolidatedItems.length} loại đồ uống
-                                </span>
-                            </div>
-                            <div className="p-6 flex-1">
-                                {consolidatedItems.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
-                                        {consolidatedItems.map((item, idx) => (
-                                            <div key={idx} className="flex items-center justify-between px-2 py-3 bg-gray-50 rounded-xl border border-transparent hover:border-orange-200 transition-colors group">
-                                                <div className="flex flex-col gap-1 flex-1">
-                                                    <h6 className="m-0 text-sm md:text-base font-bold text-gray-800">{item.name}</h6>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {item.tables.map((t, tid) => (
-                                                            <span key={tid} className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 uppercase tracking-tighter">
-                                                                Bàn {t}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-center text-sm font-black text-blue-600 bg-blue-50 w-10 h-10 rounded-xl shadow-sm border border-blue-100">
-                                                    X{item.quantity}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-gray-300 italic py-20">
-                                        <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z" /><path d="M7 21h10" /><path d="M12 3v5" /></svg>
-                                        <p>Không có đồ uống nào đang chờ</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="col-span-12 lg:col-span-3">
-                            <DelayWarnings
-                                tables={allTables}
-                                orders={activeOrders}
-                                currentTime={currentTime}
-                                onItemClick={handleItemStatusChange}
-                                filterType="drink"
-                                title="Đồ uống trễ"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {selectedTable && activeOrders[selectedTable.id.toString()] && (
+                <TableDetailModal
+                    tableId={selectedTable.id}
+                    tableIndex={allTables.findIndex(t => t.id === selectedTable.id)}
+                    mergedTables={activeOrders[selectedTable.id.toString()].mergedTables}
+                    orderItems={activeOrders[selectedTable.id.toString()].items}
+                    currentTime={currentTime}
+                    onClose={() => setSelectedTable(null)}
+                    onToggleStatus={handleToggleItemStatus}
+                />
+            )}
         </div>
     );
 };

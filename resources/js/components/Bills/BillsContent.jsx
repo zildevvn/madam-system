@@ -8,7 +8,8 @@ const BillsContent = ({
     currentTime,
     handleTableClick,
     allTables,
-    error
+    error,
+    isBar = false
 }) => {
     return (
         <div className="md-management-page__content py-4 md:py-8">
@@ -30,7 +31,8 @@ const BillsContent = ({
                             orders={activeOrders}
                             currentTime={currentTime}
                             onTableClick={handleTableClick}
-                            filterType="food"
+                            filterType={isBar ? 'drink' : 'food'}
+                            isBar={isBar}
                             showNewOrderHighlight={true}
                         />
                     </div>
@@ -41,8 +43,9 @@ const BillsContent = ({
                             tables={allTables}
                             orders={activeOrders}
                             currentTime={currentTime}
-                            title='Danh sách món'
-                            filterType="food"
+                            title={isBar ? 'Danh sách đồ uống' : 'Danh sách món'}
+                            filterType={isBar ? 'drink' : 'food'}
+                            isBar={isBar}
                         />
                     </div>
                 </div>

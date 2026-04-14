@@ -7,7 +7,8 @@ const DelayWarnings = ({
     tables,
     orders,
     currentTime,
-    filterType = null // 'food' or 'drink'
+    filterType = null, // 'food' or 'drink'
+    isBar = false
 }) => {
     const buckets = React.useMemo(() => {
         if (!orders || !currentTime) return { critical: [], warning: [], alert: [], active: [] };
@@ -40,9 +41,13 @@ const DelayWarnings = ({
             itemsToProcess.forEach((item, idx) => {
                 const diff = getElapsedTime(item.orderTime);
                 let bucketKey = 'active';
-                if (diff >= 20) bucketKey = 'critical';
-                else if (diff >= 10) bucketKey = 'warning';
-                else if (diff >= 5) bucketKey = 'alert';
+                if (isBar) {
+                    if (diff >= 5) bucketKey = 'critical';
+                } else {
+                    if (diff >= 20) bucketKey = 'critical';
+                    else if (diff >= 10) bucketKey = 'warning';
+                    else if (diff >= 5) bucketKey = 'alert';
+                }
 
                 const bucket = result[bucketKey];
                 const itemName = item.name;
@@ -98,10 +103,10 @@ const DelayWarnings = ({
         if (items.length === 0) return null;
 
         const config = {
-            critical: { title: 'Món ăn trễ (>= 20p)', color: 'text-red-600', bg: 'mdt-bg-red ', border: 'mdt-border-red shadow-red-100', dot: 'mdt-bg-red ' },
+            critical: { title: isBar ? 'Thức uống trễ (>= 5p)' : 'Món ăn trễ (>= 20p)', color: 'text-red-600', bg: 'mdt-bg-red ', border: 'mdt-border-red shadow-red-100', dot: 'mdt-bg-red ' },
             warning: { title: 'Món ăn trễ (10p - 20p)', color: 'text-yellow-700', bg: 'bg-yellow-500', border: 'border-yellow-200 shadow-yellow-100', dot: 'bg-yellow-500' },
             alert: { title: 'Món ăn trễ (5p - 10p)', color: 'text-blue-600', bg: 'bg-blue-500', border: 'border-blue-200 shadow-blue-100', dot: 'bg-blue-500' },
-            active: { title: 'Món ăn (1p - 5p)', color: 'text-gray-500', bg: 'bg-gray-400', border: 'border-gray-200 shadow-gray-100', dot: 'bg-gray-400' }
+            active: { title: isBar ? 'Thức uống (1p - 5p)' : 'Món ăn (1p - 5p)', color: 'text-gray-500', bg: 'bg-gray-400', border: 'border-gray-200 shadow-gray-100', dot: 'bg-gray-400' }
         }[type];
 
         return (
