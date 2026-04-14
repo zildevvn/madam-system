@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPrice } from '../utils/format';
 
 const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }) => {
     if (!order) return null;
@@ -85,10 +86,10 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                                     <tr key={idx}>
                                         <td align="left">
                                             <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
-                                            <div className="receipt-item-price">{(item.price || 0).toLocaleString()}</div>
+                                            <div className="receipt-item-price">{formatPrice(item.price || 0)}</div>
                                         </td>
                                         <td align="center">{item.quantity}</td>
-                                        <td align="right">{((item.price || 0) * item.quantity).toLocaleString()}</td>
+                                        <td align="right">{formatPrice((item.price || 0) * item.quantity)}</td>
                                     </tr>
                                 ))}
                                 {order.mergedTables && (
@@ -97,7 +98,7 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                                             Cộng bàn {tId}:
                                         </td>
                                         <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '11px', fontWeight: 'bold' }}>
-                                            {tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString()}
+                                            {formatPrice(tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0))}
                                         </td>
                                     </tr>
                                 )}
@@ -105,12 +106,12 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                         ))}
                         <tr className="receipt-total-row">
                             <td align="left">Tiền hàng ({totalQuantity})</td>
-                            <td colSpan="2" align="right">{subtotal.toLocaleString()}</td>
+                            <td colSpan="2" align="right">{formatPrice(subtotal)}</td>
                         </tr>
                         {discountAmount > 0 && (
                             <tr className="receipt-total-row">
                                 <td align="left">Giảm giá {discountType === 'percent' ? `(${discountValue}%)` : ''}</td>
-                                <td colSpan="2" align="right">-{discountAmount.toLocaleString()}</td>
+                                <td colSpan="2" align="right">-{formatPrice(discountAmount)}</td>
                             </tr>
                         )}
                     </tbody>
@@ -118,7 +119,7 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
 
                 <div className="receipt-final">
                     <span>THANH TOÁN</span>
-                    <span className="receipt-final-amount">{finalTotal.toLocaleString()} đ</span>
+                    <span className="receipt-final-amount">{formatPrice(finalTotal)} đ</span>
                 </div>
 
                 <div className="receipt-footer">

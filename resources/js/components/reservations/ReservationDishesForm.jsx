@@ -1,14 +1,8 @@
 import React from 'react';
 import { useWatch } from 'react-hook-form';
+import { formatPrice } from '../../utils/format';
 
 const ReservationDishesForm = ({ fields, register, watch, setValue, append, remove, inputClasses, sectionTitle }) => {
-    const formatPrice = (val) => {
-        if (val === undefined || val === null || val === '') return '';
-        const numericStr = val.toString().replace(/[^0-9]/g, '');
-        if (!numericStr) return '';
-        // Use Vietnamese locale convention (dots as thousand separators) for VND familiarity
-        return parseInt(numericStr).toLocaleString('vi-VN');
-    };
 
     const handlePriceChange = (index, value) => {
         // Strip everything except numbers

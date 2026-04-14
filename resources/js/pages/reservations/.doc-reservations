@@ -94,7 +94,7 @@ Order pay độc lập nhưng vẫn sync table state chính xác
     - Display Components: ActiveOrderTableList and similar grid components 
       automatically strip the "Bàn" prefix for a cleaner UI (e.g. "5").
     - Table Selector Visibility: The .select-tables row is now ONLY visible for 
-      merged orders. For single individual tables, this section is hidden.
+      standard merged orders. For single individual tables and Group Reservations (Case B), this section is hidden.
     - Interactive Labels: Buttons within the merged selector now display pure 
       numeric IDs (e.g. "3", "4") for a cleaner and more compact interface.
     - Dish List Headers: Group Reservation headers are also stripped of 

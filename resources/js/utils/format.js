@@ -2,6 +2,7 @@
  * Format a number as Vietnamese Dong currency string.
  */
 export const formatPrice = (price) => {
+    if (price === undefined || price === null || price === '') return '';
     return new Intl.NumberFormat('vi-VN').format(price);
 };
 

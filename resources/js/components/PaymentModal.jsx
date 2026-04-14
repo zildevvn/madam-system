@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPrice } from '../utils/format';
 import { usePaymentLogic } from '../hooks/usePaymentLogic';
 import PaymentItemEditor from './PaymentItemEditor';
 import PaymentMethodSelector from './PaymentMethodSelector';
@@ -137,7 +138,7 @@ const PaymentModal = ({
                     {discountAmount > 0 && (
                         <div className="flex justify-between items-center opacity-60">
                             <span className="text-xs font-bold text-gray-600">Tạm tính</span>
-                            <span className="text-xs font-bold text-gray-600 line-through">{draftTotal.toLocaleString()}đ</span>
+                            <span className="text-xs font-bold text-gray-600 line-through">{formatPrice(draftTotal)}đ</span>
                         </div>
                     )}
                     <div className="flex justify-between items-center">
@@ -149,12 +150,12 @@ const PaymentModal = ({
                                 </span>
                             )}
                         </div>
-                        <span className="text-lg font-black text-orange-500">{finalTotal.toLocaleString()}đ</span>
+                        <span className="text-lg font-black text-orange-500">{formatPrice(finalTotal)}đ</span>
                     </div>
                     {discountAmount > 0 && (
                         <div className="flex justify-between items-center">
                             <span className="text-[10px] font-bold text-orange-400">Đã giảm</span>
-                            <span className="text-[10px] font-bold text-orange-400">-{discountAmount.toLocaleString()}đ</span>
+                            <span className="text-[10px] font-bold text-orange-400">-{formatPrice(discountAmount)}đ</span>
                         </div>
                     )}
                 </div>

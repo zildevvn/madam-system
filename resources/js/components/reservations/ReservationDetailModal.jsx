@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPrice } from '../../utils/format';
 
 const ReservationDetailModal = ({ reservation, tables, onClose }) => {
     if (!reservation) return null;
@@ -119,7 +120,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                                 <tr key={i} className="hover:bg-white transition-colors">
                                                     <td className="px-5 py-4 font-bold text-gray-800 text-sm">{dish.name}</td>
                                                     <td className="px-5 py-4 font-black text-gray-700 text-sm text-center bg-gray-100/20">{dish.quantity}</td>
-                                                    <td className="px-5 py-4 font-black text-orange-600 text-sm text-right">{(Number(dish.price) || 0).toLocaleString()} ₫</td>
+                                                    <td className="px-5 py-4 font-black text-orange-600 text-sm text-right">{formatPrice(dish.price || 0)}đ</td>
                                                 </tr>
                                             ))}
                                             {(!reservation.dishes || reservation.dishes.length === 0) && (

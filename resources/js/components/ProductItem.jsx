@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatPrice } from '../utils/format';
 
 export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, showNoteButton = false, isReadOnly = false }) {
     const [showNote, setShowNote] = useState(false);
@@ -10,7 +11,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                 <div className="space-y-1">
                     <h3 className="font-medium">{item.name}</h3>
                     <p className="text-[14px] opacity-70">
-                        Đơn giá: {new Intl.NumberFormat('vi-VN').format(item.price)}đ
+                        Đơn giá: {formatPrice(item.price)}đ
                     </p>
                     {item.note && !showNote && (
                         <p className="product-item__note text-[12px] text-gray-500 italic mt-0.5 break-words line-clamp-2">
@@ -20,7 +21,7 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                 </div>
                 <div className="flex flex-col items-end gap-1">
                     <span className="font-bold text-on-surface text-[14px]">
-                        {new Intl.NumberFormat('vi-VN').format(item.price * item.quantity)}đ
+                        {formatPrice(item.price * item.quantity)}đ
                     </span>
                     {isReadOnly && (
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">

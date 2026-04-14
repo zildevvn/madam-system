@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPrice } from '../utils/format';
 import ProductItem from './ProductItem';
 
 const PaymentItemEditor = ({
@@ -78,7 +79,7 @@ const PaymentItemEditor = ({
                                                 className="w-full px-4 py-2.5 text-left hover:bg-orange-50 flex items-center justify-between border-none bg-transparent cursor-pointer transition-colors group"
                                             >
                                                 <span className="text-sm font-bold text-gray-700 group-hover:text-orange-600">{p.name}</span>
-                                                <span className="text-xs font-black text-gray-400">{p.price.toLocaleString()}đ</span>
+                                                <span className="text-xs font-black text-gray-400">{formatPrice(p.price)}đ</span>
                                             </button>
                                         ))}
                                     </div>
@@ -122,7 +123,7 @@ const PaymentItemEditor = ({
                                             </span>
                                             <div className="flex-1 h-[1px] bg-gray-100"></div>
                                             <span className="text-[10px] font-black text-gray-400 tracking-tighter">
-                                                {subtotal.toLocaleString()}đ
+                                                {formatPrice(subtotal)}đ
                                             </span>
                                         </div>
                                     )}
