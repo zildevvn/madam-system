@@ -5,6 +5,7 @@ import { useAppSelector } from '../../store/hooks';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
 import ReservationTable from '../../components/reservations/ReservationTable';
 import ReservationMobileCards from '../../components/reservations/ReservationMobileCards';
+import { capitalizeWords } from '../../utils/format';
 
 const ReservationList = () => {
     const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
@@ -26,6 +27,12 @@ const ReservationList = () => {
                 const timestamp = new Date(`${datePart}T${r.reservation_time}`).getTime();
                 return timestamp >= now && r.status !== 'completed';
             })
+            .map(r => ({
+                ...r,
+                lead_name: capitalizeWords(r.lead_name),
+                tour_guide_name: capitalizeWords(r.tour_guide_name),
+                company_name: capitalizeWords(r.company_name)
+            }))
             .sort((a, b) => {
                 const parseToTimestamp = (d, t) => {
                     const datePart = typeof d === 'string' ? d.split('T')[0] : '';

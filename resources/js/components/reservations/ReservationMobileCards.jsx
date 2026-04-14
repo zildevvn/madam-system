@@ -9,8 +9,8 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, form
                 </div>
             ) : (
                 reservations.map((r) => (
-                    <div 
-                        key={r.id} 
+                    <div
+                        key={r.id}
                         className={`
                             rounded-3xl p-5 shadow-sm border transition-all space-y-4
                             ${r.type === 'group' ? 'bg-purple-50/30 border-purple-100/50' : 'bg-blue-50/30 border-blue-100/50'}
@@ -18,24 +18,27 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, form
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex flex-col">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{formatDate(r.reservation_date)} - {formatTime(r.reservation_time)}</span>
+                                </div>
                                 <span className="text-base font-black text-gray-900">{r.lead_name}</span>
+                                {r.company_name && (
+                                    <span className="text-[12px] text-gray-400 font-medium">{r.company_name}</span>
+                                )}
                             </div>
                             <div className="flex flex-col items-end">
-                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${r.type === 'group' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm text-white ${r.type === 'group' ? 'mdt-bg-primary' : 'mdt-bg-blue'}`}>
                                     {r.type}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-2xl">
-                            <div className="flex flex-col flex-1">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date</span>
-                                <span className="text-sm font-black text-gray-700">{formatDate(r.reservation_date)}</span>
-                            </div>
-                            <div className="w-[1px] h-8 bg-gray-200"></div>
-                            <div className="flex flex-col flex-1">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Time</span>
-                                <span className="text-sm font-black text-gray-700">{formatTime(r.reservation_time)}</span>
+                        <div className="flex items-center justify-center bg-gray-50 p-3 rounded-2xl">
+                            <div className="flex items-center gap-2">
+                                <svg className="text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Guests:</span>
+                                <span className="text-sm font-black text-gray-700">{r.number_of_guests}</span>
                             </div>
                         </div>
 
@@ -46,14 +49,12 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, form
                             >
                                 View Detail
                             </button>
-                            {r.type === 'group' && (
-                                <button
-                                    onClick={() => onEdit(r.id)}
-                                    className="py-3 bg-orange-100 text-orange-600 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer"
-                                >
-                                    Edit Booking
-                                </button>
-                            )}
+                            <button
+                                onClick={() => onEdit(r.id)}
+                                className="py-3 bg-orange-100 text-orange-600 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer"
+                            >
+                                Edit Booking
+                            </button>
                         </div>
                     </div>
                 ))

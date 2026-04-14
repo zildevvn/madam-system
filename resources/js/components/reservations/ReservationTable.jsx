@@ -7,8 +7,9 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50/50">
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Name</th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Booking Time</th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Name</th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Guests</th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Note</th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -17,30 +18,41 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                     <tbody className="divide-y divide-gray-50">
                         {reservations.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="px-6 py-10 text-center text-gray-500 italic">
+                                <td colSpan="6" className="px-6 py-10 text-center text-gray-500 italic">
                                     No reservations found.
                                 </td>
                             </tr>
                         ) : (
                             reservations.map((r) => (
-                                <tr 
-                                    key={r.id} 
+                                <tr
+                                    key={r.id}
                                     className={`
                                         transition-colors
                                         ${r.type === 'group' ? 'bg-purple-50/20 hover:bg-purple-50/50' : 'bg-blue-50/20 hover:bg-blue-50/50'}
                                     `}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm font-bold text-gray-700">{r.lead_name}</span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
                                             <span className="text-sm font-black text-gray-700">{formatDate(r.reservation_date)} - {formatTime(r.reservation_time)}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-gray-700">{r.lead_name}</span>
+                                            {r.company_name && (
+                                                <span className="text-[12px] text-gray-400 font-medium">{r.company_name}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <svg className="text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+                                            <span className="text-sm font-black text-gray-800">{r.number_of_guests}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
-                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${r.type === 'group' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                            <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm text-white ${r.type === 'group' ? 'mdt-bg-primary' : 'mdt-bg-blue '}`}>
                                                 {r.type}
                                             </span>
                                         </div>
@@ -56,14 +68,12 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                                             >
                                                 View
                                             </button>
-                                            {r.type === 'group' && (
-                                                <button
-                                                    onClick={() => onEdit(r.id)}
-                                                    className="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-orange-200 transition-all border-none cursor-pointer"
-                                                >
-                                                    Edit
-                                                </button>
-                                            )}
+                                            <button
+                                                onClick={() => onEdit(r.id)}
+                                                className="px-3 py-1.5 bg-orange-100 text-orange-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-orange-200 transition-all border-none cursor-pointer"
+                                            >
+                                                Edit
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

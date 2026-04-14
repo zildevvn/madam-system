@@ -54,12 +54,12 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                             <div className="flex-[3] md:w-40 relative">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Price (VND)</label>
                                 <div className="relative">
-                                    <input 
-                                        type="text" 
-                                        {...register(`dishes.${index}.price`, { required: true })} 
+                                    <input
+                                        type="text"
+                                        {...register(`dishes.${index}.price`, { required: true })}
                                         value={formatPrice(watch(`dishes.${index}.price`))}
                                         onChange={(e) => handlePriceChange(index, e.target.value)}
-                                        className={inputClasses} 
+                                        className={inputClasses}
                                         placeholder="0"
                                     />
                                 </div>
@@ -79,10 +79,12 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                     onClick={() => {
                         append({ name: '', quantity: 1, price: 0, type: 'food' });
                     }}
-                    className="w-full py-3.5 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl text-xs font-black text-gray-400 hover:border-orange-300 hover:text-orange-500 hover:bg-white transition-all cursor-pointer flex items-center justify-center gap-2 group"
+                    className="w-full py-3 mdt-bg-primary text-white rounded-xl text-[11px] font-black text-orange-600 hover:border-orange-400 transition-all cursor-pointer flex items-center justify-center gap-2 group shadow-sm"
                 >
-                    <svg className="group-hover:rotate-90 transition-transform duration-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-                    ADD NEW DISH
+                    <div className="bg-white text-orange-600 p-1 rounded-lg group-hover:scale-110 transition-transform shadow-sm">
+                        <svg className="group-hover:rotate-90 transition-transform duration-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+                    </div>
+                    <span className="uppercase tracking-widest">Add New Dish</span>
                 </button>
             </div>
         </>
