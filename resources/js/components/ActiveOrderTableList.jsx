@@ -97,8 +97,18 @@ const ActiveOrderTableList = ({
                                 onClick={() => onTableClick && onTableClick(table)}
                                 className={`bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
                             >
-                                <span className={`text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
-                                    {(order?.tableName || order?.mergedTables || table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '')}
+                                <span className={`label-table text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
+                                    {(() => {
+                                        // 1. Detect Group Reservation range from table_ids
+                                        if (order?.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
+                                            return order.reservation.table_ids
+                                                .map(id => id.toString().replace(/^Bàn\s+/i, ''))
+                                                .sort((a, b) => parseInt(a) - parseInt(b))
+                                                .join('-');
+                                        }
+                                        // 2. Fallback to standard merged name or single table name
+                                        return (order?.tableName || order?.mergedTables || table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
+                                    })()}
                                 </span>
 
                                 {duration && (

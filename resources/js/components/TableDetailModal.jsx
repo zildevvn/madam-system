@@ -67,7 +67,7 @@ const TableDetailModal = ({
             <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h5>Chi tiết bàn {(mergedTables || tableId.toString()).replace(/^Bàn\s+/i, '')}</h5>
+                        <h5 className='label-table'>Chi tiết bàn {(mergedTables || tableId.toString()).replace(/^Bàn\s+/i, '')}</h5>
                     </div>
                     <button
                         onClick={onClose}

@@ -60,10 +60,20 @@ const PaymentModal = ({
                         </div>
                         <div>
                             <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn thanh toán</p>
-                            <h4 className="m-0 !text-[18px] font-black text-gray-900">
-                                Bàn {((currentOrder?.tableName || selectedTable.name || selectedTable.id.toString())
-                                    .split('-')[0] // Mask internal session suffixes (e.g. 10-indiv-609 -> 10)
-                                    .replace(/^Bàn\s+/i, ''))}
+                            <h4 className="label-table m-0 !text-[18px] font-black text-gray-900">
+                                Bàn {(() => {
+                                    // 1. Detect Group Reservation range from table_ids
+                                    if (currentOrder?.reservation?.type === 'group' && Array.isArray(currentOrder.reservation.table_ids)) {
+                                        return currentOrder.reservation.table_ids
+                                            .map(id => id.toString().replace(/^Bàn\s+/i, ''))
+                                            .sort((a, b) => parseInt(a) - parseInt(b))
+                                            .join('-');
+                                    }
+                                    // 2. Fallback to standard merged name or single table name
+                                    return (currentOrder?.tableName || selectedTable.name || selectedTable.id.toString())
+                                        .split('-')[0] // Mask internal session suffixes (e.g. 10-indiv-609 -> 10)
+                                        .replace(/^Bàn\s+/i, '');
+                                })()}
                             </h4>
                         </div>
                     </div>
