@@ -92,9 +92,10 @@ const ActiveOrderTableList = ({
                                 onClick={() => onTableClick && onTableClick(table)}
                                 className={`bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
                             >
-                                <span className={`text-[17px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
-                                    {order?.tableName || order?.mergedTables || table.name?.replace(/[^0-9]/g, '') || (table.originalTableId || table.id)}
+                                <span className={`text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
+                                    {(order?.tableName || order?.mergedTables || table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '')}
                                 </span>
+
                                 {duration && (
                                     <>
                                         <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>

@@ -91,6 +91,8 @@ Order pay độc lập nhưng vẫn sync table state chính xác
       - Result: "5-indiv-609" -> Displays as "5".
     - Lane Titles: Dashboard cards now exclude Company/Organization names 
       to favor pure table numbers (e.g. "Bàn 7-8-9").
+    - Display Components: ActiveOrderTableList and similar grid components 
+      automatically strip the "Bàn" prefix for a cleaner UI (e.g. "5").
     - Table Selector Visibility: The .select-tables row is now ONLY visible for 
       merged orders. For single individual tables, this section is hidden.
     - Interactive Labels: Buttons within the merged selector now display pure 
