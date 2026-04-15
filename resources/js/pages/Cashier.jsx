@@ -72,12 +72,29 @@ const Cashier = () => {
 
         // [CASE B] Collect all table IDs that belong to any group reservation
         const groupLinkedTableIds = new Set();
+        const tableIdToResId = {}; // [NEW] Map table to its reservation for color matching
         Object.values(groupOrders).forEach(order => {
-            if (order.reservation?.table_ids) {
-                order.reservation.table_ids.forEach(id => groupLinkedTableIds.add(Number(id)));
+            const resId = order.reservation?.id;
+            if (resId) {
+                if (order.reservation?.table_ids) {
+                    order.reservation.table_ids.forEach(id => {
+                        const tid = Number(id);
+                        groupLinkedTableIds.add(tid);
+                        tableIdToResId[tid] = resId;
+                    });
+                }
+                if (order.tableId) {
+                    groupLinkedTableIds.add(Number(order.tableId));
+                    tableIdToResId[Number(order.tableId)] = resId;
+                }
             }
-            if (order.tableId) groupLinkedTableIds.add(Number(order.tableId));
         });
+
+        // [COLOR MAPPING] Assign a stable color index (1-6) to each reservation ID
+        const getGroupColorIndex = (resId) => {
+            if (!resId) return 0;
+            return (Number(resId) % 6) + 1;
+        };
 
         // [PASS 2] Build individual orders, marking those on group tables
         orders.forEach(order => {
@@ -86,7 +103,10 @@ const Cashier = () => {
 
             if (!isGroup) {
                 individualOrders[lookupKey] = order;
-                const isGroupLinked = groupLinkedTableIds.has(Number(order.tableId));
+                const tid = Number(order.tableId);
+                const isGroupLinked = groupLinkedTableIds.has(tid);
+                const resId = order.reservation_id || order.reservation?.id || tableIdToResId[tid];
+                const groupColorIndex = isGroupLinked ? getGroupColorIndex(resId) : 0;
 
                 if (order.mergedTables) {
                     individualTablesList.push({
@@ -94,7 +114,8 @@ const Cashier = () => {
                         name: order.tableName,
                         merged_tables: order.mergedTables,
                         groupKey: lookupKey,
-                        isGroupLinked
+                        isGroupLinked,
+                        groupColorIndex
                     });
                 } else {
                     const tableObj = allTables.find(tbl => tbl.id === order.tableId);
@@ -102,10 +123,11 @@ const Cashier = () => {
                         individualTablesList.push({
                             ...tableObj,
                             name: order.tableName || tableObj.name,
-                            id: lookupKey, // [FIX] Overwrite ID with Order ID for UI lookup consistency
+                            id: lookupKey,
                             originalTableId: tableObj.id,
                             groupKey: lookupKey,
-                            isGroupLinked
+                            isGroupLinked,
+                            groupColorIndex
                         });
                     }
                 }
@@ -160,12 +182,14 @@ const Cashier = () => {
 
     // [WHY] Group Tables: Directly mapped from groupOrders
     const groupTables = useMemo(() => {
+        const getGroupColorIndex = (resId) => (Number(resId) % 6) + 1;
         return Object.values(groupOrders).map(order => ({
             id: order.id.toString(),
             name: order.tableName,
             isVirtual: false,
             reservation_id: order.reservation_id,
-            groupKey: order.id.toString()
+            groupKey: order.id.toString(),
+            groupColorIndex: getGroupColorIndex(order.reservation?.id)
         }));
     }, [groupOrders]);
 

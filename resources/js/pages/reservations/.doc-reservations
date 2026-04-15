@@ -117,7 +117,13 @@ Order pay độc lập nhưng vẫn sync table state chính xác
          have extras. This ensures visibility of pre-ordered items for the whole group.
        - Individual Lane: Specific tables with extra orders appear separately (e.g., "8", "9")
          to allow the cashier to bill those items individually per table.
-     - Rendering: ActiveOrderTableList applies CSS class 'is-group-linked' to table cards
-       where table.isGroupLinked is true.
-     - Styling: 'is-group-linked' uses $color-primary background (same as Group lane),
-       making them visually stand out from purely individual orders in the Khách Lẻ lane.
+     - Visual Identification (Multi-Color Groups):
+       - Each separate Group Reservation is assigned a unique, stable background color 
+         (selected from 6 curated premium colors: Indigo, Emerald, Rose, Amber, Violet, Cyan).
+       - Both the Master Group card and its associated individual extra cards share the same 
+         background color.
+       - This prevents confusion when multiple groups are active simultaneously, as the 
+         cashier can instantly see which individual extras belong to which master group.
+     - Rendering: ActiveOrderTableList applies CSS class 'is-group-color-N' based on 
+       the assigned color index.
+     - Styling: The 'is-group-color-N' classes provide white text and matching borders.

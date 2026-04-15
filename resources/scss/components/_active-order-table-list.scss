@@ -9,12 +9,14 @@
 // [CASE B] Individual orders on group-reserved tables
 // Visually distinguishes them from purely individual orders
 .is-group-linked {
-    background-color: $color-primary !important;
     color: white !important;
-    border-color: $color-primary !important;
-
-    .label-table,
-    span {
-        color: white !important;
-    }
+    .label-table, span { color: white !important; }
 }
+
+// Dynamic Group Colors
+.is-group-color-1 { background-color: #4f46e5 !important; border-color: #4f46e5 !important; } // Indigo
+.is-group-color-2 { background-color: #10b981 !important; border-color: #10b981 !important; } // Emerald
+.is-group-color-3 { background-color: #f43f5e !important; border-color: #f43f5e !important; } // Rose
+.is-group-color-4 { background-color: #f59e0b !important; border-color: #f59e0b !important; } // Amber
+.is-group-color-5 { background-color: #8b5cf6 !important; border-color: #8b5cf6 !important; } // Violet
+.is-group-color-6 { background-color: #06b6d4 !important; border-color: #06b6d4 !important; } // Cyan
