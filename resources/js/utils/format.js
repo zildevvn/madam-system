@@ -3,11 +3,15 @@
  */
 export const formatPrice = (price) => {
     if (price === undefined || price === null || price === '') return '';
-    return new Intl.NumberFormat('vi-VN').format(price);
+    const num = Number(price);
+    if (isNaN(num)) return '0';
+    return new Intl.NumberFormat('en-US').format(num);
 };
 
 export const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    const num = Number(amount);
+    if (isNaN(num)) return '0 VND';
+    return new Intl.NumberFormat('en-US').format(num) + ' VND';
 };
 
 export const capitalizeWords = (str) => {

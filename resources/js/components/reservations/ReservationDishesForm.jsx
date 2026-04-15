@@ -48,9 +48,9 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                             <div className="flex-[3] md:w-40 relative">
                                 <label className={`text-[10px] font-black text-gray-400 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Price (VND)</label>
                                 <div className="relative">
+                                    <input type="hidden" {...register(`dishes.${index}.price`, { required: true })} />
                                     <input
                                         type="text"
-                                        {...register(`dishes.${index}.price`, { required: true })}
                                         value={formatPrice(watch(`dishes.${index}.price`))}
                                         onChange={(e) => handlePriceChange(index, e.target.value)}
                                         className={inputClasses}

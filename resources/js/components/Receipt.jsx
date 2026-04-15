@@ -8,10 +8,10 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
     const totalQuantity = order.items.reduce((total, item) => total + item.quantity, 0);
     const orderItems = order.items || [];
 
-    const discountAmount = discountType === 'percent' 
-        ? Math.min(subtotal, (subtotal * discountValue) / 100) 
+    const discountAmount = discountType === 'percent'
+        ? Math.min(subtotal, (subtotal * discountValue) / 100)
         : Math.min(subtotal, discountValue);
-    
+
     const finalTotal = Math.max(0, subtotal - discountAmount);
 
     return (
