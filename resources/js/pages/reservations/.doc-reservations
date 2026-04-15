@@ -105,3 +105,19 @@ Order pay độc lập nhưng vẫn sync table state chính xác
     - Dictionary (orderDict): Populated during consolidation to ensure components 
       always find the correct session regardless of the split lanes.
     - multi-order support: table.active_orders (plural) is prioritized over active_order.
+
+  5. CASE B VISUAL STYLING (Individual Orders on Group Tables)
+     - Detection: Cashier's segmentedData runs a 2-pass loop.
+       - Pass 1: Identifies all group orders and collects their table_ids into groupLinkedTableIds.
+       - Pass 2: Builds individual orders, marking those whose tableId is in groupLinkedTableIds
+         with isGroupLinked: true.
+     - Grouping (Visibility & Separation):
+       - Group Lane: UseConsolidatedOrders ensures the Master Group card always displays 
+         the full range of reserved tables (e.g., "7-8-9") even if individual tables 
+         have extras. This ensures visibility of pre-ordered items for the whole group.
+       - Individual Lane: Specific tables with extra orders appear separately (e.g., "8", "9")
+         to allow the cashier to bill those items individually per table.
+     - Rendering: ActiveOrderTableList applies CSS class 'is-group-linked' to table cards
+       where table.isGroupLinked is true.
+     - Styling: 'is-group-linked' uses $color-primary background (same as Group lane),
+       making them visually stand out from purely individual orders in the Khách Lẻ lane.

@@ -49,6 +49,23 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
         const handledOrderIds = new Set();
         const orderDict = {};
 
+        // 0. [PRE-PASS] Identify all table IDs that are part of a Group Reservation
+        // Useful for splitByFlow (Cashier) to separate extras per table.
+        const groupReservedTableIds = new Set();
+        tables.forEach(t => {
+            const rawPlural = t.active_orders || t.activeOrders;
+            const rawSingular = t.active_order || t.activeOrder;
+            const orders = rawPlural || (rawSingular ? [rawSingular] : []);
+            orders.forEach(o => {
+                if (o && o.reservation && o.reservation.type === 'group') {
+                    if (o.reservation.table_ids) {
+                        o.reservation.table_ids.forEach(id => groupReservedTableIds.add(Number(id)));
+                    }
+                    groupReservedTableIds.add(Number(t.id));
+                }
+            });
+        });
+
         // 1. Consolidate into groups
         tables.forEach(t => {
             // [FIX] Normalize casing: Backend might send activeOrders or active_orders / activeOrder or active_order
@@ -57,10 +74,19 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
             const ordersToProcess = rawPlural || (rawSingular ? [rawSingular] : []);
 
             ordersToProcess.forEach(order => {
-                if (!order || !order.items || handledOrderIds.has(order.id)) return;
-                handledOrderIds.add(order.id);
+                if (!order || !order.items) return;
 
-                const groupKeyBase = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+                let groupKeyBase = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+
+                // [FORCE SEPARATION] If this table is part of a group reservation AND we are in Cashier mode (splitByFlow),
+                // we force separating individual extras into one card per table (e.g. 7, 8, 9 separate).
+                if (splitByFlow && groupReservedTableIds.has(Number(t.id))) {
+                    const isGroupOrder = order.reservation && order.reservation.type === 'group';
+                    if (!isGroupOrder) {
+                        groupKeyBase = t.id.toString();
+                    }
+                }
+
                 let groupKey = groupKeyBase;
 
                 // [WHY] For Cashier, we must keep Group Reservations and Individual Extras as separate cards.
@@ -70,15 +96,8 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                     if (reservation && reservation.type === 'group') {
                         groupKey = `${groupKeyBase}-group-${reservation.id}`;
                     } else {
-                        // [FIX] Use the table-wide merge awareness from tableIdToGroupKey.
-                        // This ensures Tables 9 and 10 (sharing a "9-10" merge) get the same key
-                        // regardless of internal order ID mismatches (e.g. 612 vs 609).
                         groupKey = `${groupKeyBase}-indiv`;
                     }
-
-
-
-
                 }
 
                 if (!consolidatedGroups[groupKey]) {
@@ -101,35 +120,27 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
                     };
                 } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
                     consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
-
-                    if (order.merged_tables === groupKey) {
-                        const reservation = order.reservation;
-                        consolidatedGroups[groupKey].id = order.id;
-                        consolidatedGroups[groupKey].startTime = new Date(order.created_at || order.updated_at),
-                            consolidatedGroups[groupKey].tableId = t.id;
-                        consolidatedGroups[groupKey].tableName = t.name || `Bàn ${t.id}`;
-                        if (reservation) {
-                            consolidatedGroups[groupKey].groupName = reservation.company_name || reservation.lead_name;
-                            consolidatedGroups[groupKey].isGroup = true;
-                            consolidatedGroups[groupKey].reservation_id = reservation.id;
-                            consolidatedGroups[groupKey].reservation = reservation;
-                        }
-                    }
                 }
 
-                const group = consolidatedGroups[groupKey];
-
                 // [WHY] Register this table's primary active session.
-                // For Bar/Kitchen (splitByFlow:false), this maps all orders to one unified group.
-                // For Cashier (splitByFlow:true), this helps with initial mapping.
-                orderDict[t.id.toString()] = group;
+                // [RULE] If multiple orders exist (Case B), we prefer mapping to the group reservation 
+                // for global table context, but individual cards in Cashier have their own identity.
+                const existingMapping = orderDict[t.id.toString()];
+                if (!existingMapping || (order.reservation && order.reservation.type === 'group')) {
+                    orderDict[t.id.toString()] = consolidatedGroups[groupKey];
+                }
 
                 // Ensure reservation_id and reservation are set if available
+                const group = consolidatedGroups[groupKey];
                 if (order.reservation_id && !group.reservation_id) {
                     group.reservation_id = order.reservation_id;
                     group.isGroup = true;
                     if (!group.reservation) group.reservation = order.reservation;
                 }
+
+                // 2. Only sum items if this specific order ID hasn't been handled yet
+                if (handledOrderIds.has(order.id)) return;
+                handledOrderIds.add(order.id);
 
                 order.items.forEach(item => {
                     const productType = item.product?.type || item.type;
