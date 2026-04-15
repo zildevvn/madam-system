@@ -2,6 +2,8 @@
     .list-tables {
         >div {
             background-color: $color-primary;
+            padding-left: 5px !important;
+            padding-right: 5px !important;
         }
     }
 }
@@ -10,13 +12,131 @@
 // Visually distinguishes them from purely individual orders
 .is-group-linked {
     color: white !important;
-    .label-table, span { color: white !important; }
+
+    .label-table,
+    span {
+        color: white !important;
+    }
 }
 
-// Dynamic Group Colors
-.is-group-color-1 { background-color: #4f46e5 !important; border-color: #4f46e5 !important; } // Indigo
-.is-group-color-2 { background-color: #10b981 !important; border-color: #10b981 !important; } // Emerald
-.is-group-color-3 { background-color: #f43f5e !important; border-color: #f43f5e !important; } // Rose
-.is-group-color-4 { background-color: #f59e0b !important; border-color: #f59e0b !important; } // Amber
-.is-group-color-5 { background-color: #8b5cf6 !important; border-color: #8b5cf6 !important; } // Violet
-.is-group-color-6 { background-color: #06b6d4 !important; border-color: #06b6d4 !important; } // Cyan
+// Dynamic Group Colors (20-Color Expanded Palette)
+.is-group-color-1 {
+    background-color: $color-primary !important;
+    border-color: $color-primary !important;
+}
+
+.is-group-color-2 {
+    background-color: #10b981 !important;
+    border-color: #10b981 !important;
+}
+
+// Emerald
+.is-group-color-3 {
+    background-color: #f43f5e !important;
+    border-color: #f43f5e !important;
+}
+
+// Rose
+.is-group-color-4 {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: white !important;
+}
+
+// Amber
+.is-group-color-5 {
+    background-color: #8b5cf6 !important;
+    border-color: #8b5cf6 !important;
+}
+
+// Violet
+.is-group-color-6 {
+    background-color: #06b6d4 !important;
+    border-color: #06b6d4 !important;
+}
+
+// Cyan
+.is-group-color-7 {
+    background-color: #6366f1 !important;
+    border-color: #6366f1 !important;
+}
+
+// Indigo
+.is-group-color-8 {
+    background-color: #84cc16 !important;
+    border-color: #84cc16 !important;
+}
+
+// Lime
+.is-group-color-9 {
+    background-color: #0ea5e9 !important;
+    border-color: #0ea5e9 !important;
+}
+
+// Sky
+.is-group-color-10 {
+    background-color: #d946ef !important;
+    border-color: #d946ef !important;
+}
+
+// Fuchsia
+.is-group-color-11 {
+    background-color: #14b8a6 !important;
+    border-color: #14b8a6 !important;
+}
+
+// Teal
+.is-group-color-12 {
+    background-color: #ec4899 !important;
+    border-color: #ec4899 !important;
+}
+
+// Pink
+.is-group-color-13 {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+// Blue
+.is-group-color-14 {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+
+// Red
+.is-group-color-15 {
+    background-color: #64748b !important;
+    border-color: #64748b !important;
+}
+
+// Slate
+.is-group-color-16 {
+    background-color: #22c55e !important;
+    border-color: #22c55e !important;
+}
+
+// Green
+.is-group-color-17 {
+    background-color: #a855f7 !important;
+    border-color: #a855f7 !important;
+}
+
+// Purple
+.is-group-color-18 {
+    background-color: #fb7185 !important;
+    border-color: #fb7185 !important;
+}
+
+// Rose (light)
+.is-group-color-19 {
+    background-color: #71717a !important;
+    border-color: #71717a !important;
+}
+
+// Zinc
+.is-group-color-20 {
+    background-color: #e11d48 !important;
+    border-color: #e11d48 !important;
+}
+
+// Crimson

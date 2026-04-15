@@ -90,10 +90,10 @@ const Cashier = () => {
             }
         });
 
-        // [COLOR MAPPING] Assign a stable color index (1-6) to each reservation ID
+        // [COLOR MAPPING] Assign a stable color index (1-20) to each reservation ID
         const getGroupColorIndex = (resId) => {
             if (!resId) return 0;
-            return (Number(resId) % 6) + 1;
+            return (Number(resId) % 20) + 1; // Expanded to 20 colors
         };
 
         // [PASS 2] Build individual orders, marking those on group tables
@@ -182,7 +182,7 @@ const Cashier = () => {
 
     // [WHY] Group Tables: Directly mapped from groupOrders
     const groupTables = useMemo(() => {
-        const getGroupColorIndex = (resId) => (Number(resId) % 6) + 1;
+        const getGroupColorIndex = (resId) => (Number(resId) % 20) + 1; // Expanded to 20 colors
         return Object.values(groupOrders).map(order => ({
             id: order.id.toString(),
             name: order.tableName,
