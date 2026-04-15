@@ -8,6 +8,17 @@
     }
 }
 
+.is-collapsed {
+    .cashier-page__list-tables .list-tables {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .label-table {
+        font-size: 13px !important;
+    }
+}
+
 .cashier-page {
     min-height: 100vh;
     padding-bottom: 30px;

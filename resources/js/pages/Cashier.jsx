@@ -19,7 +19,7 @@ const Cashier = () => {
     const [selectedTable, setSelectedTable] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
     const [reservations, setReservations] = useState([]);
-    const [isGroupVisible, setIsGroupVisible] = useState(true); // [NEW] Toggle state for Group lane
+    const [collapsedSection, setCollapsedSection] = useState(null); // 'left' | 'right' | null
     const [isLoadingRes, setIsLoadingRes] = useState(false);
 
     const loadReservations = React.useCallback(async () => {
@@ -208,6 +208,32 @@ const Cashier = () => {
     // [WHY] Individual tables: Segmented list from explodedData
     const individualTables = individualTablesList;
 
+    // [WHY] Mutually Exclusive Layout Calculations
+    const layout = useMemo(() => {
+        if (collapsedSection === 'left') {
+            return {
+                left: 'w-full lg:w-[20%] is-collapsed',
+                right: 'w-full lg:w-[80%]',
+                isLeftCollapsed: true,
+                isRightCollapsed: false
+            };
+        }
+        if (collapsedSection === 'right') {
+            return {
+                left: 'w-full lg:w-[80%]',
+                right: 'w-full lg:w-[20%] is-collapsed',
+                isLeftCollapsed: false,
+                isRightCollapsed: true
+            };
+        }
+        return {
+            left: 'w-full lg:w-1/2',
+            right: 'w-full lg:w-1/2',
+            isLeftCollapsed: false,
+            isRightCollapsed: false
+        };
+    }, [collapsedSection]);
+
 
 
 
@@ -217,29 +243,35 @@ const Cashier = () => {
             <div className="hidden" aria-hidden="true"></div>
 
             <div className="py-8 relative overflow-x-hidden">
-                {/* [NEW] Floating Tab to restore Group section */}
-                {!isGroupVisible && (
-                    <div
-                        onClick={() => setIsGroupVisible(true)}
-                        className="fixed right-0 top-1/2 -translate-y-1/2 bg-orange-500 text-white p-4 rounded-l-2xl shadow-[0_4px_20px_rgba(255,165,0,0.3)] cursor-pointer hover:pr-6 transition-all duration-300 z-50 flex items-center gap-2"
-                        title="Show Group Section"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                        <span className="text-[11px] font-black uppercase tracking-widest vertical-text hidden lg:block">Khách Đoàn</span>
-                    </div>
-                )}
 
                 <div className="w-full max-w-[1600px] mx-auto px-[20px]">
-                    <div className="flex flex-col lg:flex-row gap-4 relative items-start">
+                    <div className="flex flex-col lg:flex-row gap-4 relative items-start overflow-x-hidden">
                         {/* LEFT: Individual Tables */}
-                        <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] ${isGroupVisible ? 'w-full lg:w-1/2' : 'w-full'}`}>
-                            <div className="py-4 px-2 flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden min-h-[500px]">
+                        <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] ${layout.left}`}>
+                            <div className={`py-4 ${!layout.isLeftCollapsed ? 'px-2' : 'px-1'} flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden min-h-[500px] min-w-full ${!layout.isLeftCollapsed ? 'lg:min-w-[400px]' : 'lg:min-w-[150px]'}`}>
                                 <div className="flex items-center justify-between px-2">
                                     <div className="flex flex-col">
-                                        <h5 className="mb-0 text-gray-900 font-black text-[15px] uppercase tracking-tight">Khách Lẻ</h5>
-                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Individual Tables</span>
+                                        <h5 className={`mb-0 text-gray-900 font-black uppercase tracking-tight ${!layout.isLeftCollapsed ? 'text-[15px]' : 'text-[12px]'}`}>
+                                            {!layout.isLeftCollapsed ? 'Khách Lẻ' : 'Lẻ'}
+                                        </h5>
+                                        {!layout.isLeftCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Individual Tables</span>}
                                     </div>
-                                    <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{individualTables.length} Bàn</span>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setCollapsedSection(collapsedSection === 'left' ? null : 'left')}
+                                            className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                                            title={!layout.isLeftCollapsed ? "Collapse Left View" : "Expand Left View"}
+                                        >
+                                            {!layout.isLeftCollapsed ? (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                            ) : (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                            )}
+                                        </button>
+                                        <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                                            {individualTables.length} {!layout.isLeftCollapsed ? 'Bàn' : ''}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[400px]">
@@ -262,27 +294,30 @@ const Cashier = () => {
 
                         {/* RIGHT: Group Tables (Sliding) */}
                         <div
-                            className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] transform 
-                            ${isGroupVisible
-                                    ? 'w-full lg:w-1/2 translate-x-0 opacity-100'
-                                    : 'w-0 lg:w-0 translate-x-full opacity-0 pointer-events-none absolute right-0'}`}
+                            className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] ${layout.right}`}
                         >
-                            <div className="py-4 px-2 flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-orange-100 overflow-hidden min-h-[500px] min-w-full lg:min-w-[400px]">
+                            <div className={`py-4 ${!layout.isRightCollapsed ? 'px-2' : 'px-1'} flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-orange-100 overflow-hidden min-h-[500px] min-w-full ${!layout.isRightCollapsed ? 'lg:min-w-[400px]' : 'lg:min-w-[150px]'}`}>
                                 <div className="flex items-center justify-between px-2">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex flex-col">
-                                            <h5 className="mb-0 text-orange-600 font-black text-[15px] uppercase tracking-tight">Khách Đoàn</h5>
-                                            <span className="text-[10px] text-orange-300 font-bold uppercase tracking-widest">Group Reservations</span>
-                                        </div>
                                         <button
-                                            onClick={() => setIsGroupVisible(false)}
+                                            onClick={() => setCollapsedSection(collapsedSection === 'right' ? null : 'right')}
                                             className="p-2 hover:bg-orange-50 rounded-lg text-orange-400 hover:text-orange-600 transition-colors"
-                                            title="Hide Group View"
+                                            title={!layout.isRightCollapsed ? "Collapse Group View" : "Expand Group View"}
                                         >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                            {!layout.isRightCollapsed ? (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                                            ) : (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                            )}
                                         </button>
+                                        <div className="flex flex-col">
+                                            <h5 className={`mb-0 text-orange-600 font-black uppercase tracking-tight ${!layout.isRightCollapsed ? 'text-[15px]' : 'text-[12px]'}`}>Đoàn</h5>
+                                            {!layout.isRightCollapsed && <span className="text-[10px] text-orange-300 font-bold uppercase tracking-widest">Group Reservations</span>}
+                                        </div>
                                     </div>
-                                    <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{groupTables.length} Đoàn</span>
+                                    <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                                        {groupTables.length} {!layout.isRightCollapsed ? 'Đoàn' : ''}
+                                    </span>
                                 </div>
                                 <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-orange-50 flex flex-col overflow-hidden min-h-[400px]">
                                     <ActiveOrderTableList
