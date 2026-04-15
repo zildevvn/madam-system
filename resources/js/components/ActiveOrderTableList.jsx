@@ -95,7 +95,7 @@ const ActiveOrderTableList = ({
                             <div
                                 key={table.id}
                                 onClick={() => onTableClick && onTableClick(table)}
-                                className={`bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''}`}
+                                className={`bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''} ${table.isGroupLinked ? 'is-group-linked' : ''}`}
                             >
                                 <span className={`label-table text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
                                     {(() => {
