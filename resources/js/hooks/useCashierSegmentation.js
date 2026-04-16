@@ -47,7 +47,7 @@ export const useCashierSegmentation = (orders, allTables) => {
         });
 
         // [PASS 3] Route each non-group order:
-        // - Group-linked tables → merge items into the parent group order
+        // - Group-linked tables → Should be already segmented by consolidateOrders (via splitByFlow)
         // - Standalone tables → add to individualOrders lane
         orders.forEach(order => {
             const isGroup = order.reservation && order.reservation.type === 'group';
@@ -59,39 +59,41 @@ export const useCashierSegmentation = (orders, allTables) => {
                 const parentGroupKey = tableIdToGroupKey[tid];
 
                 if (isGroupLinked && parentGroupKey && groupOrders[parentGroupKey]) {
-                    // [MERGE] Fold this individual order's items into the parent group order
+                    // [MERGE] Fold these items into the master group order for unified billing
                     const parentGroup = groupOrders[parentGroupKey];
                     parentGroup.relatedOrderIds.push(order.id);
                     if (order.items && order.items.length > 0) {
                         parentGroup.items.push(...order.items);
                     }
-                } else {
-                    // [STANDALONE] Not linked to any group — show in Individual lane
-                    individualOrders[lookupKey] = order;
-                    const groupColorIndex = 0;
+                    // Return early so this order doesn't show up in Individual Lane
+                    return;
+                }
 
-                    if (order.mergedTables) {
+                // [STANDALONE] Not linked to any group — show in Individual lane
+                individualOrders[lookupKey] = order;
+
+                const groupColorIndex = 0;
+                if (order.mergedTables) {
+                    individualTablesList.push({
+                        id: lookupKey,
+                        name: order.tableName,
+                        merged_tables: order.mergedTables,
+                        groupKey: lookupKey,
+                        isGroupLinked: false,
+                        groupColorIndex
+                    });
+                } else {
+                    const tableObj = allTables.find(tbl => tbl.id === order.tableId);
+                    if (tableObj) {
                         individualTablesList.push({
+                            ...tableObj,
+                            name: order.tableName || tableObj.name,
                             id: lookupKey,
-                            name: order.tableName,
-                            merged_tables: order.mergedTables,
+                            originalTableId: tableObj.id,
                             groupKey: lookupKey,
                             isGroupLinked: false,
                             groupColorIndex
                         });
-                    } else {
-                        const tableObj = allTables.find(tbl => tbl.id === order.tableId);
-                        if (tableObj) {
-                            individualTablesList.push({
-                                ...tableObj,
-                                name: order.tableName || tableObj.name,
-                                id: lookupKey,
-                                originalTableId: tableObj.id,
-                                groupKey: lookupKey,
-                                isGroupLinked: false,
-                                groupColorIndex
-                            });
-                        }
                     }
                 }
             }

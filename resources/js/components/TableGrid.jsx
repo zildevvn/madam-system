@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useAppSelector } from '../store/hooks';
+import { selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 import { getElapsedString } from '../utils/time';
 
 const TableGrid = ({
@@ -9,6 +11,7 @@ const TableGrid = ({
     renderCard
 }) => {
     const [now, setNow] = useState(new Date());
+    const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 60000);
@@ -17,17 +20,6 @@ const TableGrid = ({
 
     const getElapsed = (timestamp) => getElapsedString(timestamp, now);
 
-    // Build global merge map for visual status consistency
-    const tableIdToGroupKey = {};
-    tables.forEach(t => {
-        if (t.active_order && t.active_order.merged_tables) {
-            const groupKey = t.active_order.merged_tables;
-            groupKey.split('-').forEach(id => {
-                tableIdToGroupKey[id.toString()] = groupKey;
-            });
-        }
-    });
-
     return (
         <div className={gridClassName}>
             {tables.map((table, index) => {
@@ -35,8 +27,11 @@ const TableGrid = ({
                     return renderCard(table, index);
                 }
 
-                // Default StaffOrder-style card implementation (Logic remains intact)
+                // Default StaffOrder-style card implementation
+                // Use unified group identification logic
                 const groupKey = tableIdToGroupKey[table.id.toString()];
+                
+                // [RULE] A table is busy if it has an direct order OR is part of a merge/group group.
                 const isBusy = !!table.active_order || !!groupKey;
 
                 // Identify if this table is the "primary" in a merge group

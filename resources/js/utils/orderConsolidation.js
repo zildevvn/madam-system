@@ -35,20 +35,31 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
         ordersToProcess.forEach(order => {
             if (!order || !order.items) return;
 
+            // [RULE] A table always follows its assigned group key from the store.
             let groupKeyBase = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
-            if (splitByFlow && groupReservedTableIds.has(Number(t.id))) {
-                const isGroupOrder = order.reservation && order.reservation.type === 'group';
-                if (!isGroupOrder) {
-                    groupKeyBase = t.id.toString();
-                }
-            }
+            // [WHY] Identify if this table belongs to a Group Reservation.
+            // We use the pre-pass 'groupReservedTableIds' for this.
+            const isTableInGroupRes = groupReservedTableIds.has(Number(t.id));
 
             let groupKey = groupKeyBase;
             if (splitByFlow) {
+                // [WHY] Standard split: Groups vs Individuals.
+                // However, for Group Reservations, everything MUST stay together.
                 const reservation = order.reservation;
                 if (reservation && reservation.type === 'group') {
                     groupKey = `${groupKeyBase}-group-${reservation.id}`;
+                } else if (isTableInGroupRes) {
+                    // [FIX] This is an individual extra on a reserved table.
+                    // We FORCE it into the '-group-' key so it merges with the set menu / package.
+                    // We find the reservation ID from the tables' existing group data.
+                    const parentOrderWithRes = ordersToProcess.find(o => o.reservation?.type === 'group');
+                    const resId = order.reservation_id || parentOrderWithRes?.reservation?.id;
+                    if (resId) {
+                        groupKey = `${groupKeyBase}-group-${resId}`;
+                    } else {
+                        groupKey = `${groupKeyBase}-indiv`;
+                    }
                 } else {
                     groupKey = `${groupKeyBase}-indiv`;
                 }
@@ -63,7 +74,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     tableId: t.id,
                     tableName: t.name || `Bàn ${t.id}`,
                     groupName: groupName,
-                    isGroup: !!reservation,
+                    isGroup: !!reservation || isTableInGroupRes,
                     mergedTables: (groupKey.split('-').filter(p => p && !isNaN(parseInt(p))).length > 1) ? groupKey : null,
                     tableNames: [t.name || t.id.toString()],
                     startTime: new Date(order.created_at || order.updated_at),
@@ -91,6 +102,11 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             if (handledOrderIds.has(order.id)) return;
             handledOrderIds.add(order.id);
 
+            const orderTime = new Date(order.created_at || order.updated_at);
+            if (orderTime < group.startTime) {
+                group.startTime = orderTime;
+            }
+
             order.items.forEach(item => {
                 const productType = item.product?.type || item.type;
                 if (filterType && productType !== filterType) return;
@@ -108,7 +124,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     product_id: item.product_id,
                     type: productType || filterType,
                     note: item.note || '',
-                    tableId: item.table_id,
+                    tableId: item.table_id || t.id,
                     reservation_item_id: item.reservation_item_id
                 };
 
@@ -128,16 +144,24 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     group.items.push(itemData);
                 }
             });
-
-            const orderTime = new Date(order.created_at || order.updated_at);
-            if (orderTime < group.startTime) {
-                group.startTime = orderTime;
-            }
         });
     });
 
     // 2. Finalize groups and build list for display
     const displayedGroups = new Set();
+    
+    // [WHY] Ensure all tables that are part of a group reservation point to the same group object.
+    // This handles Case 3 (Hybrid) where followers might receive individual orders later.
+    Object.values(consolidatedGroups).forEach(group => {
+        if (group.reservation && group.reservation.table_ids) {
+            group.reservation.table_ids.forEach(id => {
+                if (!orderDict[id.toString()]) {
+                    orderDict[id.toString()] = group;
+                }
+            });
+        }
+    });
+
     const activeTablesToDisplay = tables.filter(t => {
         const group = orderDict[t.id.toString()];
         if (!group) return false;

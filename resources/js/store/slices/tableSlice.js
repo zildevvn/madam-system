@@ -30,10 +30,10 @@ const tableSlice = createSlice({
     // [WHY] Global search across all tables is required to correctly update merged/combined views.
     patchItemsStatus: (state, action) => {
       const { tableId, itemIds, status } = action.payload;
-      
+
       // 1. Register the primary table as pending to guard against race conditions
       state.pendingTableIds[tableId] = (state.pendingTableIds[tableId] || 0) + 1;
-      
+
       // 2. Surgical update: iterate through all tables to find and update matching item IDs.
       //    This ensures that in a merged group, items belonging to "follower" tables are also updated.
       state.allIds.forEach(id => {
@@ -139,18 +139,48 @@ export const selectAllTables = createSelector(
   (tableState) => tableState.allIds.map(id => tableState.byId[id])
 );
 
+/**
+ * [HELPER] Builds a mapping of table IDs to their logical group keys.
+ * Handles both standard merges and group reservations.
+ */
+const getGroupMapping = (tables) => {
+  const mapping = {};
+  tables.forEach(t => {
+    const rawPlural = t.active_orders || t.activeOrders;
+    const rawSingular = t.active_order || t.activeOrder;
+    const orders = rawPlural || (rawSingular ? [rawSingular] : []);
+
+    orders.forEach(order => {
+      if (!order) return;
+
+      // Case A: Merged Tables string
+      if (order.merged_tables) {
+        const groupKey = order.merged_tables;
+        groupKey.split('-').forEach(id => {
+          if (id) mapping[id.toString()] = groupKey;
+        });
+      }
+
+      // Case B: Group Reservation IDs
+      if (order.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
+        const groupKey = order.reservation.table_ids
+          .map(id => id.toString())
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .join('-');
+        order.reservation.table_ids.forEach(id => {
+          if (id) mapping[id.toString()] = groupKey;
+        });
+      }
+    });
+  });
+  return mapping;
+};
+
 export const selectBusyTablesCount = createSelector(
   [selectAllTables],
   (tables) => {
-    const mergedInIds = new Set();
-    tables.forEach(t => {
-      if (t.active_order && t.active_order.merged_tables) {
-        const ids = t.active_order.merged_tables.split('-');
-        ids.forEach(id => mergedInIds.add(id.toString()));
-      }
-    });
-
-    return tables.filter(t => !!t.active_order || mergedInIds.has(t.id.toString())).length;
+    const groupMapping = getGroupMapping(tables);
+    return tables.filter(t => !!t.active_order || !!groupMapping[t.id.toString()]).length;
   }
 );
 
@@ -162,30 +192,25 @@ export const selectEmptyTablesCount = createSelector(
 export const selectBusyTables = createSelector(
   [selectAllTables],
   (tables) => {
-    // Collect all merged table groups and filter tables
-    const tableIdToGroupKey = {};
+    const tableIdToGroupKey = getGroupMapping(tables);
     const consolidatedGroups = new Set();
 
-    tables.forEach(t => {
-      if (t.active_order && t.active_order.merged_tables) {
-        const groupKey = t.active_order.merged_tables;
-        const ids = groupKey.split('-');
-        ids.forEach(id => {
-          tableIdToGroupKey[id] = groupKey;
-        });
-      }
-    });
-
     return tables.filter(t => {
+      // [RULE] A table belongs in 'Busy Tables' list if it has an active order.
       if (!t.active_order) {
-        // If table has no order but is part of a merge, it's busy but consolidated (hidden in list)
+        // [EXCEPTION] If a table is busy by group link but has NO order of its own, 
+        // it is NOT considered a candidate for the 'lead' table in the StaffOrder list view.
         return false;
       }
+
       const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+
+      // [RULE] If in a group, only show the 'primary' table (first ID in sorted group key)
       if (groupKey.includes('-')) {
         const primaryId = groupKey.split('-')[0];
         if (t.id.toString() !== primaryId) return false;
       }
+
       if (consolidatedGroups.has(groupKey)) return false;
       consolidatedGroups.add(groupKey);
       return true;
