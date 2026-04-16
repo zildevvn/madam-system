@@ -4,153 +4,183 @@ import { formatPrice } from '../../utils/format';
 const ReservationDetailModal = ({ reservation, tables, onClose }) => {
     if (!reservation) return null;
 
-    const assignedTableNames = tables
-        .filter(t => reservation.table_ids?.includes(t.id.toString()) || reservation.table_id === t.id)
-        .map(t => t.name)
-        .join(', ') || 'Not Assigned';
+    const isGroup = reservation.type === 'group';
 
-    const cardClasses = "bg-gray-50/50 p-4 rounded-2xl border border-gray-100/50 transition-all hover:bg-white hover:shadow-sm";
-    const labelClasses = "text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] block mb-1";
-    const valueClasses = "text-[13px] font-black text-gray-800 block";
+    // Refined styles for high-density layout
+    const labelStyle = "text-[10px] sm:text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5 block";
+    const valueStyle = "text-[13px] sm:text-[14px] font-bold text-gray-800 block";
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}></div>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div
+                className="fixed inset-0 bg-gray-900/60 backdrop-blur-[2px] animate-in fade-in duration-300"
+                onClick={onClose}
+            ></div>
 
-            <div className="relative bg-white w-full max-w-2xl rounded-[16px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="relative bg-[#FAFAFA] w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-20 duration-500 flex flex-col font-primary">
 
-                {/* Header Section */}
-                <div className="p-3 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${reservation.type === 'group' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
-                            {reservation.type === 'group' ? (
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                            ) : (
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                            )}
+                {/* Mobile Drag Handle */}
+                <div className="flex justify-center pt-3 pb-1 sm:hidden bg-white">
+                    <div className="w-12 h-1.5 bg-gray-200 rounded-full"></div>
+                </div>
+
+                {/* Clean Minimalist Header */}
+                <div className="px-3 py-3 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white z-20 font-second">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`w-2 h-2 rounded-full ${isGroup ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{reservation.type} Booking</span>
                         </div>
-                        <div>
-                            <h4 className="text-gray-900 m-0 leading-tight">{reservation.lead_name}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${reservation.type === 'group' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                                    {reservation.type}
-                                </span>
-                            </div>
-                        </div>
+                        <h3 className="text-gray-900 m-0 tracking-tight leading-tight truncate pr-4 text-lg">
+                            {isGroup ? (reservation.tour_guide_name || 'Group Booking') : reservation.lead_name}
+                        </h3>
                     </div>
-                    <button onClick={onClose} className="p-3 hover:bg-gray-100 rounded-2xl transition-all border-none cursor-pointer text-gray-400 hover:text-gray-900">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-xl transition-all border-none cursor-pointer flex-shrink-0"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
                     </button>
                 </div>
 
                 {/* Content Section */}
-                <div className="p-3 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+                <div className="flex-1 overflow-y-auto mdt-scrollbar px-3 py-4 space-y-4">
 
-                    {/* Primary Contact Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className={cardClasses}>
-                            <span className={labelClasses}>Phone Number</span>
-                            <span className={valueClasses}>{reservation.phone || 'N/A'}</span>
+                    {/* Overview Bar - 2 Columns on Mobile, Single Row on Desktop */}
+                    <div className="grid grid-cols-2 lg:flex lg:flex-wrap lg:items-center gap-4 lg:gap-x-12 lg:gap-y-4 p-3">
+                        <div className="flex-shrink-0">
+                            <span className={labelStyle}>Date</span>
+                            <span className={valueStyle}>{reservation.reservation_date?.toString().split('T')[0] || 'N/A'}</span>
                         </div>
-                        <div className={cardClasses}>
-                            <span className={labelClasses}>Email Address</span>
-                            <span className={valueClasses}>{reservation.email || 'No email provided'}</span>
+                        <div className="flex-shrink-0">
+                            <span className={labelStyle}>Time</span>
+                            <span className={valueStyle}>{reservation.reservation_time?.substring(0, 5) || 'N/A'}</span>
                         </div>
-                    </div>
-
-                    {/* Booking Logistics */}
-                    <div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-4">Booking Logistics</span>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                                <span className={labelClasses}>Date</span>
-                                <span className={valueClasses}>{reservation.reservation_date ? reservation.reservation_date.toString().split('T')[0] : 'N/A'}</span>
-                            </div>
-                            <div>
-                                <span className={labelClasses}>Time</span>
-                                <span className={valueClasses}>{reservation.reservation_time ? reservation.reservation_time.substring(0, 5) : 'N/A'}</span>
-                            </div>
-                            <div>
-                                <span className={labelClasses}>Guests</span>
-                                <span className={valueClasses}>{reservation.number_of_guests} Persons</span>
-                            </div>
-                            <div>
-                                <span className={labelClasses}>Nationality</span>
-                                <span className={valueClasses}>{reservation.nationality || 'N/A'}</span>
-                            </div>
+                        <div className="flex-shrink-0">
+                            <span className={labelStyle}>Guests</span>
+                            <span className={valueStyle}>{reservation.number_of_guests} Persons</span>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <span className={labelStyle}>Nationality</span>
+                            <span className={valueStyle}>{reservation.nationality || 'N/A'}</span>
                         </div>
                     </div>
 
-                    {/* Location & Tables */}
-                    <div className="bg-orange-50/30 p-5 rounded-[24px] border border-orange-100/50">
-                        <div className="flex items-center gap-3 mb-1">
-                            <svg className="text-orange-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-                            <span className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em]">Table Assignments</span>
-                        </div>
-                        <span className="text-base font-black text-gray-900">{assignedTableNames}</span>
-                    </div>
-
-                    {/* Group & Business Info */}
-                    {reservation.type === 'group' && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
-                                <div>
-                                    <span className={labelClasses}>Tour Guide</span>
-                                    <span className={valueClasses}>{reservation.tour_guide_name || 'Individual Booking'}</span>
-                                </div>
-                                <div>
-                                    <span className={labelClasses}>Company / Organization</span>
-                                    <span className={valueClasses}>{reservation.company_name || 'N/A'}</span>
-                                </div>
+                    {/* Location & Assignments - SINGLE ROW MERGE */}
+                    {isGroup && (
+                        <div className="flex flex-wrap items-center gap-4 px-1 py-1">
+                            <div className="flex items-center gap-2 text-[11px] sm:text-[12px] font-black text-gray-900 uppercase tracking-[0.2em] whitespace-nowrap">
+                                <svg className="text-orange-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                Tables:
                             </div>
-
-                            <div className="space-y-4">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">Pre-ordered Dishes</span>
-                                <div className="bg-gray-50/50 rounded-[24px] border border-gray-100/80 overflow-hidden">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="bg-gray-100/30">
-                                                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Item</th>
-                                                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Qty</th>
-                                                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Unit Price</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100/50">
-                                            {reservation.dishes?.map((dish, i) => (
-                                                <tr key={i} className="hover:bg-white transition-colors">
-                                                    <td className="px-5 py-4 font-bold text-gray-800 text-sm">{dish.name}</td>
-                                                    <td className="px-5 py-4 font-black text-gray-700 text-sm text-center bg-gray-100/20">{dish.quantity}</td>
-                                                    <td className="px-5 py-4 font-black text-orange-600 text-sm text-right">{formatPrice(dish.price || 0)}đ</td>
-                                                </tr>
-                                            ))}
-                                            {(!reservation.dishes || reservation.dishes.length === 0) && (
-                                                <tr><td colSpan="3" className="px-5 py-8 text-center text-gray-400 italic text-xs">No specific dishes pre-ordered.</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <div className="flex flex-wrap gap-2">
+                                {tables.filter(t => reservation.table_ids?.includes(t.id.toString()) || reservation.table_id === t.id).map(t => (
+                                    <div key={t.id} className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100 shadow-sm">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></div>
+                                        <span className="text-[12px] font-black text-gray-800 tracking-tight">{t.name}</span>
+                                    </div>
+                                ))}
+                                {tables.filter(t => reservation.table_ids?.includes(t.id.toString()) || reservation.table_id === t.id).length === 0 && (
+                                    <span className="text-gray-400 italic text-[11px] font-bold uppercase tracking-widest py-1 px-3 bg-gray-50 rounded-lg">Not assigned</span>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Note Section */}
-                    <div>
-                        <span className={labelClasses}>Internal Notes & Special Requests</span>
-                        <div className="bg-gray-50 p-5 rounded-[24px] border border-dashed border-gray-200 text-[13px] text-gray-600 leading-relaxed min-h-[80px]">
-                            {reservation.note || "No special requests or additional information recorded for this reservation."}
+                    {/* Contact Intelligence - More Compact */}
+                    <div className="space-y-4 pt-4 border-t border-gray-50">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest block px-1">Contact Details</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-1">
+                            <div>
+                                <span className={labelStyle}>Phone</span>
+                                <span className="text-[13px] font-bold text-gray-800 break-all">{reservation.phone || 'N/A'}</span>
+                            </div>
+                            <div className="col-span-1 md:col-span-1">
+                                <span className={labelStyle}>Email</span>
+                                <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.email || 'N/A'}</span>
+                            </div>
+                            {isGroup && (
+                                <>
+                                    <div>
+                                        <span className={labelStyle}>Company</span>
+                                        <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.company_name || 'N/A'}</span>
+                                    </div>
+                                    <div>
+                                        <span className={labelStyle}>Guide</span>
+                                        <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.tour_guide_name || 'N/A'}</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
+
+                    {/* Pre-ordered Items - Responsive View */}
+                    {isGroup && reservation.dishes?.length > 0 && (
+                        <div className="space-y-3 pt-4 border-t border-gray-50">
+                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest block px-1">Pre-ordered Menu</span>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden lg:block border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
+                                <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 flex justify-between">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Item Name</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subtotal</span>
+                                </div>
+                                <div className="divide-y divide-gray-50">
+                                    {reservation.dishes.map((dish, i) => (
+                                        <div key={i} className="px-4 py-3 flex justify-between items-center hover:bg-gray-50/30 transition-colors">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-gray-800">{dish.name}</span>
+                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity}x @ {formatPrice(dish.price || 0)}đ</span>
+                                            </div>
+                                            <span className="text-sm font-black text-orange-600">
+                                                {formatPrice((dish.price || 0) * (dish.quantity || 1))}đ
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Mobile/Tablet Card View */}
+                            <div className="lg:hidden space-y-2">
+                                {reservation.dishes.map((dish, i) => (
+                                    <div key={i} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-1">
+                                        <div className="flex justify-between items-start">
+                                            <span className="text-[13px] font-bold text-gray-800 flex-1">{dish.name}</span>
+                                            <span className="text-[13px] font-black text-orange-600 ml-2">
+                                                {formatPrice((dish.price || 0) * (dish.quantity || 1))}đ
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                            <span>Qty: {dish.quantity}</span>
+                                            <span>•</span>
+                                            <span>{formatPrice(dish.price || 0)}đ</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Notes & Special Requests */}
+                    <div className="space-y-3 pt-4 border-t border-gray-50">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest block px-1">Special Requests</span>
+                        <div className="bg-white p-4 rounded-xl border border-dashed border-gray-200 shadow-inner">
+                            <p className="text-[12px] text-gray-600 leading-relaxed font-medium m-0 italic">
+                                "{reservation.note || "No special requests recorded."}"
+                            </p>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Footer Action */}
-                <div className="p-3 bg-gray-50/80 border-t border-gray-100 flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-4 bg-gray-900 text-white rounded-[20px] font-black text-xs uppercase tracking-[0.2em] shadow-[0_12px_24px_-8px_rgba(0,0,0,0.3)] hover:translate-y-0.5 active:scale-[0.98] transition-all border-none cursor-pointer">
-                        Close Information
+                <div className="px-3 py-3 bg-white border-t border-gray-100 flex justify-center sticky bottom-0 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3 mdt-btn text-xs uppercase tracking-widest font-black"
+                    >
+                        Close Details
                     </button>
-                    {reservation.type === 'group' && (
-                        <div className="w-14"> {/* Placeholder or secondary action space */}
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
@@ -158,4 +188,3 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
 };
 
 export default ReservationDetailModal;
-

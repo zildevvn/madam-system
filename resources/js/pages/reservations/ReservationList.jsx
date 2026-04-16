@@ -17,7 +17,7 @@ const ReservationList = () => {
     // [WHY] Filter out past reservations and sort chronologically by full datetime
     const sortedReservations = useMemo(() => {
         if (!reservations || reservations.length === 0) return [];
-        
+
         const now = new Date().getTime();
 
         return [...reservations]
@@ -56,7 +56,7 @@ const ReservationList = () => {
 
     const formatDate = (date) => {
         if (!date) return '';
-        return typeof date === 'string' ? date.split('T')[0] : ''; 
+        return typeof date === 'string' ? date.split('T')[0] : '';
     };
 
     const handlers = {
@@ -77,7 +77,6 @@ const ReservationList = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                 <div>
                     <h3 className="text-gray-900 tracking-tight">Reservation List</h3>
-                    <p className="text-sm text-gray-500">Manage all incoming individual and group bookings.</p>
                 </div>
                 <Link to="/reservations/create" className="mdt-btn w-full sm:w-auto text-center">
                     + Create Reservation
@@ -97,7 +96,7 @@ const ReservationList = () => {
             </div>
 
             {/* Desktop View */}
-            <ReservationTable 
+            <ReservationTable
                 reservations={sortedReservations}
                 isManager={isManager}
                 formatDate={formatDate}
@@ -107,7 +106,7 @@ const ReservationList = () => {
             />
 
             {/* Mobile View */}
-            <ReservationMobileCards 
+            <ReservationMobileCards
                 reservations={sortedReservations}
                 filterType={filterType}
                 formatDate={formatDate}

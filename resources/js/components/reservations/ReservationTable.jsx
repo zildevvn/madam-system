@@ -38,7 +38,7 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-gray-700">{r.lead_name}</span>
+                                            <span className="text-sm font-bold text-gray-700">{r.type === 'group' ? r.tour_guide_name : r.lead_name}</span>
                                             {r.company_name && (
                                                 <span className="text-[12px] text-gray-400 font-medium">{r.company_name}</span>
                                             )}
@@ -52,7 +52,7 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
-                                            <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm text-white ${r.type === 'group' ? 'mdt-bg-primary' : 'mdt-bg-blue '}`}>
+                                            <span className={`text-[11px] font-black uppercase ${r.type === 'group' ? 'mdt-text-primary' : 'mdt-text-blue '}`}>
                                                 {r.type}
                                             </span>
                                         </div>

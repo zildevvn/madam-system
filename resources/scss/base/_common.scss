@@ -57,6 +57,14 @@ h2,
 h3,
 .h3 {
     font-size: 32px;
+
+    @media (max-width: 1023.98px) {
+        font-size: 24px;
+    }
+
+    @media (max-width: 767.98px) {
+        font-size: 20px;
+    }
 }
 
 h4,
@@ -187,6 +195,10 @@ h6,
 
 .mdt-text-primary {
     color: $color-primary;
+}
+
+.mdt-text-blue {
+    color: $color-blue;
 }
 
 .mdt-border-red {
