@@ -27,7 +27,6 @@ export const useCashierSegmentation = (orders, allTables) => {
         // [PASS 2] Collect all table IDs that belong to any group reservation
         // and build a reverse map: tableId → groupOrder lookupKey
         const groupLinkedTableIds = new Set();
-        const tableIdToResId = {};
         const tableIdToGroupKey = {};
         Object.entries(groupOrders).forEach(([lookupKey, order]) => {
             const resId = order.reservation?.id;
@@ -36,24 +35,16 @@ export const useCashierSegmentation = (orders, allTables) => {
                     order.reservation.table_ids.forEach(id => {
                         const tid = Number(id);
                         groupLinkedTableIds.add(tid);
-                        tableIdToResId[tid] = resId;
                         tableIdToGroupKey[tid] = lookupKey;
                     });
                 }
                 if (order.tableId) {
                     const tid = Number(order.tableId);
                     groupLinkedTableIds.add(tid);
-                    tableIdToResId[tid] = resId;
                     tableIdToGroupKey[tid] = lookupKey;
                 }
             }
         });
-
-        // [COLOR MAPPING] Assign a stable color index (1-15) to each reservation ID
-        const getGroupColorIndex = (resId) => {
-            if (!resId) return 0;
-            return (Number(resId) % 15) + 1;
-        };
 
         // [PASS 3] Route each non-group order:
         // - Group-linked tables → merge items into the parent group order
@@ -112,7 +103,7 @@ export const useCashierSegmentation = (orders, allTables) => {
             isVirtual: false,
             reservation_id: order.reservation_id,
             groupKey: order.id.toString(),
-            groupColorIndex: getGroupColorIndex(order.reservation?.id)
+            groupColorIndex: 0
         }));
 
         return {

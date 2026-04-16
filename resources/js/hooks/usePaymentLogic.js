@@ -2,6 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import productService from '../services/productService';
 import orderApi from '../services/orderApi';
 
+/**
+ * usePaymentLogic: Encapsulates all payment-related state and handlers for the Cashier modal.
+ * [WHY] Tách UI và logic — keeps PaymentModal focused on rendering.
+ * @param {Object} params - Payment context from the parent component
+ * @returns {Object} Payment state, totals, and handler functions
+ */
 export const usePaymentLogic = ({
     selectedTable,
     currentOrder,

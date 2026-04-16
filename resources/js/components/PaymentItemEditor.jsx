@@ -2,6 +2,11 @@ import React from 'react';
 import { formatPrice } from '../utils/format';
 import ProductItem from './ProductItem';
 
+/**
+ * PaymentItemEditor: Renders the scrollable item list with per-table grouping,
+ * table selector, and product search for the Cashier payment modal.
+ * [WHY] Shared pre-order items (reservation_item_id) are read-only; individual extras are editable.
+ */
 const PaymentItemEditor = ({
     selectedTable,
     currentOrder,

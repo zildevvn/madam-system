@@ -1,62 +1,37 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useEffect, useCallback } from 'react';
+import { useCheckoutState } from './useCheckoutState';
 import { 
     updateQuantity, 
     checkoutOrderAsync, 
     cancelOrderAsync, 
     updateItemNote, 
     removeFromCart, 
-    selectSelectedItems, 
     updateOrderTableAsync, 
     clearCart, 
-    createOrderAsync, 
-    selectOriginalItems 
+    createOrderAsync
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
-import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 import orderApi from '../services/orderApi';
 
+/**
+ * useCheckoutLogic: Encapsulates business logic for table checkout, 
+ * including table migration, printing, and multi-table merging.
+ * [WHY] Split from useCheckoutState to maintain separate of concerns.
+ */
 export const useCheckoutLogic = () => {
-    const { tableId } = useParams();
-    const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-
-    // Optimized selectors
-    const activeOrderId = useAppSelector(state => state.order.activeOrderId);
-    const orderStatus = useAppSelector(state => state.order.orderStatus);
-    const isModified = useAppSelector(state => state.order.isModified);
-
-    const isConfirmed = orderStatus && orderStatus !== 'draft';
-    const selectedItems = useAppSelector(selectSelectedItems);
-    const allTables = useAppSelector(selectTables);
-    const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
-    const originalItems = useAppSelector(selectOriginalItems);
-
-    // UI state 
-    const [selectedTableId, setSelectedTableId] = useState(tableId);
-    const [mergedTableIds, setMergedTableIds] = useState([]);
-    const [showMergeDropdown, setShowMergeDropdown] = useState(false);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-    const [showWarningPopup, setShowWarningPopup] = useState(false);
-    const [warningMessage, setWarningMessage] = useState('');
-    const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
-
-    const isTableChanged = useMemo(() => selectedTableId !== tableId, [selectedTableId, tableId]);
+    const state = useCheckoutState();
+    const { 
+        dispatch, navigate, tableId, activeOrderId, isConfirmed, 
+        isModified, selectedItems, originalItems, selectedTableId, 
+        mergedTableIds, setMergedTableIds, setShowWarningPopup, 
+        setWarningMessage, setSuccessMessage, setShowSuccessPopup 
+    } = state;
 
     const toggleMergedTable = useCallback((id) => {
         setMergedTableIds(prev =>
             prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
         );
-    }, []);
-
-    const total = useMemo(() =>
-        selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
-        , [selectedItems]);
-
-    const totalQuantity = useMemo(() =>
-        selectedItems.reduce((acc, item) => acc + item.quantity, 0)
-        , [selectedItems]);
+    }, [setMergedTableIds]);
 
     const handleUpdateQuantity = useCallback((id, newQuantity) => {
         if (newQuantity === 0) {
@@ -72,7 +47,6 @@ export const useCheckoutLogic = () => {
 
     const triggerBackendPrint = useCallback(async (orderId, title) => {
         if (!title) return;
-
         try {
             await orderApi.printDrinks(orderId, title);
         } catch (err) {
@@ -80,7 +54,7 @@ export const useCheckoutLogic = () => {
             setWarningMessage('Lỗi kết nối máy in Bar. Vui lòng báo Bar thủ công!');
             setShowWarningPopup(true);
         }
-    }, []);
+    }, [setWarningMessage, setShowWarningPopup]);
 
     const prepareMergedTables = useCallback(() => {
         const finalTableId = selectedTableId.toString();
@@ -115,7 +89,7 @@ export const useCheckoutLogic = () => {
             setSuccessMessage('Đơn hàng đã được lưu thành công.');
         }
         return currentOrderId;
-    }, [selectedTableId, tableId, activeOrderId, dispatch]);
+    }, [selectedTableId, tableId, activeOrderId, dispatch, setSuccessMessage]);
 
     const checkForDrinkChanges = useCallback((allDrinks) => {
         const hasModifiedDrinks = allDrinks.some(item => {
@@ -136,7 +110,6 @@ export const useCheckoutLogic = () => {
 
     const buildDrinkTitle = useCallback((hasDrinkChanges, isTableMove, wasConfirmed) => {
         if (!hasDrinkChanges && !isTableMove) return null;
-
         const tableText = selectedTableId.toString().replace(/^Bàn\s+/i, '');
         let title = wasConfirmed ? `Bill doi mon ban so ${tableText}` : '';
 
@@ -159,7 +132,6 @@ export const useCheckoutLogic = () => {
                 const allDrinks = selectedItems.filter(item => item.type === 'drink');
                 const hasDrinkChanges = checkForDrinkChanges(allDrinks);
                 const isTableMove = wasConfirmed && hasChangedTable;
-
                 const drinkPrintTitle = buildDrinkTitle(hasDrinkChanges, isTableMove, wasConfirmed);
 
                 await dispatch(checkoutOrderAsync({
@@ -205,49 +177,24 @@ export const useCheckoutLogic = () => {
             console.error(error);
             alert("Lỗi Order");
         }
-    }, [prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, selectedItems, checkForDrinkChanges, selectedTableId, tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate]);
+    }, [prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, selectedItems, checkForDrinkChanges, selectedTableId, tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, setShowSuccessPopup]);
 
     const handleCancelOrder = useCallback(async () => {
-        if (activeOrderId) {
-            await dispatch(cancelOrderAsync(activeOrderId));
-        }
+        if (activeOrderId) await dispatch(cancelOrderAsync(activeOrderId));
         navigate('/staff-order');
     }, [activeOrderId, dispatch, navigate]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
-            if (activeOrderId) {
-                navigator.sendBeacon(`/api/orders/${activeOrderId}`);
-            }
+            if (activeOrderId) navigator.sendBeacon(`/api/orders/${activeOrderId}`);
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [activeOrderId]);
 
     return {
-        tableId,
-        navigate,
-        activeOrderId,
-        isConfirmed,
-        isModified,
-        selectedItems,
-        allTables,
-        tableIdToGroupKey,
-        selectedTableId,
-        setSelectedTableId,
-        mergedTableIds,
-        showMergeDropdown,
-        setShowMergeDropdown,
-        showSuccessPopup,
-        setShowSuccessPopup,
-        showWarningPopup,
-        setShowWarningPopup,
-        warningMessage,
-        successMessage,
-        isTableChanged,
+        ...state,
         toggleMergedTable,
-        total,
-        totalQuantity,
         handleUpdateQuantity,
         handleUpdateNote,
         handleCheckout,
