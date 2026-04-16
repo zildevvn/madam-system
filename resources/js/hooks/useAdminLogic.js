@@ -32,7 +32,7 @@ export const useAdminLogic = () => {
 
     useEffect(() => {
         fetchUsers();
-        
+
         // Listen for system diagnostics
         if (window.Echo) {
             const channel = window.Echo.channel('system-diagnostics')

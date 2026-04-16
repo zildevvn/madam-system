@@ -7,12 +7,12 @@ export const useOrderLogic = () => {
     const params = useParams();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    
+
     const activeOrderId = useAppSelector(state => state.order.activeOrderId);
-    const products = useAppSelector(state => 
+    const products = useAppSelector(state =>
         state.product.products.allIds.map(id => state.product.products.byId[id])
     );
-    const categories = useAppSelector(state => 
+    const categories = useAppSelector(state =>
         state.product.categories.allIds.map(id => state.product.categories.byId[id])
     );
     const searchQuery = useAppSelector(state => state.product.searchQuery) || '';
@@ -27,7 +27,7 @@ export const useOrderLogic = () => {
 
     const [activeCategoryId, setActiveCategoryId] = useState(filteredCategories[0]?.id);
     const [animatingItems, setAnimatingItems] = useState({});
-    
+
     const scrollContainerRef = useRef(null);
     const sidebarRef = useRef(null);
     const observerRef = useRef(null);

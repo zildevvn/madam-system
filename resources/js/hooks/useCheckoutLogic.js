@@ -1,13 +1,13 @@
 import { useEffect, useCallback } from 'react';
 import { useCheckoutState } from './useCheckoutState';
-import { 
-    updateQuantity, 
-    checkoutOrderAsync, 
-    cancelOrderAsync, 
-    updateItemNote, 
-    removeFromCart, 
-    updateOrderTableAsync, 
-    clearCart, 
+import {
+    updateQuantity,
+    checkoutOrderAsync,
+    cancelOrderAsync,
+    updateItemNote,
+    removeFromCart,
+    updateOrderTableAsync,
+    clearCart,
     createOrderAsync
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
@@ -20,11 +20,11 @@ import orderApi from '../services/orderApi';
  */
 export const useCheckoutLogic = () => {
     const state = useCheckoutState();
-    const { 
-        dispatch, navigate, tableId, activeOrderId, isConfirmed, 
-        isModified, selectedItems, originalItems, selectedTableId, 
-        mergedTableIds, setMergedTableIds, setShowWarningPopup, 
-        setWarningMessage, setSuccessMessage, setShowSuccessPopup 
+    const {
+        dispatch, navigate, tableId, activeOrderId, isConfirmed,
+        isModified, selectedItems, originalItems, selectedTableId,
+        mergedTableIds, setMergedTableIds, setShowWarningPopup,
+        setWarningMessage, setSuccessMessage, setShowSuccessPopup
     } = state;
 
     const toggleMergedTable = useCallback((id) => {

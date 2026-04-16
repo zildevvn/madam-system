@@ -67,7 +67,7 @@ const TableGrid = ({
             })}
 
             {tables.length === 0 && !error && (
-                <div className="col-span-full py-20 text-center text-gray-400">
+                <div className="!bg-white col-span-full py-20 text-center text-gray-400">
                     Không tìm thấy dữ liệu bàn nào.
                 </div>
             )}

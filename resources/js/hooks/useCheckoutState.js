@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { 
-    selectSelectedItems, 
-    selectOriginalItems 
+import {
+    selectSelectedItems,
+    selectOriginalItems
 } from '../store/slices/orderSlice';
 import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 
