@@ -16,9 +16,12 @@ export const usePaymentLogic = ({
     onUpdateDraftItems,
     discountType,
     discountValue,
-    cashierNote
+    cashierNote,
+    isHistoryEdit = false
 }) => {
-    const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card' | 'cash'
+    const [paymentMethod, setPaymentMethod] = useState(() => {
+        return isHistoryEdit ? currentOrder?.payment_method : null;
+    });
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Metadata state (still local as they are transient UI helpers)
@@ -61,38 +64,48 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            // [WHY] relatedOrderIds contains all order IDs merged into a unified group view.
-            // We must complete each one to properly close the group + individual extras.
-            const orderIds = currentOrder.relatedOrderIds || [currentOrder.id];
+            if (isHistoryEdit) {
+                // [WHY] History edit only updates payment details, no item checkout required
+                await orderApi.updatePayment(currentOrder.id, {
+                    payment_method: paymentMethod,
+                    discount_type: discountType,
+                    discount_value: discountValue,
+                    cashier_note: cashierNote
+                });
+            } else {
+                // [WHY] relatedOrderIds contains all order IDs merged into a unified group view.
+                // We must complete each one to properly close the group + individual extras.
+                const orderIds = currentOrder.relatedOrderIds || [currentOrder.id];
 
-            // 1. Persist changes to DB if draft items changed (Skip for pure group reservations which are read-only)
-            if (!currentOrder.isGroup) {
-                await orderApi.checkoutOrder(
-                    currentOrder.id,
-                    draftItems.map(i => ({
-                        product_id: i.product_id || i.id,
-                        quantity: i.quantity,
-                        price: i.price,
-                        note: i.note,
-                        table_id: i.tableId || currentOrder.tableId
-                    })),
-                    currentOrder?.mergedTables || selectedTable.merged_tables || null
-                );
-            }
+                // 1. Persist changes to DB if draft items changed (Skip for pure group reservations which are read-only)
+                if (!currentOrder.isGroup) {
+                    await orderApi.checkoutOrder(
+                        currentOrder.id,
+                        draftItems.map(i => ({
+                            product_id: i.product_id || i.id,
+                            quantity: i.quantity,
+                            price: i.price,
+                            note: i.note,
+                            table_id: i.tableId || currentOrder.tableId
+                        })),
+                        currentOrder?.mergedTables || selectedTable.merged_tables || null
+                    );
+                }
 
-            // 2. Complete payment for ALL related orders
-            for (const orderId of orderIds) {
-                await orderApi.completeOrder(orderId, paymentMethod, discountType, discountValue, cashierNote);
+                // 2. Complete payment for ALL related orders
+                for (const orderId of orderIds) {
+                    await orderApi.completeOrder(orderId, paymentMethod, discountType, discountValue, cashierNote);
+                }
             }
 
             onPaymentSuccess();
         } catch (err) {
             console.error('Payment failed:', err);
-            alert('Có lỗi xảy ra khi thanh toán. Vui lòng thử lại.');
+            alert('Có lỗi xảy ra khi cập nhật. Vui lòng thử lại.');
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess]);
+    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess, isHistoryEdit]);
 
     const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
         let newItems;

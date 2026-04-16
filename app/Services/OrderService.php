@@ -304,6 +304,113 @@ class OrderService
         return $result;
     }
 
+    // [WHY] Fetch completed orders for the History panel
+    public function getHistory($limit = 20)
+    {
+        return Order::with(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name'])
+            ->where('status', 'completed')
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    // [WHY] Revert a completed order to pending state
+    // [RULE] Updates table status to busy
+    public function reopenOrder($orderId)
+    {
+        $result = DB::transaction(function () use ($orderId) {
+            $order = Order::findOrFail($orderId);
+            
+            // [WHY] Check if table is already busy with another order
+            if ($order->table_id) {
+                $isTableOccupied = Order::where('table_id', $order->table_id)
+                    ->whereIn('status', ['pending', 'processing', 'draft'])
+                    ->where('id', '!=', $orderId)
+                    ->exists();
+                
+                if ($isTableOccupied) {
+                    throw new \Exception('Cannot reopen order: Table is currently occupied by another active order.');
+                }
+            }
+
+            $order->update([
+                'status' => 'pending',
+                'payment_method' => null,
+                'cashier_id' => null
+            ]);
+
+            if ($order->table_id) {
+                \App\Models\Table::where('id', $order->table_id)->update(['status' => 'busy']);
+            }
+
+            // [WHY] Handle group reservation state revert
+            if ($order->reservation_id) {
+                $reservation = \App\Models\Reservation::find($order->reservation_id);
+                if ($reservation && $reservation->status === 'completed') {
+                    $reservation->update(['status' => 'confirmed']);
+                }
+            }
+
+            return $order;
+        });
+
+        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+
+        try {
+            broadcast(new \App\Events\OrderUpdated($result, 'order_updated'));
+            if ($result->reservation_id) {
+                $reservation = \App\Models\Reservation::find($result->reservation_id);
+                if ($reservation) {
+                    broadcast(new \App\Events\ReservationUpdated($reservation, 'updated'));
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Broadcast failed during order reopen: ' . $e->getMessage());
+        }
+
+        return $result;
+    }
+
+    // [WHY] Update payment record for a completed order
+    public function updatePayment($orderId, $data)
+    {
+        $order = Order::findOrFail($orderId);
+        
+        $subtotal = $order->subtotal ?? ($order->total_price + $order->discount_amount);
+        $discountType = $data['discount_type'] ?? $order->discount_type;
+        $discountValue = $data['discount_value'] ?? $order->discount_value;
+        $discountAmount = 0;
+
+        if ($discountType === 'percent') {
+            $discountAmount = floor(($subtotal * $discountValue) / 100);
+        } elseif ($discountType === 'fixed') {
+            $discountAmount = $discountValue;
+        }
+        
+        $discountAmount = min($subtotal, $discountAmount);
+        $finalPrice = $subtotal - $discountAmount;
+
+        $order->update([
+            'payment_method' => $data['payment_method'] ?? $order->payment_method,
+            'discount_type' => $discountType,
+            'discount_value' => $discountValue,
+            'discount_amount' => $discountAmount,
+            'total_price' => $finalPrice,
+            'cashier_note' => $data['cashier_note'] ?? $order->cashier_note,
+        ]);
+
+        $order->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        
+        try {
+            broadcast(new \App\Events\OrderUpdated($order, 'order_updated'));
+        } catch (\Exception $e) {
+            \Log::error('Broadcast failed during payment update: ' . $e->getMessage());
+        }
+
+        return $order;
+    }
+
     // [WHY] Transfer order from one table to another
     // [RULE] Correctly updates both old and new table statuses
     public function updateTable($orderId, $newTableId)

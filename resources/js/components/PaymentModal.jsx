@@ -22,7 +22,8 @@ const PaymentModal = ({
     step = 1,
     onUpdateStep,
     cashierNote = '',
-    onUpdateCashierNote
+    onUpdateCashierNote,
+    isHistoryEdit = false
 }) => {
     const {
         paymentMethod,
@@ -51,7 +52,8 @@ const PaymentModal = ({
         onUpdateDraftItems,
         discountType,
         discountValue,
-        cashierNote
+        cashierNote,
+        isHistoryEdit
     });
 
     const [showExtras, setShowExtras] = useState(false);
@@ -113,6 +115,7 @@ const PaymentModal = ({
                     handleAddProduct={handleAddProduct}
                     filteredProducts={filteredProducts}
                     compact={true}
+                    isReadOnly={isHistoryEdit}
                 />
 
                 {/* ─── FOOTER: Extracted ─── */}
@@ -137,6 +140,7 @@ const PaymentModal = ({
                     handlePayment={handlePayment}
                     isGroup={!!currentOrder?.isGroup}
                     draftItemsCount={draftItems.length}
+                    isHistoryEdit={isHistoryEdit}
                 />
             </div>
         </div>

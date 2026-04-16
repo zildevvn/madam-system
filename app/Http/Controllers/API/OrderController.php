@@ -145,6 +145,54 @@ class OrderController extends Controller
         ], 400);
     }
 
+    public function history(Request $request)
+    {
+        $limit = $request->input('limit', 20);
+        $orders = $this->orderService->getHistory($limit);
+
+        return response()->json([
+            'data' => $orders,
+            'message' => 'Success',
+            'errors' => null
+        ]);
+    }
+
+    public function reopen($id)
+    {
+        try {
+            $order = $this->orderService->reopenOrder($id);
+            return response()->json([
+                'data' => $order,
+                'message' => 'Order reopened successfully',
+                'errors' => null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'data' => null,
+                'message' => $e->getMessage(),
+                'errors' => 'Reopen failed'
+            ], 400);
+        }
+    }
+
+    public function updatePayment(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'payment_method' => 'string|in:cash,bank,card,debt',
+            'discount_type' => 'nullable|string|in:fixed,percent',
+            'discount_value' => 'nullable|numeric|min:0',
+            'cashier_note' => 'nullable|string|max:255'
+        ]);
+
+        $order = $this->orderService->updatePayment($id, $validated);
+
+        return response()->json([
+            'data' => $order,
+            'message' => 'Payment updated successfully',
+            'errors' => null
+        ]);
+    }
+
     public function printDrinkBill(Request $request, $id)
     {
         $order = $this->orderService->getOrder($id);
