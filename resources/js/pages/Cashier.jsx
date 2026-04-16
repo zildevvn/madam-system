@@ -193,14 +193,6 @@ const Cashier = () => {
         }));
     }, [groupOrders]);
 
-    if (status === 'loading' && allTables.length === 0) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-            </div>
-        );
-    }
-
     const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
     const currentContext = currentLookupKey ? tableContexts[currentLookupKey] : null;
     const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
@@ -233,6 +225,15 @@ const Cashier = () => {
             isRightCollapsed: false
         };
     }, [collapsedSection]);
+
+    // [WHY] Early return AFTER all hooks to comply with React's rules of hooks
+    if (status === 'loading' && allTables.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            </div>
+        );
+    }
 
 
 
