@@ -27,18 +27,25 @@ const tableSlice = createSlice({
     },
     // Optimistic item status patch: updates specific items in-place before API confirms.
     // Also registers the table as 'pending' to guard against stale fetchTables overwrites.
+    // [WHY] Global search across all tables is required to correctly update merged/combined views.
     patchItemsStatus: (state, action) => {
       const { tableId, itemIds, status } = action.payload;
-      // Register as pending (increment counter to support concurrent toggles)
+      
+      // 1. Register the primary table as pending to guard against race conditions
       state.pendingTableIds[tableId] = (state.pendingTableIds[tableId] || 0) + 1;
-      const table = state.byId[tableId];
-      if (table?.active_order?.items) {
-        table.active_order.items.forEach(item => {
-          if (itemIds.includes(item.id)) {
-            item.status = status;
-          }
-        });
-      }
+      
+      // 2. Surgical update: iterate through all tables to find and update matching item IDs.
+      //    This ensures that in a merged group, items belonging to "follower" tables are also updated.
+      state.allIds.forEach(id => {
+        const table = state.byId[id];
+        if (table?.active_order?.items) {
+          table.active_order.items.forEach(item => {
+            if (itemIds.includes(item.id)) {
+              item.status = status;
+            }
+          });
+        }
+      });
     },
   },
   extraReducers: (builder) => {

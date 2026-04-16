@@ -23,6 +23,7 @@ const Bills = () => {
     } = useConsolidatedOrders('food', true);
 
     const handleTableClick = (table) => {
+        console.log(table);
         if (activeOrders[table.id.toString()]) {
             setSelectedTable(table);
         }

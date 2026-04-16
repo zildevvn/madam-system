@@ -161,7 +161,9 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                 group.tableName = group.tableName || `Bàn ${group.tableId}`;
             }
 
-            group.served = group.items.length > 0 && group.items.every(i => i.status === 'served');
+            // [WHY] Group is considered served if all items are either 'ready' (cooked) or 'served' (at table).
+            // This matches the logic in ActiveOrderTableList.jsx for showing "HOÀN TẤT".
+            group.served = group.items.length > 0 && group.items.every(i => i.status === 'ready' || i.status === 'served');
         }
 
         if (displayedGroups.has(groupKey)) return false;
