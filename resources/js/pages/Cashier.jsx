@@ -6,7 +6,8 @@ import PaymentModal from '../components/PaymentModal';
 import { reservationApi } from '../services/reservationApi';
 import CashierIndividualLane from '../components/CashierIndividualLane';
 import CashierGroupLane from '../components/CashierGroupLane';
-
+import CashierHistoryLane from '../components/CashierHistoryLane';
+import orderApi from '../services/orderApi';
 const Cashier = () => {
     const {
         orders,
@@ -20,8 +21,11 @@ const Cashier = () => {
     const [selectedTable, setSelectedTable] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
     const [reservations, setReservations] = useState([]);
-    const [collapsedSection, setCollapsedSection] = useState(null); // 'left' | 'right' | null
+    const [collapsedSection, setCollapsedSection] = useState(null); // Expand all by default
     const [isLoadingRes, setIsLoadingRes] = useState(false);
+    const [historyOrders, setHistoryOrders] = useState([]);
+    const [isReopening, setIsReopening] = useState(null);
+    const [editingHistoryOrder, setEditingHistoryOrder] = useState(null);
 
     const loadReservations = React.useCallback(async () => {
         setIsLoadingRes(true);
@@ -35,24 +39,39 @@ const Cashier = () => {
         }
     }, []);
 
-    // [WHY] Fetch reservations to drive the groupTables section
+    const loadHistory = React.useCallback(async () => {
+        try {
+            const res = await orderApi.getHistory(15);
+            setHistoryOrders(res.data || []);
+        } catch (err) {
+            console.error("Failed to fetch history:", err);
+        }
+    }, []);
+
+    // [WHY] Fetch reservations and history
     useEffect(() => {
         loadReservations();
-    }, [loadReservations, status]); // Refresh when table status changes (suggests updates)
+        loadHistory();
+    }, [loadReservations, loadHistory, status]); // Refresh when table status changes (suggests updates)
 
     // [WHY] Real-time listeners for the Cashier dashboard
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
 
-            // Listen for any events that might affect group table assignments
-            channel.listen('.order_created', loadReservations)
-                .listen('.order_updated', loadReservations)
-                .listen('.reservation_updated', loadReservations);
+            const handleUpdate = () => {
+                loadReservations();
+                loadHistory();
+            };
+
+            channel.listen('.order_created', handleUpdate)
+                .listen('.order_updated', handleUpdate)
+                .listen('.item_status_updated', handleUpdate)
+                .listen('.reservation_updated', handleUpdate);
 
             return () => window.Echo.leaveChannel('orders');
         }
-    }, [loadReservations]);
+    }, [loadReservations, loadHistory]);
 
     // [WHY] Segment orders into Group Reservations vs Individual Tables
     // [RULE] Tách UI và logic (custom hook) — README.md Component Rule
@@ -97,27 +116,113 @@ const Cashier = () => {
                 return newState;
             });
         }
+        if (editingHistoryOrder) {
+            setEditingHistoryOrder(null);
+            loadHistory();
+        }
         setSelectedTable(null);
+    };
+
+    const handleReopenOrder = async (orderId) => {
+        if (!window.confirm("Are you sure you want to reopen this bill? This will move it back to active status.")) return;
+        
+        setIsReopening(orderId);
+        try {
+            await orderApi.reopenOrder(orderId);
+            // toast.success("Order reopened successfully");
+            loadHistory();
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Failed to reopen order");
+        } finally {
+            setIsReopening(null);
+        }
+    };
+
+    const handleEditHistoryOrder = (order) => {
+        // [WHY] Map history order to the format expected by PaymentModal
+        setEditingHistoryOrder(order);
+        
+        // We set context for this "pseudo-table" if it's not a real active table
+        const lookupKey = `history-${order.id}`;
+        setTableContexts(prev => ({
+            ...prev,
+            [lookupKey]: {
+                step: 2, // Jump straight to payment step
+                discountType: order.discount_type || 'fixed',
+                discountValue: order.discount_value || 0,
+                cashierNote: order.cashier_note || '',
+                draftItems: order.items || []
+            }
+        }));
     };
 
     const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
     const currentContext = currentLookupKey ? tableContexts[currentLookupKey] : null;
     const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
+    
+    // [WHY] Consolidate history orders by reservation_id for Group Reservations
+    // [RULE] Match Group Reservation lane behavior: one card per group transaction
+    const consolidatedHistory = useMemo(() => {
+        const groups = {};
+        const standalone = [];
 
-    // [WHY] Mutually Exclusive Layout Calculations
-    const layout = useMemo(() => {
+        historyOrders.forEach(order => {
+            if (order.reservation_id) {
+                if (!groups[order.reservation_id]) {
+                    groups[order.reservation_id] = {
+                        ...order,
+                        items: [...(order.items || [])],
+                        total_price: Number(order.total_price),
+                        discount_amount: Number(order.discount_amount),
+                        allMergedTables: new Set(order.merged_tables ? order.merged_tables.split('-') : (order.table?.name ? [order.table.name.replace(/[^0-9]/g, '')] : []))
+                    };
+                } else {
+                    const g = groups[order.reservation_id];
+                    g.total_price += Number(order.total_price);
+                    g.discount_amount += Number(order.discount_amount);
+                    g.items = [...g.items, ...(order.items || [])];
+                    if (order.merged_tables) {
+                        order.merged_tables.split('-').forEach(t => g.allMergedTables.add(t.replace(/[^0-9]/g, '')));
+                    } else if (order.table?.name) {
+                        g.allMergedTables.add(order.table.name.replace(/[^0-9]/g, ''));
+                    }
+                    if (new Date(order.updated_at) > new Date(g.updated_at)) {
+                        g.updated_at = order.updated_at;
+                    }
+                }
+            } else {
+                standalone.push(order);
+            }
+        });
+
+        const consolidated = Object.values(groups).map(g => {
+            if (g.allMergedTables.size > 0) {
+                g.merged_tables = Array.from(g.allMergedTables)
+                    .filter(Boolean)
+                    .sort((a,b) => parseInt(a) - parseInt(b))
+                    .join('-');
+            }
+            return g;
+        });
+
+        return [...consolidated, ...standalone].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    }, [historyOrders]);
+
+    // [WHY] Mutually Exclusive Layout Calculations for Top Lanes
+    const topLayout = useMemo(() => {
         if (collapsedSection === 'left') {
             return {
-                left: 'w-full lg:w-[20%] is-collapsed',
-                right: 'w-full lg:w-[80%]',
+                left: 'w-full lg:w-[15%] is-collapsed',
+                right: 'w-full lg:w-[85%]',
                 isLeftCollapsed: true,
                 isRightCollapsed: false
             };
         }
         if (collapsedSection === 'right') {
             return {
-                left: 'w-full lg:w-[80%]',
-                right: 'w-full lg:w-[20%] is-collapsed',
+                left: 'w-full lg:w-[85%]',
+                right: 'w-full lg:w-[15%] is-collapsed',
                 isLeftCollapsed: false,
                 isRightCollapsed: true
             };
@@ -129,6 +234,12 @@ const Cashier = () => {
             isRightCollapsed: false
         };
     }, [collapsedSection]);
+
+    // History Layout: Simple full-width toggle
+    const historyLayout = useMemo(() => ({
+        history: collapsedSection === 'history' ? 'w-full !min-h-0' : 'w-full',
+        isHistoryCollapsed: collapsedSection === 'history'
+    }), [collapsedSection]);
 
     // [WHY] Early return AFTER all hooks to comply with React's rules of hooks
     if (status === 'loading' && allTables.length === 0) {
@@ -146,9 +257,10 @@ const Cashier = () => {
 
             <div className="py-8 relative overflow-x-hidden">
                 <div className="w-full max-w-[1600px] mx-auto px-[20px]">
-                    <div className="flex flex-col lg:flex-row gap-4 relative items-start overflow-x-hidden">
+                    {/* Top Row: Active Lanes */}
+                    <div className="flex flex-col lg:flex-row gap-4 relative items-start">
                         <CashierIndividualLane 
-                            layout={layout}
+                            layout={topLayout}
                             individualTables={individualTables}
                             individualOrders={individualOrders}
                             currentTime={currentTime}
@@ -157,7 +269,7 @@ const Cashier = () => {
                         />
 
                         <CashierGroupLane 
-                            layout={layout}
+                            layout={topLayout}
                             groupTables={groupTables}
                             groupOrders={groupOrders}
                             currentTime={currentTime}
@@ -165,32 +277,46 @@ const Cashier = () => {
                             onToggleCollapse={() => setCollapsedSection(collapsedSection === 'right' ? null : 'right')}
                         />
                     </div>
+
+                    {/* Bottom Row: History Lane (Full Width) */}
+                    < CashierHistoryLane 
+                        layout={historyLayout}
+                        historyOrders={consolidatedHistory}
+                        onToggleCollapse={() => setCollapsedSection(collapsedSection === 'history' ? null : 'history')}
+                        onEditOrder={handleEditHistoryOrder}
+                        onReopenOrder={handleReopenOrder}
+                        isReopening={isReopening}
+                    />
                 </div>
             </div>
 
-            {/* Payment Popup Modal */}
-            {selectedTable && currentContext && (
+            {/* Payment / Edit Modal */}
+            {(selectedTable || editingHistoryOrder) && (currentContext || tableContexts[`history-${editingHistoryOrder?.id}`]) && (
                 <PaymentModal
-                    selectedTable={selectedTable}
-                    currentOrder={currentOrder}
-                    onClose={() => setSelectedTable(null)}
+                    selectedTable={selectedTable || editingHistoryOrder?.table}
+                    currentOrder={currentOrder || editingHistoryOrder}
+                    isHistoryEdit={!!editingHistoryOrder}
+                    onClose={() => {
+                        setSelectedTable(null);
+                        setEditingHistoryOrder(null);
+                    }}
                     onPaymentSuccess={handlePaymentSuccess}
 
                     // Controlled Props from context
-                    draftItems={currentContext.draftItems}
-                    onUpdateDraftItems={(items) => updateTableContext(currentLookupKey, { draftItems: items })}
+                    draftItems={editingHistoryOrder ? editingHistoryOrder.items : currentContext.draftItems}
+                    onUpdateDraftItems={(items) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { draftItems: items })}
 
-                    discountType={currentContext.discountType}
-                    onUpdateDiscountType={(type) => updateTableContext(currentLookupKey, { discountType: type })}
+                    discountType={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).discountType}
+                    onUpdateDiscountType={(type) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { discountType: type })}
 
-                    discountValue={currentContext.discountValue}
-                    onUpdateDiscountValue={(val) => updateTableContext(currentLookupKey, { discountValue: val })}
+                    discountValue={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).discountValue}
+                    onUpdateDiscountValue={(val) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { discountValue: val })}
 
-                    step={currentContext.step}
-                    onUpdateStep={(s) => updateTableContext(currentLookupKey, { step: s })}
+                    step={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).step}
+                    onUpdateStep={(s) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { step: s })}
 
-                    cashierNote={currentContext.cashierNote}
-                    onUpdateCashierNote={(note) => updateTableContext(currentLookupKey, { cashierNote: note })}
+                    cashierNote={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).cashierNote}
+                    onUpdateCashierNote={(note) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { cashierNote: note })}
                 />
             )}
 

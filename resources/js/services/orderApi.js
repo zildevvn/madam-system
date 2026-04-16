@@ -34,6 +34,18 @@ const orderApi = {
     });
     return response.data;
   },
+  getHistory: async (limit = 20) => {
+    const response = await axios.get(`/api/orders/history?limit=${limit}`);
+    return response.data;
+  },
+  reopenOrder: async (orderId) => {
+    const response = await axios.post(`/api/orders/${orderId}/reopen`);
+    return response.data;
+  },
+  updatePayment: async (orderId, data) => {
+    const response = await axios.patch(`/api/orders/${orderId}/payment`, data);
+    return response.data;
+  },
   printDrinks: async (orderId, title) => {
     const response = await axios.post(`/api/orders/${orderId}/print-drinks`, { title });
     return response.data;

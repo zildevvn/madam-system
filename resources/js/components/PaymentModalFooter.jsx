@@ -26,7 +26,8 @@ const PaymentModalFooter = ({
     isProcessing,
     handlePayment,
     isGroup,
-    draftItemsCount
+    draftItemsCount,
+    isHistoryEdit = false
 }) => {
     return (
         <div className="shrink-0 border-t border-gray-100 bg-gray-50/50">
@@ -149,10 +150,26 @@ const PaymentModalFooter = ({
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                     </button>
                 ) : (
-                    <button disabled={draftItemsCount === 0 || !paymentMethod || isProcessing} onClick={handlePayment} className={`mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>
-                        {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>}
-                        {isProcessing ? 'Đang xử lý...' : 'Xác Nhận'}
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => onUpdateStep(1)}
+                            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <button 
+                            disabled={draftItemsCount === 0 || !paymentMethod || isProcessing} 
+                            onClick={handlePayment} 
+                            className={`flex-1 mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                        >
+                            {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                    {isHistoryEdit ? 'Cập nhật' : 'Xác Nhận'}
+                                </div>
+                            )}
+                        </button>
+                    </div>
                 )}
             </div>
         </div>
