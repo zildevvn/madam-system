@@ -16,7 +16,9 @@ const PaymentModal = ({
     discountValue = 0,
     onUpdateDiscountValue,
     step = 1,
-    onUpdateStep
+    onUpdateStep,
+    cashierNote = '',
+    onUpdateCashierNote
 }) => {
     const {
         paymentMethod,
@@ -44,7 +46,8 @@ const PaymentModal = ({
         draftItems,
         onUpdateDraftItems,
         discountType,
-        discountValue
+        discountValue,
+        cashierNote
     });
 
     if (!selectedTable) return null;
@@ -99,7 +102,6 @@ const PaymentModal = ({
                     handleAddProduct={handleAddProduct}
                     filteredProducts={filteredProducts}
                     compact={true}
-                    isReadOnly={!!currentOrder?.isGroup}
                 />
 
                 <div className="px-6 py-3 border-t border-gray-50">
@@ -132,6 +134,17 @@ const PaymentModal = ({
                             {discountType === 'percent' ? '%' : 'vnđ'}
                         </div>
                     </div>
+                </div>
+
+                <div className="px-6 py-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ghi chú thu ngân</span>
+                    <textarea
+                        value={cashierNote}
+                        onChange={(e) => onUpdateCashierNote(e.target.value)}
+                        placeholder="Thêm ghi chú..."
+                        rows={2}
+                        className="w-full mt-1 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-orange-200 transition-colors resize-none"
+                    />
                 </div>
 
                 <div className="mx-3 flex flex-col bg-orange-50 rounded-2xl px-3 py-2 gap-1">

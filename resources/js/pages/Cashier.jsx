@@ -54,8 +54,8 @@ const Cashier = () => {
     }, [loadReservations]);
 
     // [WHY] Segment the consolidated orders into two billing lanes:
-    // 1. groupOrders: Orders linked to a group reservation (Master Pre-orders).
-    // 2. individualOrders: Standard orders (including extras on group tables).
+    // 1. groupOrders: Unified group orders (master pre-order + individual extras merged).
+    // 2. individualOrders: Standard orders on non-group tables only.
     const segmentedData = useMemo(() => {
         const groupOrders = {};
         const individualOrders = {};
@@ -66,14 +66,21 @@ const Cashier = () => {
             const isGroup = order.reservation && order.reservation.type === 'group';
             const lookupKey = order.id.toString();
             if (isGroup) {
-                groupOrders[lookupKey] = order;
+                // Clone the order and initialize relatedOrderIds for multi-order payment
+                groupOrders[lookupKey] = {
+                    ...order,
+                    items: [...(order.items || [])],
+                    relatedOrderIds: [order.id]
+                };
             }
         });
 
-        // [CASE B] Collect all table IDs that belong to any group reservation
+        // [PASS 2] Collect all table IDs that belong to any group reservation
+        // and build a reverse map: tableId → groupOrder lookupKey
         const groupLinkedTableIds = new Set();
-        const tableIdToResId = {}; // [NEW] Map table to its reservation for color matching
-        Object.values(groupOrders).forEach(order => {
+        const tableIdToResId = {};
+        const tableIdToGroupKey = {}; // Maps each group-linked tableId to its group order key
+        Object.entries(groupOrders).forEach(([lookupKey, order]) => {
             const resId = order.reservation?.id;
             if (resId) {
                 if (order.reservation?.table_ids) {
@@ -81,11 +88,14 @@ const Cashier = () => {
                         const tid = Number(id);
                         groupLinkedTableIds.add(tid);
                         tableIdToResId[tid] = resId;
+                        tableIdToGroupKey[tid] = lookupKey;
                     });
                 }
                 if (order.tableId) {
-                    groupLinkedTableIds.add(Number(order.tableId));
-                    tableIdToResId[Number(order.tableId)] = resId;
+                    const tid = Number(order.tableId);
+                    groupLinkedTableIds.add(tid);
+                    tableIdToResId[tid] = resId;
+                    tableIdToGroupKey[tid] = lookupKey;
                 }
             }
         });
@@ -93,42 +103,56 @@ const Cashier = () => {
         // [COLOR MAPPING] Assign a stable color index (1-20) to each reservation ID
         const getGroupColorIndex = (resId) => {
             if (!resId) return 0;
-            return (Number(resId) % 20) + 1; // Expanded to 20 colors
+            return (Number(resId) % 20) + 1;
         };
 
-        // [PASS 2] Build individual orders, marking those on group tables
+        // [PASS 3] Route each non-group order:
+        // - Group-linked tables → merge items into the parent group order
+        // - Standalone tables → add to individualOrders lane
         orders.forEach(order => {
             const isGroup = order.reservation && order.reservation.type === 'group';
             const lookupKey = order.id.toString();
 
             if (!isGroup) {
-                individualOrders[lookupKey] = order;
                 const tid = Number(order.tableId);
                 const isGroupLinked = groupLinkedTableIds.has(tid);
-                const resId = order.reservation_id || order.reservation?.id || tableIdToResId[tid];
-                const groupColorIndex = isGroupLinked ? getGroupColorIndex(resId) : 0;
+                const parentGroupKey = tableIdToGroupKey[tid];
 
-                if (order.mergedTables) {
-                    individualTablesList.push({
-                        id: lookupKey,
-                        name: order.tableName,
-                        merged_tables: order.mergedTables,
-                        groupKey: lookupKey,
-                        isGroupLinked,
-                        groupColorIndex
-                    });
+                if (isGroupLinked && parentGroupKey && groupOrders[parentGroupKey]) {
+                    // [MERGE] Fold this individual order's items into the parent group order
+                    const parentGroup = groupOrders[parentGroupKey];
+                    parentGroup.relatedOrderIds.push(order.id);
+                    if (order.items && order.items.length > 0) {
+                        parentGroup.items.push(...order.items);
+                    }
                 } else {
-                    const tableObj = allTables.find(tbl => tbl.id === order.tableId);
-                    if (tableObj) {
+                    // [STANDALONE] Not linked to any group — show in Individual lane
+                    individualOrders[lookupKey] = order;
+                    const resId = order.reservation_id || order.reservation?.id || tableIdToResId[tid];
+                    const groupColorIndex = 0; // Standalone = no group color
+
+                    if (order.mergedTables) {
                         individualTablesList.push({
-                            ...tableObj,
-                            name: order.tableName || tableObj.name,
                             id: lookupKey,
-                            originalTableId: tableObj.id,
+                            name: order.tableName,
+                            merged_tables: order.mergedTables,
                             groupKey: lookupKey,
-                            isGroupLinked,
+                            isGroupLinked: false,
                             groupColorIndex
                         });
+                    } else {
+                        const tableObj = allTables.find(tbl => tbl.id === order.tableId);
+                        if (tableObj) {
+                            individualTablesList.push({
+                                ...tableObj,
+                                name: order.tableName || tableObj.name,
+                                id: lookupKey,
+                                originalTableId: tableObj.id,
+                                groupKey: lookupKey,
+                                isGroupLinked: false,
+                                groupColorIndex
+                            });
+                        }
                     }
                 }
             }
@@ -151,6 +175,7 @@ const Cashier = () => {
                     step: 1,
                     discountType: 'fixed',
                     discountValue: 0,
+                    cashierNote: '',
                     draftItems: currentOrder ? [...currentOrder.items] : []
                 }
             }));
@@ -182,14 +207,13 @@ const Cashier = () => {
 
     // [WHY] Group Tables: Directly mapped from groupOrders
     const groupTables = useMemo(() => {
-        const getGroupColorIndex = (resId) => (Number(resId) % 20) + 1; // Expanded to 20 colors
         return Object.values(groupOrders).map(order => ({
             id: order.id.toString(),
             name: order.tableName,
             isVirtual: false,
             reservation_id: order.reservation_id,
             groupKey: order.id.toString(),
-            groupColorIndex: getGroupColorIndex(order.reservation?.id)
+            groupColorIndex: 0
         }));
     }, [groupOrders]);
 
@@ -363,6 +387,9 @@ const Cashier = () => {
 
                     step={currentContext.step}
                     onUpdateStep={(s) => updateTableContext(currentLookupKey, { step: s })}
+
+                    cashierNote={currentContext.cashierNote}
+                    onUpdateCashierNote={(note) => updateTableContext(currentLookupKey, { cashierNote: note })}
                 />
             )}
 

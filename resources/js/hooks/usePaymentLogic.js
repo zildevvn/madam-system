@@ -9,7 +9,8 @@ export const usePaymentLogic = ({
     draftItems,
     onUpdateDraftItems,
     discountType,
-    discountValue
+    discountValue,
+    cashierNote
 }) => {
     const [paymentMethod, setPaymentMethod] = useState(null); // 'bank' | 'card' | 'cash'
     const [isProcessing, setIsProcessing] = useState(false);
@@ -18,7 +19,15 @@ export const usePaymentLogic = ({
     const [allProducts, setAllProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showProductSearch, setShowProductSearch] = useState(false);
-    const [targetTableId, setTargetTableId] = useState(selectedTable?.id);
+    const [targetTableId, setTargetTableId] = useState(() => {
+        // [WHY] For group orders, default to the first table in the reservation
+        // so the table selector's first button is active on open.
+        const tableIds = currentOrder?.reservation?.table_ids;
+        if (currentOrder?.reservation?.type === 'group' && Array.isArray(tableIds) && tableIds.length > 0) {
+            return Number([...tableIds].sort((a, b) => Number(a) - Number(b))[0]);
+        }
+        return selectedTable?.id;
+    });
 
     // Fetch products for "Add new items"
     useEffect(() => {
@@ -46,7 +55,11 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            // 1. Persist changes to DB if draft items changed (Skip for group reservations which are read-only and lack product_ids)
+            // [WHY] relatedOrderIds contains all order IDs merged into a unified group view.
+            // We must complete each one to properly close the group + individual extras.
+            const orderIds = currentOrder.relatedOrderIds || [currentOrder.id];
+
+            // 1. Persist changes to DB if draft items changed (Skip for pure group reservations which are read-only)
             if (!currentOrder.isGroup) {
                 await orderApi.checkoutOrder(
                     currentOrder.id,
@@ -61,8 +74,11 @@ export const usePaymentLogic = ({
                 );
             }
 
-            // 2. Complete payment with discount info
-            await orderApi.completeOrder(currentOrder.id, paymentMethod, discountType, discountValue);
+            // 2. Complete payment for ALL related orders
+            for (const orderId of orderIds) {
+                await orderApi.completeOrder(orderId, paymentMethod, discountType, discountValue, cashierNote);
+            }
+
             onPaymentSuccess();
         } catch (err) {
             console.error('Payment failed:', err);
@@ -70,7 +86,7 @@ export const usePaymentLogic = ({
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, onPaymentSuccess]);
+    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess]);
 
     const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
         let newItems;

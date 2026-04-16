@@ -25,11 +25,12 @@ const orderApi = {
     const response = await axios.put(`/api/order-items/${itemId}/status`, { status });
     return response.data;
   },
-  completeOrder: async (orderId, paymentMethod, discountType = null, discountValue = 0) => {
+  completeOrder: async (orderId, paymentMethod, discountType = null, discountValue = 0, cashierNote = '') => {
     const response = await axios.post(`/api/orders/${orderId}/complete`, {
       payment_method: paymentMethod,
       discount_type: discountType,
-      discount_value: discountValue
+      discount_value: discountValue,
+      cashier_note: cashierNote || null
     });
     return response.data;
   },

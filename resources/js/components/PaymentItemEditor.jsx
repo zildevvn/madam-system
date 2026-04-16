@@ -19,9 +19,23 @@ const PaymentItemEditor = ({
     filteredProducts,
     isReadOnly = false
 }) => {
+    // [WHY] Detect unified group order — has reservation.table_ids for the table selector
+    const isUnifiedGroup = currentOrder?.reservation?.type === 'group';
+    const groupTableIds = isUnifiedGroup && Array.isArray(currentOrder.reservation.table_ids)
+        ? currentOrder.reservation.table_ids.map(id => Number(id)).sort((a, b) => a - b)
+        : [];
+
+    // [WHY] Derive table list for the selector:
+    // - Unified group: use reservation.table_ids (individual tables)
+    // - Staff-merged: use mergedTables string
+    const mergedStr = currentOrder?.mergedTables || selectedTable.merged_tables;
+    const selectorTableIds = groupTableIds.length > 0
+        ? groupTableIds
+        : (mergedStr ? mergedStr.split('-').map(s => s.trim()).filter(id => id && !isNaN(parseInt(id))).map(Number) : []);
+
     return (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Header Content */}
+            {/* Header Content — "Điều chỉnh món" for editable items */}
             {!isReadOnly && (
                 <div className="px-6 pt-5 pb-2">
                     <div className="mb-4 relative">
@@ -35,28 +49,24 @@ const PaymentItemEditor = ({
                             </button>
                         </div>
 
-                        {/* Table Selector (Visible only for merged orders) */}
-                        {(currentOrder?.mergedTables || selectedTable.merged_tables) && (
+                        {/* Table Selector — works for both staff-merged and group reservations */}
+                        {selectorTableIds.length > 1 && (
                             <div className="select-tables flex flex-wrap gap-1.5 mb-3 bg-gray-50/80 p-1.5 rounded-xl border border-gray-100">
-                                {(currentOrder?.mergedTables || selectedTable.merged_tables)
-                                    .split('-')
-                                    .map(tId => tId.trim())
-                                    .filter(id => id && !isNaN(parseInt(id)))
-                                    .map(id => (
-                                        <button
-                                            key={id}
-                                            onClick={() => setTargetTableId(parseInt(id))}
-                                            className={`
-                                                px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border-none cursor-pointer
-                                                ${targetTableId === parseInt(id)
-                                                    ? 'bg-orange-500 text-white shadow-sm shadow-orange-200'
-                                                    : 'bg-white text-gray-400 hover:text-gray-600'
-                                                }
-                                            `}
-                                        >
-                                            {id.toString().split('-')[0]}
-                                        </button>
-                                    ))}
+                                {selectorTableIds.map(id => (
+                                    <button
+                                        key={id}
+                                        onClick={() => setTargetTableId(id)}
+                                        className={`
+                                            px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border-none cursor-pointer
+                                            ${targetTableId === id
+                                                ? 'bg-orange-500 text-white shadow-sm shadow-orange-200'
+                                                : 'bg-white text-gray-400 hover:text-gray-600'
+                                            }
+                                        `}
+                                    >
+                                        {id}
+                                    </button>
+                                ))}
                             </div>
                         )}
 
@@ -98,10 +108,19 @@ const PaymentItemEditor = ({
                     <div className="space-y-1">
                         {Object.entries(
                             draftItems.reduce((acc, item) => {
-                                // [RULE] For standard group reservations, we unify everything into one 'GROUP' bucket.
-                                // [RULE] For staff-merges (Individual flow), we maintain per-table separation.
+                                // [RULE] For unified group orders:
+                                // - Items with reservation_item_id = shared pre-order → GROUP bucket
+                                // - Items without reservation_item_id = individual extras → per-table bucket
                                 const isGroupReservation = currentOrder?.reservation && currentOrder?.reservation.type === 'group';
-                                const tGroup = isGroupReservation ? 'GROUP' : (item.tableId || selectedTable.originalTableId || selectedTable.id);
+
+                                let tGroup;
+                                if (isGroupReservation) {
+                                    // Shared pre-order items go to GROUP, individual extras go to their table
+                                    tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
+                                } else {
+                                    // Standard staff-merge: group by table
+                                    tGroup = item.tableId || selectedTable.originalTableId || selectedTable.id;
+                                }
 
                                 if (!acc[tGroup]) acc[tGroup] = [];
                                 acc[tGroup].push(item);
@@ -109,16 +128,23 @@ const PaymentItemEditor = ({
                             }, {})
                         ).sort(([a], [b]) => a === 'GROUP' ? -1 : a - b).map(([tGroup, tableItems]) => {
                             const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-                            const mergedStr = currentOrder?.mergedTables || selectedTable.merged_tables;
-                            const displayTableTitle = tGroup === 'GROUP'
-                                ? `Bàn ${mergedStr ? mergedStr.split('-group-')[0].split('-').filter(id => id && !isNaN(parseInt(id))).join(' - ') : (selectedTable.originalTableId || selectedTable.id)}`
+                            const isSharedSection = tGroup === 'GROUP';
+
+                            // [WHY] Display title for each section
+                            const displayTableTitle = isSharedSection
+                                ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.join('-')})` : ''}`
                                 : `Bàn ${tGroup.toString().split('-')[0]}`;
+
+                            // [WHY] Shared pre-order items are always read-only.
+                            // Individual extras are editable.
+                            const sectionReadOnly = isSharedSection;
 
                             return (
                                 <div key={tGroup} className="space-y-1 mb-4 last:mb-0">
-                                    {(mergedStr || tGroup === 'GROUP') && (
+                                    {/* Section header — always show for unified group, or staff-merged */}
+                                    {(isUnifiedGroup || mergedStr) && (
                                         <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100 italic">
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border italic ${isSharedSection ? 'text-orange-400 bg-orange-50 border-orange-100' : 'text-gray-400 bg-gray-50 border-gray-100'}`}>
                                                 {displayTableTitle}
                                             </span>
                                             <div className="flex-1 h-[1px] bg-gray-100"></div>
@@ -129,14 +155,16 @@ const PaymentItemEditor = ({
                                     )}
                                     {tableItems.map((item, idx) => {
                                         const actualTableId = item.tableId || selectedTable.id;
+                                        // [WHY] Per-item read-only: shared dishes (reservation_item_id) are locked
+                                        const itemReadOnly = isReadOnly || sectionReadOnly;
                                         return (
                                             <ProductItem
                                                 key={`${item.product_id || item.id}-${actualTableId}`}
                                                 item={item}
                                                 onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q)}
                                                 onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n)}
-                                                showNoteButton={!isReadOnly}
-                                                isReadOnly={isReadOnly}
+                                                showNoteButton={!itemReadOnly}
+                                                isReadOnly={itemReadOnly}
                                             />
                                         );
                                     })}
