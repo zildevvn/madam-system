@@ -93,9 +93,9 @@ export const useCashierSegmentation = (orders, allTables) => {
             groupColorIndex: getGroupColorIndex(order.reservation?.id)
         }));
 
-        return { 
-            groupOrders, 
-            individualOrders, 
+        return {
+            groupOrders,
+            individualOrders,
             individualTables: individualTablesList.sort((a, b) => b.id - a.id),
             groupTables
         };
