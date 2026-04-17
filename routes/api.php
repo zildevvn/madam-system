@@ -7,6 +7,8 @@ use App\Http\Controllers\API\OrderController;
 
 Route::get('/tables', [TableController::class, 'index']);
 Route::post('/tables', [TableController::class, 'store']);
+Route::put('/tables/{id}', [TableController::class, 'update']);
+Route::delete('/tables/{id}', [TableController::class, 'destroy']);
 
 Route::get('/tables/{id}/active-order', [OrderController::class, 'activeOrder']);
 Route::get('/orders/history', [OrderController::class, 'history']);

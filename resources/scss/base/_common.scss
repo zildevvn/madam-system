@@ -70,6 +70,14 @@ h3,
 h4,
 .h4 {
     font-size: 24px;
+
+    @media (max-width: 1023.98px) {
+        font-size: 20px;
+    }
+
+    @media (max-width: 767.98px) {
+        font-size: 18px;
+    }
 }
 
 h5,
@@ -236,9 +244,13 @@ h6,
 }
 
 .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+
+    /* Firefox */
     &::-webkit-scrollbar {
-        display: none; /* Chrome, Safari and Opera */
+        display: none;
+        /* Chrome, Safari and Opera */
     }
 }
