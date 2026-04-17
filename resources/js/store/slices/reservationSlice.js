@@ -4,8 +4,8 @@ import { reservationApi } from '../../services/reservationApi';
 // Thunks
 export const fetchReservationsAsync = createAsyncThunk(
     'reservation/fetchAll',
-    async (type = null) => {
-        const response = await reservationApi.getAll(type);
+    async (params = {}) => {
+        const response = await reservationApi.getAll(params);
         return response.data; // data field from standard response
     }
 );

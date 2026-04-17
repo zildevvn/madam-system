@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, formatDate, formatTime }) => {
+const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterType, formatDate, formatTime }) => {
     return (
         <div className="md:hidden space-y-4">
             {reservations.length === 0 ? (
@@ -13,6 +13,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, form
                         key={r.id}
                         className={`
                             rounded-xl p-2 shadow-sm transition-all space-y-2 bg-white
+                            ${r.status === 'completed' ? 'opacity-50 line-through' : ''}
                         `}
                     >
                         <div className="flex justify-between items-start">
@@ -37,9 +38,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, form
                             </div>
                         </div>
 
-
-
-                        <div className="grid grid-cols-2 gap-3 pt-2">
+                        <div className={`grid ${(r.type === 'individual' && r.status !== 'completed') ? 'grid-cols-3' : 'grid-cols-2'} gap-3 pt-2`}>
                             <button
                                 onClick={() => onView(r)}
                                 className="py-2 bg-gray-100 text-gray-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all border-none cursor-pointer"
@@ -52,6 +51,14 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, filterType, form
                             >
                                 Edit
                             </button>
+                            {r.type === 'individual' && r.status !== 'completed' && (
+                                <button
+                                    onClick={() => onDone(r)}
+                                    className="py-2 bg-green-100 text-green-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-green-200 transition-all border-none cursor-pointer"
+                                >
+                                    Arrived
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))

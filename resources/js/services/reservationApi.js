@@ -1,10 +1,16 @@
 import axios from 'axios';
 
 export const reservationApi = {
-    getAll: async (type = null) => {
-        const url = type ? `/api/reservations?type=${type}` : '/api/reservations';
+    getAll: async (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.type && params.type !== 'all') queryParams.append('type', params.type);
+        if (params.date) queryParams.append('date', params.date);
+        if (params.month) queryParams.append('month', params.month);
+
+        const queryString = queryParams.toString();
+        const url = queryString ? `/api/reservations?${queryString}` : '/api/reservations';
         const response = await axios.get(url);
-        return response.data; // Expected format: { data: [...], message: '...', errors: null }
+        return response.data;
     },
     getById: async (id) => {
         const response = await axios.get(`/api/reservations/${id}`);
