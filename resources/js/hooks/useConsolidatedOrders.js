@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { fetchTables } from '../store/slices/tableSlice';
 import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
-import { consolidateOrders } from '../utils/orderConsolidation';
+import { consolidateOrders } from '../shared/utils/consolidateOrders';
 
 /**
  * useConsolidatedOrders: Groups tables by their merged_tables string and 

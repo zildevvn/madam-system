@@ -57,7 +57,7 @@ const CashierHistoryLane = ({
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-[13px] font-black text-gray-900 uppercase">
-                                            {order.merged_tables 
+                                            {order.merged_tables
                                                 ? `Bàn ${order.merged_tables}`
                                                 : (order.table?.name
                                                     ? (order.table.name.startsWith('Bàn') ? order.table.name : `Bàn ${order.table.name}`)
@@ -105,22 +105,6 @@ const CashierHistoryLane = ({
                                 >
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>
                                     Edit
-                                </button>
-                                <button
-                                    onClick={() => onReopenOrder(order.id)}
-                                    disabled={isReopening === order.id}
-                                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                                        isReopening === order.id 
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                        : 'bg-orange-50 hover:bg-orange-100 text-orange-600'
-                                    }`}
-                                >
-                                    {isReopening === order.id ? (
-                                        <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
-                                    )}
-                                    {isReopening === order.id ? 'Wait...' : 'Reopen'}
                                 </button>
                             </div>
                         </div>

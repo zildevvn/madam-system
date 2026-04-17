@@ -18,6 +18,7 @@ class OrderController extends Controller
         $this->printService = $printService;
     }
 
+    // [WHY] Fetch the currently active order for a given table to display in the workspace.
     public function activeOrder($tableId)
     {
         $order = $this->orderService->getActiveOrder($tableId);
@@ -58,6 +59,11 @@ class OrderController extends Controller
         ], 201);
     }
 
+    /**
+     * complete
+     * [WHY] Finalizes an order, records payment details, and releases the table.
+     * [RULE] Status changes to 'completed'. Table status changes to 'available'.
+     */
     public function complete(Request $request, $id)
     {
         $validated = $request->validate([
@@ -146,6 +152,7 @@ class OrderController extends Controller
         ], 400);
     }
 
+    // [WHY] Fetch completed orders for the History panel with optional pagination limit.
     public function history(Request $request)
     {
         $limit = $request->input('limit', 20);
@@ -176,6 +183,11 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * updatePayment
+     * [WHY] Permite correcting payment details for historical bills without reopening the order.
+     * [RULE] Propagates changes to all orders in a group reservation or merged set.
+     */
     public function updatePayment(Request $request, $id)
     {
         $validated = $request->validate([

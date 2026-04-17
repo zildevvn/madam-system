@@ -213,6 +213,8 @@ class OrderService
     // [WHY] Close order and release tables
     // [RULE] Handles merged tables by finalizing all orders in the group
     // [RULE] Transactional safety for payment data
+    // [WHY] Finalizes the transaction for one or more tables. 
+    // [RULE] If Merged Tables or Group Reservation, propagates 'completed' status to all sibling orders.
     public function completeOrder($orderId, $data)
     {
         $result = DB::transaction(function () use ($orderId, $data) {
@@ -331,11 +333,16 @@ class OrderService
         return $result;
     }
 
-    // [WHY] Fetch completed orders for the History panel
+    /**
+     * getHistory
+     * [WHY] Returns a list of finalized orders for the cashier history view.
+     * [RULE] Eager loads all related metadata to prevent N+1 queries.
+     */
     public function getHistory($limit = 20)
     {
         return Order::with(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation'])
             ->where('status', 'completed')
+            ->whereDate('updated_at', now()->toDateString())
             ->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->limit($limit)
@@ -344,6 +351,11 @@ class OrderService
 
     // [WHY] Revert a completed order to pending state
     // [RULE] Updates table status to busy
+    /**
+     * reopenOrder
+     * [WHY] Reverts a completed order back to 'pending' to allow further edits.
+     * [RULE] Reverses the table release and reservation completion.
+     */
     public function reopenOrder($orderId)
     {
         $result = DB::transaction(function () use ($orderId) {
@@ -430,7 +442,11 @@ class OrderService
         return $result;
     }
 
-    // [WHY] Update payment record for a completed order
+    /**
+     * updatePayment
+     * [WHY] Updates payment metadata (note, method, discount) for finalized bills.
+     * [RULE] Atomic update: ensures all related orders in a group stay consistent.
+     */
     public function updatePayment($orderId, $data)
     {
         $order = Order::findOrFail($orderId);
