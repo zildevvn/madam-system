@@ -5,7 +5,7 @@
  * @param {Object} options - { filterType, groupByCompositeKey, splitByFlow }
  * @returns {Object} { orders, orderDict, activeTablesToDisplay }
  */
-export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null, groupByCompositeKey = false, splitByFlow = false } = {}) => {
+export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null, groupByCompositeKey = false } = {}) => {
     const consolidatedGroups = {};
     const handledOrderIds = new Set();
     const orderDict = {};
@@ -42,28 +42,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             // We use the pre-pass 'groupReservedTableIds' for this.
             const isTableInGroupRes = groupReservedTableIds.has(Number(t.id));
 
-            let groupKey = groupKeyBase;
-            if (splitByFlow) {
-                // [WHY] Standard split: Groups vs Individuals.
-                // However, for Group Reservations, everything MUST stay together.
-                const reservation = order.reservation;
-                if (reservation && reservation.type === 'group') {
-                    groupKey = `${groupKeyBase}-group-${reservation.id}`;
-                } else if (isTableInGroupRes) {
-                    // [FIX] This is an individual extra on a reserved table.
-                    // We FORCE it into the '-group-' key so it merges with the set menu / package.
-                    // We find the reservation ID from the tables' existing group data.
-                    const parentOrderWithRes = ordersToProcess.find(o => o.reservation?.type === 'group');
-                    const resId = order.reservation_id || parentOrderWithRes?.reservation?.id;
-                    if (resId) {
-                        groupKey = `${groupKeyBase}-group-${resId}`;
-                    } else {
-                        groupKey = `${groupKeyBase}-indiv`;
-                    }
-                } else {
-                    groupKey = `${groupKeyBase}-indiv`;
-                }
-            }
+            let groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
             if (!consolidatedGroups[groupKey]) {
                 const reservation = order.reservation;

@@ -63,7 +63,8 @@ class OrderController extends Controller
         $validated = $request->validate([
             'payment_method' => 'required|string|in:cash,bank,card,debt',
             'discount_type' => 'nullable|string|in:fixed,percent',
-            'discount_value' => 'nullable|numeric|min:0'
+            'discount_value' => 'nullable|numeric|min:0',
+            'cashier_note' => 'nullable|string|max:255'
         ]);
 
         $data = array_merge($validated, ['cashier_id' => $request->user()?->id]);

@@ -23,6 +23,7 @@ class Order extends Model
         'discount_value',
         'discount_amount',
         'payment_method',
+        'cashier_note',
     ];
 
     public function server()

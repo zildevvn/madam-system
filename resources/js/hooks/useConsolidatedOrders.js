@@ -11,7 +11,7 @@ import { consolidateOrders } from '../utils/orderConsolidation';
  * @param {boolean} groupByCompositeKey - whether to group same items together
  * @param {boolean} splitByFlow - if true, separates group reservations from individual extras (Cashier only)
  */
-export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = false, splitByFlow = false) => {
+export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = false) => {
     const dispatch = useAppDispatch();
     const tables = useAppSelector(selectTables);
     const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
@@ -48,8 +48,7 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
     return useMemo(() => {
         const result = consolidateOrders(tables, tableIdToGroupKey, {
             filterType,
-            groupByCompositeKey,
-            splitByFlow
+            groupByCompositeKey
         });
 
         return {
@@ -60,5 +59,5 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
             status: tableStatus,
             error
         };
-    }, [tables, tableIdToGroupKey, filterType, groupByCompositeKey, currentTime, tableStatus, error, splitByFlow]);
+    }, [tables, tableIdToGroupKey, filterType, groupByCompositeKey, currentTime, tableStatus, error]);
 };

@@ -16,7 +16,7 @@ const Cashier = () => {
         allTables,
         status,
         error
-    } = useConsolidatedOrders(null, true, true);
+    } = useConsolidatedOrders(null, true);
 
     const [selectedTable, setSelectedTable] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
@@ -90,7 +90,9 @@ const Cashier = () => {
                     discountType: 'fixed',
                     discountValue: 0,
                     cashierNote: '',
-                    draftItems: currentOrder ? [...currentOrder.items] : []
+                    draftItems: currentOrder ? [...currentOrder.items] : [],
+                    paymentMethod: 'cash',
+                    showExtras: false
                 }
             }));
         }
@@ -149,6 +151,8 @@ const Cashier = () => {
             ...prev,
             [lookupKey]: {
                 step: 2, // Jump straight to payment step
+                paymentMethod: order.payment_method || 'cash', // Pre-fill current payment method
+                showExtras: true, // Show Note and Discount by default for history edit
                 discountType: order.discount_type || 'fixed',
                 discountValue: order.discount_value || 0,
                 cashierNote: order.cashier_note || '',
@@ -165,64 +169,136 @@ const Cashier = () => {
     // [RULE] Match Group Reservation lane behavior: one card per group transaction
     const consolidatedHistory = useMemo(() => {
         const groups = {};
-        const standalone = [];
 
-        historyOrders.forEach(order => {
-            if (order.reservation_id) {
-                if (!groups[order.reservation_id]) {
-                    groups[order.reservation_id] = {
-                        ...order,
-                        items: [...(order.items || [])],
-                        total_price: Number(order.total_price),
-                        discount_amount: Number(order.discount_amount),
-                        allMergedTables: new Set(order.merged_tables ? order.merged_tables.split('-') : (order.table?.name ? [order.table.name.replace(/[^0-9]/g, '')] : []))
-                    };
-                } else {
-                    const g = groups[order.reservation_id];
-                    g.total_price += Number(order.total_price);
-                    g.discount_amount += Number(order.discount_amount);
-                    g.items = [...g.items, ...(order.items || [])];
-                    if (order.merged_tables) {
-                        order.merged_tables.split('-').forEach(t => g.allMergedTables.add(t.replace(/[^0-9]/g, '')));
-                    } else if (order.table?.name) {
-                        g.allMergedTables.add(order.table.name.replace(/[^0-9]/g, ''));
-                    }
-                    if (new Date(order.updated_at) > new Date(g.updated_at)) {
-                        g.updated_at = order.updated_at;
-                    }
+        // Helper to clean -indiv, -group and other internal suffixes
+        const cleanMergedString = (str) => {
+            if (!str) return null;
+            return str.split('-')
+                .map(p => p.toString().replace(/[^0-9]/g, ''))
+                .filter(Boolean)
+                .sort((a,b) => parseInt(a) - parseInt(b))
+                .join('-');
+        };
+
+        // [WHY] Normalize all orders first to ensure items have a 'name' property and match active order shape
+        const normalizedHistory = historyOrders.map(order => ({
+            ...order,
+            mergedTables: order.merged_tables, // [MAP] For PaymentItemEditor
+            isGroup: !!order.reservation_id,    // [MAP] For PaymentModalFooter
+            items: (order.items || []).map(i => ({
+                ...i,
+                name: i.product?.name || i.name || 'Unknown',
+                tableId: i.table_id // [WHY] Preserve null for shared items; PaymentItemEditor uses this to group into 'GROUP'
+            }))
+        }));
+
+        // [WHY] Multi-signal grouping logic (Two Pass)
+        // [RULE] If orders share a Reservation ID OR a Transaction Timestamp OR a Merged Table string, they belong together.
+        const signalToGroupId = {};
+        
+        // Pass 1: Build Linkages
+        normalizedHistory.forEach(order => {
+            const timeKey = new Date(order.updated_at).getTime().toString();
+            const cleanedMerged = cleanMergedString(order.merged_tables);
+            
+            const signals = [
+                order.reservation_id ? `res-${order.reservation_id}` : null,
+                cleanedMerged ? `merged-${cleanedMerged}` : null,
+                `tx-${timeKey}-${order.payment_method}`
+            ].filter(Boolean);
+
+            // Find an existing group ID from any of the signals
+            let existingGroupId = null;
+            for (const s of signals) {
+                if (signalToGroupId[s]) {
+                    existingGroupId = signalToGroupId[s];
+                    break;
+                }
+            }
+
+            // If found, link all current signals to this group. If not, create a new one.
+            const groupId = existingGroupId || signals[0];
+            signals.forEach(s => signalToGroupId[s] = groupId);
+        });
+
+        // Pass 2: Grouping
+        normalizedHistory.forEach(order => {
+            const timeKey = new Date(order.updated_at).getTime().toString();
+            const groupKey = signalToGroupId[order.reservation_id ? `res-${order.reservation_id}` : `tx-${timeKey}-${order.payment_method}`];
+
+            if (!groups[groupKey]) {
+                groups[groupKey] = {
+                    ...order,
+                    merged_tables: cleanMergedString(order.merged_tables),
+                    mergedTables: cleanMergedString(order.merged_tables),
+                    items: [...(order.items || [])],
+                    total_price: Number(order.total_price),
+                    discount_amount: Number(order.discount_amount),
+                    allTableIds: new Set()
+                };
+                const cm = cleanMergedString(order.merged_tables);
+                if (cm) cm.split('-').forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
+                else if (order.table_id) groups[groupKey].allTableIds.add(parseInt(order.table_id));
+                
+                if (order.reservation?.table_ids) {
+                    order.reservation.table_ids.forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
                 }
             } else {
-                standalone.push(order);
+                const g = groups[groupKey];
+                g.total_price += Number(order.total_price);
+                g.discount_amount += Number(order.discount_amount);
+                g.items = [...g.items, ...(order.items || [])];
+                if (order.cashier_note && !g.cashier_note) {
+                    g.cashier_note = order.cashier_note;
+                }
+                // [WHY] Ensure if any order in the group has reservation metadata, the group card carries it
+                if (order.reservation && !g.reservation) {
+                    g.reservation = order.reservation;
+                    g.reservation_id = order.reservation_id;
+                    g.isGroup = true;
+                }
+                const cm = cleanMergedString(order.merged_tables);
+                if (cm) cm.split('-').forEach(id => g.allTableIds.add(parseInt(id)));
+                else if (order.table_id) g.allTableIds.add(parseInt(order.table_id));
+                
+                if (order.reservation?.table_ids) {
+                    order.reservation.table_ids.forEach(id => g.allTableIds.add(parseInt(id)));
+                }
+                if (new Date(order.updated_at) > new Date(g.updated_at)) {
+                    g.updated_at = order.updated_at;
+                }
             }
         });
 
         const consolidated = Object.values(groups).map(g => {
-            if (g.allMergedTables.size > 0) {
-                g.merged_tables = Array.from(g.allMergedTables)
+            if (g.allTableIds.size > 1) {
+                const range = Array.from(g.allTableIds)
                     .filter(Boolean)
                     .sort((a,b) => parseInt(a) - parseInt(b))
                     .join('-');
+                g.merged_tables = range;
+                g.mergedTables = range;
             }
             return g;
         });
 
-        return [...consolidated, ...standalone].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        return consolidated.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
     }, [historyOrders]);
 
     // [WHY] Mutually Exclusive Layout Calculations for Top Lanes
-    const topLayout = useMemo(() => {
+    const layout = useMemo(() => {
         if (collapsedSection === 'left') {
             return {
-                left: 'w-full lg:w-[15%] is-collapsed',
-                right: 'w-full lg:w-[85%]',
+                left: 'w-full lg:w-[20%] is-collapsed',
+                right: 'w-full lg:w-[80%]',
                 isLeftCollapsed: true,
                 isRightCollapsed: false
             };
         }
         if (collapsedSection === 'right') {
             return {
-                left: 'w-full lg:w-[85%]',
-                right: 'w-full lg:w-[15%] is-collapsed',
+                left: 'w-full lg:w-[80%]',
+                right: 'w-full lg:w-[20%] is-collapsed',
                 isLeftCollapsed: false,
                 isRightCollapsed: true
             };
@@ -260,7 +336,7 @@ const Cashier = () => {
                     {/* Top Row: Active Lanes */}
                     <div className="flex flex-col lg:flex-row gap-4 relative items-start">
                         <CashierIndividualLane 
-                            layout={topLayout}
+                            layout={layout}
                             individualTables={individualTables}
                             individualOrders={individualOrders}
                             currentTime={currentTime}
@@ -269,7 +345,7 @@ const Cashier = () => {
                         />
 
                         <CashierGroupLane 
-                            layout={topLayout}
+                            layout={layout}
                             groupTables={groupTables}
                             groupOrders={groupOrders}
                             currentTime={currentTime}
@@ -290,33 +366,68 @@ const Cashier = () => {
                 </div>
             </div>
 
-            {/* Payment / Edit Modal */}
-            {(selectedTable || editingHistoryOrder) && (currentContext || tableContexts[`history-${editingHistoryOrder?.id}`]) && (
+            {/* Original Payment Popup Modal for Active Tables */}
+            {selectedTable && currentContext && (
                 <PaymentModal
-                    selectedTable={selectedTable || editingHistoryOrder?.table}
-                    currentOrder={currentOrder || editingHistoryOrder}
-                    isHistoryEdit={!!editingHistoryOrder}
-                    onClose={() => {
-                        setSelectedTable(null);
-                        setEditingHistoryOrder(null);
-                    }}
+                    selectedTable={selectedTable}
+                    currentOrder={currentOrder}
+                    onClose={() => setSelectedTable(null)}
                     onPaymentSuccess={handlePaymentSuccess}
 
                     // Controlled Props from context
-                    draftItems={editingHistoryOrder ? editingHistoryOrder.items : currentContext.draftItems}
-                    onUpdateDraftItems={(items) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { draftItems: items })}
+                    draftItems={currentContext.draftItems}
+                    onUpdateDraftItems={(items) => updateTableContext(currentLookupKey, { draftItems: items })}
 
-                    discountType={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).discountType}
-                    onUpdateDiscountType={(type) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { discountType: type })}
+                    discountType={currentContext.discountType}
+                    onUpdateDiscountType={(type) => updateTableContext(currentLookupKey, { discountType: type })}
 
-                    discountValue={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).discountValue}
-                    onUpdateDiscountValue={(val) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { discountValue: val })}
+                    discountValue={currentContext.discountValue}
+                    onUpdateDiscountValue={(val) => updateTableContext(currentLookupKey, { discountValue: val })}
 
-                    step={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).step}
-                    onUpdateStep={(s) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { step: s })}
+                    step={currentContext.step}
+                    onUpdateStep={(s) => updateTableContext(currentLookupKey, { step: s })}
 
-                    cashierNote={(editingHistoryOrder ? tableContexts[`history-${editingHistoryOrder.id}`] : currentContext).cashierNote}
-                    onUpdateCashierNote={(note) => updateTableContext(editingHistoryOrder ? `history-${editingHistoryOrder.id}` : currentLookupKey, { cashierNote: note })}
+                    cashierNote={currentContext.cashierNote}
+                    onUpdateCashierNote={(note) => updateTableContext(currentLookupKey, { cashierNote: note })}
+
+                    paymentMethod={currentContext.paymentMethod}
+                    onUpdatePaymentMethod={(method) => updateTableContext(currentLookupKey, { paymentMethod: method })}
+
+                    showExtras={currentContext.showExtras}
+                    onUpdateShowExtras={(show) => updateTableContext(currentLookupKey, { showExtras: show })}
+                />
+            )}
+
+            {/* Separate Modal Logic for History Editing to avoid Key (RK) conflicts */}
+            {editingHistoryOrder && tableContexts[`history-${editingHistoryOrder.id}`] && (
+                <PaymentModal
+                    selectedTable={editingHistoryOrder.table}
+                    currentOrder={editingHistoryOrder}
+                    isHistoryEdit={true}
+                    onClose={() => setEditingHistoryOrder(null)}
+                    onPaymentSuccess={handlePaymentSuccess}
+
+                    // Controlled Props from context (isolated from active table contexts)
+                    draftItems={editingHistoryOrder.items}
+                    onUpdateDraftItems={(items) => updateTableContext(`history-${editingHistoryOrder.id}`, { draftItems: items })}
+
+                    discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
+                    onUpdateDiscountType={(type) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountType: type })}
+
+                    discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
+                    onUpdateDiscountValue={(val) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountValue: val })}
+
+                    step={tableContexts[`history-${editingHistoryOrder.id}`].step}
+                    onUpdateStep={(s) => updateTableContext(`history-${editingHistoryOrder.id}`, { step: s })}
+
+                    cashierNote={tableContexts[`history-${editingHistoryOrder.id}`].cashierNote}
+                    onUpdateCashierNote={(note) => updateTableContext(`history-${editingHistoryOrder.id}`, { cashierNote: note })}
+
+                    paymentMethod={tableContexts[`history-${editingHistoryOrder.id}`].paymentMethod}
+                    onUpdatePaymentMethod={(method) => updateTableContext(`history-${editingHistoryOrder.id}`, { paymentMethod: method })}
+
+                    showExtras={tableContexts[`history-${editingHistoryOrder.id}`].showExtras}
+                    onUpdateShowExtras={(show) => updateTableContext(`history-${editingHistoryOrder.id}`, { showExtras: show })}
                 />
             )}
 
