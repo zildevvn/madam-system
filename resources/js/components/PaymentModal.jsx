@@ -23,11 +23,13 @@ const PaymentModal = ({
     onUpdateStep,
     cashierNote = '',
     onUpdateCashierNote,
+    paymentMethod,
+    onUpdatePaymentMethod,
+    showExtras = false,
+    onUpdateShowExtras,
     isHistoryEdit = false
 }) => {
     const {
-        paymentMethod,
-        setPaymentMethod,
         isProcessing,
         allProducts,
         searchQuery,
@@ -53,10 +55,11 @@ const PaymentModal = ({
         discountType,
         discountValue,
         cashierNote,
+        paymentMethod,
+        setPaymentMethod: onUpdatePaymentMethod,
         isHistoryEdit
     });
 
-    const [showExtras, setShowExtras] = useState(false);
 
     if (!selectedTable) return null;
 
@@ -121,7 +124,7 @@ const PaymentModal = ({
                 {/* ─── FOOTER: Extracted ─── */}
                 <PaymentModalFooter 
                     showExtras={showExtras}
-                    setShowExtras={setShowExtras}
+                    setShowExtras={onUpdateShowExtras}
                     discountType={discountType}
                     onUpdateDiscountType={onUpdateDiscountType}
                     discountValue={discountValue}
@@ -135,7 +138,7 @@ const PaymentModal = ({
                     step={step}
                     onUpdateStep={onUpdateStep}
                     paymentMethod={paymentMethod}
-                    setPaymentMethod={setPaymentMethod}
+                    setPaymentMethod={onUpdatePaymentMethod}
                     isProcessing={isProcessing}
                     handlePayment={handlePayment}
                     isGroup={!!currentOrder?.isGroup}

@@ -17,11 +17,10 @@ export const usePaymentLogic = ({
     discountType,
     discountValue,
     cashierNote,
-    isHistoryEdit = false
+    isHistoryEdit = false,
+    paymentMethod,
+    setPaymentMethod
 }) => {
-    const [paymentMethod, setPaymentMethod] = useState(() => {
-        return isHistoryEdit ? currentOrder?.payment_method : null;
-    });
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Metadata state (still local as they are transient UI helpers)

@@ -61,34 +61,46 @@ const PaymentModalFooter = ({
             {showExtras && (
                 <div className="px-5 pb-3 space-y-3 animate-[fadeSlideDown_0.15s_ease-out]">
                     {/* Discount Row */}
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg shrink-0">
-                            <button
-                                onClick={() => onUpdateDiscountType('fixed')}
-                                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all border-none cursor-pointer ${discountType === 'fixed' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 bg-transparent'}`}
-                            >
-                                VNĐ
-                            </button>
-                            <button
-                                onClick={() => onUpdateDiscountType('percent')}
-                                className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all border-none cursor-pointer ${discountType === 'percent' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 bg-transparent'}`}
-                            >
-                                %
-                            </button>
-                        </div>
-                        <div className="relative flex-1">
-                            <input
-                                type="number"
-                                value={discountValue || ''}
-                                onChange={(e) => onUpdateDiscountValue(Math.max(0, parseFloat(e.target.value) || 0))}
-                                placeholder="Nhập mức giảm..."
-                                className="w-full bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-sm font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-[10px] uppercase">
-                                {discountType === 'percent' ? '%' : 'vnđ'}
+                    {!isHistoryEdit ? (
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg shrink-0">
+                                <button
+                                    onClick={() => onUpdateDiscountType('fixed')}
+                                    className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all border-none cursor-pointer ${discountType === 'fixed' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 bg-transparent'}`}
+                                >
+                                    VNĐ
+                                </button>
+                                <button
+                                    onClick={() => onUpdateDiscountType('percent')}
+                                    className={`px-2 py-1 text-[9px] font-bold rounded-md transition-all border-none cursor-pointer ${discountType === 'percent' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 bg-transparent'}`}
+                                >
+                                    %
+                                </button>
+                            </div>
+                            <div className="relative flex-1">
+                                <input
+                                    type="number"
+                                    value={discountValue === 0 ? '' : discountValue}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        onUpdateDiscountValue(val === '' ? 0 : Math.max(0, parseFloat(val) || 0));
+                                    }}
+                                    placeholder="Nhập mức giảm..."
+                                    className="w-full bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-sm font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-[10px] uppercase">
+                                    {discountType === 'percent' ? '%' : 'vnđ'}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        discountAmount > 0 && (
+                            <div className="flex items-center justify-between bg-orange-50/50 p-2.5 rounded-xl border border-orange-100/50">
+                                <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Mức giảm giá đã áp dụng</span>
+                                <span className="text-sm font-black text-orange-500">-{formatPrice(discountAmount)}đ</span>
+                            </div>
+                        )
+                    )}
 
                     {/* Cashier Note */}
                     <textarea
@@ -130,10 +142,10 @@ const PaymentModalFooter = ({
 
             {/* Payment Method (Step 2) */}
             {step === 2 && (
-                <PaymentMethodSelector 
-                    paymentMethod={paymentMethod} 
-                    setPaymentMethod={setPaymentMethod} 
-                    isGroup={isGroup} 
+                <PaymentMethodSelector
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
+                    isGroup={isGroup}
                 />
             )}
 
@@ -151,15 +163,15 @@ const PaymentModalFooter = ({
                     </button>
                 ) : (
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={() => onUpdateStep(1)}
                             className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                         </button>
-                        <button 
-                            disabled={draftItemsCount === 0 || !paymentMethod || isProcessing} 
-                            onClick={handlePayment} 
+                        <button
+                            disabled={draftItemsCount === 0 || !paymentMethod || isProcessing}
+                            onClick={handlePayment}
                             className={`flex-1 mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
                         >
                             {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
