@@ -3,11 +3,14 @@ import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import { useCashierSegmentation } from '../hooks/useCashierSegmentation';
 import Receipt from '../components/Receipt';
 import PaymentModal from '../components/PaymentModal';
-import { reservationApi } from '../services/reservationApi';
 import CashierIndividualLane from '../components/CashierIndividualLane';
 import CashierGroupLane from '../components/CashierGroupLane';
 import CashierHistoryLane from '../components/CashierHistoryLane';
 import orderApi from '../services/orderApi';
+import { useCashierHistory } from '../hooks/useCashierHistory';
+import { useCashierData } from '../hooks/useCashierData';
+import { cleanMergedString } from '../shared/utils/normalizeTableStrings';
+
 const Cashier = () => {
     const {
         orders,
@@ -20,58 +23,16 @@ const Cashier = () => {
 
     const [selectedTable, setSelectedTable] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
-    const [reservations, setReservations] = useState([]);
     const [collapsedSection, setCollapsedSection] = useState(null); // Expand all by default
-    const [isLoadingRes, setIsLoadingRes] = useState(false);
-    const [historyOrders, setHistoryOrders] = useState([]);
     const [isReopening, setIsReopening] = useState(null);
     const [editingHistoryOrder, setEditingHistoryOrder] = useState(null);
 
-    const loadReservations = React.useCallback(async () => {
-        setIsLoadingRes(true);
-        try {
-            const res = await reservationApi.getAll();
-            setReservations(res.data || []);
-        } catch (err) {
-            console.error("Failed to fetch reservations:", err);
-        } finally {
-            setIsLoadingRes(false);
-        }
-    }, []);
-
-    const loadHistory = React.useCallback(async () => {
-        try {
-            const res = await orderApi.getHistory(15);
-            setHistoryOrders(res.data || []);
-        } catch (err) {
-            console.error("Failed to fetch history:", err);
-        }
-    }, []);
-
-    // [WHY] Fetch reservations and history
-    useEffect(() => {
-        loadReservations();
-        loadHistory();
-    }, [loadReservations, loadHistory, status]); // Refresh when table status changes (suggests updates)
-
-    // [WHY] Real-time listeners for the Cashier dashboard
-    useEffect(() => {
-        if (window.Echo) {
-            const channel = window.Echo.channel('orders');
-
-            const handleUpdate = () => {
-                loadReservations();
-                loadHistory();
-            };
-
-            channel.listen('.order_created', handleUpdate)
-                .listen('.order_updated', handleUpdate)
-                .listen('.item_status_updated', handleUpdate)
-                .listen('.reservation_updated', handleUpdate);
-
-            return () => window.Echo.leaveChannel('orders');
-        }
-    }, [loadReservations, loadHistory]);
+    const {
+        reservations,
+        historyOrders,
+        isLoadingRes,
+        refreshData
+    } = useCashierData(status);
 
     // [WHY] Segment orders into Group Reservations vs Individual Tables
     // [RULE] Tách UI và logic (custom hook) — README.md Component Rule
@@ -120,7 +81,7 @@ const Cashier = () => {
         }
         if (editingHistoryOrder) {
             setEditingHistoryOrder(null);
-            loadHistory();
+            refreshData();
         }
         setSelectedTable(null);
     };
@@ -132,7 +93,7 @@ const Cashier = () => {
         try {
             await orderApi.reopenOrder(orderId);
             // toast.success("Order reopened successfully");
-            loadHistory();
+            refreshData();
         } catch (err) {
             console.error(err);
             alert(err.response?.data?.message || "Failed to reopen order");
@@ -165,125 +126,7 @@ const Cashier = () => {
     const currentContext = currentLookupKey ? tableContexts[currentLookupKey] : null;
     const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
     
-    // [WHY] Consolidate history orders by reservation_id for Group Reservations
-    // [RULE] Match Group Reservation lane behavior: one card per group transaction
-    const consolidatedHistory = useMemo(() => {
-        const groups = {};
-
-        // Helper to clean -indiv, -group and other internal suffixes
-        const cleanMergedString = (str) => {
-            if (!str) return null;
-            return str.split('-')
-                .map(p => p.toString().replace(/[^0-9]/g, ''))
-                .filter(Boolean)
-                .sort((a,b) => parseInt(a) - parseInt(b))
-                .join('-');
-        };
-
-        // [WHY] Normalize all orders first to ensure items have a 'name' property and match active order shape
-        const normalizedHistory = historyOrders.map(order => ({
-            ...order,
-            mergedTables: order.merged_tables, // [MAP] For PaymentItemEditor
-            isGroup: !!order.reservation_id,    // [MAP] For PaymentModalFooter
-            items: (order.items || []).map(i => ({
-                ...i,
-                name: i.product?.name || i.name || 'Unknown',
-                tableId: i.table_id // [WHY] Preserve null for shared items; PaymentItemEditor uses this to group into 'GROUP'
-            }))
-        }));
-
-        // [WHY] Multi-signal grouping logic (Two Pass)
-        // [RULE] If orders share a Reservation ID OR a Transaction Timestamp OR a Merged Table string, they belong together.
-        const signalToGroupId = {};
-        
-        // Pass 1: Build Linkages
-        normalizedHistory.forEach(order => {
-            const timeKey = new Date(order.updated_at).getTime().toString();
-            const cleanedMerged = cleanMergedString(order.merged_tables);
-            
-            const signals = [
-                order.reservation_id ? `res-${order.reservation_id}` : null,
-                cleanedMerged ? `merged-${cleanedMerged}` : null,
-                `tx-${timeKey}-${order.payment_method}`
-            ].filter(Boolean);
-
-            // Find an existing group ID from any of the signals
-            let existingGroupId = null;
-            for (const s of signals) {
-                if (signalToGroupId[s]) {
-                    existingGroupId = signalToGroupId[s];
-                    break;
-                }
-            }
-
-            // If found, link all current signals to this group. If not, create a new one.
-            const groupId = existingGroupId || signals[0];
-            signals.forEach(s => signalToGroupId[s] = groupId);
-        });
-
-        // Pass 2: Grouping
-        normalizedHistory.forEach(order => {
-            const timeKey = new Date(order.updated_at).getTime().toString();
-            const groupKey = signalToGroupId[order.reservation_id ? `res-${order.reservation_id}` : `tx-${timeKey}-${order.payment_method}`];
-
-            if (!groups[groupKey]) {
-                groups[groupKey] = {
-                    ...order,
-                    merged_tables: cleanMergedString(order.merged_tables),
-                    mergedTables: cleanMergedString(order.merged_tables),
-                    items: [...(order.items || [])],
-                    total_price: Number(order.total_price),
-                    discount_amount: Number(order.discount_amount),
-                    allTableIds: new Set()
-                };
-                const cm = cleanMergedString(order.merged_tables);
-                if (cm) cm.split('-').forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
-                else if (order.table_id) groups[groupKey].allTableIds.add(parseInt(order.table_id));
-                
-                if (order.reservation?.table_ids) {
-                    order.reservation.table_ids.forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
-                }
-            } else {
-                const g = groups[groupKey];
-                g.total_price += Number(order.total_price);
-                g.discount_amount += Number(order.discount_amount);
-                g.items = [...g.items, ...(order.items || [])];
-                if (order.cashier_note && !g.cashier_note) {
-                    g.cashier_note = order.cashier_note;
-                }
-                // [WHY] Ensure if any order in the group has reservation metadata, the group card carries it
-                if (order.reservation && !g.reservation) {
-                    g.reservation = order.reservation;
-                    g.reservation_id = order.reservation_id;
-                    g.isGroup = true;
-                }
-                const cm = cleanMergedString(order.merged_tables);
-                if (cm) cm.split('-').forEach(id => g.allTableIds.add(parseInt(id)));
-                else if (order.table_id) g.allTableIds.add(parseInt(order.table_id));
-                
-                if (order.reservation?.table_ids) {
-                    order.reservation.table_ids.forEach(id => g.allTableIds.add(parseInt(id)));
-                }
-                if (new Date(order.updated_at) > new Date(g.updated_at)) {
-                    g.updated_at = order.updated_at;
-                }
-            }
-        });
-
-        const consolidated = Object.values(groups).map(g => {
-            if (g.allTableIds.size > 1) {
-                const range = Array.from(g.allTableIds)
-                    .filter(Boolean)
-                    .sort((a,b) => parseInt(a) - parseInt(b))
-                    .join('-');
-                g.merged_tables = range;
-                g.mergedTables = range;
-            }
-            return g;
-        });
-
-        return consolidated.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-    }, [historyOrders]);
+    const consolidatedHistory = useCashierHistory(historyOrders);
 
     // [WHY] Mutually Exclusive Layout Calculations for Top Lanes
     const layout = useMemo(() => {
