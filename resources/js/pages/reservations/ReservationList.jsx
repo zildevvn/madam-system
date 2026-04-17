@@ -1,16 +1,35 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useReservations } from '../../hooks/useReservations';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { saveReservationAsync } from '../../store/slices/reservationSlice';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
 import ReservationTable from '../../components/reservations/ReservationTable';
 import ReservationMobileCards from '../../components/reservations/ReservationMobileCards';
 import { capitalizeWords } from '../../utils/format';
 
+const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 const ReservationList = () => {
     const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
-    const { reservations, tables, loading } = useReservations(filterType === 'all' ? null : filterType);
+    const [dateFilter, setDateFilter] = useState('today'); // 'today' | '1'...'12'
+    
+    const filters = useMemo(() => {
+        const params = { type: filterType === 'all' ? null : filterType };
+        if (dateFilter === 'today') {
+            params.date = new Date().toISOString().split('T')[0];
+        } else if (dateFilter !== 'all') {
+            params.month = dateFilter;
+        }
+        return params;
+    }, [filterType, dateFilter]);
+
+    const { reservations, tables, loading } = useReservations(filters);
     const { user } = useAppSelector(state => state.auth);
+    const dispatch = useAppDispatch();
     const [viewingReservation, setViewingReservation] = useState(null);
     const navigate = useNavigate();
 
@@ -22,10 +41,15 @@ const ReservationList = () => {
 
         return [...reservations]
             .filter(r => {
-                // [RULE] Hide past bookings (compare full datetime) and completed bookings
+                // [RULE] If showing a specific month, show everything. If "Today", only show active/upcoming/completed.
+                if (dateFilter !== 'today' && dateFilter !== 'all') return true;
+
+                const now = new Date().getTime();
                 const datePart = typeof r.reservation_date === 'string' ? r.reservation_date.split('T')[0] : '';
                 const timestamp = new Date(`${datePart}T${r.reservation_time}`).getTime();
-                return timestamp >= now && r.status !== 'completed';
+                
+                // [RULE] Hide past bookings (compare full datetime) but keep those within 1 hour or marked as completed
+                return timestamp >= (now - 3600000) || r.status === 'completed';
             })
             .map(r => ({
                 ...r,
@@ -34,6 +58,10 @@ const ReservationList = () => {
                 company_name: capitalizeWords(r.company_name)
             }))
             .sort((a, b) => {
+                // [RULE] Completed items always go to the bottom
+                if (a.status === 'completed' && b.status !== 'completed') return 1;
+                if (a.status !== 'completed' && b.status === 'completed') return -1;
+
                 const parseToTimestamp = (d, t) => {
                     const datePart = typeof d === 'string' ? d.split('T')[0] : '';
                     return new Date(`${datePart}T${t}`).getTime();
@@ -61,7 +89,15 @@ const ReservationList = () => {
 
     const handlers = {
         onView: (r) => setViewingReservation(r),
-        onEdit: (id) => navigate(`/reservations/edit/${id}`)
+        onEdit: (id) => navigate(`/reservations/edit/${id}`),
+        onDone: async (r) => {
+            if (window.confirm(`Mark reservation for ${r.lead_name} as done?`)) {
+                await dispatch(saveReservationAsync({
+                    id: r.id,
+                    data: { ...r, status: 'completed' }
+                }));
+            }
+        }
     };
 
     if (loading) {
@@ -83,16 +119,39 @@ const ReservationList = () => {
                 </Link>
             </div>
 
-            <div className="flex bg-gray-100/80 p-1 rounded-[18px] w-fit mb-6 shadow-inner border border-gray-200/50">
-                {['all', 'individual', 'group'].map((type) => (
+            <div className="flex flex-wrap gap-4 mb-6">
+                {/* Type Filter */}
+                <div className="flex bg-gray-100/80 p-1 rounded-[18px] w-fit shadow-inner border border-gray-200/50">
+                    {['all', 'individual', 'group'].map((type) => (
+                        <button
+                            key={type}
+                            onClick={() => setFilterType(type)}
+                            className={`px-4 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            {type}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Date Filter */}
+                <div className="flex bg-gray-100/80 p-1 rounded-[18px] w-fit shadow-inner border border-gray-200/50 overflow-x-auto no-scrollbar max-w-full">
                     <button
-                        key={type}
-                        onClick={() => setFilterType(type)}
-                        className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        onClick={() => setDateFilter('today')}
+                        className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === 'today' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                        Today
                     </button>
-                ))}
+                    <div className="w-[1px] bg-gray-200 mx-1 my-2" />
+                    {months.map((month, idx) => (
+                        <button
+                            key={month}
+                            onClick={() => setDateFilter((idx + 1).toString())}
+                            className={`px-4 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === (idx + 1).toString() ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            {month.substring(0, 3)}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Desktop View */}
@@ -103,6 +162,7 @@ const ReservationList = () => {
                 formatTime={formatTime}
                 onView={handlers.onView}
                 onEdit={handlers.onEdit}
+                onDone={handlers.onDone}
             />
 
             {/* Mobile View */}

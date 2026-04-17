@@ -234,3 +234,11 @@ h6,
     scrollbar-width: thin;
     scrollbar-color: rgba($color-primary, 0.2) transparent;
 }
+
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+    &::-webkit-scrollbar {
+        display: none; /* Chrome, Safari and Opera */
+    }
+}

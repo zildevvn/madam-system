@@ -4,7 +4,7 @@ import { fetchReservationsAsync, selectAllReservations } from '../store/slices/r
 import { fetchTables } from '../store/slices/tableSlice';
 import { selectTables } from '../store/selectors/tableSelectors';
 
-export const useReservations = (type = null) => {
+export const useReservations = (filters = {}) => {
     const dispatch = useAppDispatch();
     const reservations = useAppSelector(selectAllReservations);
     const tables = useAppSelector(selectTables);
@@ -12,19 +12,19 @@ export const useReservations = (type = null) => {
     const tableStatus = useAppSelector(state => state.table.status);
 
     const fetchData = useCallback(async () => {
-        dispatch(fetchReservationsAsync(type));
+        dispatch(fetchReservationsAsync(filters));
         if (tableStatus === 'idle') {
             dispatch(fetchTables());
         }
-    }, [dispatch, type, tableStatus]);
+    }, [dispatch, JSON.stringify(filters), tableStatus]);
 
     useEffect(() => {
         // [WHY] Only fetch if idle or if we want a specific type (type might have changed)
         fetchData();
-    }, [dispatch, type]); // Dependency on type ensures refetch if type changes
+    }, [dispatch, JSON.stringify(filters)]); // Dependency on filters ensures refetch if filters change
 
     return {
-        reservations: type ? reservations.filter(r => r.type === type) : reservations,
+        reservations,
         tables,
         loading: reservationStatus === 'loading' || tableStatus === 'loading',
         refetch: fetchData

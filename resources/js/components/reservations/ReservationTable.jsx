@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime, formatDate }) => {
+const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, formatTime, formatDate }) => {
     return (
         <div className="hidden md:block bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
@@ -28,6 +28,7 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                                     key={r.id}
                                     className={`
                                         transition-colors
+                                        ${r.status === 'completed' ? 'opacity-50 line-through' : ''}
                                         ${r.type === 'group' ? 'bg-purple-50/20 hover:bg-purple-50/50' : 'bg-blue-50/20 hover:bg-blue-50/50'}
                                     `}
                                 >
@@ -74,6 +75,14 @@ const ReservationTable = ({ reservations, onView, onEdit, isManager, formatTime,
                                             >
                                                 Edit
                                             </button>
+                                            {r.type === 'individual' && r.status !== 'completed' && (
+                                                <button
+                                                    onClick={() => onDone(r)}
+                                                    className="px-3 py-1.5 bg-green-100 text-green-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-green-200 transition-all border-none cursor-pointer"
+                                                >
+                                                    Arrived
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

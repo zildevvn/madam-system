@@ -28,7 +28,17 @@ class ReservationController extends Controller
             $query->where('type', $request->query('type'));
         }
 
-        $reservations = $query->orderBy('reservation_time', 'asc')
+        if ($request->has('date') && !empty($request->query('date'))) {
+            $query->whereDate('reservation_date', $request->query('date'));
+        }
+
+        if ($request->has('month') && !empty($request->query('month'))) {
+            $query->whereMonth('reservation_date', $request->query('month'))
+                  ->whereYear('reservation_date', now()->year);
+        }
+
+        $reservations = $query->orderBy('reservation_date', 'asc')
+            ->orderBy('reservation_time', 'asc')
             ->get();
 
         return response()->json([
