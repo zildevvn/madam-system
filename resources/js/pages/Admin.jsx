@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdminLogic } from '../hooks/useAdminLogic';
 import TableManagement from '../components/admin/TableManagement';
+import ProductManagement from '../components/admin/ProductManagement';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
@@ -37,6 +38,7 @@ export default function Admin() {
     const tabs = [
         { id: 'system', label: 'Hệ thống', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg> },
         { id: 'tables', label: 'Quản lý Bàn', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg> },
+        { id: 'products', label: 'Quản lý Menu', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
     ];
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -329,6 +331,8 @@ export default function Admin() {
                             </div>
                         ) : activeTab === 'tables' ? (
                             <TableManagement />
+                        ) : activeTab === 'products' ? (
+                            <ProductManagement />
                         ) : (
                             <div className="flex items-center justify-center h-64 text-slate-400 italic font-medium bg-white rounded-[32px] border border-slate-100 shadow-sm animate-in fade-in duration-500">
                                 Section "{tabs.find(t => t.id === activeTab)?.label}" is coming soon...
@@ -357,8 +361,19 @@ export default function Admin() {
                         <span className={`transition-all duration-500 ${activeTab === 'tables' ? 'scale-110 text-orange-500 drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]' : 'active:scale-95'}`}>
                             {tabs.find(t => t.id === 'tables')?.icon}
                         </span>
-                        <span className={`text-[9px] font-black uppercase tracking-widest transition-opacity duration-500 ${activeTab === 'tables' ? 'opacity-100' : 'opacity-40'}`}>Quản lý Bàn</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest transition-opacity duration-500 ${activeTab === 'tables' ? 'opacity-100' : 'opacity-40'}`}>Bàn</span>
                         {activeTab === 'tables' && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-orange-500 rounded-full blur-[1px]"></div>}
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('products')}
+                        className={`flex flex-col items-center justify-center gap-1.5 transition-all duration-500 relative px-4 py-2 ${activeTab === 'products' ? 'text-white' : 'text-slate-600 active:text-white'}`}
+                    >
+                        <span className={`transition-all duration-500 ${activeTab === 'products' ? 'scale-110 text-orange-500 drop-shadow-[0_0_12px_rgba(249,115,22,0.6)]' : 'active:scale-95'}`}>
+                            {tabs.find(t => t.id === 'products')?.icon}
+                        </span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest transition-opacity duration-500 ${activeTab === 'products' ? 'opacity-100' : 'opacity-40'}`}>Menu</span>
+                        {activeTab === 'products' && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-orange-500 rounded-full blur-[1px]"></div>}
                     </button>
 
                     <button

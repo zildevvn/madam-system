@@ -27,12 +27,22 @@ Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemS
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ProductController;
 
+use App\Http\Controllers\API\CategoryController;
+
 Route::post('/login', [UserController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
 Route::get('/users/{id}', [UserController::class, 'show']);
 Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
 
 Route::get('/products', [ProductController::class, 'index']);
+Route::post('/products', [ProductController::class, 'store']);
+Route::put('/products/{id}', [ProductController::class, 'update']);
+Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::post('/categories', [CategoryController::class, 'store']);
+Route::put('/categories/{id}', [CategoryController::class, 'update']);
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
 use App\Http\Controllers\API\DebugController;
 use App\Http\Controllers\API\ReservationController;

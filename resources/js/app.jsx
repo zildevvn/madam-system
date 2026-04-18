@@ -32,6 +32,7 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { updateReservationFromSocket } from "./store/slices/reservationSlice";
+import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 
 const RouteBodyClass = () => {
@@ -105,6 +106,12 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
     const dispatch = useAppDispatch();
+
+    // [WHY] Initial Data Fetch for Products and Categories
+    useEffect(() => {
+        dispatch(fetchProducts());
+        dispatch(fetchCategories());
+    }, [dispatch]);
 
     // [WHY] Global Real-time Listeners for Reservations
     // [RULE] Real-time updates must go through Redux (Rule 412)
