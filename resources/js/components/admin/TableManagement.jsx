@@ -62,7 +62,6 @@ const TableManagement = () => {
                         <tr className="bg-gray-50/50">
                             <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">ID</th>
                             <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Tên bàn</th>
-                            <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Trạng thái</th>
                             <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Hành động</th>
                         </tr>
                     </thead>
@@ -78,14 +77,7 @@ const TableManagement = () => {
                                         <span className="text-base font-black text-gray-900">{table.name}</span>
                                     </div>
                                 </td>
-                                <td className="px-8 py-5 whitespace-nowrap">
-                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${table.status === 'available' ? 'bg-green-100 text-green-600' :
-                                        table.status === 'busy' ? 'bg-blue-100 text-blue-600' :
-                                            'bg-gray-100 text-gray-600'
-                                        }`}>
-                                        {table.status === 'available' ? 'empty' : table.status}
-                                    </span>
-                                </td>
+
                                 <td className="px-8 py-5 whitespace-nowrap text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <button
@@ -124,12 +116,7 @@ const TableManagement = () => {
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: #{table.id}</span>
                                 </div>
                             </div>
-                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex-shrink-0 ${table.status === 'available' ? 'bg-green-100 text-green-600' :
-                                table.status === 'busy' ? 'bg-blue-100 text-blue-600' :
-                                    'bg-slate-100 text-slate-600'
-                                }`}>
-                                {table.status === 'available' ? 'empty' : table.status}
-                            </span>
+
                         </div>
 
                         <div className="flex items-center gap-2 pt-4">

@@ -159,9 +159,6 @@ export default function Admin() {
                                     {activeTab === 'system' ? 'Master Overview' : tabs.find(t => t.id === activeTab)?.label || 'Management'}
                                 </span>
                             </div>
-                            <h4 className="">
-                                {activeTab === 'system' ? 'Quản Lý Bàn' : tabs.find(t => t.id === activeTab)?.label || 'Cơ sở hạ tầng'}
-                            </h4>
                         </header>
 
                         {activeTab === 'system' ? (

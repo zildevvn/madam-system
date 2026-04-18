@@ -4,19 +4,16 @@ import { useForm } from 'react-hook-form';
 const TableFormModal = ({ isOpen, onClose, onSubmit, table = null, processing = false }) => {
     const { register, handleSubmit, reset } = useForm({
         defaultValues: {
-            name: '',
-            status: 'available'
+            name: ''
         }
     });
 
     useEffect(() => {
         if (isOpen) {
             reset(table ? {
-                name: table.name || '',
-                status: table.status || 'available'
+                name: table.name || ''
             } : {
-                name: '',
-                status: 'available'
+                name: ''
             });
         }
     }, [table, isOpen, reset]);
@@ -51,26 +48,7 @@ const TableFormModal = ({ isOpen, onClose, onSubmit, table = null, processing = 
                         />
                     </div>
 
-                    {table && (
-                        <div>
-                            <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-2">Trạng thái</label>
-                            <div className="relative group">
-                                <select
-                                    {...register('status')}
-                                    className="text-[13px] w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-gray-900 font-bold focus:ring-2 focus:ring-orange-500/20 transition-all appearance-none cursor-pointer pr-10"
-                                >
-                                    <option value="available">Trống (Empty)</option>
-                                    <option value="busy">Đang bận (Busy)</option>
-                                    <option value="maintenance">Bảo trì (Maintenance)</option>
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-gray-600 transition-colors">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
 
                     <div className="pt-4 flex items-center gap-4">
                         <button
