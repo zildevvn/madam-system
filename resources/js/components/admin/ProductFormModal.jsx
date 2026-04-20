@@ -112,7 +112,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         <input
                             {...register('name', { required: true })}
                             type="text"
-                            className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans"
+                            className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans"
                             placeholder="Vd: Phở Bò Chín"
                         />
                     </div>
@@ -124,7 +124,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                                 <input
                                     {...register('price', { required: true, valueAsNumber: true })}
                                     type="number"
-                                    className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans"
+                                    className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans"
                                     placeholder="0"
                                 />
                                 {watchedPrice > 0 && (
@@ -141,7 +141,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                             <div className="relative">
                                 <select
                                     {...register('type')}
-                                    className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer font-sans"
+                                    className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer font-sans"
                                 >
                                     <option value="food">Thức ăn</option>
                                     <option value="drink">Đồ uống</option>
@@ -158,7 +158,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         <div className="relative">
                             <select
                                 {...register('category_id', { required: true })}
-                                className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer font-sans"
+                                className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer font-sans"
                             >
                                 <option value="">Chọn danh mục</option>
                                 {categories.map(cat => (
