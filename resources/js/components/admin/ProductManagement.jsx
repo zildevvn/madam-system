@@ -8,14 +8,14 @@ import CategoryList from './CategoryList';
 // [WHY] Component to manage products and categories in the admin dashboard.
 // [RULE] Delegated UI for lists to sub-components.
 const ProductManagement = () => {
-    const { 
-        products, 
-        categories, 
-        loading, 
-        processing, 
-        error, 
-        addProduct, 
-        updateProduct, 
+    const {
+        products,
+        categories,
+        loading,
+        processing,
+        error,
+        addProduct,
+        updateProduct,
         deleteProduct,
         handleAddCategory,
         handleUpdateCategory,
@@ -23,15 +23,15 @@ const ProductManagement = () => {
     } = useProductManagement();
 
     const [activeTab, setActiveTab] = useState('products'); // products, categories
-    
+
     // Product states
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
-    
+
     // Category states
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
-    
+
     const [filterType, setFilterType] = useState('all'); // all, food, drink
 
     const handleAddProduct = () => {
@@ -95,22 +95,20 @@ const ProductManagement = () => {
                 <div className="inline-flex bg-white p-1.5 rounded-[24px] shadow-sm border border-slate-100">
                     <button
                         onClick={() => setActiveTab('products')}
-                        className={`px-8 py-3.5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${
-                            activeTab === 'products'
+                        className={`px-8 py-3.5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'products'
                             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                        }`}
+                            }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
                         Quản lý món
                     </button>
                     <button
                         onClick={() => setActiveTab('categories')}
-                        className={`px-8 py-3.5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${
-                            activeTab === 'categories'
+                        className={`px-8 py-3.5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'categories'
                             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                        }`}
+                            }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01" /></svg>
                         Danh mục
@@ -121,20 +119,16 @@ const ProductManagement = () => {
             {/* Header / Actions */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-black text-slate-900 mb-0">
-                        {activeTab === 'products' ? 'Danh sách món' : 'Quản lý danh mục'}
-                    </h2>
                     {activeTab === 'products' && (
                         <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
                             {['all', 'food', 'drink'].map(type => (
                                 <button
                                     key={type}
                                     onClick={() => setFilterType(type)}
-                                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
-                                        filterType === type 
-                                        ? 'bg-slate-900 text-white' 
+                                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${filterType === type
+                                        ? 'bg-slate-900 text-white'
                                         : 'text-slate-400 hover:text-slate-600'
-                                    }`}
+                                        }`}
                                 >
                                     {type === 'all' ? 'Tất cả' : type === 'food' ? 'Food' : 'Drink'}
                                 </button>
@@ -161,17 +155,17 @@ const ProductManagement = () => {
 
             {/* Content Logic */}
             {activeTab === 'products' ? (
-                <ProductList 
-                    filteredProducts={filteredProducts} 
-                    handleEditProduct={handleEditProduct} 
-                    deleteProduct={deleteProduct} 
+                <ProductList
+                    filteredProducts={filteredProducts}
+                    handleEditProduct={handleEditProduct}
+                    deleteProduct={deleteProduct}
                 />
             ) : (
-                <CategoryList 
-                    categories={categories} 
-                    products={products} 
-                    handleEditCategoryClick={handleEditCategoryClick} 
-                    handleDeleteCategory={handleDeleteCategory} 
+                <CategoryList
+                    categories={categories}
+                    products={products}
+                    handleEditCategoryClick={handleEditCategoryClick}
+                    handleDeleteCategory={handleDeleteCategory}
                 />
             )}
 

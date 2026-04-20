@@ -70,7 +70,7 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
             {/* Products Grid (Mobile) */}
             <div className="lg:hidden grid grid-cols-1 gap-4">
                 {filteredProducts.map((product) => (
-                    <div key={product.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm space-y-5">
+                    <div key={product.id} className="bg-white px-3 py-4 rounded-[16px] border border-slate-100 shadow-sm space-y-3">
                         <div className="flex items-center gap-5">
                             <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-100">
                                 {product.image ? (

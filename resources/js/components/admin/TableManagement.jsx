@@ -37,14 +37,14 @@ const TableManagement = () => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <button
                     onClick={handleAdd}
-                    className="w-full sm:w-auto px-6 py-3 bg-gray-900 text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-xl shadow-gray-900/10 flex items-center justify-center gap-2 group"
+                    className="mdt-btn flex items-center justify-center group"
                 >
                     <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
-                    Thêm bàn mới
+                    Thêm Bàn Mới
                 </button>
             </div>
 
@@ -56,7 +56,7 @@ const TableManagement = () => {
             )}
 
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
+            <div className="hidden md:block bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50/50">
@@ -105,35 +105,29 @@ const TableManagement = () => {
             {/* Mobile Card Grid View */}
             <div className="md:hidden grid grid-cols-1 gap-3">
                 {tables.map((table) => (
-                    <div key={table.id} className="bg-white p-5 rounded-[24px] shadow-sm border border-slate-100 group active:scale-95 transition-all">
+                    <div key={table.id} className="bg-white px-4 py-3.5 rounded-[16px] shadow-sm border border-slate-100 group active:scale-95 transition-all">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 flex-shrink-0">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg>
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-base font-black text-slate-900 truncate leading-tight">{table.name}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ID: #{table.id}</span>
-                                </div>
+                                <span className="text-base font-black text-slate-900 truncate leading-tight">{table.name}</span>
                             </div>
 
-                        </div>
-
-                        <div className="flex items-center gap-2 pt-4">
-                            <button
-                                onClick={() => handleEdit(table)}
-                                className="flex-1 py-2.5 bg-slate-50 text-slate-600 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-orange-50 hover:text-orange-500 transition-all flex items-center justify-center gap-2 border-none"
-                            >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                Sửa
-                            </button>
-                            <button
-                                onClick={() => deleteTable(table.id)}
-                                className="flex-1 py-2.5 bg-slate-50 text-slate-400 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center gap-2 border-none"
-                            >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                Xóa
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={() => handleEdit(table)}
+                                    className="w-9 h-9 bg-slate-50 text-slate-600 rounded-xl hover:bg-orange-50 hover:text-orange-500 transition-all flex items-center justify-center border-none"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button
+                                    onClick={() => deleteTable(table.id)}
+                                    className="w-9 h-9 bg-slate-50 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center border-none"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}
