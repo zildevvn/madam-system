@@ -22,7 +22,7 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::select('id', 'name', 'type')->get();
+        $categories = Category::select('id', 'name', 'type', 'icon')->get();
 
         return response()->json([
             'data' => $categories,
@@ -39,6 +39,7 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:food,drink',
+            'icon' => 'nullable|string',
         ]);
 
         try {
@@ -65,6 +66,7 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:food,drink',
+            'icon' => 'nullable|string',
         ]);
 
         try {

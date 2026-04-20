@@ -1,16 +1,7 @@
 import React from 'react';
 import { useOrderLogic } from '../hooks/useOrderLogic';
 import DefaultProductImg from '../../images/default-product.png';
-
-const CATEGORY_ICONS = {
-    1: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" /></svg>,
-    2: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>,
-    3: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z" /><path d="M7 21h10" /><path d="M12 3v5" /></svg>,
-    4: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.292 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>,
-    5: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.2 3a2 2 0 0 1 1.8 1.1l4.2 8.5c.2.4.3.8.3 1.2v6.2a2 2 0 0 1-2 2H4.5a2 2 0 0 1-2-2v-6.2c0-.4.1-.8.3-1.2l4.2-8.5A2 2 0 0 1 8.8 3h6.4z" /><path d="M6 12h12" /></svg>,
-    6: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 22h8" /><path d="M7 10h10" /><path d="M12 15v7" /><path d="M12 15a5 5 0 0 0 5-5V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v6a5 5 0 0 0 5 5Z" /></svg>,
-    7: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15a7 7 0 0 0 7-7V4H5v4a7 7 0 0 0 7 7Z" /><path d="M12 15v7" /><path d="M7 22h10" /><path d="m2 2 20 20" /></svg>,
-};
+import { getIcon } from '../shared/constants/categoryIcons';
 
 const Order = () => {
     const {
@@ -42,8 +33,10 @@ const Order = () => {
                                     : ''
                                     }`}
                             >
-                                {CATEGORY_ICONS[category.id] && <div className="category-icon mb-1 md:mb-2">{CATEGORY_ICONS[category.id]}</div>}
-                                <span className="category-name text-[10px] md:text-[12px]">{category.name}</span>
+                                <div className="category-icon mb-1 md:mb-2 text-slate-600">
+                                    {getIcon(category.icon, { width: 24, height: 24 })}
+                                </div>
+                                <span className="category-name text-[10px] md:text-[12px] font-bold text-slate-800">{category.name}</span>
                             </button>
                         ))}
                     </div>
