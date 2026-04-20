@@ -69,7 +69,7 @@ class UserController extends Controller
     public function updateRole(Request $request, $id)
     {
         $validated = $request->validate([
-            'role' => 'required|string|in:admin,order_staff,kitchen,bar,cashier'
+            'role' => 'required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller'
         ]);
 
         $user = $this->userService->updateRole($id, $validated['role']);
@@ -77,6 +77,61 @@ class UserController extends Controller
         return response()->json([
             'data' => $user,
             'message' => 'User role updated successfully'
+        ]);
+    }
+
+    /**
+     * Store a new user.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'sometimes|nullable|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+        ]);
+
+        $user = $this->userService->createUser($validated);
+
+        return response()->json([
+            'data' => $user,
+            'message' => 'User created successfully'
+        ], 201);
+    }
+
+    /**
+     * Update an existing user.
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|nullable|email|unique:users,email,' . $id,
+            'password' => 'sometimes|nullable|string|min:6',
+            'role' => 'sometimes|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+        ]);
+
+        $user = $this->userService->updateUser($id, array_filter($validated));
+
+        return response()->json([
+            'data' => $user,
+            'message' => 'User updated successfully'
+        ]);
+    }
+
+    /**
+     * Delete a user.
+     */
+    public function destroy(Request $request, $id)
+    {
+        // Simple protection: don't let a user delete themselves 
+        // (assuming the current user can be checked e.g. via token if auth were fully integrated)
+        // For now we just implement the capability.
+        $this->userService->deleteUser($id);
+
+        return response()->json([
+            'message' => 'User deleted successfully'
         ]);
     }
 }

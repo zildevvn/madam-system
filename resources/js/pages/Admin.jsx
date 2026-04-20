@@ -6,6 +6,7 @@ import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeroStats from '../components/admin/AdminHeroStats';
 import AdminPersonnelList from '../components/admin/AdminPersonnelList';
 import AdminTelemetry from '../components/admin/AdminTelemetry';
+import UserManagement from '../components/admin/UserManagement';
 
 // [WHY] Main layout for the Admin section.
 // [RULE] High-level container, logic delegated to sub-components and hooks.
@@ -42,6 +43,7 @@ export default function Admin() {
 
     const tabs = [
         { id: 'system', label: 'Hệ thống', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg> },
+        { id: 'personnel', label: 'Nhân sự', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
         { id: 'tables', label: 'Quản lý Bàn', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg> },
         { id: 'products', label: 'Quản lý Menu', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
     ];
@@ -107,6 +109,8 @@ export default function Admin() {
                                     </div>
                                 </div>
                             </div>
+                        ) : activeTab === 'personnel' ? (
+                            <UserManagement currentUser={currentUser} />
                         ) : activeTab === 'tables' ? (
                             <TableManagement />
                         ) : activeTab === 'products' ? (

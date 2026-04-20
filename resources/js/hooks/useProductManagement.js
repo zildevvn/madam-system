@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import productService from '../services/productService';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchProducts, fetchCategories, addCategory, updateCategory, deleteCategory } from '../store/slices/productSlice';
@@ -27,9 +28,11 @@ export const useProductManagement = () => {
         try {
             await productService.createProduct(data);
             refresh(); // Triggers Redux re-fetch
+            toast.success('Thêm món mới thành công');
             return true;
         } catch (err) {
             console.error('Failed to add product:', err);
+            toast.error('Không thể thêm món mới');
             return false;
         }
     };
@@ -38,9 +41,11 @@ export const useProductManagement = () => {
         try {
             await productService.updateProduct(id, data);
             refresh(); // Triggers Redux re-fetch
+            toast.success('Cập nhật món thành công');
             return true;
         } catch (err) {
             console.error('Failed to update product:', err);
+            toast.error('Không thể cập nhật món');
             return false;
         }
     };
@@ -51,9 +56,11 @@ export const useProductManagement = () => {
         try {
             await productService.deleteProduct(id);
             refresh(); // Triggers Redux re-fetch
+            toast.success('Xóa món thành công');
             return true;
         } catch (err) {
             console.error('Failed to delete product:', err);
+            toast.error('Không thể xóa món');
             return false;
         }
     };
@@ -61,16 +68,20 @@ export const useProductManagement = () => {
     const handleAddCategory = async (data) => {
         const result = await dispatch(addCategory(data));
         if (addCategory.fulfilled.match(result)) {
+            toast.success('Thêm danh mục thành công');
             return true;
         }
+        toast.error('Không thể thêm danh mục');
         return false;
     };
 
     const handleUpdateCategory = async (id, data) => {
         const result = await dispatch(updateCategory({ id, data }));
         if (updateCategory.fulfilled.match(result)) {
+            toast.success('Cập nhật danh mục thành công');
             return true;
         }
+        toast.error('Không thể cập nhật danh mục');
         return false;
     };
 
@@ -79,10 +90,11 @@ export const useProductManagement = () => {
         
         const result = await dispatch(deleteCategory(id));
         if (deleteCategory.fulfilled.match(result)) {
+            toast.success('Xóa danh mục thành công');
             return true;
         } else {
             // Error message from rejectWithValue
-            alert(result.payload);
+            toast.error(result.payload || 'Không thể xóa danh mục');
             return false;
         }
     };

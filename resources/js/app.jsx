@@ -5,6 +5,7 @@ import { store } from './store';
 import './bootstrap';
 import "../css/app.css";
 import "../scss/app.scss";
+import { Toaster } from 'react-hot-toast';
 
 
 import axios from "axios";
@@ -68,15 +69,21 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
         return <Navigate to="/" replace />;
     }
 
+    // Admin always has access to everything
     if (user.role === 'admin') {
         return children ? children : <Outlet />;
     }
+
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         const getRoleRedirect = (role) => {
             switch (role) {
                 case 'kitchen': return { path: '/kitchen', label: 'Go to Kitchen Page' };
+                case 'bar': return { path: '/bar', label: 'Go to Bar Page' };
                 case 'cashier': return { path: '/cashier', label: 'Go to Cashier Page' };
-                case 'order_staff': return { path: '/staff-order', label: 'Go to Staff Order Page' };
+                case 'bill': return { path: '/bills', label: 'Go to Bill Page' };
+                case 'manager':
+                case 'order_staff':
+                case 'seller': return { path: '/staff-order', label: 'Go to Order Page' };
                 default: return { path: '/', label: 'Return to Home' };
             }
         };
@@ -141,17 +148,32 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={['order_staff']}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
-                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['order_staff']}><DefaultLayout><Bar /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                    {/* Order page: Access by admin, manager, order_staff, seller */}
+                    <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
+                    <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
+
+                    {/* Reservations: Access by admin, manager, order_staff, seller */}
+                    <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+
+                    {/* Cashier page: Access by admin, cashier */}
                     <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={['order_staff']}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
-                    <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'order_staff']}><Checkout /></RoleProtectedRoute>} />
+                    
+                    {/* Bill page: Access by admin, bill */}
+                    <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['bill']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                    
+                    {/* Kitchen page: Access by admin, kitchen */}
+                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
+                    
+                    {/* Bar page: Access by admin, bar */}
+                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['bar']}><DefaultLayout><Bar /></DefaultLayout></RoleProtectedRoute>} />
+
+                    {/* Admin: strictly admin only */}
+                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
+                    
+                    {/* Checkout (Related to cashier/billing) */}
+                    <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'bill']}><Checkout /></RoleProtectedRoute>} />
                 </Route>
             </Routes>
         </BrowserRouter>
@@ -160,6 +182,7 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById("app")).render(
     <Provider store={store}>
+        <Toaster position="top-right" reverseOrder={false} />
         <App />
     </Provider>
 );

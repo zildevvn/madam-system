@@ -35,4 +35,38 @@ class UserService
         $user->save();
         return $user;
     }
+
+    public function createUser(array $data)
+    {
+        return User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'role' => $data['role'] ?? 'order_staff',
+        ]);
+    }
+
+    public function updateUser($id, array $data)
+    {
+        $user = User::findOrFail($id);
+        
+        $updateData = [
+            'name' => $data['name'] ?? $user->name,
+            'email' => $data['email'] ?? $user->email,
+            'role' => $data['role'] ?? $user->role,
+        ];
+
+        if (!empty($data['password'])) {
+            $updateData['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($updateData);
+        return $user;
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::findOrFail($id);
+        return $user->delete();
+    }
 }

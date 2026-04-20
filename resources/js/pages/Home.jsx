@@ -20,14 +20,29 @@ export default function Home() {
     useEffect(() => {
         if (user) {
             const role = user.role?.toLowerCase();
-            if (role === 'admin') {
-                navigate("/admin");
-            } else if (role === 'kitchen') {
-                navigate("/kitchen");
-            } else if (role === 'accountant' || role === 'cashier') {
-                navigate("/cashier");
-            } else {
-                navigate("/staff-order");
+            switch (role) {
+                case 'admin':
+                    navigate("/admin");
+                    break;
+                case 'kitchen':
+                    navigate("/kitchen");
+                    break;
+                case 'bar':
+                    navigate("/bar");
+                    break;
+                case 'cashier':
+                    navigate("/cashier");
+                    break;
+                case 'bill':
+                    navigate("/bills");
+                    break;
+                case 'manager':
+                case 'order_staff':
+                case 'seller':
+                    navigate("/staff-order");
+                    break;
+                default:
+                    navigate("/");
             }
         }
     }, [user, navigate]);
