@@ -31,7 +31,10 @@ use App\Http\Controllers\API\CategoryController;
 
 Route::post('/login', [UserController::class, 'login']);
 Route::get('/users', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'store']);
 Route::get('/users/{id}', [UserController::class, 'show']);
+Route::put('/users/{id}', [UserController::class, 'update']);
+Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
 
 Route::get('/products', [ProductController::class, 'index']);

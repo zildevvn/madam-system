@@ -14,12 +14,12 @@ export default function Header() {
 
     const getNavigation = () => {
         const baseNav = [
-            { name: 'Staff Order', href: '/staff-order', roles: ['order_staff'] },
+            { name: 'Staff Order', href: '/staff-order', roles: ['manager', 'order_staff', 'seller'] },
             { name: 'Kitchen', href: '/kitchen', roles: ['kitchen'] },
-            { name: 'Bar', href: '/bar', roles: ['order_staff'] },
-            { name: 'Bills', href: '/bills', roles: ['order_staff', 'cashier'] },
+            { name: 'Bar', href: '/bar', roles: ['bar'] },
+            { name: 'Bills', href: '/bills', roles: ['bill'] },
             { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
-            { name: 'Reservations', href: '/reservations', roles: ['order_staff', 'cashier'] },
+            { name: 'Reservations', href: '/reservations', roles: ['manager', 'order_staff', 'seller'] },
             { name: 'Admin', href: '/admin', roles: [] },
         ];
         
