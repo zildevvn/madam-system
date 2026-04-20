@@ -84,7 +84,7 @@ const Order = () => {
                                                 >
                                                     <div className="relative overflow-hidden w-full aspect-square bg-gray-50 rounded-tr-[10px]">
                                                         <img
-                                                            src={product.image || DefaultProductImg}
+                                                            src={product.image ? (product.image.startsWith('http') ? product.image : `/storage/${product.image}`) : DefaultProductImg}
                                                             onError={(e) => { e.target.src = DefaultProductImg; }}
                                                             alt={product.name}
                                                             className={`w-full h-full object-cover object-center transition-transform duration-500 ease-out ${animatingItems[product.id] ? 'scale-110 blur-[1px]' : 'group-hover:scale-105 group-active:scale-95'}`}

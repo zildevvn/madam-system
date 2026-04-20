@@ -45,7 +45,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, category = null, process
                         <input
                             {...register('name', { required: true })}
                             type="text"
-                            className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all"
+                            className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all"
                             placeholder="Vd: Khai vị, Đồ uống có cồn..."
                         />
                     </div>
@@ -55,7 +55,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, category = null, process
                         <div className="relative">
                             <select
                                 {...register('type', { required: true })}
-                                className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-bold appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer"
+                                className="text-[14px] lg:text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer"
                             >
                                 <option value="food">Thức ăn / Món ăn</option>
                                 <option value="drink">Đồ uống / Giải khát</option>

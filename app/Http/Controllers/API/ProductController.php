@@ -33,10 +33,10 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
             'type' => 'required|in:food,drink',
-            'image' => 'nullable|string'
+            'image' => 'nullable|image|max:2048'
         ]);
 
-        $product = $this->productService->createProduct($validated);
+        $product = $this->productService->createProduct($request->all(), $request->file('image'));
 
         return response()->json([
             'data' => $product,
@@ -52,10 +52,10 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
             'type' => 'required|in:food,drink',
-            'image' => 'nullable|string'
+            'image' => 'nullable|image|max:2048'
         ]);
 
-        $product = $this->productService->updateProduct($id, $validated);
+        $product = $this->productService->updateProduct($id, $request->all(), $request->file('image'));
 
         return response()->json([
             'data' => $product,
