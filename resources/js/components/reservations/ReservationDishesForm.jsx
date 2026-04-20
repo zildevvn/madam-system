@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWatch } from 'react-hook-form';
-import { formatPrice } from '../../utils/format';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ReservationDishesForm = ({ fields, register, watch, setValue, append, remove, inputClasses, sectionTitle }) => {
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPrice } from '../utils/format';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 /**
  * CashierHistoryLane: Renders the payment history lane of the Cashier dashboard.

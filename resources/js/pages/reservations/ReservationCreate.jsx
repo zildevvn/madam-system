@@ -8,7 +8,7 @@ import ReservationTableSelector from '../../components/reservations/ReservationT
 const ReservationCreate = () => {
     const { id } = useParams();
     const isEdit = !!id;
-    const { user } = useAppSelector(state => state.auth);
+    const user = useAppSelector(state => state.auth.user);
     const navigate = useNavigate();
     const isManager = user?.role === 'cashier' || user?.role === 'admin';
 

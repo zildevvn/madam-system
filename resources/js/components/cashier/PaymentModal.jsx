@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePaymentLogic } from '../hooks/usePaymentLogic';
+import { usePaymentLogic } from '../../hooks/usePaymentLogic';
 import PaymentItemEditor from './PaymentItemEditor';
 import PaymentModalFooter from './PaymentModalFooter';
 

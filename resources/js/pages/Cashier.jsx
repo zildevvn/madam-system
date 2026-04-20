@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import { useCashierSegmentation } from '../hooks/useCashierSegmentation';
-import Receipt from '../components/Receipt';
-import PaymentModal from '../components/PaymentModal';
-import CashierIndividualLane from '../components/CashierIndividualLane';
-import CashierGroupLane from '../components/CashierGroupLane';
-import CashierHistoryLane from '../components/CashierHistoryLane';
+import Receipt from '../components/cashier/Receipt';
+import PaymentModal from '../components/cashier/PaymentModal';
+import CashierIndividualLane from '../components/cashier/CashierIndividualLane';
+import CashierGroupLane from '../components/cashier/CashierGroupLane';
+import CashierHistoryLane from '../components/cashier/CashierHistoryLane';
 import orderApi from '../services/orderApi';
 import { useCashierHistory } from '../hooks/useCashierHistory';
 import { useCashierData } from '../hooks/useCashierData';

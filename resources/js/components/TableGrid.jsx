@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../store/hooks';
 import { selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
-import { getElapsedString } from '../utils/time';
+import { getElapsedString } from '../shared/utils/formatTime';
 
 const TableGrid = ({
     tables,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPrice } from '../../utils/format';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ReservationDetailModal = ({ reservation, tables, onClose }) => {
     if (!reservation) return null;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { getElapsedString } from '../utils/time';
-import { formatPrice } from '../utils/format';
+import { getElapsedString } from '../shared/utils/formatTime';
+import { formatPrice } from '../shared/utils/formatCurrency';
 
 const OrderList = ({ tables, allTables, onTableClick, now }) => {
     if (tables.length === 0) {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { formatPrice } from '../utils/format';
-import ProductItem from './ProductItem';
+import { formatPrice } from '../../shared/utils/formatCurrency';
+import ProductItem from '../ProductItem';
 
 /**
  * PaymentItemEditor: Renders the scrollable item list with per-table grouping,

@@ -1,5 +1,5 @@
 import React from 'react';
-import ActiveOrderTableList from './ActiveOrderTableList';
+import ActiveOrderTableList from '../ActiveOrderTableList';
 
 /**
  * CashierIndividualLane: Renders the left lane of the Cashier dashboard 

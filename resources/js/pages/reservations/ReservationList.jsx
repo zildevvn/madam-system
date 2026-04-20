@@ -6,7 +6,7 @@ import { saveReservationAsync } from '../../store/slices/reservationSlice';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
 import ReservationTable from '../../components/reservations/ReservationTable';
 import ReservationMobileCards from '../../components/reservations/ReservationMobileCards';
-import { capitalizeWords } from '../../utils/format';
+import { capitalizeWords } from '../../shared/utils/formatCurrency';
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -28,7 +28,7 @@ const ReservationList = () => {
     }, [filterType, dateFilter]);
 
     const { reservations, tables, loading } = useReservations(filters);
-    const { user } = useAppSelector(state => state.auth);
+    const user = useAppSelector(state => state.auth.user);
     const dispatch = useAppDispatch();
     const [viewingReservation, setViewingReservation] = useState(null);
     const navigate = useNavigate();

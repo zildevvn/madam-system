@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatPrice } from '../utils/format';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }) => {
     if (!order) return null;

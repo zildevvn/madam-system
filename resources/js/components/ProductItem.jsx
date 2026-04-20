@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatPrice } from '../utils/format';
+import { formatPrice } from '../shared/utils/formatCurrency';
 
 export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, showNoteButton = false, isReadOnly = false }) {
     const [showNote, setShowNote] = useState(false);

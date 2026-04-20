@@ -55,7 +55,7 @@ const RouteBodyClass = () => {
 };
 
 const ProtectedRoute = ({ children }) => {
-    const { user } = useAppSelector(state => state.auth);
+    const user = useAppSelector(state => state.auth.user);
     if (!user) {
         return <Navigate to="/" replace />;
     }
@@ -63,7 +63,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const RoleProtectedRoute = ({ children, allowedRoles }) => {
-    const { user } = useAppSelector(state => state.auth);
+    const user = useAppSelector(state => state.auth.user);
     if (!user) {
         return <Navigate to="/" replace />;
     }
