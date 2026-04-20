@@ -89,13 +89,13 @@ const ProductManagement = () => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="space-y-4 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
             {/* Tab Switcher */}
             <div className="flex justify-center">
-                <div className="inline-flex bg-white p-1.5 rounded-[24px] shadow-sm border border-slate-100">
+                <div className="inline-flex bg-white p-1.5 rounded-[16px] shadow-sm border border-slate-100">
                     <button
                         onClick={() => setActiveTab('products')}
-                        className={`px-8 py-3.5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'products'
+                        className={`px-4 py-2 lg:px-8 lg:py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'products'
                             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                             }`}
@@ -105,7 +105,7 @@ const ProductManagement = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('categories')}
-                        className={`px-8 py-3.5 rounded-[18px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'categories'
+                        className={`px-4 py-2 lg:px-8 lg:py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'categories'
                             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                             }`}
@@ -139,9 +139,9 @@ const ProductManagement = () => {
 
                 <button
                     onClick={activeTab === 'products' ? handleAddProduct : handleAddCategoryClick}
-                    className="w-full lg:w-auto px-8 py-4 bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 group active:scale-95"
+                    className="mdt-btn flex items-center justify-center group"
                 >
-                    <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
+                    <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                     {activeTab === 'products' ? 'Thêm món mới' : 'Thêm danh mục'}
                 </button>
             </div>

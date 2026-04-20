@@ -86,7 +86,7 @@ const PaymentModalFooter = ({
                                         onUpdateDiscountValue(val === '' ? 0 : Math.max(0, parseFloat(val) || 0));
                                     }}
                                     placeholder="Nhập mức giảm..."
-                                    className="w-full bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-sm font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
+                                    className="w-full bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-[16px] font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
                                 />
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-[10px] uppercase">
                                     {discountType === 'percent' ? '%' : 'vnđ'}
@@ -108,7 +108,7 @@ const PaymentModalFooter = ({
                         onChange={(e) => onUpdateCashierNote(e.target.value)}
                         placeholder="Ghi chú thu ngân..."
                         rows={2}
-                        className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-orange-200 transition-colors resize-none"
+                        className="w-full bg-white border border-gray-100 rounded-lg px-3 py-2 text-[16px] font-medium text-gray-700 outline-none focus:border-orange-200 transition-colors resize-none"
                     />
                 </div>
             )}

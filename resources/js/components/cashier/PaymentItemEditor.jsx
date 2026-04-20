@@ -83,7 +83,7 @@ const PaymentItemEditor = ({
                                     placeholder="Tìm món thêm..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[16px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
                                 />
                                 {filteredProducts.length > 0 && (
                                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-20 py-1 overflow-hidden">

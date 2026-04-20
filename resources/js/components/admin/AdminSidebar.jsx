@@ -18,8 +18,8 @@ const AdminSidebar = ({
         <aside className={`fixed lg:sticky top-0 left-0 h-screen bg-[#0a0f1e] text-white flex flex-col shadow-2xl z-[80] transition-all duration-500 ease-out border-r border-white-[0.05] ${isMobileMenuOpen ? 'translate-x-0 w-80' :
             isSidebarCollapsed ? 'w-20 -translate-x-full lg:translate-x-0' : 'w-80 -translate-x-full lg:translate-x-0'
             }`}>
-            {/* Brand */}
-            <div className="h-24 flex items-center px-6 whitespace-nowrap overflow-hidden">
+            {/* Brand / Header */}
+            <div className="h-24 flex items-center justify-between px-6 whitespace-nowrap overflow-hidden flex-shrink-0">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-orange-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-xl shadow-orange-500/40 relative group-hover:scale-110 transition-transform">
                         <span className="text-xl font-black italic">M</span>
@@ -30,6 +30,16 @@ const AdminSidebar = ({
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1.5">Admin Central</span>
                     </div>
                 </div>
+
+                {/* Mobile Close Button */}
+                {isMobileMenuOpen && (
+                    <button 
+                        onClick={toggleMobileMenu}
+                        className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 text-slate-400 active:scale-90 transition-all border-none cursor-pointer"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                )}
             </div>
 
             {/* Sidebar Menu */}

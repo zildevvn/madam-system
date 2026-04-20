@@ -43,7 +43,7 @@ const TableFormModal = ({ isOpen, onClose, onSubmit, table = null, processing = 
                         <input
                             {...register('name', { required: true })}
                             type="text"
-                            className="text-[13px] w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-gray-900 font-bold placeholder:text-gray-300 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                            className="text-[16px] w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-gray-900 font-bold placeholder:text-gray-300 focus:ring-2 focus:ring-orange-500/20 transition-all"
                             placeholder="Vd: Bàn 01"
                         />
                     </div>

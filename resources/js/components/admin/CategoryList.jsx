@@ -4,13 +4,13 @@ const CategoryList = ({ categories, products, handleEditCategoryClick, handleDel
     return (
         <>
             {/* Categories Table (Desktop) */}
-            <div className="hidden lg:block bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="hidden lg:block bg-white rounded-[16px] border border-slate-100 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-slate-50/50">
                         <tr>
                             <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Danh mục</th>
                             <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Loại</th>
-                            <th className="px-8 py-6 text-[10px) font-black text-slate-400 uppercase tracking-[0.2em]">Số lượng món</th>
+                            <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Số lượng món</th>
                             <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Hành động</th>
                         </tr>
                     </thead>
@@ -25,16 +25,15 @@ const CategoryList = ({ categories, products, handleEditCategoryClick, handleDel
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 whitespace-nowrap">
-                                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${
-                                            category.type === 'food' 
-                                            ? 'bg-blue-50 text-blue-500 border-blue-100' 
+                                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${category.type === 'food'
+                                            ? 'bg-blue-50 text-blue-500 border-blue-100'
                                             : 'bg-green-50 text-green-500 border-green-100'
-                                        }`}>
+                                            }`}>
                                             {category.type === 'food' ? 'Thức ăn' : 'Đồ uống'}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 whitespace-nowrap">
-                                        <span className="text-sm font-bold text-slate-400">{productCount} món đang sử dụng</span>
+                                        <span className="text-sm font-bold text-slate-400">{productCount} món</span>
                                     </td>
                                     <td className="px-8 py-6 whitespace-nowrap text-right">
                                         <div className="flex items-center justify-end gap-3 opacity-40 group-hover:opacity-100 transition-all">

@@ -4,7 +4,7 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
     return (
         <>
             {/* Products Table (Desktop) */}
-            <div className="hidden lg:block bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="hidden lg:block bg-white rounded-[16px] border border-slate-100 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-slate-50/50">
                         <tr>
@@ -40,10 +40,7 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                                     </span>
                                 </td>
                                 <td className="px-8 py-6 whitespace-nowrap">
-                                    <div className="flex flex-col leading-none">
-                                        <span className="text-base font-black text-slate-900">{new Intl.NumberFormat('vi-VN').format(product.price)}đ</span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Current Price</span>
-                                    </div>
+                                    <span className="text-base font-black text-slate-900">{new Intl.NumberFormat('vi-VN').format(product.price)}đ</span>
                                 </td>
                                 <td className="px-8 py-6 whitespace-nowrap text-right">
                                     <div className="flex items-center justify-end gap-3 opacity-40 group-hover:opacity-100 transition-all">
@@ -80,16 +77,14 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                                 )}
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-lg font-black text-slate-900 truncate uppercase tracking-tight leading-tight">{product.name}</span>
+                                <span className="text-[13px] font-black text-slate-900 truncate uppercase tracking-tight leading-tight">{product.name}</span>
                                 <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{product.category?.name || 'Uncategorized'}</span>
-                                    <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest ${product.type === 'food' ? 'text-blue-500' : 'text-green-500'}`}>{product.type}</span>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.category?.name || 'Uncategorized'}</span>
                                 </div>
                             </div>
                         </div>
                         <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                            <span className="text-xl font-black text-slate-900">{new Intl.NumberFormat('vi-VN').format(product.price)}đ</span>
+                            <span className="text-[14px] font-black text-slate-900">{new Intl.NumberFormat('vi-VN').format(product.price)}đ</span>
                             <div className="flex items-center gap-2">
                                 <button onClick={() => handleEditProduct(product)} className="px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Sửa</button>
                                 <button onClick={() => deleteProduct(product.id)} className="px-4 py-2.5 bg-slate-50 text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Xóa</button>
