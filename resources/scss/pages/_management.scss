@@ -5,10 +5,10 @@
 }
 
 .md-management-page {
-    padding-top: 160px;
+    padding-top: 60px;
 
     &.page-bill {
-        padding-top: 45px;
+        padding-top: 0px;
 
         >div:first-child {
             top: 10px;
@@ -22,7 +22,7 @@
             top: 0;
             width: 100%;
             z-index: 39;
-            top: 100px;
+            top: 92px;
 
             @media (max-width: 767.98px) {
                 top: 70px;
@@ -57,9 +57,10 @@
     @page {
         margin: 0;
     }
-    header, 
-    nav, 
-    .fixed, 
+
+    header,
+    nav,
+    .fixed,
     footer,
     button,
     .md-management-page__content,
@@ -197,10 +198,12 @@
         opacity: 1;
         transform: translateY(0);
     }
+
     50% {
         opacity: 0.6;
         transform: translateY(-5px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 20;
+    const itemsPerPage = 50;
 
     // Total pages calculation
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
