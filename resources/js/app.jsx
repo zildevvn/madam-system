@@ -25,6 +25,7 @@ import Cashier from './pages/Cashier';
 import Bar from './pages/Bar';
 import ReservationList from './pages/reservations/ReservationList';
 import ReservationCreate from './pages/reservations/ReservationCreate';
+import ExpenseManagement from './pages/ExpenseManagement';
 
 // Set base default header
 window.axios = axios;
@@ -159,6 +160,9 @@ function App() {
 
                     {/* Cashier page: Access by admin, cashier */}
                     <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout hideHeader={true}><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                    
+                    {/* Expenses: Access by admin, cashier */}
+                    <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
                     
                     {/* Bill page: Access by admin, bill */}
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['bill']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />

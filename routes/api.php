@@ -50,9 +50,13 @@ Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 use App\Http\Controllers\API\DebugController;
 use App\Http\Controllers\API\ReservationController;
 
+use App\Http\Controllers\API\ExpenseController;
+
 Route::get('/debug/printer', [DebugController::class, 'checkPrinter']);
 Route::get('/debug/broadcast', [DebugController::class, 'sendTestBroadcast']);
 
 Route::post('/reservations/{id}/confirm', [ReservationController::class, 'confirm']);
 Route::get('/reservations/{id}/bill', [ReservationController::class, 'getBill']);
 Route::apiResource('reservations', ReservationController::class);
+
+Route::apiResource('expenses', ExpenseController::class);

@@ -106,6 +106,7 @@ export default function Header() {
             { name: 'Bills', href: '/bills', roles: ['bill'] },
             { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
             { name: 'Reservations', href: '/reservations', roles: ['manager', 'order_staff', 'seller'] },
+            { name: 'Expense Management', href: '/expenses', roles: ['cashier'] },
         ];
 
         if (!user) return [];
