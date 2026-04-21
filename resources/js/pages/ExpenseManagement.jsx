@@ -79,7 +79,7 @@ const ExpenseManagement = () => {
                                 placeholder="Tìm kiếm chi tiêu..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="mdt-btn !w-full !bg-white !pl-12 !pr-4 !py-3 placeholder:text-slate-300 focus:outline-none !text-slate-900 shadow-sm border border-slate-100"
+                                className="mdt-btn !text-[16px] !w-full !bg-white !pl-12 !pr-4 !py-3 placeholder:text-slate-300 focus:outline-none !text-slate-900 shadow-sm border border-slate-100"
                             />
                             {searchTerm && (
                                 <button

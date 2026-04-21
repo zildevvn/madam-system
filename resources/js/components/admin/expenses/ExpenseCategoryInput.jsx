@@ -1,13 +1,13 @@
 import React from 'react';
 
-const ExpenseCategoryInput = ({ 
-    type, 
-    register, 
-    setValue, 
-    categories, 
-    currentCategory, 
+const ExpenseCategoryInput = ({
+    type,
+    register,
+    setValue,
+    categories,
+    currentCategory,
     isFixedOther,
-    error 
+    error
 }) => {
     return (
         <div className="space-y-4">
@@ -25,7 +25,7 @@ const ExpenseCategoryInput = ({
                                     setValue('category', val === 'other_fixed' ? '' : val);
                                 }}
                                 value={categories.fixed.some(c => c.value === currentCategory) ? currentCategory : 'other_fixed'}
-                                className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal appearance-none transition-all shadow-inner uppercase tracking-tight"
+                                className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal appearance-none transition-all shadow-inner tracking-tight"
                             >
                                 {categories.fixed.map(cat => (
                                     <option key={cat.value} value={cat.value}>{cat.label}</option>
