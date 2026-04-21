@@ -57,7 +57,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="relative w-full max-w-xl bg-white rounded-[16px] shadow-2xl border border-slate-100 flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 fade-in duration-300">
+            <div className="relative w-full max-w-xl bg-white rounded-[16px] shadow-2xl border border-slate-100 flex flex-col max-h-[85vh] md:max-h-[90vh] overflow-hidden animate-in zoom-in-95 fade-in duration-300">
                 <div className="px-3 py-2 lg:px-6 lg:py-4 border-b border-gray-50 flex items-center justify-between flex-shrink-0 bg-white z-10">
                     <h4 className="text-gray-900 mb-0">
                         {expense ? 'Cập nhật chi tiêu' : 'Thêm chi tiêu mới'}
@@ -92,7 +92,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
                             </div>
                         </div>
 
-                        <ExpenseCategoryInput 
+                        <ExpenseCategoryInput
                             type={currentType}
                             register={register}
                             setValue={setValue}
@@ -108,7 +108,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
                                 {...register('description')}
                                 rows="3"
                                 placeholder="Nhập nội dung chi tiêu tại đây..."
-                                className="text-[14px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal shadow-inner resize-none appearance-none"
+                                className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal shadow-inner resize-none appearance-none"
                             ></textarea>
                         </div>
                     </div>
