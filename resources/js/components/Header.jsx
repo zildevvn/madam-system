@@ -4,6 +4,82 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import LogoImg from '../../images/Logo.png';
 
+const NavItem = ({ item, isActive, setSidebarOpen }) => {
+    const [expanded, setExpanded] = useState(false);
+    const hasChildren = item.children && item.children.length > 0;
+
+    const toggleExpand = (e) => {
+        if (hasChildren) {
+            e.preventDefault();
+            setExpanded(!expanded);
+        }
+    };
+
+    const isAnyChildActive = hasChildren && item.children.some(child => isActive(child.href));
+
+    return (
+        <div className="flex flex-col">
+            <Link
+                to={hasChildren ? '#' : item.href}
+                onClick={(e) => {
+                    if (hasChildren) {
+                        toggleExpand(e);
+                    } else {
+                        setSidebarOpen(false);
+                    }
+                }}
+                className={`flex items-center justify-between px-6 py-4 text-sm font-bold transition-all duration-300 group rounded-none border-r-2 ${isActive(item.href) || isAnyChildActive
+                    ? 'bg-orange-50/50 text-orange-600 border-orange-500'
+                    : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900 font-semibold'
+                    }`}
+            >
+                <span className="flex items-center gap-3">
+                    {item.name}
+                </span>
+                {hasChildren && (
+                    <div className={`p-1 rounded-lg transition-colors ${expanded ? 'bg-orange-100 text-orange-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                        <svg
+                            className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="3.5"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                )}
+            </Link>
+
+            {hasChildren && (
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded ? 'max-h-60' : 'max-h-0'}`}>
+                    <div className="bg-slate-50/20 flex flex-col py-1 ml-4 border-l border-slate-100">
+                        {item.children.map((child) => {
+                            const childActive = isActive(child.href);
+                            return (
+                                <Link
+                                    key={child.name}
+                                    to={child.href}
+                                    onClick={() => setSidebarOpen(false)}
+                                    className={`flex items-center pl-4 pr-4 py-3 text-[13px] font-bold transition-all duration-200 relative group ${childActive
+                                        ? 'text-orange-600'
+                                        : 'text-slate-500 hover:text-slate-900'
+                                        }`}
+                                >
+                                    {childActive && (
+                                        <div className="absolute left-0 w-1 h-4 bg-orange-500 rounded-r-full" />
+                                    )}
+                                    {child.name}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -14,17 +90,26 @@ export default function Header() {
 
     const getNavigation = () => {
         const baseNav = [
+            {
+                name: 'Admin',
+                href: '/admin',
+                roles: [],
+                children: [
+                    { name: 'Nhân sự', href: '/admin?tab=personnel' },
+                    { name: 'Quản Lý Bàn', href: '/admin?tab=tables' },
+                    { name: 'Quản Lý Menu', href: '/admin?tab=products' },
+                ]
+            },
             { name: 'Staff Order', href: '/staff-order', roles: ['manager', 'order_staff', 'seller'] },
             { name: 'Kitchen', href: '/kitchen', roles: ['kitchen'] },
             { name: 'Bar', href: '/bar', roles: ['bar'] },
             { name: 'Bills', href: '/bills', roles: ['bill'] },
             { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
             { name: 'Reservations', href: '/reservations', roles: ['manager', 'order_staff', 'seller'] },
-            { name: 'Admin', href: '/admin', roles: [] },
         ];
-        
+
         if (!user) return [];
-        
+
         if (user.role === 'admin') return baseNav;
         return baseNav.filter(item => item.roles.includes(user.role));
     };
@@ -32,42 +117,56 @@ export default function Header() {
     const navigation = getNavigation();
 
     const isActive = (path) => {
-        return location.pathname === path;
+        if (!path || path === '#') return false;
+        return location.pathname + location.search === path || location.pathname === path;
     };
 
     const handleLogout = () => {
         dispatch(logout());
         navigate('/');
     };
-    const isStaffOrder = location.pathname === '/staff-order' || location.pathname === '/bills' || location.pathname === '/cashier';
+
+    const isFixedLayout = location.pathname === '/staff-order' || location.pathname === '/bills' || location.pathname === '/cashier' || location.pathname === '/kitchen' || location.pathname === '/bar';
 
     return (
         <>
-            <header className={`bg-white shadow ${isStaffOrder ? 'is-fixed' : ''}`}>
+            <header className={`bg-white/90 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-100 transition-all duration-300 ${isFixedLayout ? 'shadow-sm' : 'shadow-none'}`}>
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center">
-                        <div className="flex h-auto">
-                            <Link to="/" className="flex items-center">
-                                <img src={LogoImg} alt="logo" className="w-full max-w-[70px] md:max-w-[100px] h-auto" />
+                    <div className="flex justify-between items-center h-16 md:h-20">
+                        <div className="flex">
+                            <Link to="/" className="flex items-center group">
+                                <img
+                                    src={LogoImg}
+                                    alt="logo"
+                                    className="w-auto h-12 md:h-14 group-hover:opacity-80 transition-opacity duration-300"
+                                />
                             </Link>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center mr-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setSidebarOpen(true)}
-                                    className="btn-hamburger flex flex-col justify-center items-center w-10 h-10 p-2 bg-transparent border-none rounded-lg cursor-pointer gap-[5px] transition-all duration-300 ease-in-out hover:bg-black/5"
-                                >
-                                    <span className="block w-[22px] h-[2px] bg-gray-600 rounded-sm transition-all duration-300 ease-in-out"></span>
-                                    <span className="block w-[22px] h-[2px] bg-gray-600 rounded-sm transition-all duration-300 ease-in-out"></span>
-                                    <span className="block w-[22px] h-[2px] bg-gray-600 rounded-sm transition-all duration-300 ease-in-out"></span>
-                                </button>
-                            </div>
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <button
+                                type="button"
+                                className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
+                                aria-label="Notifications"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                            </button>
 
-                            <div className="flex items-center cursor-pointer transition-opacity duration-300 ease-in-out hover:opacity-60">
-                                <svg width="24px" height="24px" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path fillRule="evenodd" clipRule="evenodd" d="M14.752 1.91434C14.1218 2.7805 13.75 3.84683 13.75 5C13.75 7.83971 16.0046 10.1528 18.8214 10.247C18.8216 10.2508 18.8219 10.2546 18.8222 10.2583C18.8369 10.4557 18.852 10.6591 18.8726 10.855C19.1087 13.1025 19.6495 14.6443 20.1679 15.6582C20.5132 16.3334 20.8519 16.781 21.0922 17.0516C21.2125 17.1871 21.3088 17.2788 21.3696 17.3328C21.4 17.3599 21.4216 17.3775 21.4329 17.3865L21.4416 17.3933C21.7027 17.5833 21.8131 17.9196 21.7147 18.2278C21.6154 18.5386 21.3265 18.7496 21.0002 18.7496L3.00005 18.75C2.67373 18.75 2.38485 18.539 2.28559 18.2281C2.18718 17.9199 2.29755 17.5837 2.55863 17.3937L2.56735 17.3869C2.57869 17.3779 2.60028 17.3602 2.63069 17.3332C2.69148 17.2792 2.7877 17.1875 2.90804 17.052C3.14835 16.7814 3.48701 16.3338 3.8323 15.6585C4.52142 14.3109 5.25005 12.0306 5.25005 8.4C5.25005 6.51876 5.95021 4.70561 7.21026 3.36156C8.47184 2.01587 10.1937 1.25 12.0001 1.25C12.3823 1.25 12.7613 1.28434 13.1331 1.35139C13.3707 1.39421 14.1514 1.63742 14.752 1.91434Z" fill="#000000"></path><path fillRule="evenodd" clipRule="evenodd" d="M15.25 5C15.25 2.92893 16.9289 1.25 19 1.25C21.0711 1.25 22.75 2.92893 22.75 5C22.75 7.07107 21.0711 8.75 19 8.75C16.9289 8.75 15.25 7.07107 15.25 5Z" fill="#000000"></path><path fillRule="evenodd" clipRule="evenodd" d="M9.89369 20.3514C10.252 20.1435 10.7109 20.2655 10.9188 20.6238C11.0287 20.8132 11.1864 20.9705 11.3761 21.0798C11.5659 21.1891 11.781 21.2466 12 21.2466C12.219 21.2466 12.4342 21.1891 12.6239 21.0798C12.8137 20.9705 12.9714 20.8132 13.0813 20.6238C13.2891 20.2655 13.7481 20.1435 14.1063 20.3514C14.4646 20.5592 14.5866 21.0182 14.3788 21.3765C14.137 21.7932 13.7901 22.1391 13.3726 22.3796C12.9551 22.62 12.4818 22.7466 12 22.7466C11.5183 22.7466 11.0449 22.62 10.6275 22.3796C10.21 22.1391 9.86301 21.7932 9.62127 21.3765C9.41343 21.0182 9.5354 20.5592 9.89369 20.3514Z" fill="#000000"></path></svg>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSidebarOpen(true)}
+                                className="flex flex-col justify-center items-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all active:scale-95 border border-slate-100"
+                                aria-label="Open menu"
+                            >
+                                <div className="space-y-1">
+                                    <span className="block w-5 h-0.5 bg-current rounded-full"></span>
+                                    <span className="block w-5 h-0.5 bg-current rounded-full"></span>
+                                    <span className="block w-5 h-0.5 bg-current rounded-full"></span>
+                                </div>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -75,65 +174,65 @@ export default function Header() {
 
             {/* Overlay */}
             <div
-                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out ${sidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                className={`fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[50] transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setSidebarOpen(false)}
             ></div>
 
             {/* Sidebar */}
-            <div className={`fixed top-0 right-0 h-full w-[300px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <aside className={`fixed top-0 right-0 h-full w-[280px] md:w-[320px] bg-white shadow-2xl z-[60] transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex flex-col h-full">
-                    {/* Sidebar Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                        <span className="text-lg font-semibold text-gray-800">Menu</span>
-                        <button
-                            type="button"
-                            onClick={() => setSidebarOpen(false)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent border-none cursor-pointer hover:bg-gray-100 transition-all duration-200"
-                        >
-                            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* User Info */}
+                    {/* User Profile */}
                     {user && (
-                        <div className="p-4 border-b border-gray-200">
-                            <p className="text-sm font-semibold text-gray-800">{user.name}</p>
-                            <p className="text-xs text-gray-500">{user.email}</p>
-                            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">{user.role}</span>
+                        <div className="px-4 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white text-sm font-black">
+                                    {user.name?.[0].toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <p className="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{user.name}</p>
+                                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{user.role}</p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setSidebarOpen(false)}
+                                className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg bg-white text-slate-400 hover:text-slate-900 hover:shadow-sm transition-all border border-slate-100"
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
                     )}
 
-                    {/* Navigation Links */}
-                    <nav className="flex-1 py-4 overflow-y-auto">
+                    {/* Navigation */}
+                    <nav className="flex-1 py-4 overflow-y-auto no-scrollbar">
                         {navigation.map((item) => (
-                            <Link
+                            <NavItem
                                 key={item.name}
-                                to={item.href}
-                                onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center px-6 py-3 text-sm font-medium transition-all duration-200 ${isActive(item.href)
-                                    ? 'bg-orange-50 text-orange-600 border-r-4 border-orange-500'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                    }`}
-                            >
-                                {item.name}
-                            </Link>
+                                item={item}
+                                isActive={isActive}
+                                setSidebarOpen={setSidebarOpen}
+                            />
                         ))}
                     </nav>
 
-                    {/* Logout */}
-                    <div className="p-4 border-t border-gray-200">
+                    {/* Footer */}
+                    <div className="p-6 border-t border-slate-100 bg-slate-50/50">
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-200 border-none cursor-pointer"
+                            className="mdt-btn w-full"
                         >
-                            Log Out
+                            <span className="relative z-10 mr-1">Log Out</span>
+                            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7" />
+                            </svg>
                         </button>
                     </div>
                 </div>
-            </div>
+            </aside>
         </>
     );
 }
