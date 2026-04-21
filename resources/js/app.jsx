@@ -158,7 +158,7 @@ function App() {
                     <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Cashier page: Access by admin, cashier */}
-                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout hideHeader={true}><Cashier /></DefaultLayout></RoleProtectedRoute>} />
                     
                     {/* Bill page: Access by admin, bill */}
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['bill']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
@@ -167,7 +167,7 @@ function App() {
                     <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
                     
                     {/* Bar page: Access by admin, bar */}
-                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['bar']}><DefaultLayout><Bar /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['bar']}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Admin: strictly admin only */}
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
