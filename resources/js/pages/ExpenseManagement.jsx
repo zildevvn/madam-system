@@ -65,7 +65,7 @@ const ExpenseManagement = () => {
     }
 
     return (
-        <div className="space-y-4 py-5 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="space-y-4 py-5 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-x-hidden">
             <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                 {/* Header / Actions Area */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

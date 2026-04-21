@@ -4,6 +4,7 @@ import productReducer from './slices/productSlice';
 import orderReducer from './slices/orderSlice';
 import authReducer from './slices/authSlice';
 import reservationReducer from './slices/reservationSlice';
+import expenseReducer from './slices/expenseSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     order: orderReducer,
     auth: authReducer,
     reservation: reservationReducer,
+    expense: expenseReducer,
   },
 });
 

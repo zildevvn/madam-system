@@ -3,17 +3,17 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ExpenseListMobile = ({ filteredExpenses, allCategories, handleEditExpense, deleteExpense }) => {
     return (
-        <div className="md:hidden space-y-4">
+        <div className="md:hidden space-y-4 py-5 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-x-hidden">
             {filteredExpenses.map((expense) => (
                 <div
                     key={expense.id}
-                    className="bg-white px-2 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500"
+                    className="bg-white px-2 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500 overflow-hidden w-full"
                 >
                     {/* Header: Date & Type */}
                     <div className="flex items-center justify-between">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{expense.date}</span>
-                            <span className="text-[10px] text-slate-800 font-black uppercase tracking-widest mt-0.5">
+                            <span className="text-[10px] text-slate-800 font-black uppercase tracking-widest mt-0.5 truncate max-w-[150px]">
                                 {expense.type === 'fixed' ? 'Cố định' : 'Biến đổi'} • {expense.user?.name}
                             </span>
                         </div>
@@ -28,7 +28,7 @@ const ExpenseListMobile = ({ filteredExpenses, allCategories, handleEditExpense,
 
                     {/* Body: Description & Sub-info */}
                     <div className="flex items-center gap-2 justify-between">
-                        <p className='text-[11px] text-slate-400 tracking-widest'>
+                        <p className='text-[11px] text-slate-400 tracking-widest break-words w-full line-clamp-2'>
                             {expense.description || 'Không có mô tả'}
                         </p>
                     </div>

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->decimal('amount', 15, 2);
-            $table->enum('type', ['fixed', 'variable']);
+            $table->enum('type', ['fixed', 'variable'])->index();
             $table->string('category');
             $table->text('description')->nullable();
-            $table->date('date');
+            $table->date('date')->index();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

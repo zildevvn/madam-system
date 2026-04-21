@@ -1,121 +1,115 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import toast from 'react-hot-toast';
+import { useEffect, useMemo, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
-    getExpensesApi,
-    createExpenseApi,
-    updateExpenseApi,
-    deleteExpenseApi
-} from '../services/expenseService';
+    fetchExpensesAsync,
+    createExpenseAsync,
+    updateExpenseAsync,
+    deleteExpenseAsync,
+    selectAllExpenses,
+    selectExpenseStatus,
+    selectExpenseProcessing,
+    selectExpenseError,
+    clearExpenseError
+} from '../store/slices/expenseSlice';
 
+/**
+ * Custom hook to manage expenses via Redux Toolkit.
+ * Decouples Component UI from state management logic.
+ */
 export const useExpenseManagement = () => {
-    const { user } = useSelector(state => state.auth);
-    const [expenses, setExpenses] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [processing, setProcessing] = useState(false);
-    const [error, setError] = useState(null);
+    const dispatch = useDispatch();
+    const user = useSelector((state) => state.auth?.user);
 
-    const fetchExpenses = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await getExpensesApi();
-            setExpenses(response.data.data || []);
-            setError(null);
-        } catch (err) {
-            console.error('Failed to fetch expenses:', err);
-            setError('Không thể tải danh sách chi tiêu');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // Redux Selectors
+    const expenses = useSelector(selectAllExpenses);
+    const status = useSelector(selectExpenseStatus);
+    const processing = useSelector(selectExpenseProcessing);
+    const error = useSelector(selectExpenseError);
 
+    // Initialization: Fetch expenses on mount
     useEffect(() => {
-        fetchExpenses();
-    }, [fetchExpenses]);
+        if (status === 'idle') {
+            dispatch(fetchExpensesAsync());
+        }
+    }, [status, dispatch]);
 
-    const addExpense = async (data) => {
+    /**
+     * Add a new expense
+     */
+    const addExpense = useCallback(async (expenseData) => {
         if (!user?.id) {
-            toast.error('Vui lòng đăng nhập để thực hiện tác vụ này');
+            console.error('User not authenticated');
             return false;
         }
 
-        try {
-            setProcessing(true);
-            await createExpenseApi({ ...data, user_id: user.id });
-            await fetchExpenses();
-            toast.success('Ghi nhận chi tiêu thành công');
-            return true;
-        } catch (err) {
-            console.error('Failed to add expense:', err);
-            toast.error(err.response?.data?.message || 'Không thể ghi nhận chi tiêu');
-            return false;
-        } finally {
-            setProcessing(false);
+        const dataWithUser = {
+            ...expenseData,
+            user_id: user.id
+        };
+
+        const result = await dispatch(createExpenseAsync(dataWithUser));
+        return createExpenseAsync.fulfilled.match(result);
+    }, [dispatch, user]);
+
+    /**
+     * Update an existing expense
+     */
+    const updateExpense = useCallback(async (id, data) => {
+        const result = await dispatch(updateExpenseAsync({ id, data }));
+        return updateExpenseAsync.fulfilled.match(result);
+    }, [dispatch]);
+
+    /**
+     * Delete an expense
+     */
+    const deleteExpense = useCallback(async (id) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa chi tiết chi tiêu này?')) {
+            const result = await dispatch(deleteExpenseAsync(id));
+            return deleteExpenseAsync.fulfilled.match(result);
         }
-    };
+        return false;
+    }, [dispatch]);
 
-    const updateExpense = async (id, data) => {
-        if (!user?.id) {
-            toast.error('Vui lòng đăng nhập để thực hiện tác vụ này');
-            return false;
-        }
-
-        try {
-            setProcessing(true);
-            await updateExpenseApi(id, { ...data, user_id: user.id });
-            await fetchExpenses();
-            toast.success('Cập nhật chi tiêu thành công');
-            return true;
-        } catch (err) {
-            console.error('Failed to update expense:', err);
-            toast.error('Không thể cập nhật chi tiêu');
-            return false;
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    const deleteExpense = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa mục chi tiêu này?')) return;
-
-        try {
-            setProcessing(true);
-            await deleteExpenseApi(id);
-            await fetchExpenses();
-            toast.success('Xóa chi tiêu thành công');
-            return true;
-        } catch (err) {
-            console.error('Failed to delete expense:', err);
-            toast.error('Không thể xóa chi tiêu');
-            return false;
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    const categories = {
+    /**
+     * Predefined Expense Categories
+     * Memoized to prevent unnecessary re-renders.
+     */
+    const categories = useMemo(() => ({
         fixed: [
             { value: 'rent', label: 'Tiền thuê mặt bằng' },
             { value: 'salary', label: 'Lương nhân viên' },
-            { value: 'utilities', label: 'Điện & Nước (Cố định)' },
-            { value: 'wifi', label: 'Wi-Fi & Internet' },
-            { value: 'other_fixed', label: 'Chi phí cố định khác' }
+            { value: 'utilities', label: 'Điện & Nước' },
+            { value: 'internet', label: 'Wi-Fi & Cáp' },
+            { value: 'tax', label: 'Thuế & Phí' },
+            { value: 'other_fixed', label: 'Khác (Cố định)' },
         ],
-        variable: []
-    };
+        variable: [
+            { value: 'ingredients', label: 'Nguyên liệu thực phẩm' },
+            { value: 'drinks', label: 'Đồ uống & Bar' },
+            { value: 'marketing', label: 'Marketing / QC' },
+            { value: 'maintenance', label: 'Bảo trì / Sửa chữa' },
+            { value: 'supplies', label: 'Đồ dùng tiêu hao' },
+            { value: 'other_variable', label: 'Khác (Biến đổi)' },
+        ]
+    }), []);
 
-    const getAllCategories = () => [...categories.fixed];
+    /**
+     * Get all labels for display
+     */
+    const getAllCategories = useCallback(() => {
+        return [...categories.fixed, ...categories.variable];
+    }, [categories]);
 
     return {
         expenses,
-        loading,
+        loading: status === 'loading',
         processing,
         error,
-        fetchExpenses,
         addExpense,
         updateExpense,
         deleteExpense,
         categories,
-        getAllCategories
+        getAllCategories,
+        clearError: () => dispatch(clearExpenseError())
     };
 };
