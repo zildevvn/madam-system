@@ -34,6 +34,8 @@ const ProductManagement = () => {
 
     const [filterType, setFilterType] = useState('all'); // all, food, drink
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const handleAddProduct = () => {
         setEditingProduct(null);
         setIsProductModalOpen(true);
@@ -75,9 +77,14 @@ const ProductManagement = () => {
     };
 
     const filteredProducts = products.filter(p => {
-        if (filterType === 'all') return true;
-        return p.type === filterType;
+        const matchesType = filterType === 'all' || p.type === filterType;
+        const matchesSearch = (p.name?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+        return matchesType && matchesSearch;
     });
+
+    const filteredCategories = categories.filter(c =>
+        (c.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
 
     if (loading && products.length === 0 && categories.length === 0) {
         return (
@@ -95,7 +102,7 @@ const ProductManagement = () => {
                 <div className="inline-flex bg-white p-1.5 rounded-[16px] shadow-sm border border-slate-100">
                     <button
                         onClick={() => setActiveTab('products')}
-                        className={`px-4 py-2 lg:px-8 lg:py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'products'
+                        className={`cursor-pointer px-4 py-2 lg:px-8 lg:py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'products'
                             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                             }`}
@@ -105,7 +112,7 @@ const ProductManagement = () => {
                     </button>
                     <button
                         onClick={() => setActiveTab('categories')}
-                        className={`px-4 py-2 lg:px-8 lg:py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'categories'
+                        className={`cursor-pointer px-4 py-2 lg:px-8 lg:py-3.5 rounded-[12px] text-[11px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-2 ${activeTab === 'categories'
                             ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                             }`}
@@ -117,33 +124,55 @@ const ProductManagement = () => {
             </div>
 
             {/* Header / Actions */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    {activeTab === 'products' && (
-                        <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
-                            {['all', 'food', 'drink'].map(type => (
-                                <button
-                                    key={type}
-                                    onClick={() => setFilterType(type)}
-                                    className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${filterType === type
-                                        ? 'bg-slate-900 text-white'
-                                        : 'text-slate-400 hover:text-slate-600'
-                                        }`}
-                                >
-                                    {type === 'all' ? 'Tất cả' : type === 'food' ? 'Food' : 'Drink'}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+            <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-6">
 
-                <button
-                    onClick={activeTab === 'products' ? handleAddProduct : handleAddCategoryClick}
-                    className="mdt-btn flex items-center justify-center group"
-                >
-                    <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
-                    {activeTab === 'products' ? 'Thêm món mới' : 'Thêm danh mục'}
-                </button>
+                {activeTab === 'products' && (
+                    <div className="max-w-fit mx-auto md:mx-0 flex bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex-shrink-0">
+                        {['all', 'food', 'drink'].map(type => (
+                            <button
+                                key={type}
+                                onClick={() => setFilterType(type)}
+                                className={`cursor-pointer px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${filterType === type
+                                    ? 'bg-slate-900 text-white'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                    }`}
+                            >
+                                {type === 'all' ? 'Tất cả' : type === 'food' ? 'Food' : 'Drink'}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+
+                <div className="flex items-center gap-2 justify-end">
+                    <button
+                        onClick={activeTab === 'products' ? handleAddProduct : handleAddCategoryClick}
+                        className="mdt-btn flex items-center justify-center group shrink-0"
+                    >
+                        <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                        <span>{activeTab === 'products' ? 'Thêm món mới' : 'Thêm danh mục'}</span>
+                    </button>
+                    <div className="relative flex-1 group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder={activeTab === 'products' ? "Tìm kiếm món ăn..." : "Tìm kiếm danh mục..."}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="mdt-btn !w-full !bg-white  !pl-12 !pr-4 !py-3 placeholder:text-slate-300 focus:outline-none !text-slate-900"
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-500 transition-colors"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {error && (
@@ -162,7 +191,7 @@ const ProductManagement = () => {
                 />
             ) : (
                 <CategoryList
-                    categories={categories}
+                    categories={filteredCategories}
                     products={products}
                     handleEditCategoryClick={handleEditCategoryClick}
                     handleDeleteCategory={handleDeleteCategory}

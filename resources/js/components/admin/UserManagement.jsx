@@ -18,6 +18,8 @@ const UserManagement = ({ currentUser }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const handleAddUser = () => {
         setEditingUser(null);
         setIsModalOpen(true);
@@ -38,6 +40,11 @@ const UserManagement = ({ currentUser }) => {
         }
     };
 
+    const filteredUsers = users.filter(u =>
+        (u.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (u.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+
     if (loading && users.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[40px] border border-gray-100 shadow-sm animate-pulse">
@@ -51,6 +58,27 @@ const UserManagement = ({ currentUser }) => {
         <div className="space-y-4 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
             {/* Optimized Header / Actions Area */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm nhân sự..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="mdt-btn !w-full !bg-white  !pl-12 !pr-4 !py-3 placeholder:text-slate-300 focus:outline-none !text-slate-900"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-500 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    )}
+                </div>
+
                 <button
                     onClick={handleAddUser}
                     className="mdt-btn flex items-center justify-center group self-stretch md:self-auto"
@@ -79,7 +107,7 @@ const UserManagement = ({ currentUser }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {users.map((u) => (
+                            {filteredUsers.map((u) => (
                                 <tr key={u.id} className="group hover:bg-slate-50/40 transition-all">
                                     <td className="px-10 py-5 whitespace-nowrap">
                                         <div className="flex items-center gap-4">
@@ -135,7 +163,7 @@ const UserManagement = ({ currentUser }) => {
 
             {/* Mobile Card Grid View */}
             <div className="md:hidden space-y-3">
-                {users.map((u) => (
+                {filteredUsers.map((u) => (
                     <div key={u.id} className="bg-white px-2 py-3 rounded-[16px] shadow-sm border border-slate-100 flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-500">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-[26px] bg-slate-100 flex items-center justify-center text-base font-black text-slate-500 uppercase ring-4 ring-slate-50">
@@ -182,7 +210,7 @@ const UserManagement = ({ currentUser }) => {
                 ))}
             </div>
 
-            {users.length === 0 && (
+            {filteredUsers.length === 0 && (
                 <div className="py-20 flex flex-col items-center justify-center bg-white rounded-[32px] border border-slate-100 shadow-sm animate-in zoom-in-95 duration-500">
                     <div className="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-4">
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>

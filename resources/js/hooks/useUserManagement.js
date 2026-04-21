@@ -111,7 +111,7 @@ export const useUserManagement = () => {
         { value: 'kitchen', label: 'Bếp (Kitchen)' },
         { value: 'bar', label: 'Bar' },
         { value: 'cashier', label: 'Thu ngân (Cashier)' },
-        { value: 'bill', label: 'Nhân viên thanh toán (Bill)' },
+        { value: 'bill', label: 'Nhân viên đọc Bill' },
         { value: 'seller', label: 'Bán hàng (Seller)' }
     ];
 

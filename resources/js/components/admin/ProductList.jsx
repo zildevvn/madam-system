@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
+
+    // Total pages calculation
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+    // Slice products for current page
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset to page 1 when filtered items change (search/filter)
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filteredProducts.length]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        // Scroll to top of list area for better UX
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
-        <>
+        <div className="space-y-6">
             {/* Products Table (Desktop) */}
             <div className="hidden lg:block bg-white rounded-[16px] border border-slate-100 shadow-sm overflow-hidden">
                 <table className="w-full text-left">
@@ -15,16 +38,16 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                        {filteredProducts.map((product) => (
+                        {paginatedProducts.map((product) => (
                             <tr key={product.id} className="group hover:bg-slate-50/30 transition-all">
                                 <td className="px-8 py-6 whitespace-nowrap">
                                     <div className="flex items-center gap-5">
                                         <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-100 shadow-inner group-hover:scale-105 transition-transform duration-500">
                                             {product.image ? (
-                                                <img 
-                                                    src={product.image.startsWith('http') ? product.image : `/storage/${product.image}`} 
-                                                    alt={product.name} 
-                                                    className="w-full h-full object-cover" 
+                                                <img
+                                                    src={product.image.startsWith('http') ? product.image : `/storage/${product.image}`}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover"
                                                 />
                                             ) : (
                                                 <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -50,13 +73,13 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                                     <div className="flex items-center justify-end gap-3 opacity-40 group-hover:opacity-100 transition-all">
                                         <button
                                             onClick={() => handleEditProduct(product)}
-                                            className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-orange-50 hover:text-orange-500 rounded-xl transition-all active:scale-90"
+                                            className="w-10 h-10 flex items-center justify-center text-slate-400 hover:bg-orange-50 hover:text-orange-500 rounded-xl transition-all active:scale-90 cursor-pointer"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                         </button>
                                         <button
                                             onClick={() => deleteProduct(product.id)}
-                                            className="w-10 h-10 flex items-center justify-center text-slate-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all active:scale-90"
+                                            className="w-10 h-10 flex items-center justify-center text-slate-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all active:scale-90 cursor-pointer"
                                         >
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                         </button>
@@ -70,15 +93,15 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
 
             {/* Products Grid (Mobile) */}
             <div className="lg:hidden grid grid-cols-1 gap-4">
-                {filteredProducts.map((product) => (
+                {paginatedProducts.map((product) => (
                     <div key={product.id} className="bg-white px-3 py-4 rounded-[16px] border border-slate-100 shadow-sm space-y-3">
                         <div className="flex items-center gap-5">
                             <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-100">
                                 {product.image ? (
-                                    <img 
-                                        src={product.image.startsWith('http') ? product.image : `/storage/${product.image}`} 
-                                        alt={product.name} 
-                                        className="w-full h-full object-cover" 
+                                    <img
+                                        src={product.image.startsWith('http') ? product.image : `/storage/${product.image}`}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
                                     />
                                 ) : (
                                     <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -94,21 +117,61 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                         <div className="flex items-center justify-between pt-2 border-t border-slate-50">
                             <span className="text-[14px] font-black text-slate-900">{new Intl.NumberFormat('vi-VN').format(product.price)}đ</span>
                             <div className="flex items-center gap-2">
-                                <button onClick={() => handleEditProduct(product)} className="px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Sửa</button>
-                                <button onClick={() => deleteProduct(product.id)} className="px-4 py-2.5 bg-slate-50 text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Xóa</button>
+                                <button onClick={() => handleEditProduct(product)} className="cursor-pointer px-4 py-2.5 bg-slate-50 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Sửa</button>
+                                <button onClick={() => deleteProduct(product.id)} className="cursor-pointer px-4 py-2.5 bg-slate-50 text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">Xóa</button>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {filteredProducts.length === 0 && (
+            {filteredProducts.length === 0 ? (
                 <div className="py-24 text-center bg-white rounded-[48px] border border-slate-100 shadow-sm border-dashed">
                     <h3 className="text-xl font-black text-slate-900 mb-2">Chưa có sản phẩm nào.</h3>
                 </div>
+            ) : totalPages > 1 && (
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-4">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                        Hiển thị <span className="text-slate-900">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</span> trên <span className="text-slate-900">{filteredProducts.length}</span> sản phẩm
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-orange-500 hover:border-orange-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-90 cursor-pointer"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button
+                                    key={i + 1}
+                                    onClick={() => handlePageChange(i + 1)}
+                                    className={`w-11 h-11 flex items-center justify-center rounded-2xl text-[11px] font-black transition-all active:scale-90 cursor-pointer ${currentPage === i + 1
+                                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
+                                        : 'bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-50 shadow-sm'
+                                        }`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-orange-500 hover:border-orange-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm active:scale-90 cursor-pointer"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                    </div>
+                </div>
             )}
-        </>
+        </div>
     );
 };
 
 export default ProductList;
+

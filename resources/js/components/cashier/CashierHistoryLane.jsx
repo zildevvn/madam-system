@@ -26,22 +26,9 @@ const CashierHistoryLane = ({
                         {!isCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Recently Paid Bills</span>}
                     </div>
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={onToggleCollapse}
-                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
-                            title={!isCollapsed ? "Collapse History" : "Expand History"}
-                        >
-                            {!isCollapsed ? (
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                            ) : (
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                            )}
-                        </button>
-                        {!isCollapsed && (
-                            <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                                {historyOrders.length} Bill
-                            </span>
-                        )}
+                        <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                            {historyOrders.length} Bill
+                        </span>
                     </div>
                 </div>
 
@@ -109,13 +96,11 @@ const CashierHistoryLane = ({
                             </div>
                         </div>
                     ))}
-                    {historyOrders.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-32 opacity-20 filter grayscale">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
-                            <p className="text-[11px] font-bold mt-4 uppercase tracking-[0.2em]">No bills yet</p>
-                        </div>
-                    )}
                 </div>
+
+                {historyOrders.length === 0 && (
+                    <h5 className="flex flex-col items-center justify-center py-32 w-full text-[11px] font-bold mt-4 uppercase tracking-[0.2em]">No bills yet</h5>
+                )}
 
                 {isCollapsed && (
                     <div className="flex-1 flex items-center justify-center lg:writing-mode-vertical py-10 opacity-30 select-none">

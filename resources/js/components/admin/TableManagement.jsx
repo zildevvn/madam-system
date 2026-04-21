@@ -7,6 +7,8 @@ const TableManagement = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTable, setEditingTable] = useState(null);
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const handleAdd = () => {
         setEditingTable(null);
         setIsModalOpen(true);
@@ -27,6 +29,10 @@ const TableManagement = () => {
         }
     };
 
+    const filteredTables = tables.filter(t =>
+        (t.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+
     if (loading && tables.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[32px] border border-gray-100">
@@ -39,6 +45,27 @@ const TableManagement = () => {
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm bàn..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="mdt-btn !w-full !bg-white  !pl-12 !pr-4 !py-3 placeholder:text-slate-300 focus:outline-none !text-slate-900"
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-500 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    )}
+                </div>
+
                 <button
                     onClick={handleAdd}
                     className="mdt-btn flex items-center justify-center group"
@@ -66,7 +93,7 @@ const TableManagement = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                        {tables.map((table) => (
+                        {filteredTables.map((table) => (
                             <tr key={table.id} className="hover:bg-gray-50/30 transition-colors">
                                 <td className="px-8 py-5 whitespace-nowrap text-[13px] font-bold text-gray-400">#{table.id}</td>
                                 <td className="px-8 py-5 whitespace-nowrap">
@@ -104,7 +131,7 @@ const TableManagement = () => {
 
             {/* Mobile Card Grid View */}
             <div className="md:hidden grid grid-cols-1 gap-3">
-                {tables.map((table) => (
+                {filteredTables.map((table) => (
                     <div key={table.id} className="bg-white px-4 py-3.5 rounded-[16px] shadow-sm border border-slate-100 group active:scale-95 transition-all">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
@@ -133,7 +160,7 @@ const TableManagement = () => {
                 ))}
             </div>
 
-            {tables.length === 0 && (
+            {filteredTables.length === 0 && (
                 <div className="p-20 text-center bg-white rounded-[32px] border border-gray-100">
                     <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
                         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg>
