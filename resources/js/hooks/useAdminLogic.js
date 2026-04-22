@@ -12,6 +12,7 @@ export const useAdminLogic = () => {
     const [testingPrinter, setTestingPrinter] = useState(false);
     const [testingWS, setTestingWS] = useState(false);
     const [logs, setLogs] = useState([]);
+    const [todayRevenue, setTodayRevenue] = useState(0);
 
     const addLog = useCallback((type, prefix, message) => {
         const time = new Date().toLocaleTimeString();
@@ -30,8 +31,18 @@ export const useAdminLogic = () => {
         }
     }, []);
 
+    const fetchStats = useCallback(async () => {
+        try {
+            const res = await axios.get('/api/stats/today-revenue');
+            setTodayRevenue(res.data.data.revenue || 0);
+        } catch (error) {
+            console.error('Failed to fetch revenue stats:', error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchUsers();
+        fetchStats();
 
         // Listen for system diagnostics
         if (window.Echo) {
@@ -93,6 +104,7 @@ export const useAdminLogic = () => {
 
     return {
         users,
+        todayRevenue,
         loading,
         updating,
         currentUser,

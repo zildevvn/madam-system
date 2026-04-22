@@ -51,6 +51,7 @@ use App\Http\Controllers\API\DebugController;
 use App\Http\Controllers\API\ReservationController;
 
 use App\Http\Controllers\API\ExpenseController;
+use App\Http\Controllers\API\StatsController;
 
 Route::get('/debug/printer', [DebugController::class, 'checkPrinter']);
 Route::get('/debug/broadcast', [DebugController::class, 'sendTestBroadcast']);
@@ -60,3 +61,6 @@ Route::get('/reservations/{id}/bill', [ReservationController::class, 'getBill'])
 Route::apiResource('reservations', ReservationController::class);
 
 Route::apiResource('expenses', ExpenseController::class);
+
+Route::get('/stats/today-revenue', [StatsController::class, 'todayRevenue']);
+Route::get('/stats/revenue-report', [StatsController::class, 'revenueReport']);

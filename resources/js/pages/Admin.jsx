@@ -1,97 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useAdminLogic } from '../hooks/useAdminLogic';
-import TableManagement from '../components/admin/TableManagement';
-import ProductManagement from '../components/admin/ProductManagement';
-import AdminHeroStats from '../components/admin/AdminHeroStats';
-import AdminPersonnelList from '../components/admin/AdminPersonnelList';
-import AdminTelemetry from '../components/admin/AdminTelemetry';
-import UserManagement from '../components/admin/UserManagement';
+import React from 'react';
+import AdminRevenueReport from '../components/admin/AdminRevenueReport';
 
-// [WHY] Main layout for the Admin section.
-// [RULE] High-level container, logic delegated to sub-components and hooks.
+/**
+ * Admin Page Component
+ * WHY: Main layout for the Admin section, now focused exclusively on Revenue Reporting.
+ * RULE: Delegated logic to AdminRevenueReport specialized component.
+ */
 export default function Admin() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const activeTab = searchParams.get('tab') || 'system';
-    
-    const setActiveTab = (tabId) => {
-        setSearchParams({ tab: tabId });
-    };
-
-    const {
-        users,
-        loading,
-        updating,
-        currentUser,
-        testingPrinter,
-        testingWS,
-        logs,
-        setLogs,
-        testPrinter,
-        testWebsocket,
-        fetchUsers,
-        handleRoleChange,
-        roles
-    } = useAdminLogic();
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-[#0a0f1e]">
-                <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 rounded-full border-4 border-white/5 border-t-orange-500 animate-spin"></div>
-                </div>
-            </div>
-        );
-    }
-
-    const tabs = [
-        { id: 'system', label: 'Hệ thống' },
-        { id: 'personnel', label: 'Nhân sự' },
-        { id: 'tables', label: 'Quản lý Bàn' },
-        { id: 'products', label: 'Quản lý Menu' },
-    ];
-
     return (
         <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-orange-100 selection:text-orange-900">
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col min-w-0">
                 <div className="flex-1 p-4 lg:p-6 custom-scrollbar pb-33 lg:pb-16 bg-[#f0f4f8]">
                     <div className="max-w-7xl mx-auto">
-                        {activeTab === 'system' ? (
-                            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-                                <AdminHeroStats users={users} />
-                                <div className="grid grid-cols-1 2xl:grid-cols-5 gap-6 xl:gap-12">
-                                    <AdminPersonnelList
-                                        users={users}
-                                        fetchUsers={fetchUsers}
-                                        updating={updating}
-                                        currentUser={currentUser}
-                                        roles={roles}
-                                        handleRoleChange={handleRoleChange}
-                                    />
-                                    <div className="2xl:col-span-2 flex flex-col gap-6 xl:gap-12 flex-1">
-                                        <AdminTelemetry
-                                            testPrinter={testPrinter}
-                                            testingPrinter={testingPrinter}
-                                            testWebsocket={testWebsocket}
-                                            testingWS={testingWS}
-                                            setLogs={setLogs}
-                                            logs={logs}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ) : activeTab === 'personnel' ? (
-                            <UserManagement currentUser={currentUser} />
-                        ) : activeTab === 'tables' ? (
-                            <TableManagement />
-                        ) : activeTab === 'products' ? (
-                            <ProductManagement />
-                        ) : (
-                            <div className="flex items-center justify-center h-64 text-slate-400 italic font-medium bg-white rounded-[32px] border border-slate-100 shadow-sm animate-in fade-in duration-500">
-                                Section "{tabs.find(t => t.id === activeTab)?.label}" is coming soon...
-                            </div>
-                        )}
+                        <AdminRevenueReport />
                     </div>
                 </div>
             </main>

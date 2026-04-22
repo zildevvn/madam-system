@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import ExpenseTypeSelector from './expenses/ExpenseTypeSelector';
 import ExpenseCategoryInput from './expenses/ExpenseCategoryInput';
@@ -16,7 +17,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
             amount: '',
             type: 'variable',
             category: '',
-            date: new Date().toISOString().split('T')[0],
+            date: format(new Date(), 'yyyy-MM-dd'),
             description: ''
         }
     });
@@ -38,7 +39,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
                 amount: '',
                 type: 'variable',
                 category: '',
-                date: new Date().toISOString().split('T')[0],
+                date: format(new Date(), 'yyyy-MM-dd'),
                 description: ''
             });
         }

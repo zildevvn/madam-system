@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { useReservations } from '../../hooks/useReservations';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
@@ -20,7 +21,7 @@ const ReservationList = () => {
     const filters = useMemo(() => {
         const params = { type: filterType === 'all' ? null : filterType };
         if (dateFilter === 'today') {
-            params.date = new Date().toISOString().split('T')[0];
+            params.date = format(new Date(), 'yyyy-MM-dd');
         } else if (dateFilter !== 'all') {
             params.month = dateFilter;
         }
