@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
+import imageCompression from 'browser-image-compression';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 
-const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = null, processing = false }) => {
+const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = null, processing = false, serverError = null }) => {
     const [preview, setPreview] = useState(null);
     const [imageError, setImageError] = useState(null);
+    const [isCompressing, setIsCompressing] = useState(false);
     const fileInputRef = useRef(null);
 
-    const { register, handleSubmit, reset, setValue, watch } = useForm({
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
         defaultValues: {
             name: '',
             price: 0,
@@ -39,28 +41,79 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
         }
     }, [product, isOpen, reset, categories]);
 
-    const handleFileChange = (e) => {
+    // [WHY] Dedicated effect to handle blob URL cleanup to prevent memory leaks
+    useEffect(() => {
+        return () => {
+            if (preview && typeof preview === 'string' && preview.startsWith('blob:')) {
+                URL.revokeObjectURL(preview);
+            }
+        };
+    }, [preview]);
+
+    const clearFileInput = () => {
+        setValue('image', null);
+        setPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         setImageError(null);
 
         if (file) {
-            // Check file size (1.5MB = 1,572,864 bytes)
-            if (file.size > 1.5 * 1024 * 1024) {
-                setImageError('Dung lượng ảnh phải nhỏ hơn 1.5MB');
-                setValue('image', null);
-                setPreview(null);
-                if (fileInputRef.current) fileInputRef.current.value = '';
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                setImageError('Vui lòng chọn tệp tin hình ảnh');
+                clearFileInput();
                 return;
             }
 
-            // Set image preview and value
-            setValue('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+            setIsCompressing(true);
+            try {
+                // [WHY] Automatic compression and resizing before upload
+                const options = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1200,
+                    useWebWorker: true
+                };
+                
+                const compressedFile = await imageCompression(file, options);
+
+                // Check image dimensions of the result
+                const img = new Image();
+                const objectUrl = URL.createObjectURL(compressedFile);
+                img.src = objectUrl;
+                img.onload = () => {
+                    const MAX_DIMENSION = 1200;
+                    if (img.width > MAX_DIMENSION || img.height > MAX_DIMENSION) {
+                        setImageError(`Ảnh quá lớn (tối đa ${MAX_DIMENSION}x${MAX_DIMENSION}px). Hiện tại: ${img.width}x${img.height}px`);
+                        URL.revokeObjectURL(objectUrl);
+                        clearFileInput();
+                        setIsCompressing(false);
+                        return;
+                    }
+
+                    // Set image preview and value
+                    setValue('image', compressedFile);
+                    setPreview(objectUrl);
+                    setIsCompressing(false);
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    setImageError('Không thể đọc tệp tin hình ảnh sau khi nén');
+                    clearFileInput();
+                    setIsCompressing(false);
+                };
+            } catch (error) {
+                console.error('Image compression error:', error);
+                setImageError('Lỗi khi nén ảnh. Vui lòng chọn ảnh khác.');
+                setIsCompressing(false);
+                clearFileInput();
+            }
         }
+
+        // [WHY] Reset the input value so selecting the same file again triggers onChange
+        e.target.value = '';
     };
 
     const onFormSubmit = (data) => {
@@ -92,6 +145,13 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                 </div>
 
                 <form onSubmit={handleSubmit(onFormSubmit)} className="px-3 py-2 lg:px-6 lg:py-4 space-y-3 lg:space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    {serverError && (
+                        <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            <span>{serverError}</span>
+                        </div>
+                    )}
+
                     {/* Image Upload Area */}
                     <div className="flex flex-col items-center gap-4 py-2">
                         <div
@@ -129,11 +189,19 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                     <div>
                         <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Tên món</label>
                         <input
-                            {...register('name', { required: true })}
+                            {...register('name', { 
+                                required: 'Tên món không được để trống',
+                                minLength: { value: 2, message: 'Tên món quá ngắn' }
+                            })}
                             type="text"
-                            className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans"
+                            className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.name ? 'ring-2 ring-red-500/20 bg-red-50/30' : ''}`}
                             placeholder="Vd: Phở Bò Chín"
                         />
+                        {errors.name && (
+                            <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                                {errors.name.message}
+                            </span>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-5">
@@ -141,17 +209,26 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                             <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Giá (VND)</label>
                             <div className="relative">
                                 <input
-                                    {...register('price', { required: true, valueAsNumber: true })}
+                                    {...register('price', { 
+                                        required: 'Giá không được để trống',
+                                        min: { value: 0, message: 'Giá không hợp lệ' },
+                                        valueAsNumber: true 
+                                    })}
                                     type="number"
-                                    className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans"
+                                    className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.price ? 'ring-2 ring-red-500/20 bg-red-50/30' : ''}`}
                                     placeholder="0"
                                 />
-                                {watchedPrice > 0 && (
+                                {watchedPrice > 0 && !errors.price && (
                                     <div className="mt-1.5 px-1 flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-300">
                                         <span className="text-[11px] font-black text-orange-500 uppercase tracking-widest">
                                             {formatPrice(watchedPrice)}đ
                                         </span>
                                     </div>
+                                )}
+                                {errors.price && (
+                                    <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                                        {errors.price.message}
+                                    </span>
                                 )}
                             </div>
                         </div>
@@ -176,8 +253,8 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Danh mục</label>
                         <div className="relative">
                             <select
-                                {...register('category_id', { required: true })}
-                                className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer font-sans"
+                                {...register('category_id', { required: 'Vui lòng chọn danh mục' })}
+                                className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer font-sans ${errors.category_id ? 'ring-2 ring-red-500/20 bg-red-50/30' : ''}`}
                             >
                                 <option value="">Chọn danh mục</option>
                                 {categories.map(cat => (
@@ -188,6 +265,11 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
                             </div>
                         </div>
+                        {errors.category_id && (
+                            <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                                {errors.category_id.message}
+                            </span>
+                        )}
                     </div>
 
                     <div className="pt-4 flex items-center gap-4">
@@ -200,13 +282,13 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         </button>
                         <button
                             type="submit"
-                            disabled={processing}
+                            disabled={processing || isCompressing}
                             className="flex-1 py-3 bg-orange-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/25 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2"
                         >
-                            {processing ? (
+                            {processing || isCompressing ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                    <span>Đang xử lý...</span>
+                                    <span>{isCompressing ? 'Đang nén ảnh...' : 'Đang xử lý...'}</span>
                                 </>
                             ) : (
                                 product ? 'Lưu thay đổi' : 'Thêm món'

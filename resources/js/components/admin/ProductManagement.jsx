@@ -205,6 +205,7 @@ const ProductManagement = () => {
                 product={editingProduct}
                 categories={categories}
                 processing={processing}
+                serverError={error}
             />
 
             <CategoryFormModal

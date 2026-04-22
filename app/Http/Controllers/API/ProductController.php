@@ -33,7 +33,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
             'type' => 'required|in:food,drink',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:1024'
         ]);
 
         $product = $this->productService->createProduct($request->all(), $request->file('image'));
@@ -52,7 +52,7 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
             'type' => 'required|in:food,drink',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:1024'
         ]);
 
         $product = $this->productService->updateProduct($id, $request->all(), $request->file('image'));
