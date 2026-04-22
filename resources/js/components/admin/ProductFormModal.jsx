@@ -4,6 +4,7 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = null, processing = false }) => {
     const [preview, setPreview] = useState(null);
+    const [imageError, setImageError] = useState(null);
     const fileInputRef = useRef(null);
 
     const { register, handleSubmit, reset, setValue, watch } = useForm({
@@ -21,6 +22,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
     useEffect(() => {
         if (isOpen) {
             setPreview(product?.image ? `/storage/${product.image}` : null);
+            setImageError(null);
             reset(product ? {
                 name: product.name || '',
                 price: product.price || 0,
@@ -39,7 +41,19 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
+        setImageError(null);
+
         if (file) {
+            // Check file size (1.5MB = 1,572,864 bytes)
+            if (file.size > 1.5 * 1024 * 1024) {
+                setImageError('Dung lượng ảnh phải nhỏ hơn 1.5MB');
+                setValue('image', null);
+                setPreview(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return;
+            }
+
+            // Set image preview and value
             setValue('image', file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -105,6 +119,11 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                             accept="image/*"
                             onChange={handleFileChange}
                         />
+                        {imageError && (
+                            <div className="text-red-500 text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-top-1 duration-300">
+                                {imageError}
+                            </div>
+                        )}
                     </div>
 
                     <div>
