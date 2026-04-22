@@ -14,52 +14,47 @@ class StatsService
      */
     public function getRevenueReport($period = 'day', $date = null, $startDate = null, $endDate = null)
     {
-        $query = Order::where('status', 'completed');
+        $query = Order::where('orders.status', 'completed');
         $referenceDate = $date ? \Illuminate\Support\Carbon::parse($date) : now();
 
         switch ($period) {
             case 'week':
                 if ($startDate && $endDate) {
-                    $query->whereBetween('updated_at', [
+                    $query->whereBetween('orders.updated_at', [
                         \Illuminate\Support\Carbon::parse($startDate)->startOfDay(),
                         \Illuminate\Support\Carbon::parse($endDate)->endOfDay()
                     ]);
                 } else {
-                    $query->whereBetween('updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
+                    $query->whereBetween('orders.updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
                 }
                 break;
             case 'month':
-                $query->whereMonth('updated_at', $referenceDate->month)
-                      ->whereYear('updated_at', $referenceDate->year);
+                $query->whereMonth('orders.updated_at', $referenceDate->month)
+                      ->whereYear('orders.updated_at', $referenceDate->year);
                 break;
             case 'year':
-                $query->whereYear('updated_at', $referenceDate->year);
+                $query->whereYear('orders.updated_at', $referenceDate->year);
                 break;
             case 'day':
             default:
-                $query->whereDate('updated_at', $referenceDate->toDateString());
+                $query->whereDate('orders.updated_at', $referenceDate->toDateString());
                 break;
         }
 
-        $totalRevenue = (clone $query)->sum('total_price');
-        $totalOrders = (clone $query)->count();
-
-        $individualOrders = (clone $query)->where(function($q) {
-            $q->whereNull('reservation_id')
-              ->orWhereHas('reservation', function($sub) {
-                  $sub->where('type', 'individual');
-              });
-        })->count();
-
-        $groupOrders = (clone $query)->whereHas('reservation', function($q) {
-            $q->where('type', 'group');
-        })->count();
+        $stats = $query->leftJoin('reservations', 'orders.reservation_id', '=', 'reservations.id')
+            ->selectRaw("
+                COALESCE(SUM(orders.total_price), 0) as total_revenue,
+                COUNT(orders.id) as total_orders,
+                COUNT(CASE WHEN orders.reservation_id IS NULL OR reservations.type = 'individual' THEN 1 END) as individual_orders,
+                COUNT(CASE WHEN reservations.type = 'group' THEN 1 END) as group_orders
+            ")
+            ->first();
 
         return [
-            'total_revenue' => (float)$totalRevenue,
-            'total_orders' => $totalOrders,
-            'individual_orders' => $individualOrders,
-            'group_orders' => $groupOrders,
+            'total_revenue' => (float)$stats->total_revenue,
+            'total_orders' => (int)$stats->total_orders,
+            'individual_orders' => (int)$stats->individual_orders,
+            'group_orders' => (int)$stats->group_orders,
             'period' => $period
         ];
     }
