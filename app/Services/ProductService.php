@@ -33,6 +33,9 @@ class ProductService
     {
         $product = Product::findOrFail($id);
         
+        // [WHY] Ensure we don't overwrite the image column with null if no new file is uploaded
+        unset($data['image']);
+        
         if ($imageFile) {
             // [WHY] Delete old image if it exists
             if ($product->image) {

@@ -118,13 +118,29 @@ Không dùng Redux cho modal/input/toggle
 - >200 dòng → tách  
 - Tách UI và logic  
 
-## Performance
-React.memo  
-useMemo  
-useCallback  
-
 ## Clean Code
 Không code dư, không biến thừa  
+
+# 🖼️ Image Processing Rules
+
+## Frontend (Required)
+- **Auto-Compression**: Sử dụng `browser-image-compression` để nén ảnh trước khi upload.
+- **Dimensions**: Tự động resize ảnh về tối đa **1200x1200px**.
+- **File Size**: Nén ảnh xuống dưới **1MB** (1024KB).
+- **Feedback**: Hiển thị trạng thái "Đang nén ảnh..." trong quá trình xử lý.
+- **Memory Management**: 
+    - Sử dụng `URL.createObjectURL` cho preview (không dùng Base64).
+    - Phải thực hiện `URL.revokeObjectURL` để tránh memory leak.
+- **Input Reset**: Reset `e.target.value = ''` sau mỗi lần chọn để có thể chọn lại cùng một file.
+
+## Backend (Validation)
+- **Laravel Rule**: enforce `'image' => 'nullable|image|max:1024'`.
+- **Preserve Logic**: Khi Edit, giữ lại ảnh cũ nếu không có file mới được upload (không overwrite null).
+
+## Performance Impact
+- Giảm 70-90% băng thông upload.
+- Tối ưu bộ nhớ browser khi xử lý ảnh phân giải cao.
+- Tránh lag khi hiển thị danh sách Menu có nhiều ảnh thumbnail.
 
 # 📁 File Naming Conventions
 
