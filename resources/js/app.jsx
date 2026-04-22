@@ -43,12 +43,12 @@ const RouteBodyClass = () => {
     useEffect(() => {
         // Preserve common classes, remove existing page-* classes
         const existingClasses = document.body.className.split(' ').filter(c => c && !c.startsWith('page-'));
-        
+
         // Sanitize path (e.g., /reservations/edit/1 -> reservations-edit)
-        const pathSegments = location.pathname === '/' 
-            ? ['home'] 
+        const pathSegments = location.pathname === '/'
+            ? ['home']
             : location.pathname.split('/').filter(p => p && isNaN(p));
-            
+
         const pageClass = `page-${pathSegments.join('-')}`;
         document.body.className = [...existingClasses, pageClass].join(' ');
     }, [location]);
@@ -126,16 +126,16 @@ function App() {
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            
+
             channel.listen('.reservation_updated', (data) => {
                 // [WHY] Update the normalized Redux store directly from the socket payload
                 // The backend sends { id: ..., action: ..., reservation: ... }
                 // Note: The backend event might need a small update to include the full reservation if it doesn't already
                 // but for now we follow the 'id' + 'reservation' payload structure.
-                dispatch(updateReservationFromSocket({ 
-                    id: data.id.toString(), 
+                dispatch(updateReservationFromSocket({
+                    id: data.id.toString(),
                     reservation: data.reservation,
-                    action: data.action 
+                    action: data.action
                 }));
             });
 
@@ -160,22 +160,22 @@ function App() {
 
                     {/* Cashier page: Access by admin, cashier */}
                     <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout hideHeader={true}><Cashier /></DefaultLayout></RoleProtectedRoute>} />
-                    
+
                     {/* Expenses: Access by admin, cashier */}
                     <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
-                    
+
                     {/* Bill page: Access by admin, bill */}
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['bill']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
-                    
+
                     {/* Kitchen page: Access by admin, kitchen */}
                     <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
-                    
+
                     {/* Bar page: Access by admin, bar */}
                     <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['bar']}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Admin: strictly admin only */}
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
-                    
+
                     {/* Checkout (Related to cashier/billing) */}
                     <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'bill']}><Checkout /></RoleProtectedRoute>} />
                 </Route>
