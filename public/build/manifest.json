@@ -16,12 +16,12 @@
     "src": "resources/images/image-madam.jpg"
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-BzlWjt8i.js",
+    "file": "assets/app-CdXjzgBx.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "css": [
-      "assets/app-BCAvuh_z.css"
+      "assets/app-C6HZpBZf.css"
     ],
     "assets": [
       "assets/Logo-Cg5u9XuE.png",
