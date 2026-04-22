@@ -3,8 +3,14 @@ import { useExpenseManagement } from '../hooks/useExpenseManagement';
 import ExpenseFormModal from '../components/admin/ExpenseFormModal';
 import ExpenseListDesktop from '../components/admin/ExpenseListDesktop';
 import ExpenseListMobile from '../components/admin/ExpenseListMobile';
-import { formatPrice } from '../shared/utils/formatCurrency';
+import ExpenseFilterHeader from '../components/admin/expenses/ExpenseFilterHeader';
+import ExpenseAdvancedFilters from '../components/admin/expenses/ExpenseAdvancedFilters';
 
+/**
+ * Expense Management Page Component
+ * WHY: Manages the expense dashboard state, filtering orchestration, and CRUD operations.
+ * Adheres to <200 lines rule by further modularizing the filter segments which fixed the layout breakage.
+ */
 const ExpenseManagement = () => {
     const {
         expenses,
@@ -20,11 +26,13 @@ const ExpenseManagement = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState(null);
+    
+    // Filtering States
     const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState('all'); // all, fixed, variable
+    const [typeFilter, setTypeFilter] = useState('all'); 
     const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString()); 
     const [monthFilter, setMonthFilter] = useState(''); 
-    const [dateFilter, setDateFilter] = useState('');   // YYYY-MM-DD
+    const [dateFilter, setDateFilter] = useState('');
 
     const handleAddExpense = () => {
         setEditingExpense(null);
@@ -48,14 +56,13 @@ const ExpenseManagement = () => {
 
     const allCategories = getAllCategories();
 
+    // WHY: Client-side filtering logic for optimized performance
     const filteredExpenses = expenses.filter(e => {
         const categoryLabel = allCategories.find(cat => cat.value === e.category)?.label || e.category;
         const matchesSearch = (e.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
             (categoryLabel?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
         const matchesType = typeFilter === 'all' || e.type === typeFilter;
-
-        // [WHY] Precise filtering by date, year and month
         const matchesDate = !dateFilter || e.date === dateFilter;
         
         const expenseYear = e.date?.split('-')[0];
@@ -81,119 +88,31 @@ const ExpenseManagement = () => {
             <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                 {/* Header / Actions Area */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col sm:flex-row flex-1 max-w-2xl gap-3">
-                        <div className="relative flex-1 group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Tìm kiếm chi tiêu..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="mdt-btn !text-[16px] !w-full !bg-white !pl-12 !pr-4 !py-3 placeholder:text-slate-300 focus:outline-none !text-slate-900 shadow-sm border border-slate-100"
-                            />
-                            {searchTerm && (
-                                <button
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-500 transition-colors"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="max-w-fit mx-auto md:mx-0 flex bg-slate-100 p-1 rounded-xl border border-slate-200/50 sm:w-auto h-[52px]">
-                            {['all', 'variable', 'fixed'].map((type) => (
-                                <button
-                                    key={type}
-                                    onClick={() => setTypeFilter(type)}
-                                    className={`cursor-pointer px-4 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${typeFilter === type
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-400 hover:text-slate-600'}`}
-                                >
-                                    {type === 'all' ? 'Tất cả' : type === 'fixed' ? 'Cố định' : 'Biến đổi'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    <ExpenseFilterHeader 
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        typeFilter={typeFilter}
+                        setTypeFilter={setTypeFilter}
+                    />
 
                     <button
                         onClick={handleAddExpense}
-                        className="mdt-btn flex items-center justify-center gap-2 group self-stretch md:self-auto"
+                        className="mdt-btn flex items-center justify-center gap-2 group self-stretch md:self-auto h-[52px]"
                     >
                         <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                         <span>Thêm chi tiêu</span>
                     </button>
                 </div>
 
-                {/* Advanced Filters */}
-                <div className="mt-4 flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm min-w-[280px] flex-1 sm:flex-none h-[52px]">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Tháng/Năm:</span>
-                        <div className="flex items-center flex-1">
-                            <select 
-                                value={monthFilter}
-                                onChange={(e) => {
-                                    setMonthFilter(e.target.value);
-                                    if (e.target.value) setDateFilter('');
-                                }}
-                                className="bg-transparent border-none text-[13px] font-black uppercase text-slate-800 focus:ring-0 p-0 cursor-pointer flex-1 text-center sm:text-left appearance-none"
-                            >
-                                <option value="">Tất cả tháng</option>
-                                {Array.from({ length: 12 }, (_, i) => {
-                                    const m = (i + 1).toString().padStart(2, '0');
-                                    return <option key={m} value={m}>Tháng {m}</option>;
-                                })}
-                            </select>
-                            <span className="text-slate-300 mx-1">/</span>
-                            <select 
-                                value={yearFilter}
-                                onChange={(e) => {
-                                    setYearFilter(e.target.value);
-                                    if (e.target.value) setDateFilter('');
-                                }}
-                                className="bg-transparent border-none text-[13px] font-black uppercase text-slate-800 focus:ring-0 p-0 cursor-pointer w-[60px] text-center sm:text-left appearance-none"
-                            >
-                                <option value="">Năm</option>
-                                {[2024, 2025, 2026].map(y => (
-                                    <option key={y} value={y.toString()}>{y}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm min-w-[200px] flex-1 sm:flex-none h-[52px]">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Ngày:</span>
-                        <input 
-                            type="date" 
-                            value={dateFilter}
-                            onChange={(e) => {
-                                setDateFilter(e.target.value);
-                                if (e.target.value) {
-                                    setMonthFilter(''); 
-                                    setYearFilter('');
-                                }
-                            }}
-                            className="bg-transparent border-none text-[13px] font-black uppercase text-slate-800 focus:ring-0 p-0 cursor-pointer w-full text-center sm:text-left"
-                        />
-                    </div>
-
-                    {/* [WHY] Clear Filters button only appears when date/month filters are applied as requested */}
-                    {(monthFilter || dateFilter || (yearFilter !== new Date().getFullYear().toString() && yearFilter !== '')) && (
-                        <button 
-                            onClick={() => {
-                                setMonthFilter('');
-                                setYearFilter(new Date().getFullYear().toString());
-                                setDateFilter('');
-                            }}
-                            className="text-[9px] h-[52px] font-black text-orange-500 uppercase tracking-widest hover:text-orange-600 transition-all flex items-center justify-center gap-1.5 px-6 bg-orange-50 rounded-xl border border-orange-100/50 flex-1 sm:flex-none active:scale-95"
-                        >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                            Xóa bộ lọc
-                        </button>
-                    )}
-                </div>
+                {/* Advanced Filters Area */}
+                <ExpenseAdvancedFilters 
+                    yearFilter={yearFilter}
+                    setYearFilter={setYearFilter}
+                    monthFilter={monthFilter}
+                    setMonthFilter={setMonthFilter}
+                    dateFilter={dateFilter}
+                    setDateFilter={setDateFilter}
+                />
 
                 {error && (
                     <div className="bg-red-50 text-red-600 p-5 rounded-3xl text-[11px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-4 animate-in shake duration-500 mt-4">
@@ -203,7 +122,6 @@ const ExpenseManagement = () => {
                 )}
 
                 <div className="mt-6">
-                    {/* Desktop Table View */}
                     <ExpenseListDesktop
                         filteredExpenses={filteredExpenses}
                         allCategories={allCategories}
@@ -211,7 +129,6 @@ const ExpenseManagement = () => {
                         deleteExpense={deleteExpense}
                     />
 
-                    {/* Mobile Card Grid View */}
                     <ExpenseListMobile
                         filteredExpenses={filteredExpenses}
                         allCategories={allCategories}
