@@ -1,8 +1,8 @@
 import React from 'react';
-import { useRevenueReport } from '../../hooks/useRevenueReport';
-import RevenuePeriodSelector from './reporting/RevenuePeriodSelector';
-import RevenueDateFilters from './reporting/RevenueDateFilters';
-import RevenueStatsContent from './reporting/RevenueStatsContent';
+import { useRevenueReport } from '../../../hooks/useRevenueReport';
+import RevenuePeriodSelector from './RevenuePeriodSelector';
+import RevenueDateFilters from './RevenueDateFilters';
+import RevenueStatsContent from './RevenueStatsContent';
 
 /**
  * AdminRevenueReport Component
