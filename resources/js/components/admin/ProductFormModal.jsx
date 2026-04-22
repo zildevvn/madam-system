@@ -136,15 +136,33 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-[16px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
                 <div className="px-3 py-2 lg:px-6 lg:py-4 border-b border-gray-50 flex items-center justify-between flex-shrink-0">
-                    <h4 className="text-gray-900 mb-0 font-black">
+                    <h4 className="text-gray-900 mb-0 font-black text-sm lg:text-base">
                         {product ? 'Chỉnh sửa món' : 'Thêm món mới'}
                     </h4>
-                    <button onClick={onClose} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all" type="button">
+                    <button 
+                        onClick={onClose} 
+                        disabled={processing || isCompressing}
+                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed" 
+                        type="button"
+                    >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit(onFormSubmit)} className="px-3 py-2 lg:px-6 lg:py-4 space-y-3 lg:space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                <div className="flex-1 min-h-0 relative">
+                    {/* Processing Overlay */}
+                    {(processing || isCompressing) && (
+                        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-in fade-in duration-300">
+                            <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white shadow-xl border border-gray-100">
+                                <div className="w-8 h-8 border-3 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+                                <span className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] animate-pulse">
+                                    {isCompressing ? 'Đang tối ưu ảnh...' : 'Đang lưu dữ liệu...'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit(onFormSubmit)} className="px-3 py-2 lg:px-6 lg:py-4 space-y-3 lg:space-y-4 overflow-y-auto custom-scrollbar h-full">
                     {serverError && (
                         <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -276,7 +294,8 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
+                            disabled={processing || isCompressing}
+                            className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50"
                         >
                             Hủy
                         </button>
@@ -296,6 +315,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         </button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     );
