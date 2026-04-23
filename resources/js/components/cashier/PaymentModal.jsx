@@ -78,7 +78,7 @@ const PaymentModal = ({
     const totalQty = draftItems.reduce((s, i) => s + i.quantity, 0);
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
             <div className="bg-white rounded-t-[32px] sm:rounded-[24px] w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[88vh]">
 
                 {/* ─── HEADER: Compact ─── */}
