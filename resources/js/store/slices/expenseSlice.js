@@ -9,7 +9,10 @@ export const fetchExpensesAsync = createAsyncThunk(
             const response = await expenseApi.getExpenses();
             return response.data; // Expected format: Array of expenses
         } catch (error) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to fetch expenses');
+            const message = error.response?.data?.errors 
+                ? Object.values(error.response.data.errors).flat().join(' ')
+                : (error.response?.data?.message || 'Failed to fetch expenses');
+            return rejectWithValue(message);
         }
     }
 );
@@ -21,7 +24,10 @@ export const createExpenseAsync = createAsyncThunk(
             const response = await expenseApi.createExpense(expenseData);
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to create expense');
+            const message = error.response?.data?.errors 
+                ? Object.values(error.response.data.errors).flat().join(' ')
+                : (error.response?.data?.message || 'Failed to create expense');
+            return rejectWithValue(message);
         }
     }
 );
@@ -33,7 +39,10 @@ export const updateExpenseAsync = createAsyncThunk(
             const response = await expenseApi.updateExpense(id, data);
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to update expense');
+            const message = error.response?.data?.errors 
+                ? Object.values(error.response.data.errors).flat().join(' ')
+                : (error.response?.data?.message || 'Failed to update expense');
+            return rejectWithValue(message);
         }
     }
 );

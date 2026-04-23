@@ -76,7 +76,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
                             <div className="space-y-2">
                                 <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Số tiền (VND)</label>
                                 <input
-                                    {...register('amount', { required: true })}
+                                    {...register('amount', { required: true, valueAsNumber: true })}
                                     type="number"
                                     placeholder="0"
                                     className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal shadow-inner ${errors.amount ? 'ring-2 ring-red-500/20 bg-red-50/20' : ''}`}
