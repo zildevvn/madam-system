@@ -2,17 +2,63 @@ import React from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }) => {
+    const [printDate] = React.useState(new Date());
     if (!order) return null;
 
-    const subtotal = order.items.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const totalQuantity = order.items.reduce((total, item) => total + item.quantity, 0);
     const orderItems = order.items || [];
+    const subtotal = orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const totalQuantity = orderItems.reduce((total, item) => total + item.quantity, 0);
 
     const discountAmount = discountType === 'percent'
         ? Math.min(subtotal, (subtotal * discountValue) / 100)
         : Math.min(subtotal, discountValue);
 
     const finalTotal = Math.max(0, subtotal - discountAmount);
+
+    const formatReceiptDate = (date) => {
+        if (!date) return '-';
+        return new Intl.DateTimeFormat('vi-VN', {
+            hour: '2-digit', minute: '2-digit',
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        }).format(new Date(date)).replace(',', '');
+    };
+
+    // ─── LOGIC: Table & Group Info ───
+    const isGroupReservation = order.reservation && order.reservation.type === 'group';
+    
+    const tableIds = isGroupReservation && Array.isArray(order.reservation.table_ids)
+        ? order.reservation.table_ids
+            .map(id => id.toString().replace(/^Bàn\s+/i, ''))
+            .sort((a, b) => parseInt(a) - parseInt(b))
+        : [];
+
+    const displayTableName = tableIds.length > 0
+        ? tableIds.join('-')
+        : (order.tableName || tableName || order.table?.name || order.table?.id.toString() || '-')
+            .toString()
+            .replace(/^Bàn\s+/i, '');
+
+    const groupedItems = Object.entries(
+        orderItems.reduce((acc, item) => {
+            let tGroup;
+            if (isGroupReservation) {
+                // Shared pre-order items go to GROUP, individual extras go to their table
+                tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
+            } else {
+                // Standard staff-merge: group by table
+                tGroup = item.tableId || order.tableId;
+            }
+            if (!acc[tGroup]) acc[tGroup] = [];
+            acc[tGroup].push(item);
+            return acc;
+        }, {})
+    ).sort(([a], [b]) => {
+        if (a === 'GROUP') return -1;
+        if (b === 'GROUP') return 1;
+        return Number(a) - Number(b);
+    });
+
+    const showTableHeaders = groupedItems.length > 1 || isGroupReservation;
 
     return (
         <div id="receipt-print-area" className="receipt-print-only">
@@ -25,21 +71,10 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                 <div className="receipt-meta">
                     <div className="receipt-meta-row">
                         <span>Tại bàn</span>
-                        <span>{(() => {
-                            const isGroupReservation = order.reservation && order.reservation.type === 'group';
-                            if (isGroupReservation && Array.isArray(order.reservation.table_ids)) {
-                                return order.reservation.table_ids
-                                    .map(id => id.toString().replace(/^Bàn\s+/i, ''))
-                                    .sort((a, b) => parseInt(a) - parseInt(b))
-                                    .join('-');
-                            }
-                            return (order.tableName || tableName || order.table?.name || order.table?.id.toString() || '-')
-                                .toString()
-                                .replace(/^Bàn\s+/i, '');
-                        })()}</span>
+                        <span>{displayTableName}</span>
                     </div>
 
-                    {order.reservation && order.reservation.type === 'group' && (
+                    {isGroupReservation && (
                         <>
                             {(order.reservation.company_name || order.reservation.lead_name) && (
                                 <div className="receipt-meta-row">
@@ -58,17 +93,11 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
 
                     <div className="receipt-meta-row">
                         <span>Giờ vào</span>
-                        <span>{new Intl.DateTimeFormat('vi-VN', {
-                            hour: '2-digit', minute: '2-digit',
-                            day: '2-digit', month: '2-digit', year: 'numeric'
-                        }).format(new Date(order.startTime || order.created_at)).replace(',', '')}</span>
+                        <span>{formatReceiptDate(order.startTime || order.created_at)}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>Giờ in</span>
-                        <span>{new Intl.DateTimeFormat('vi-VN', {
-                            hour: '2-digit', minute: '2-digit',
-                            day: '2-digit', month: '2-digit', year: 'numeric'
-                        }).format(new Date()).replace(',', '')}</span>
+                        <span>{formatReceiptDate(printDate)}</span>
                     </div>
                     <div className="receipt-meta-row">
                         <span>Thu ngân</span>
@@ -93,86 +122,55 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                         </tr>
                     </thead>
                     <tbody>
-                        {(() => {
-                            const isGroupReservation = order.reservation && order.reservation.type === 'group';
-                            const groupTableIds = isGroupReservation && Array.isArray(order.reservation.table_ids)
-                                ? order.reservation.table_ids.map(id => id.toString().replace(/^Bàn\s+/i, '')).sort((a, b) => parseInt(a) - parseInt(b))
-                                : [];
+                        {groupedItems.map(([tGroup, tableItems]) => {
+                            const sectionSubtotal = tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+                            const isSharedSection = tGroup === 'GROUP';
 
-                            const tablesWithItems = Object.entries(
-                                orderItems.reduce((acc, item) => {
-                                    // [RULE] Sync with PaymentItemEditor.jsx grouping logic
-                                    let tGroup;
-                                    if (isGroupReservation) {
-                                        // Shared pre-order items go to GROUP, individual extras go to their table
-                                        tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
-                                    } else {
-                                        // Standard staff-merge: group by table
-                                        tGroup = item.tableId || order.tableId;
-                                    }
+                            // [SYNC] Use same naming as PaymentItemEditor
+                            const displayTableTitle = isSharedSection
+                                ? `Món chung${tableIds.length > 0 ? ` (Bàn ${tableIds.join('-')})` : ''}`
+                                : `Bàn ${tGroup.toString().split('-')[0]}`;
 
-                                    if (!acc[tGroup]) acc[tGroup] = [];
-                                    acc[tGroup].push(item);
-                                    return acc;
-                                }, {})
-                            ).sort(([a], [b]) => {
-                                if (a === 'GROUP') return -1;
-                                if (b === 'GROUP') return 1;
-                                return Number(a) - Number(b);
-                            });
-
-                            const showTableHeaders = tablesWithItems.length > 1 || isGroupReservation;
-
-                            return tablesWithItems.map(([tGroup, tableItems]) => {
-                                const subtotal = tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-                                const isSharedSection = tGroup === 'GROUP';
-
-                                // [SYNC] Use same naming as PaymentItemEditor
-                                const displayTableTitle = isSharedSection
-                                    ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.join('-')})` : ''}`
-                                    : `Bàn ${tGroup.toString().split('-')[0]}`;
-
-                                return (
-                                    <React.Fragment key={tGroup}>
-                                        {showTableHeaders && (
-                                            <tr className="receipt-table-header-row">
-                                                <td colSpan="3" align="left" style={{
-                                                    fontWeight: 'bold',
-                                                    backgroundColor: isSharedSection ? '#fff5f0' : '#f9f9f9',
-                                                    padding: '4px 8px',
-                                                    fontSize: '10px',
-                                                    borderBottom: '1px solid #eee',
-                                                    color: isSharedSection ? '#ff4d00' : 'inherit',
-                                                    textTransform: 'uppercase'
-                                                }}>
-                                                    {displayTableTitle}
-                                                </td>
-                                            </tr>
-                                        )}
-                                        {tableItems.map((item, idx) => (
-                                            <tr key={idx}>
-                                                <td align="left">
-                                                    <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
-                                                    <div className="receipt-item-price">{formatPrice(item.price || 0)}</div>
-                                                </td>
-                                                <td align="center">{item.quantity}</td>
-                                                <td align="right">{formatPrice((item.price || 0) * item.quantity)}</td>
-                                            </tr>
-                                        ))}
-                                        {showTableHeaders && (
-                                            <tr className="receipt-subtotal-row" style={{ marginBottom: '8px' }}>
-                                                <td colSpan="2" align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontStyle: 'italic', color: '#666' }}>
-                                                    Cộng {isSharedSection ? 'phần chung' : `bàn ${tGroup}`}:
-                                                </td>
-                                                <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontWeight: 'bold' }}>
-                                                    {formatPrice(subtotal)}
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            });
-                        })()}
+                            return (
+                                <React.Fragment key={tGroup}>
+                                    {showTableHeaders && (
+                                        <tr className="receipt-table-header-row">
+                                            <td colSpan="3" align="left" style={{
+                                                fontWeight: 'bold',
+                                                backgroundColor: isSharedSection ? '#fff5f0' : '#f9f9f9',
+                                                padding: '4px 8px',
+                                                fontSize: '10px',
+                                                borderBottom: '1px solid #eee',
+                                                color: isSharedSection ? '#ff4d00' : 'inherit',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                {displayTableTitle}
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {tableItems.map((item, idx) => (
+                                        <tr key={idx}>
+                                            <td align="left">
+                                                <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
+                                                <div className="receipt-item-price">{formatPrice(item.price || 0)}</div>
+                                            </td>
+                                            <td align="center">{item.quantity}</td>
+                                            <td align="right">{formatPrice((item.price || 0) * item.quantity)}</td>
+                                        </tr>
+                                    ))}
+                                    {showTableHeaders && (
+                                        <tr className="receipt-subtotal-row" style={{ marginBottom: '8px' }}>
+                                            <td colSpan="2" align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontStyle: 'italic', color: '#666' }}>
+                                                Cộng {isSharedSection ? 'phần chung' : `bàn ${tGroup}`}:
+                                            </td>
+                                            <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontWeight: 'bold' }}>
+                                                {formatPrice(sectionSubtotal)}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
                         <tr className="receipt-total-row">
                             <td align="left">Tiền hàng ({totalQuantity})</td>
                             <td colSpan="2" align="right">{formatPrice(subtotal)}</td>
