@@ -36,13 +36,13 @@ export default function StaffOrder() {
 
             // [FIX] Listen to the specific broadcastAs names sent by the backend
             channel.listen('.order_created', handleUpdate)
-                  .listen('.order_updated', handleUpdate)
-                  .listen('.item_status_updated', handleUpdate);
+                .listen('.order_updated', handleUpdate)
+                .listen('.item_status_updated', handleUpdate);
 
             return () => {
                 channel.stopListening('.order_created', handleUpdate)
-                       .stopListening('.order_updated', handleUpdate)
-                       .stopListening('.item_status_updated', handleUpdate);
+                    .stopListening('.order_updated', handleUpdate)
+                    .stopListening('.item_status_updated', handleUpdate);
             };
         }
     }, [dispatch]);
