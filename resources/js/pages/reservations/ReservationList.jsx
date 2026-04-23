@@ -86,7 +86,12 @@ const ReservationList = () => {
 
     const formatDate = (date) => {
         if (!date) return '';
-        return typeof date === 'string' ? date.split('T')[0] : '';
+        const dateStr = typeof date === 'string' ? date.split('T')[0] : '';
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const [year, month, day] = parts;
+        return `${day}-${month}-${year}`;
     };
 
     const handlers = useMemo(() => ({
