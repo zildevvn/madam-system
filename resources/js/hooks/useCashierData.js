@@ -53,7 +53,13 @@ export const useCashierData = (status) => {
                 .listen('.item_status_updated', handleUpdate)
                 .listen('.reservation_updated', handleUpdate);
 
-            return () => window.Echo.leaveChannel('orders');
+            return () => {
+                // [FIX] Surgical cleanup to avoid killing shared 'orders' subscribers
+                channel.stopListening('.order_created', handleUpdate)
+                    .stopListening('.order_updated', handleUpdate)
+                    .stopListening('.item_status_updated', handleUpdate)
+                    .stopListening('.reservation_updated', handleUpdate);
+            };
         }
     }, [loadReservations, loadHistory]);
 

@@ -31,11 +31,19 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
             const channel = window.Echo.channel('orders');
             const handleUpdate = () => dispatch(fetchTables());
 
+            // [WHY] Listen for all relevant order/item events.
+            // [RULE] We use specific event names matching the backend's broadcastAs() values.
             channel.listen('.order_created', handleUpdate)
                 .listen('.order_updated', handleUpdate)
                 .listen('.item_status_updated', handleUpdate);
 
-            return () => window.Echo.leaveChannel('orders');
+            return () => {
+                // [FIX] Use stopListening instead of leaveChannel to avoid killing 
+                // subscriptions for other hooks sharing this channel on the same page.
+                channel.stopListening('.order_created', handleUpdate)
+                    .stopListening('.order_updated', handleUpdate)
+                    .stopListening('.item_status_updated', handleUpdate);
+            };
         }
     }, [dispatch]);
 
