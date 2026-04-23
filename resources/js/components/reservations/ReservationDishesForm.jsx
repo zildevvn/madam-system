@@ -20,6 +20,7 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                 {fields.map((field, index) => (
                     <div key={field.id} className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm md:shadow-none md:border-none md:p-0 md:bg-transparent flex flex-col md:flex-row gap-3 items-stretch md:items-end animate-in fade-in slide-in-from-left-2 duration-200">
                         <div className="flex-1">
+                            <input type="hidden" {...register(`dishes.${index}.id`)} />
                             <label className={`text-[10px] font-black text-gray-700 uppercase mb-1 ${index === 0 ? 'block' : 'block md:hidden'}`}>Dish Name</label>
                             <input {...register(`dishes.${index}.name`, { required: true })} className={inputClasses} placeholder="Enter dish name..." />
                         </div>

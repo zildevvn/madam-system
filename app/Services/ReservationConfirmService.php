@@ -62,18 +62,23 @@ class ReservationConfirmService
             }
 
             // [WHY] Convert reservation_items -> order_items
-            // [RULE] We generate an array to do a bulk insert, avoiding N+1 INSERTS
+            // [RULE] If editing an existing reservation that already has an order, 
+            // only sync the items that haven't been sent yet.
+            $existingReservationItemIds = $mainOrder->items()
+                ->where('source', 'reservation')
+                ->whereNotNull('reservation_item_id')
+                ->pluck('reservation_item_id')
+                ->toArray();
+
             $orderItemsToInsert = [];
             $now = now();
             
-            // [WHY] Prevent duplication: delete existing items from this reservation in the main order 
-            // before re-inserting the fresh set.
-            $mainOrder->items()->where('source', 'reservation')->delete();
-            
-            // [WHY] Recalculate total price starting from fresh baseline (non-reservation items)
-            $totalPrice = $mainOrder->items()->where('source', '!=', 'reservation')->sum(DB::raw('price * quantity'));
-            
-            foreach ($reservation->items as $resItem) {
+            // [WHY] Filter only for genuinely NEW reservation items (prevents kitchen duplicates on edit)
+            $newItems = $reservation->items->filter(function($item) use ($existingReservationItemIds) {
+                return !in_array($item->id, $existingReservationItemIds);
+            });
+
+            foreach ($newItems as $resItem) {
                 $orderItemsToInsert[] = [
                     'order_id' => $mainOrder->id,
                     'product_id' => null, 
@@ -88,12 +93,14 @@ class ReservationConfirmService
                     'created_at' => $now,
                     'updated_at' => $now
                 ];
-                $totalPrice += ($resItem->price * $resItem->quantity);
             }
 
             if (!empty($orderItemsToInsert)) {
                 OrderItem::insert($orderItemsToInsert);
             }
+
+            // [WHY] Always recalculate the full order totals including existing and new items
+            $totalPrice = $mainOrder->items()->sum(DB::raw('price * quantity'));
 
             // Always update order totals to stay in sync
             $mainOrder->update([
@@ -102,10 +109,13 @@ class ReservationConfirmService
             ]);
 
             // [WHY] Trigger real-time data push to Kitchen and Bill systems
-            // [RULE] Wrap in try-catch to ensure broadcast failure doesn't rollback the save
+            // [RULE] If new items were added, broadcast as 'order_created' to trigger 
+            // sound notifications and highlights in the kitchen/bar systems.
+            $action = $newItems->isNotEmpty() ? 'order_created' : 'order_updated';
+
             try {
                 if ($mainOrder) {
-                    event(new \App\Events\OrderUpdated($mainOrder, 'order_created'));
+                    event(new \App\Events\OrderUpdated($mainOrder, $action));
                 }
             } catch (\Exception $e) {
                 \Log::warning("Real-time broadcast failed during reservation confirmation: " . $e->getMessage());

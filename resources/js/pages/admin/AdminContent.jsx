@@ -1,6 +1,6 @@
 import React from 'react';
 import AdminRevenueReport from '../../components/admin/AdminRevenueReport/AdminRevenueReport';
-import RevenueExpensesContent from '../../components/admin/AdminRevenueReport/RevenueExpensesContent';
+import AdminExpenses from '../../components/admin/AdminRevenueReport/AdminExpenses';
 
 /**
  * AdminContent Component
@@ -14,7 +14,7 @@ const AdminContent = () => {
             <AdminRevenueReport />
 
             {/* Expenses Report Section */}
-            {/* <RevenueExpensesContent /> */}
+            <AdminExpenses />
         </div>
     );
 };
