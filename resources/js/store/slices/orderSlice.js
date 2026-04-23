@@ -22,13 +22,13 @@ export const cancelOrderAsync = createAsyncThunk('order/cancelOrder', async (ord
 });
 
 export const updateOrderTableAsync = createAsyncThunk('order/updateTable', async ({ orderId, tableId }) => {
-    const data = await orderApi.updateOrderTable(orderId, tableId);
-    return data.data;
+  const data = await orderApi.updateOrderTable(orderId, tableId);
+  return data.data;
 });
 
 export const updateItemStatusAsync = createAsyncThunk('order/updateItemStatus', async ({ itemId, status }) => {
-    const data = await orderApi.updateItemStatus(itemId, status);
-    return data.data;
+  const data = await orderApi.updateItemStatus(itemId, status);
+  return data.data;
 });
 
 const initialState = {
@@ -100,7 +100,7 @@ const orderSlice = createSlice({
     startNewOrder: (state, action) => {
       state.tableId = action.payload; // the table id
       state.activeOrderId = null; // explicitly null since it's uncreated
-      state.orderStatus = 'draft'; 
+      state.orderStatus = 'draft';
       state.isModified = true;
       state.items = { byId: {}, allIds: [] };
     },
@@ -162,27 +162,27 @@ const orderSlice = createSlice({
       .addCase(updateOrderTableAsync.fulfilled, (state, action) => {
         const order = action.payload;
         if (order) {
-            state.activeOrderId = order.id;
-            state.orderStatus = order.status;
-            state.orderType = order.order_type;
-            state.tableId = order.table_id;
-            state.mergedTables = order.merged_tables;
-            state.isModified = false;
-            state.items.byId = {};
-            state.items.allIds = [];
-            if (order.items) {
-                order.items.forEach(orderItem => {
-                    const product = orderItem.product;
-                    if (product) {
-                        const itemData = { ...product, quantity: Number(orderItem.quantity), note: orderItem.note || '' };
-                        state.items.byId[product.id] = itemData;
-                        state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
-                        if (!state.items.allIds.includes(product.id)) {
-                            state.items.allIds.push(product.id);
-                        }
-                    }
-                });
-            }
+          state.activeOrderId = order.id;
+          state.orderStatus = order.status;
+          state.orderType = order.order_type;
+          state.tableId = order.table_id;
+          state.mergedTables = order.merged_tables;
+          state.isModified = false;
+          state.items.byId = {};
+          state.items.allIds = [];
+          if (order.items) {
+            order.items.forEach(orderItem => {
+              const product = orderItem.product;
+              if (product) {
+                const itemData = { ...product, quantity: Number(orderItem.quantity), note: orderItem.note || '' };
+                state.items.byId[product.id] = itemData;
+                state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
+                if (!state.items.allIds.includes(product.id)) {
+                  state.items.allIds.push(product.id);
+                }
+              }
+            });
+          }
         }
       });
   },
@@ -208,8 +208,8 @@ export const selectSelectedItems = createSelector(
 );
 
 export const selectOriginalItems = createSelector(
-    [selectOrderState],
-    (orderState) => orderState.originalItems
+  [selectOrderState],
+  (orderState) => orderState.originalItems
 );
 
 export default orderSlice.reducer;

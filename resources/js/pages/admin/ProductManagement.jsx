@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useProductManagement } from '../../hooks/useProductManagement';
-import ProductFormModal from './ProductFormModal';
-import CategoryFormModal from './CategoryFormModal';
-import ProductList from './ProductList';
-import CategoryList from './CategoryList';
+import ProductFormModal from '../../components/admin/ProductFormModal';
+import CategoryFormModal from '../../components/admin/CategoryFormModal';
+import ProductList from '../../components/admin/ProductList';
+import CategoryList from '../../components/admin/CategoryList';
 
 // [WHY] Component to manage products and categories in the admin dashboard.
 // [RULE] Delegated UI for lists to sub-components.

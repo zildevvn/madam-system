@@ -88,6 +88,11 @@ class StatsService
             'total_expenses' => (float)$expenseStats->total_expenses,
             'fixed_expenses' => (float)$expenseStats->fixed_expenses,
             'variable_expenses' => (float)$expenseStats->variable_expenses,
+            // [WHY] Specialized operational metrics and itemized lists requested by the user.
+            'fixed_expenses_month' => (float)Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('amount'),
+            'variable_expenses_day' => (float)Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->sum('amount'),
+            'fixed_items_month' => Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->orderBy('date', 'desc')->get(),
+            'variable_items_day' => Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->orderBy('created_at', 'desc')->get(),
             'period' => $period
         ];
     }

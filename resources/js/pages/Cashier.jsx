@@ -261,39 +261,50 @@ const Cashier = () => {
 
             {/* Separate Modal Logic for History Editing to avoid Key (RK) conflicts */}
             {editingHistoryOrder && tableContexts[`history-${editingHistoryOrder.id}`] && (
-                <PaymentModal
-                    selectedTable={editingHistoryOrder.table}
-                    currentOrder={editingHistoryOrder}
-                    isHistoryEdit={true}
-                    onClose={() => setEditingHistoryOrder(null)}
-                    onPaymentSuccess={handlePaymentSuccess}
+                <>
+                    <PaymentModal
+                        selectedTable={editingHistoryOrder.table}
+                        currentOrder={editingHistoryOrder}
+                        isHistoryEdit={true}
+                        onClose={() => setEditingHistoryOrder(null)}
+                        onPaymentSuccess={handlePaymentSuccess}
 
-                    // Controlled Props from context (isolated from active table contexts)
-                    draftItems={editingHistoryOrder.items}
-                    onUpdateDraftItems={(items) => updateTableContext(`history-${editingHistoryOrder.id}`, { draftItems: items })}
+                        // Controlled Props from context (isolated from active table contexts)
+                        draftItems={editingHistoryOrder.items}
+                        onUpdateDraftItems={(items) => updateTableContext(`history-${editingHistoryOrder.id}`, { draftItems: items })}
 
-                    discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
-                    onUpdateDiscountType={(type) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountType: type })}
+                        discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
+                        onUpdateDiscountType={(type) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountType: type })}
 
-                    discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
-                    onUpdateDiscountValue={(val) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountValue: val })}
+                        discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
+                        onUpdateDiscountValue={(val) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountValue: val })}
 
-                    step={tableContexts[`history-${editingHistoryOrder.id}`].step}
-                    onUpdateStep={(s) => updateTableContext(`history-${editingHistoryOrder.id}`, { step: s })}
+                        step={tableContexts[`history-${editingHistoryOrder.id}`].step}
+                        onUpdateStep={(s) => updateTableContext(`history-${editingHistoryOrder.id}`, { step: s })}
 
-                    cashierNote={tableContexts[`history-${editingHistoryOrder.id}`].cashierNote}
-                    onUpdateCashierNote={(note) => updateTableContext(`history-${editingHistoryOrder.id}`, { cashierNote: note })}
+                        cashierNote={tableContexts[`history-${editingHistoryOrder.id}`].cashierNote}
+                        onUpdateCashierNote={(note) => updateTableContext(`history-${editingHistoryOrder.id}`, { cashierNote: note })}
 
-                    paymentMethod={tableContexts[`history-${editingHistoryOrder.id}`].paymentMethod}
-                    onUpdatePaymentMethod={(method) => updateTableContext(`history-${editingHistoryOrder.id}`, { paymentMethod: method })}
+                        paymentMethod={tableContexts[`history-${editingHistoryOrder.id}`].paymentMethod}
+                        onUpdatePaymentMethod={(method) => updateTableContext(`history-${editingHistoryOrder.id}`, { paymentMethod: method })}
 
-                    showExtras={tableContexts[`history-${editingHistoryOrder.id}`].showExtras}
-                    onUpdateShowExtras={(show) => updateTableContext(`history-${editingHistoryOrder.id}`, { showExtras: show })}
-                />
+                        showExtras={tableContexts[`history-${editingHistoryOrder.id}`].showExtras}
+                        onUpdateShowExtras={(show) => updateTableContext(`history-${editingHistoryOrder.id}`, { showExtras: show })}
+                    />
+                    {createPortal(
+                        <Receipt
+                            order={editingHistoryOrder}
+                            tableName={editingHistoryOrder.table?.name || (editingHistoryOrder.merged_tables ? `Bàn ${editingHistoryOrder.merged_tables}` : 'Mang đi')}
+                            discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
+                            discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
+                        />,
+                        document.body
+                    )}
+                </>
             )}
         </div>
 
-            {/* Bulletproof Portal-based Print Area */}
+            {/* Bulletproof Portal-based Print Area for Active Tables */}
             {selectedTable && currentOrder && currentContext && createPortal(
                 <Receipt
                     order={currentOrder}

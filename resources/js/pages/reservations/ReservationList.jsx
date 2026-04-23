@@ -17,17 +17,22 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 const ReservationList = () => {
     const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
     const [dateFilter, setDateFilter] = useState('today'); // 'today' | '1'...'12'
-    const renderTime = new Date();
-    
+
+    // [STABILITY] Use a stable reference for the current time to avoid filter jumping on re-renders
+    const [renderTime] = useState(new Date());
+
     const filters = useMemo(() => {
         const params = { type: filterType === 'all' ? null : filterType };
         if (dateFilter === 'today') {
-            params.date = format(renderTime, 'yyyy-MM-dd');
+            const y = renderTime.getFullYear();
+            const m = String(renderTime.getMonth() + 1).padStart(2, '0');
+            const d = String(renderTime.getDate()).padStart(2, '0');
+            params.date = `${y}-${m}-${d}`;
         } else if (dateFilter !== 'all') {
             params.month = dateFilter;
         }
         return params;
-    }, [filterType, dateFilter]);
+    }, [filterType, dateFilter, renderTime]);
 
     const { reservations, tables, loading } = useReservations(filters);
     const user = useAppSelector(state => state.auth.user);
@@ -35,47 +40,48 @@ const ReservationList = () => {
     const [viewingReservation, setViewingReservation] = useState(null);
     const navigate = useNavigate();
 
-    // [WHY] Filter out past reservations and sort chronologically by full datetime
-    // [OPTIMIZATION] Pre-calculate timestamps once to avoid repeated parsing in sort/filter loops
+    // [WHY] Prepare and sort reservations for the current view.
+    // [FIX] Ensure items don't disappear due to aggressive "past booking" filters.
     const sortedReservations = useMemo(() => {
-        if (!reservations || reservations.length === 0) return [];
-        
+        if (!reservations || !Array.isArray(reservations)) return [];
+
         const activeNowMs = renderTime.getTime();
         const ONE_HOUR_MS = 60 * 60 * 1000;
 
         return reservations
             .map(r => {
-                const datePart = typeof r.reservation_date === 'string' ? r.reservation_date.split('T')[0] : '';
-                const timestamp = new Date(`${datePart}T${r.reservation_time}`).getTime();
-                return { ...r, _timestamp: timestamp };
+                // [ROBUST] Safe date/time parsing
+                const datePart = r.reservation_date ? r.reservation_date.split('T')[0] : '';
+                const timePart = r.reservation_time ? r.reservation_time : '00:00';
+                const timestamp = datePart ? new Date(`${datePart}T${timePart}`).getTime() : 0;
+                return { ...r, _timestamp: timestamp || 0 };
             })
             .filter(r => {
-                // [RULE] If showing "Today", show all items for today regardless of time to ensure edit visibility.
-                if (dateFilter === 'today') return true;
+                // [RULE] If showing Today or a specific Month, show ALL matching items for that period.
+                // We only hide stale "pending" items if we were looking at a general "Upcoming Events" view.
+                if (dateFilter === 'today' || dateFilter !== 'all') return true;
 
-                // [VISIBILITY] Show if:
-                // 1. The booking is marked as completed
-                // 2. The booking is in the future or started within the last hour (grace period)
                 const isCompleted = r.status === 'completed';
                 const isRecentOrUpcoming = r._timestamp >= (activeNowMs - ONE_HOUR_MS);
-
                 return isCompleted || isRecentOrUpcoming;
             })
             .sort((a, b) => {
                 // [RULE] Completed items always go to the bottom
-                if (a.status === 'completed' && b.status !== 'completed') return 1;
-                if (a.status !== 'completed' && b.status === 'completed') return -1;
+                const aDone = a.status === 'completed';
+                const bDone = b.status === 'completed';
+                if (aDone && !bDone) return 1;
+                if (!aDone && bDone) return -1;
 
-                // [RULE] Earlier time comes first (ascending chronological) using pre-calculated timestamp
+                // [RULE] Ascending chronological order
                 return a._timestamp - b._timestamp;
             })
             .map(r => ({
                 ...r,
-                lead_name: capitalizeWords(r.lead_name),
-                tour_guide_name: capitalizeWords(r.tour_guide_name),
-                company_name: capitalizeWords(r.company_name)
+                lead_name: capitalizeWords(r.lead_name || ''),
+                tour_guide_name: capitalizeWords(r.tour_guide_name || ''),
+                company_name: capitalizeWords(r.company_name || '')
             }));
-    }, [reservations, dateFilter]);
+    }, [reservations, dateFilter, renderTime]);
 
     const isManager = user?.role === 'cashier' || user?.role === 'admin';
 

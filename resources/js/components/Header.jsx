@@ -3,29 +3,29 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import LogoImg from '../../images/Logo.png';
+import { ROLES } from '../shared/constants/roles';
 
 const NavItem = ({ item, isActive, setSidebarOpen }) => {
-    const [expanded, setExpanded] = useState(false);
     const hasChildren = item.children && item.children.length > 0;
-
-    const toggleExpand = (e) => {
-        if (hasChildren) {
-            e.preventDefault();
-            setExpanded(!expanded);
-        }
-    };
-
     const isAnyChildActive = hasChildren && item.children.some(child => isActive(child.href));
+    const [expanded, setExpanded] = React.useState(isAnyChildActive);
+
+    // [WHY] Synchronize expansion state with route changes (e.g. navigation via URL)
+    React.useEffect(() => {
+        if (isAnyChildActive) {
+            setExpanded(true);
+        }
+    }, [isAnyChildActive]);
+
 
     return (
         <div className="flex flex-col">
             <Link
-                to={hasChildren ? '#' : item.href}
+                to={item.href}
                 onClick={(e) => {
+                    setSidebarOpen(false);
                     if (hasChildren) {
-                        toggleExpand(e);
-                    } else {
-                        setSidebarOpen(false);
+                        setExpanded(!expanded);
                     }
                 }}
                 className={`flex items-center justify-between px-6 py-4 text-sm font-bold transition-all duration-300 group rounded-none border-r-2 ${isActive(item.href) || isAnyChildActive
@@ -88,7 +88,7 @@ export default function Header() {
 
     const { user } = useAppSelector(state => state.auth);
 
-    const getNavigation = () => {
+    const navigation = React.useMemo(() => {
         const baseNav = [
             {
                 name: 'Admin',
@@ -101,22 +101,20 @@ export default function Header() {
 
                 ]
             },
-            { name: 'Staff Order', href: '/staff-order', roles: ['manager', 'order_staff', 'seller'] },
-            { name: 'Kitchen', href: '/kitchen', roles: ['kitchen'] },
-            { name: 'Bar', href: '/bar', roles: ['bar'] },
-            { name: 'Bills', href: '/bills', roles: ['bill'] },
-            { name: 'Cashier', href: '/cashier', roles: ['cashier'] },
-            { name: 'Reservations', href: '/reservations', roles: ['manager', 'order_staff', 'seller'] },
-            { name: 'Expense Management', href: '/expenses', roles: ['cashier'] },
+            { name: 'Staff Order', href: '/staff-order', roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER] },
+            { name: 'Kitchen', href: '/kitchen', roles: [ROLES.KITCHEN] },
+            { name: 'Bar', href: '/bar', roles: [ROLES.BAR] },
+            { name: 'Bills', href: '/bills', roles: [ROLES.BILL] },
+            { name: 'Cashier', href: '/cashier', roles: [ROLES.CASHIER] },
+            { name: 'Reservations', href: '/reservations', roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER] },
+            { name: 'Expense Management', href: '/expenses', roles: [ROLES.CASHIER] },
         ];
 
         if (!user) return [];
 
-        if (user.role === 'admin') return baseNav;
+        if (user.role === ROLES.ADMIN) return baseNav;
         return baseNav.filter(item => item.roles.includes(user.role));
-    };
-
-    const navigation = getNavigation();
+    }, [user]);
 
     const isActive = (path) => {
         if (!path || path === '#') return false;

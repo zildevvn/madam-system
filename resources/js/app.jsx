@@ -18,10 +18,10 @@ import Home from "./pages/Home";
 import StaffOrder from "./pages/StaffOrder";
 import Kitchen from "./pages/Kitchen";
 import Admin from "./pages/Admin";
-import RevenuePage from "./pages/admin/RevenuePage";
+import AdminContent from "./pages/admin/AdminContent";
 import PersonnelPage from "./pages/admin/PersonnelPage";
-import TableManagement from "./components/admin/TableManagement";
-import ProductManagement from "./components/admin/ProductManagement";
+import TableManagement from "./pages/admin/TableManagement";
+import ProductManagement from "./pages/admin/ProductManagement";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
@@ -34,6 +34,8 @@ import ExpenseManagement from './pages/ExpenseManagement';
 // Set base default header
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+import { ROLES } from "./shared/constants/roles";
 
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -75,20 +77,20 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     // Admin always has access to everything
-    if (user.role === 'admin') {
+    if (user.role === ROLES.ADMIN) {
         return children ? children : <Outlet />;
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         const getRoleRedirect = (role) => {
             switch (role) {
-                case 'kitchen': return { path: '/kitchen', label: 'Go to Kitchen Page' };
-                case 'bar': return { path: '/bar', label: 'Go to Bar Page' };
-                case 'cashier': return { path: '/cashier', label: 'Go to Cashier Page' };
-                case 'bill': return { path: '/bills', label: 'Go to Bill Page' };
-                case 'manager':
-                case 'order_staff':
-                case 'seller': return { path: '/staff-order', label: 'Go to Order Page' };
+                case ROLES.KITCHEN: return { path: '/kitchen', label: 'Go to Kitchen Page' };
+                case ROLES.BAR: return { path: '/bar', label: 'Go to Bar Page' };
+                case ROLES.CASHIER: return { path: '/cashier', label: 'Go to Cashier Page' };
+                case ROLES.BILL: return { path: '/bills', label: 'Go to Bill Page' };
+                case ROLES.MANAGER:
+                case ROLES.ORDER_STAFF:
+                case ROLES.SELLER: return { path: '/staff-order', label: 'Go to Order Page' };
                 default: return { path: '/', label: 'Return to Home' };
             }
         };
@@ -154,33 +156,33 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route element={<ProtectedRoute />}>
                     {/* Order page: Access by admin, manager, order_staff, seller */}
-                    <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
-                    <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
+                    <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
+                    <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
 
                     {/* Reservations: Access by admin, manager, order_staff, seller */}
-                    <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={['manager', 'order_staff', 'seller']}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Cashier page: Access by admin, cashier */}
-                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout hideHeader={true}><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout hideHeader={true}><Cashier /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Expenses: Access by admin, cashier */}
-                    <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={['cashier']}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Bill page: Access by admin, bill */}
-                    <Route path="/bills" element={<RoleProtectedRoute allowedRoles={['bill']}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Kitchen page: Access by admin, kitchen */}
-                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={['kitchen']}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Bar page: Access by admin, bar */}
-                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['bar']}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Admin: strictly admin only - Refactored to subpages */}
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
-                        <Route index element={<RevenuePage />} />
-                        <Route path="revenue" element={<RevenuePage />} />
+                        <Route index element={<AdminContent />} />
+                        <Route path="revenue" element={<AdminContent />} />
                         <Route path="personnel" element={<PersonnelPage />} />
                         <Route path="tables" element={<TableManagement />} />
                         <Route path="products" element={<ProductManagement />} />

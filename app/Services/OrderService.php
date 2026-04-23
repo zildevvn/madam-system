@@ -28,18 +28,18 @@ class OrderService
     {
         return Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereDoesntHave('reservation')
-                    ->orWhereHas('reservation', function($q) {
+                    ->orWhereHas('reservation', function ($q) {
                         $q->where('type', '!=', 'group');
                     });
             })
             ->with([
-                'items.product' => function($query) {
+                'items.product' => function ($query) {
                     $query->select('id', 'name', 'price', 'type');
                 },
-                'table:id,name', 
-                'server:id,name', 
+                'table:id,name',
+                'server:id,name',
                 'cashier:id,name'
             ])
             ->latest()
@@ -50,11 +50,11 @@ class OrderService
     public function getOrder($id)
     {
         return Order::with([
-            'items.product' => function($query) {
+            'items.product' => function ($query) {
                 $query->select('id', 'name', 'price', 'type');
             },
-            'table:id,name', 
-            'server:id,name', 
+            'table:id,name',
+            'server:id,name',
             'cashier:id,name'
         ])->findOrFail($id);
     }
@@ -92,9 +92,9 @@ class OrderService
         $order->save();
 
         return $order->load([
-            'items.product:id,name,price', 
-            'table:id,name', 
-            'server:id,name', 
+            'items.product:id,name,price',
+            'table:id,name',
+            'server:id,name',
             'cashier:id,name'
         ]);
     }
@@ -117,7 +117,7 @@ class OrderService
                 $productId = $itemData['product_id'];
                 $orderItem = $existingItems->get($productId);
                 $productType = $productTypes->get($productId);
-                
+
                 if (!$productType) {
                     Log::warning("Order item checkout: Product ID {$productId} has no type defined. Defaulting to 'food'.");
                     $productType = 'food';
@@ -184,9 +184,9 @@ class OrderService
 
         $order = $item->order;
         $order->load([
-            'items.product:id,name,price', 
-            'table:id,name', 
-            'server:id,name', 
+            'items.product:id,name,price',
+            'table:id,name',
+            'server:id,name',
             'cashier:id,name'
         ]);
 

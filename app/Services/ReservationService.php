@@ -59,9 +59,27 @@ class ReservationService
             $reservation->update($data);
 
             if ($hasDishesKey) {
-                $reservation->items()->delete();
-                if (!empty($dishes)) {
-                    $reservation->items()->createMany($dishes);
+                // [WHY] Implement smart sync instead of delete-all to prevent ID churn.
+                // This allows ReservationConfirmService to identify truly NEW dishes.
+                $incomingDishIds = collect($dishes)->pluck('id')->filter()->toArray();
+                
+                // 1. Delete items that were removed in the UI
+                $reservation->items()->whereNotIn('id', $incomingDishIds)->delete();
+
+                // 2. Process incoming dishes
+                foreach ($dishes as $dishData) {
+                    if (isset($dishData['id'])) {
+                        // Update existing
+                        $reservation->items()->where('id', $dishData['id'])->update([
+                            'name' => $dishData['name'],
+                            'type' => $dishData['type'],
+                            'quantity' => $dishData['quantity'],
+                            'price' => $dishData['price'],
+                        ]);
+                    } else {
+                        // Create new
+                        $reservation->items()->create($dishData);
+                    }
                 }
             }
 
