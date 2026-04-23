@@ -52,12 +52,22 @@ export const useExpenseManagement = () => {
     }, [dispatch, user]);
 
     /**
-     * Update an existing expense
+     * Update an existing expense record.
      */
     const updateExpense = useCallback(async (id, data) => {
-        const result = await dispatch(updateExpenseAsync({ id, data }));
+        if (!user?.id) {
+            console.error('User not authenticated');
+            return false;
+        }
+
+        const dataWithUser = {
+            ...data,
+            user_id: user.id
+        };
+
+        const result = await dispatch(updateExpenseAsync({ id, data: dataWithUser }));
         return updateExpenseAsync.fulfilled.match(result);
-    }, [dispatch]);
+    }, [dispatch, user]);
 
     /**
      * Delete an expense

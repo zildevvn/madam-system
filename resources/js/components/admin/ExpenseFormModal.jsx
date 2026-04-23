@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import ExpenseTypeSelector from './expenses/ExpenseTypeSelector';
 import ExpenseCategoryInput from './expenses/ExpenseCategoryInput';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, processing }) => {
     const {
@@ -24,6 +25,18 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
 
     const currentType = watch('type');
     const currentCategory = watch('category');
+    const watchedAmount = watch('amount');
+
+    const formatWithCommas = (value) => {
+        if (value === undefined || value === null || value === '') return '';
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    };
+
+    const handleAmountChange = (e) => {
+        const rawValue = e.target.value.replace(/\D/g, "");
+        const numValue = rawValue ? parseInt(rawValue, 10) : '';
+        setValue('amount', numValue, { shouldValidate: true, shouldDirty: true });
+    };
 
     useEffect(() => {
         if (expense && isOpen) {
@@ -76,11 +89,14 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
                             <div className="space-y-2">
                                 <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Số tiền (VND)</label>
                                 <input
-                                    {...register('amount', { required: true })}
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     placeholder="0"
+                                    value={formatWithCommas(watchedAmount)}
+                                    onChange={handleAmountChange}
                                     className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal shadow-inner ${errors.amount ? 'ring-2 ring-red-500/20 bg-red-50/20' : ''}`}
                                 />
+                                <input type="hidden" {...register('amount', { required: true, min: 1 })} />
                             </div>
 
                             <div className="space-y-2">

@@ -18,6 +18,10 @@ import Home from "./pages/Home";
 import StaffOrder from "./pages/StaffOrder";
 import Kitchen from "./pages/Kitchen";
 import Admin from "./pages/Admin";
+import RevenuePage from "./pages/admin/RevenuePage";
+import PersonnelPage from "./pages/admin/PersonnelPage";
+import TableManagement from "./components/admin/TableManagement";
+import ProductManagement from "./components/admin/ProductManagement";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
@@ -173,8 +177,14 @@ function App() {
                     {/* Bar page: Access by admin, bar */}
                     <Route path="/bar" element={<RoleProtectedRoute allowedRoles={['bar']}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
 
-                    {/* Admin: strictly admin only */}
-                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>} />
+                    {/* Admin: strictly admin only - Refactored to subpages */}
+                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
+                        <Route index element={<RevenuePage />} />
+                        <Route path="revenue" element={<RevenuePage />} />
+                        <Route path="personnel" element={<PersonnelPage />} />
+                        <Route path="tables" element={<TableManagement />} />
+                        <Route path="products" element={<ProductManagement />} />
+                    </Route>
 
                     {/* Checkout (Related to cashier/billing) */}
                     <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'bill']}><Checkout /></RoleProtectedRoute>} />

@@ -95,9 +95,10 @@ export default function Header() {
                 href: '/admin',
                 roles: [],
                 children: [
-                    { name: 'Nhân sự', href: '/admin?tab=personnel' },
-                    { name: 'Quản Lý Bàn', href: '/admin?tab=tables' },
-                    { name: 'Quản Lý Menu', href: '/admin?tab=products' },
+                    { name: 'Nhân sự', href: '/admin/personnel' },
+                    { name: 'Quản Lý Bàn', href: '/admin/tables' },
+                    { name: 'Quản Lý Menu', href: '/admin/products' },
+
                 ]
             },
             { name: 'Staff Order', href: '/staff-order', roles: ['manager', 'order_staff', 'seller'] },
