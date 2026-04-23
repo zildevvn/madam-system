@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const CheckoutFooter = ({ 
     totalQuantity, 
@@ -23,7 +24,7 @@ const CheckoutFooter = ({
                     </span>
                     <div className="flex flex-col items-end mt-1">
                         <span className="text-xl font-extrabold text-on-surface">
-                            {new Intl.NumberFormat('vi-VN').format(total)}đ
+                            {formatPrice(total)}đ
                         </span>
                     </div>
                 </div>
