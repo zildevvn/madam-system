@@ -23,7 +23,8 @@ class UserController extends Controller
         $users = $this->userService->getAllUsers();
         return response()->json([
             'data' => $users,
-            'message' => 'Success'
+            'message' => 'Success',
+            'errors' => null
         ]);
     }
 
@@ -35,7 +36,8 @@ class UserController extends Controller
         $user = $this->userService->getUserById($id);
         return response()->json([
             'data' => $user,
-            'message' => 'Success'
+            'message' => 'Success',
+            'errors' => null
         ]);
     }
 
@@ -60,6 +62,7 @@ class UserController extends Controller
         return response()->json([
             'data' => $user,
             'message' => 'Login successful',
+            'errors' => null
         ]);
     }
 
@@ -76,7 +79,8 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $user,
-            'message' => 'User role updated successfully'
+            'message' => 'User role updated successfully',
+            'errors' => null
         ]);
     }
 
@@ -96,7 +100,8 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $user,
-            'message' => 'User created successfully'
+            'message' => 'User created successfully',
+            'errors' => null
         ], 201);
     }
 
@@ -116,7 +121,8 @@ class UserController extends Controller
 
         return response()->json([
             'data' => $user,
-            'message' => 'User updated successfully'
+            'message' => 'User updated successfully',
+            'errors' => null
         ]);
     }
 
@@ -131,7 +137,9 @@ class UserController extends Controller
         $this->userService->deleteUser($id);
 
         return response()->json([
-            'message' => 'User deleted successfully'
+            'message' => 'User deleted successfully',
+            'data' => null,
+            'errors' => null
         ]);
     }
 }

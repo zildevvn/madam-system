@@ -23,7 +23,11 @@ export const useCheckoutLogic = () => {
     const {
         dispatch, navigate, tableId, activeOrderId, isConfirmed,
         isModified, selectedItems, originalItems, selectedTableId,
-        mergedTableIds, setMergedTableIds, setShowWarningPopup,
+        mergedTableIds, setMergedTableIds, showWarningPopup,
+        warningMessage,
+        setShowWarningPopup,
+        isTableChanged,
+        isMergeChanged,
         setWarningMessage, setSuccessMessage, setShowSuccessPopup
     } = state;
 
@@ -128,7 +132,7 @@ export const useCheckoutLogic = () => {
             const wasConfirmed = isConfirmed;
             const hasChangedTable = selectedTableId.toString() !== tableId.toString();
 
-            if (isModified || !wasConfirmed) {
+            if (isModified || isMergeChanged || !wasConfirmed) {
                 const allDrinks = selectedItems.filter(item => item.type === 'drink');
                 const hasDrinkChanges = checkForDrinkChanges(allDrinks);
                 const isTableMove = wasConfirmed && hasChangedTable;
@@ -177,7 +181,7 @@ export const useCheckoutLogic = () => {
             console.error(error);
             alert("Lỗi Order");
         }
-    }, [prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, selectedItems, checkForDrinkChanges, selectedTableId, tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, setShowSuccessPopup]);
+    }, [prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId, tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, setShowSuccessPopup]);
 
     const handleCancelOrder = useCallback(async () => {
         if (activeOrderId) await dispatch(cancelOrderAsync(activeOrderId));
