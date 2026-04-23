@@ -86,9 +86,9 @@ class ReservationController extends Controller
                 $validated['table_id'] = null;
             }
 
-            // [WHY] Ensure date is strictly YYYY-MM-DD
             if (!empty($validated['reservation_date'])) {
-                $validated['reservation_date'] = explode('T', (string)$validated['reservation_date'])[0];
+                // [FIX] Robustly extract ONLY the YYYY-MM-DD part using regex to handle any time/T format
+                $validated['reservation_date'] = preg_replace('/\s.*|T.*/', '', (string)$validated['reservation_date']);
             }
 
             $reservation = $this->reservationService->createReservation($validated);
@@ -180,9 +180,9 @@ class ReservationController extends Controller
                 $validated['table_id'] = null;
             }
 
-            // [WHY] Ensure date is strictly YYYY-MM-DD if ISO format was sent (e.g. from React DatePicker)
             if (!empty($validated['reservation_date'])) {
-                $validated['reservation_date'] = explode('T', (string)$validated['reservation_date'])[0];
+                // [FIX] Robustly extract ONLY the YYYY-MM-DD part using regex to handle any time/T format
+                $validated['reservation_date'] = preg_replace('/\s.*|T.*/', '', (string)$validated['reservation_date']);
             }
             
             $reservation = $this->reservationService->updateReservation($id, $validated, $hasDishesKey);

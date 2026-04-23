@@ -31,7 +31,7 @@ class Reservation extends Model
 
     protected $casts = [
         'table_ids' => 'array',
-        'reservation_date' => 'date'
+        'reservation_date' => 'date:Y-m-d'
     ];
 
     protected $appends = ['dishes'];

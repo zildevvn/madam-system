@@ -39,7 +39,9 @@ export const useReservationForm = (id = null, user = null) => {
                     setReservationData(data); // [WHY] Store raw data for display-only fields (e.g. updated_at, updater)
                     
                     if (data.reservation_date) {
-                        data.reservation_date = data.reservation_date.toString().split('T')[0];
+                        // [FIX] Robustly extract ONLY the YYYY-MM-DD part to prevent timezone shifts or invalid input values
+                        // Handles both ISO (T separator) and DB (space separator) formats
+                        data.reservation_date = data.reservation_date.toString().split(/[\sT]/)[0];
                     }
                     form.reset(data);
                     setActiveTab(data.type);
@@ -70,7 +72,8 @@ export const useReservationForm = (id = null, user = null) => {
         }
 
         if (payload.reservation_date) {
-            payload.reservation_date = payload.reservation_date.toString().split('T')[0];
+            // [FIX] Ensure we send a clean YYYY-MM-DD string to the API
+            payload.reservation_date = payload.reservation_date.toString().split(/[\sT]/)[0];
         }
 
         if (payload.table_id === "") payload.table_id = null;
