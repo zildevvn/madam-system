@@ -18,7 +18,7 @@ import Home from "./pages/Home";
 import StaffOrder from "./pages/StaffOrder";
 import Kitchen from "./pages/Kitchen";
 import Admin from "./pages/Admin";
-import AdminRevenueReport from "./components/admin/AdminRevenueReport/AdminRevenueReport";
+import RevenuePage from "./pages/admin/RevenuePage";
 import PersonnelPage from "./pages/admin/PersonnelPage";
 import TableManagement from "./components/admin/TableManagement";
 import ProductManagement from "./components/admin/ProductManagement";
@@ -179,8 +179,8 @@ function App() {
 
                     {/* Admin: strictly admin only - Refactored to subpages */}
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
-                        <Route index element={<AdminRevenueReport />} />
-                        <Route path="revenue" element={<AdminRevenueReport />} />
+                        <Route index element={<RevenuePage />} />
+                        <Route path="revenue" element={<RevenuePage />} />
                         <Route path="personnel" element={<PersonnelPage />} />
                         <Route path="tables" element={<TableManagement />} />
                         <Route path="products" element={<ProductManagement />} />

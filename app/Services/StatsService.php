@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
 
 class StatsService
@@ -50,11 +51,43 @@ class StatsService
             ")
             ->first();
 
+        // Calculate Expenses for the same period
+        $expenseQuery = Expense::query();
+        switch ($period) {
+            case 'week':
+                if ($startDate && $endDate) {
+                    $expenseQuery->whereBetween('date', [$startDate, $endDate]);
+                } else {
+                    $expenseQuery->whereBetween('date', [$referenceDate->copy()->startOfWeek()->toDateString(), $referenceDate->copy()->endOfWeek()->toDateString()]);
+                }
+                break;
+            case 'month':
+                $expenseQuery->whereMonth('date', $referenceDate->month)
+                             ->whereYear('date', $referenceDate->year);
+                break;
+            case 'year':
+                $expenseQuery->whereYear('date', $referenceDate->year);
+                break;
+            case 'day':
+            default:
+                $expenseQuery->whereDate('date', $referenceDate->toDateString());
+                break;
+        }
+
+        $expenseStats = $expenseQuery->selectRaw("
+            COALESCE(SUM(amount), 0) as total_expenses,
+            COALESCE(SUM(CASE WHEN type = 'fixed' THEN amount ELSE 0 END), 0) as fixed_expenses,
+            COALESCE(SUM(CASE WHEN type = 'variable' THEN amount ELSE 0 END), 0) as variable_expenses
+        ")->first();
+
         return [
             'total_revenue' => (float)$stats->total_revenue,
             'total_orders' => (int)$stats->total_orders,
             'individual_orders' => (int)$stats->individual_orders,
             'group_orders' => (int)$stats->group_orders,
+            'total_expenses' => (float)$expenseStats->total_expenses,
+            'fixed_expenses' => (float)$expenseStats->fixed_expenses,
+            'variable_expenses' => (float)$expenseStats->variable_expenses,
             'period' => $period
         ];
     }

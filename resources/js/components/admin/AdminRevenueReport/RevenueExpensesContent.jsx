@@ -1,0 +1,77 @@
+import React from 'react';
+import { useRevenueReport } from '../../../hooks/useRevenueReport';
+import { formatPrice } from '../../../shared/utils/formatCurrency';
+
+/**
+ * RevenueExpensesContent
+ * [WHY] Provides a standalone report card for operating expenses.
+ * [RULE] Displays fixed and variable expenses without its own internal filters.
+ */
+const RevenueExpensesContent = () => {
+    const {
+        stats,
+        loading
+    } = useRevenueReport();
+
+    if (loading && !stats) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[16px] border border-slate-100 shadow-sm animate-pulse">
+                <div className="w-10 h-10 rounded-full border-4 border-slate-100 border-t-rose-500 animate-spin mb-4"></div>
+                <p className="text-slate-400 font-bold text-[10px] tracking-widest uppercase">Đang tải chi phí...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className={`bg-white rounded-[16px] shadow-sm border border-slate-100 transition-all duration-500 p-6 lg:p-10 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                <div className="flex flex-col items-center">
+                    {/* Identification Header */}
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full border border-red-100/50 mb-10">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Báo cáo chi phí vận hành</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 w-full max-w-4xl">
+                        {/* Fixed Expenses */}
+                        <div className="flex flex-col items-center">
+                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-3">Cố định</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl lg:text-7xl font-black text-rose-500 tracking-tighter">
+                                    {formatPrice(stats?.fixed_expenses)}
+                                </span>
+                                <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">vnd</span>
+                            </div>
+                        </div>
+
+                        {/* Variable Expenses */}
+                        <div className="flex flex-col items-center border-t md:border-t-0 md:border-l border-slate-50 pt-8 md:pt-0">
+                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mb-3">Biến đổi</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl lg:text-7xl font-black text-orange-500 tracking-tighter">
+                                    {formatPrice(stats?.variable_expenses)}
+                                </span>
+                                <span className="text-[11px] font-black text-slate-300 uppercase tracking-widest">vnd</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Total Expenses Summary */}
+                    <div className="mt-12 pt-6 border-t border-slate-50 w-full flex flex-col items-center">
+                        <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2 font-sans">Tổng chi phí</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-slate-900 tracking-tight">
+                                {formatPrice(stats?.total_expenses)}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">vnd</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default RevenueExpensesContent;
