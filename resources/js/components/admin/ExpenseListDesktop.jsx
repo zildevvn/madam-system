@@ -1,4 +1,5 @@
 import React from 'react';
+import { format, parseISO } from 'date-fns';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ExpenseListDesktop = ({ filteredExpenses, allCategories, handleEditExpense, deleteExpense }) => {
@@ -22,7 +23,9 @@ const ExpenseListDesktop = ({ filteredExpenses, allCategories, handleEditExpense
                                     <div className="flex items-center gap-4">
                                         <div className={`w-2 h-10 rounded-full ${expense.type === 'fixed' ? 'bg-indigo-500' : 'bg-amber-500'}`} title={expense.type === 'fixed' ? 'Cố định' : 'Biến đổi'} />
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-black text-slate-900 uppercase tracking-tight">{expense.date}</span>
+                                            <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                                                {expense.date ? format(parseISO(expense.date), 'dd-MM-yyyy') : '-'}
+                                            </span>
                                             <span className="text-[10px] text-slate-800 font-black uppercase tracking-widest mt-0.5">
                                                 {expense.type === 'fixed' ? 'Cố định' : 'Biến đổi'} • {expense.user?.name}
                                             </span>
@@ -30,15 +33,12 @@ const ExpenseListDesktop = ({ filteredExpenses, allCategories, handleEditExpense
                                     </div>
                                 </td>
                                 <td className="px-10 py-5 whitespace-nowrap">
-                                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${expense.type === 'fixed'
-                                        ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
-                                        : 'bg-amber-50 text-amber-600 border-amber-100'
-                                        }`}>
+                                    <span className={`text-[14px] font-black  tracking-widest transition-all`}>
                                         {allCategories.find(c => c.value === expense.category)?.label || expense.category}
                                     </span>
                                 </td>
                                 <td className="px-10 py-5">
-                                    <p className="text-sm font-semibold text-slate-500 line-clamp-1 max-w-xs">{expense.description || '-'}</p>
+                                    <p className="text-[13px] text-slate-600 line-clamp-1 max-w-xs">{expense.description || '-'}</p>
                                 </td>
                                 <td className="px-10 py-5 whitespace-nowrap">
                                     <span className="text-base font-black text-red-500">{formatPrice(expense.amount)}</span>

@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import ExpenseTypeSelector from './expenses/ExpenseTypeSelector';
 import ExpenseCategoryInput from './expenses/ExpenseCategoryInput';
+import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, processing }) => {
     const {
@@ -24,6 +25,7 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
 
     const currentType = watch('type');
     const currentCategory = watch('category');
+    const watchedAmount = watch('amount');
 
     useEffect(() => {
         if (expense && isOpen) {
@@ -81,6 +83,13 @@ const ExpenseFormModal = ({ isOpen, onClose, onSubmit, expense, categories, proc
                                     placeholder="0"
                                     className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal shadow-inner ${errors.amount ? 'ring-2 ring-red-500/20 bg-red-50/20' : ''}`}
                                 />
+                                {watchedAmount > 0 && !errors.amount && (
+                                    <div className="px-1 animate-in fade-in slide-in-from-top-1 duration-300">
+                                        <span className="text-[11px] font-black text-orange-500 uppercase tracking-widest">
+                                            {formatPrice(watchedAmount)} VNĐ
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
