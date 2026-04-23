@@ -65,14 +65,20 @@ class ReservationConfirmService
             // [RULE] We generate an array to do a bulk insert, avoiding N+1 INSERTS
             $orderItemsToInsert = [];
             $now = now();
-            $totalPrice = $mainOrder->total_price;
+            
+            // [WHY] Prevent duplication: delete existing items from this reservation in the main order 
+            // before re-inserting the fresh set.
+            $mainOrder->items()->where('source', 'reservation')->delete();
+            
+            // [WHY] Recalculate total price starting from fresh baseline (non-reservation items)
+            $totalPrice = $mainOrder->items()->where('source', '!=', 'reservation')->sum(DB::raw('price * quantity'));
             
             foreach ($reservation->items as $resItem) {
                 $orderItemsToInsert[] = [
                     'order_id' => $mainOrder->id,
-                    'product_id' => null, // [WHY] IDs removed as per user request
+                    'product_id' => null, 
                     'name' => $resItem->name,
-                    'type' => $resItem->type ?? 'food', // [WHY] Use type from reservation item
+                    'type' => $resItem->type ?? 'food', 
                     'table_id' => null, 
                     'quantity' => $resItem->quantity,
                     'price' => $resItem->price,
@@ -87,15 +93,22 @@ class ReservationConfirmService
 
             if (!empty($orderItemsToInsert)) {
                 OrderItem::insert($orderItemsToInsert);
-                $mainOrder->update([
-                    'total_price' => $totalPrice,
-                    'subtotal' => $totalPrice
-                ]);
             }
 
+            // Always update order totals to stay in sync
+            $mainOrder->update([
+                'total_price' => $totalPrice,
+                'subtotal' => $totalPrice
+            ]);
+
             // [WHY] Trigger real-time data push to Kitchen and Bill systems
-            if ($mainOrder) {
-                event(new \App\Events\OrderUpdated($mainOrder, 'order_created'));
+            // [RULE] Wrap in try-catch to ensure broadcast failure doesn't rollback the save
+            try {
+                if ($mainOrder) {
+                    event(new \App\Events\OrderUpdated($mainOrder, 'order_created'));
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Real-time broadcast failed during reservation confirmation: " . $e->getMessage());
             }
 
             return [$mainTableId => $mainOrder];

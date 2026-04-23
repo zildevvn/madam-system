@@ -25,8 +25,12 @@ class ReservationService
                 $reservation->items()->createMany($dishes);
             }
 
-            // [WHY] Orchestrate group confirmation if tables are assigned
-            if ($reservation->type === 'group' && !empty($tableIds)) {
+            // [WHY] Orchestrate group confirmation ONLY if tables are assigned AND it is for TODAY
+            // We use a robust comparison to handle cases where the date might still be a string after create
+            $resDate = $reservation->reservation_date;
+            $isToday = $resDate && (\Illuminate\Support\Carbon::parse($resDate)->isToday());
+
+            if ($reservation->type === 'group' && !empty($tableIds) && $isToday) {
                 $confirmService = app(\App\Services\ReservationConfirmService::class);
                 $confirmService->confirmGroupReservation($reservation, $tableIds, $data['staff_id'] ?? null);
             }
@@ -61,8 +65,14 @@ class ReservationService
                 }
             }
 
-            // [WHY] Orchestrate group confirmation if tables are assigned
-            if (!empty($tableIds)) {
+            // [WHY] Reload to ensure all attributes are correctly cast and up to date after the update
+            $reservation->refresh();
+
+            // [WHY] Orchestrate group confirmation ONLY if tables are assigned AND it is for TODAY
+            $resDate = $reservation->reservation_date;
+            $isToday = $resDate && (\Illuminate\Support\Carbon::parse($resDate)->isToday());
+
+            if ($reservation->type === 'group' && !empty($tableIds) && $isToday) {
                 // Ensure dishes is cleared before confirmGroupReservation to avoid transient data conflicts
                 $reservation->unsetRelation('items');
                 $confirmService = app(\App\Services\ReservationConfirmService::class);

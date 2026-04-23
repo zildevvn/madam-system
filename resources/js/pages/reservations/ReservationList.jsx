@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { useReservations } from '../../hooks/useReservations';
@@ -9,19 +9,20 @@ import ReservationTable from '../../components/reservations/ReservationTable';
 import ReservationMobileCards from '../../components/reservations/ReservationMobileCards';
 import { capitalizeWords } from '../../shared/utils/formatCurrency';
 
-const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-];
+const months = Array.from({ length: 12 }, (_, i) => ({
+    full: new Intl.DateTimeFormat(undefined, { month: 'long' }).format(new Date(2021, i, 1)),
+    short: new Intl.DateTimeFormat(undefined, { month: 'short' }).format(new Date(2021, i, 1))
+}));
 
 const ReservationList = () => {
     const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
     const [dateFilter, setDateFilter] = useState('today'); // 'today' | '1'...'12'
+    const renderTime = new Date();
     
     const filters = useMemo(() => {
         const params = { type: filterType === 'all' ? null : filterType };
         if (dateFilter === 'today') {
-            params.date = format(new Date(), 'yyyy-MM-dd');
+            params.date = format(renderTime, 'yyyy-MM-dd');
         } else if (dateFilter !== 'all') {
             params.month = dateFilter;
         }
@@ -35,46 +36,46 @@ const ReservationList = () => {
     const navigate = useNavigate();
 
     // [WHY] Filter out past reservations and sort chronologically by full datetime
+    // [OPTIMIZATION] Pre-calculate timestamps once to avoid repeated parsing in sort/filter loops
     const sortedReservations = useMemo(() => {
         if (!reservations || reservations.length === 0) return [];
+        
+        const activeNowMs = renderTime.getTime();
+        const ONE_HOUR_MS = 60 * 60 * 1000;
 
-        const now = new Date().getTime();
-
-        return [...reservations]
-            .filter(r => {
-                // [RULE] If showing a specific month, show everything. If "Today", only show active/upcoming/completed.
-                if (dateFilter !== 'today' && dateFilter !== 'all') return true;
-
-                const now = new Date().getTime();
+        return reservations
+            .map(r => {
                 const datePart = typeof r.reservation_date === 'string' ? r.reservation_date.split('T')[0] : '';
                 const timestamp = new Date(`${datePart}T${r.reservation_time}`).getTime();
-                
-                // [RULE] Hide past bookings (compare full datetime) but keep those within 1 hour or marked as completed
-                return timestamp >= (now - 3600000) || r.status === 'completed';
+                return { ...r, _timestamp: timestamp };
+            })
+            .filter(r => {
+                // [RULE] If showing "Today", show all items for today regardless of time to ensure edit visibility.
+                if (dateFilter === 'today') return true;
+
+                // [VISIBILITY] Show if:
+                // 1. The booking is marked as completed
+                // 2. The booking is in the future or started within the last hour (grace period)
+                const isCompleted = r.status === 'completed';
+                const isRecentOrUpcoming = r._timestamp >= (activeNowMs - ONE_HOUR_MS);
+
+                return isCompleted || isRecentOrUpcoming;
+            })
+            .sort((a, b) => {
+                // [RULE] Completed items always go to the bottom
+                if (a.status === 'completed' && b.status !== 'completed') return 1;
+                if (a.status !== 'completed' && b.status === 'completed') return -1;
+
+                // [RULE] Earlier time comes first (ascending chronological) using pre-calculated timestamp
+                return a._timestamp - b._timestamp;
             })
             .map(r => ({
                 ...r,
                 lead_name: capitalizeWords(r.lead_name),
                 tour_guide_name: capitalizeWords(r.tour_guide_name),
                 company_name: capitalizeWords(r.company_name)
-            }))
-            .sort((a, b) => {
-                // [RULE] Completed items always go to the bottom
-                if (a.status === 'completed' && b.status !== 'completed') return 1;
-                if (a.status !== 'completed' && b.status === 'completed') return -1;
-
-                const parseToTimestamp = (d, t) => {
-                    const datePart = typeof d === 'string' ? d.split('T')[0] : '';
-                    return new Date(`${datePart}T${t}`).getTime();
-                };
-
-                const timestampA = parseToTimestamp(a.reservation_date, a.reservation_time);
-                const timestampB = parseToTimestamp(b.reservation_date, b.reservation_time);
-
-                // [RULE] Earlier time comes first (ascending chronological)
-                return timestampA - timestampB;
-            });
-    }, [reservations]);
+            }));
+    }, [reservations, dateFilter]);
 
     const isManager = user?.role === 'cashier' || user?.role === 'admin';
 
@@ -85,10 +86,15 @@ const ReservationList = () => {
 
     const formatDate = (date) => {
         if (!date) return '';
-        return typeof date === 'string' ? date.split('T')[0] : '';
+        const dateStr = typeof date === 'string' ? date.split('T')[0] : '';
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const [year, month, day] = parts;
+        return `${day}-${month}-${year}`;
     };
 
-    const handlers = {
+    const handlers = useMemo(() => ({
         onView: (r) => setViewingReservation(r),
         onEdit: (id) => navigate(`/reservations/edit/${id}`),
         onDone: async (r) => {
@@ -99,7 +105,7 @@ const ReservationList = () => {
                 }));
             }
         }
-    };
+    }), [navigate, dispatch]);
 
     if (loading) {
         return (
@@ -145,11 +151,11 @@ const ReservationList = () => {
                     <div className="w-[1px] bg-gray-200 mx-1 my-2" />
                     {months.map((month, idx) => (
                         <button
-                            key={month}
+                            key={month.full}
                             onClick={() => setDateFilter((idx + 1).toString())}
                             className={`px-4 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === (idx + 1).toString() ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
-                            {month.substring(0, 3)}
+                            {month.short}
                         </button>
                     ))}
                 </div>

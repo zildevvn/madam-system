@@ -94,7 +94,11 @@ class ReservationController extends Controller
             $reservation = $this->reservationService->createReservation($validated);
 
             // [WHY] Broadcast real-time event for dashboard synchronization
-            broadcast(new \App\Events\ReservationUpdated($reservation, 'created'))->toOthers();
+            try {
+                broadcast(new \App\Events\ReservationUpdated($reservation, 'created'))->toOthers();
+            } catch (\Exception $e) {
+                \Log::warning("Reservation broadcast failed: " . $e->getMessage());
+            }
 
             return response()->json([
                 'data' => $reservation,
@@ -184,7 +188,11 @@ class ReservationController extends Controller
             $reservation = $this->reservationService->updateReservation($id, $validated, $hasDishesKey);
 
             // [WHY] Broadcast real-time event for dashboard synchronization
-            broadcast(new \App\Events\ReservationUpdated($reservation, 'updated'))->toOthers();
+            try {
+                broadcast(new \App\Events\ReservationUpdated($reservation, 'updated'))->toOthers();
+            } catch (\Exception $e) {
+                \Log::warning("Reservation update broadcast failed: " . $e->getMessage());
+            }
             
             return response()->json([
                 'data' => $reservation,
@@ -227,7 +235,11 @@ class ReservationController extends Controller
             $orders = $confirmService->confirmGroupReservation($reservation, $validated['table_ids'], request()->user()?->id);
             
             // [WHY] Broadcast real-time event
-            broadcast(new \App\Events\ReservationUpdated($reservation, 'confirmed'))->toOthers();
+            try {
+                broadcast(new \App\Events\ReservationUpdated($reservation, 'confirmed'))->toOthers();
+            } catch (\Exception $e) {
+                \Log::warning("Reservation confirmation broadcast failed: " . $e->getMessage());
+            }
 
             return response()->json([
                 'status' => 'success',

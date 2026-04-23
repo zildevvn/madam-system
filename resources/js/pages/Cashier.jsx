@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import { useCashierSegmentation } from '../hooks/useCashierSegmentation';
 import Receipt from '../components/cashier/Receipt';
@@ -37,6 +38,22 @@ const Cashier = () => {
     // [WHY] Segment orders into Group Reservations vs Individual Tables
     // [RULE] Tách UI và logic (custom hook) — README.md Component Rule
     const { groupOrders, individualOrders, individualTables, groupTables } = useCashierSegmentation(orders, allTables);
+    
+    // [WHY] Force state-driven print isolation
+    // [RULE] High-reliability print strategy for thermal printers
+    useEffect(() => {
+        const handleBefore = () => document.body.classList.add('is-printing-receipt');
+        const handleAfter = () => document.body.classList.remove('is-printing-receipt');
+
+        window.addEventListener('beforeprint', handleBefore);
+        window.addEventListener('afterprint', handleAfter);
+
+        return () => {
+            window.removeEventListener('beforeprint', handleBefore);
+            window.removeEventListener('afterprint', handleAfter);
+            document.body.classList.remove('is-printing-receipt');
+        };
+    }, []);
 
     const handleTableClick = (table) => {
         const lookupKey = (table.groupKey || table.id).toString();
@@ -171,10 +188,11 @@ const Cashier = () => {
 
     return (
         <div className="cashier-page pb-20">
-            {/* [NON-INTRUSIVE FIX] Invisible spacer to satisfy global SCSS first-child:fixed rule */}
-            <div className="hidden" aria-hidden="true"></div>
+            <div className="no-print">
+                {/* [NON-INTRUSIVE FIX] Invisible spacer to satisfy global SCSS first-child:fixed rule */}
+                <div className="hidden" aria-hidden="true"></div>
 
-            <div className="py-8 relative overflow-x-hidden">
+                <div className="py-8 relative overflow-x-hidden">
                 <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                     {/* Top Row: Active Lanes */}
                     <div className="flex flex-col lg:flex-row gap-4 relative items-start">
@@ -273,17 +291,17 @@ const Cashier = () => {
                     onUpdateShowExtras={(show) => updateTableContext(`history-${editingHistoryOrder.id}`, { showExtras: show })}
                 />
             )}
+        </div>
 
-            {/* Hidden Print Area */}
-            {selectedTable && currentOrder && currentContext && (
-                <div className="hidden-print">
-                    <Receipt
-                        order={currentOrder}
-                        tableName={selectedTable?.name}
-                        discountType={currentContext.discountType}
-                        discountValue={currentContext.discountValue}
-                    />
-                </div>
+            {/* Bulletproof Portal-based Print Area */}
+            {selectedTable && currentOrder && currentContext && createPortal(
+                <Receipt
+                    order={currentOrder}
+                    tableName={selectedTable?.name}
+                    discountType={currentContext.discountType}
+                    discountValue={currentContext.discountValue}
+                />,
+                document.body
             )}
         </div>
     );
