@@ -31,17 +31,18 @@ const Bills = () => {
 
     const handleToggleItemStatus = async (item, nextStatus) => {
         const ids = item.allIds || [item.id];
-        const tableId = selectedTable.id;
+        
+        // [WHY] For group reservations or merged tables, the items actually belong to the 'owner' table 
+        // in the Redux store. We must use the consolidated group's tableId for the optimistic update 
+        // to find and patch the items correctly.
+        const consolidatedGroup = activeOrders[selectedTable.id.toString()];
+        const tableId = consolidatedGroup?.tableId || selectedTable.id;
 
         // 1. Optimistic Redux update — instant UI response, no waiting for API.
-        //    patchItemsStatus also registers tableId in pendingTableIds to guard
-        //    against stale fetchTables overwrites (race condition fix).
         dispatch(patchItemsStatus({ tableId, itemIds: ids, status: nextStatus }));
 
         try {
-            // 2. Confirm via API. tableSlice.addMatcher handles the surgical store patch
-            //    and clears the pendingTableIds counter on fulfillment.
-            //    tableId is passed so the rejected matcher can also clear the guard.
+            // 2. Confirm via API.
             await Promise.all(ids.map(id =>
                 dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, tableId })).unwrap()
             ));
