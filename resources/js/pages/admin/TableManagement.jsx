@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTableManagement } from '../../hooks/useTableManagement';
-import TableFormModal from './TableFormModal';
+import TableFormModal from '../../components/admin/TableFormModal';
 
 const TableManagement = () => {
     const { tables, loading, processing, error, addTable, updateTable, deleteTable } = useTableManagement();

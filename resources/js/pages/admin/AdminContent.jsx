@@ -3,13 +3,13 @@ import AdminRevenueReport from '../../components/admin/AdminRevenueReport/AdminR
 import RevenueExpensesContent from '../../components/admin/AdminRevenueReport/RevenueExpensesContent';
 
 /**
- * RevenuePage Component
- * [WHY] Acts as the parent layout for administrative financial reports.
+ * AdminContent Component
+ * [WHY] Acts as the primary content container for administrative financial reports.
  * [RULE] Renders independent report modules (Revenue, Expenses) as siblings.
  */
-const RevenuePage = () => {
+const AdminContent = () => {
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="admin-content flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Revenue Report Section (Self-contained with its own filters) */}
             <AdminRevenueReport />
 
@@ -19,4 +19,4 @@ const RevenuePage = () => {
     );
 };
 
-export default RevenuePage;
+export default AdminContent;
