@@ -26,12 +26,12 @@ const ExpenseManagement = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExpense, setEditingExpense] = useState(null);
-    
+
     // Filtering States
     const [searchTerm, setSearchTerm] = useState('');
-    const [typeFilter, setTypeFilter] = useState('all'); 
-    const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString()); 
-    const [monthFilter, setMonthFilter] = useState(''); 
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+    const [monthFilter, setMonthFilter] = useState('');
     const [dateFilter, setDateFilter] = useState('');
 
     const handleAddExpense = () => {
@@ -64,7 +64,7 @@ const ExpenseManagement = () => {
 
         const matchesType = typeFilter === 'all' || e.type === typeFilter;
         const matchesDate = !dateFilter || e.date === dateFilter;
-        
+
         const expenseYear = e.date?.split('-')[0];
         const expenseMonth = e.date?.split('-')[1];
 
@@ -88,7 +88,7 @@ const ExpenseManagement = () => {
             <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                 {/* Header / Actions Area */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <ExpenseFilterHeader 
+                    <ExpenseFilterHeader
                         searchTerm={searchTerm}
                         setSearchTerm={setSearchTerm}
                         typeFilter={typeFilter}
@@ -97,7 +97,7 @@ const ExpenseManagement = () => {
 
                     <button
                         onClick={handleAddExpense}
-                        className="mdt-btn flex items-center justify-center gap-2 group self-stretch md:self-auto h-[52px]"
+                        className="mdt-btn flex items-center justify-center gap-2 group self-stretch md:self-auto"
                     >
                         <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                         <span>Thêm chi tiêu</span>
@@ -105,7 +105,7 @@ const ExpenseManagement = () => {
                 </div>
 
                 {/* Advanced Filters Area */}
-                <ExpenseAdvancedFilters 
+                <ExpenseAdvancedFilters
                     yearFilter={yearFilter}
                     setYearFilter={setYearFilter}
                     monthFilter={monthFilter}

@@ -4,24 +4,24 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
 
 const ExpenseListMobile = ({ filteredExpenses, allCategories, handleEditExpense, deleteExpense }) => {
     return (
-        <div className="md:hidden space-y-4 py-5 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-x-hidden">
+        <div className="md:hidden space-y-3 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-x-hidden">
             {filteredExpenses.map((expense) => (
                 <div
                     key={expense.id}
                     className="bg-white px-2 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500 overflow-hidden w-full"
                 >
                     {/* Header: Date & Type */}
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-col">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col flex-1 min-w-0">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                 {expense.date ? format(parseISO(expense.date), 'dd-MM-yyyy') : '-'}
                             </span>
-                            <span className="text-[13px] text-slate-800 font-black  tracking-widest mt-0.5 truncate">
+                            <span className="text-[13px] font-black mt-0.5 break-words">
                                 {allCategories.find(c => c.value === expense.category)?.label || expense.category}
                             </span>
                         </div>
 
-                        <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${expense.type === 'fixed'
+                        <div className={`flex-shrink-0 px-3 py-1.5 rounded-sm text-[9px] font-black uppercase tracking-widest border ${expense.type === 'fixed'
                             ? 'bg-indigo-50 text-indigo-600 border-indigo-100/50'
                             : 'bg-amber-50 text-amber-600 border-amber-100/50'
                             }`}>

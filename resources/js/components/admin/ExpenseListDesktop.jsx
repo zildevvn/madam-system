@@ -19,7 +19,7 @@ const ExpenseListDesktop = ({ filteredExpenses, allCategories, handleEditExpense
                     <tbody className="divide-y divide-slate-50">
                         {filteredExpenses.map((expense) => (
                             <tr key={expense.id} className="group hover:bg-slate-50/40 transition-all">
-                                <td className="px-10 py-5 whitespace-nowrap">
+                                <td className="px-2 py-3 whitespace-nowrap">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-2 h-10 rounded-full ${expense.type === 'fixed' ? 'bg-indigo-500' : 'bg-amber-500'}`} title={expense.type === 'fixed' ? 'Cố định' : 'Biến đổi'} />
                                         <div className="flex flex-col">
@@ -32,18 +32,18 @@ const ExpenseListDesktop = ({ filteredExpenses, allCategories, handleEditExpense
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-10 py-5 whitespace-nowrap">
+                                <td className="px-2 py-3 whitespace-nowrap">
                                     <span className={`text-[14px] font-black  tracking-widest transition-all`}>
                                         {allCategories.find(c => c.value === expense.category)?.label || expense.category}
                                     </span>
                                 </td>
-                                <td className="px-10 py-5">
+                                <td className="px-2 py-3">
                                     <p className="text-[13px] text-slate-600 line-clamp-1 max-w-xs">{expense.description || '-'}</p>
                                 </td>
-                                <td className="px-10 py-5 whitespace-nowrap">
+                                <td className="px-2 py-3 whitespace-nowrap">
                                     <span className="text-base font-black text-red-500">{formatPrice(expense.amount)}</span>
                                 </td>
-                                <td className="px-10 py-5 text-right whitespace-nowrap">
+                                <td className="px-2 py-3 text-right whitespace-nowrap">
                                     <div className="flex items-center justify-end gap-3 opacity-40 group-hover:opacity-100 transition-all">
                                         <button
                                             onClick={() => handleEditExpense(expense)}
