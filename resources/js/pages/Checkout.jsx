@@ -28,6 +28,7 @@ export default function Checkout() {
         warningMessage,
         setShowWarningPopup,
         isTableChanged,
+        isMergeChanged,
         toggleMergedTable,
         total,
         totalQuantity,
@@ -65,6 +66,7 @@ export default function Checkout() {
                 isConfirmed={isConfirmed}
                 isModified={isModified}
                 isTableChanged={isTableChanged}
+                isMergeChanged={isMergeChanged}
                 handleCancelOrder={handleCancelOrder}
                 navigate={navigate}
                 tableId={tableId}

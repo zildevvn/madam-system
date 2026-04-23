@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
@@ -26,9 +26,20 @@ export const useCheckoutState = () => {
     const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
     const originalItems = useAppSelector(selectOriginalItems);
 
+    // [WHY] Initialize mergedTableIds from existing group state (Rule 312: state synchronization)
+    const initialMergedIds = useMemo(() => {
+        const groupKey = tableIdToGroupKey[tableId?.toString()];
+        if (groupKey) {
+            return groupKey.split('-')
+                .map(id => parseInt(id))
+                .filter(id => id.toString() !== tableId?.toString());
+        }
+        return [];
+    }, [tableId, tableIdToGroupKey]);
+
     // Local UI state 
     const [selectedTableId, setSelectedTableId] = useState(tableId);
-    const [mergedTableIds, setMergedTableIds] = useState([]);
+    const [mergedTableIds, setMergedTableIds] = useState(initialMergedIds);
     const [showMergeDropdown, setShowMergeDropdown] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [showWarningPopup, setShowWarningPopup] = useState(false);
@@ -36,6 +47,21 @@ export const useCheckoutState = () => {
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
 
     const isTableChanged = useMemo(() => selectedTableId !== tableId, [selectedTableId, tableId]);
+
+    const isMergeChanged = useMemo(() => {
+        const groupKey = tableIdToGroupKey[tableId?.toString()];
+        const currentInitialIds = groupKey ? groupKey.split('-')
+            .map(id => parseInt(id))
+            .filter(id => id.toString() !== tableId?.toString()) : [];
+            
+        if (mergedTableIds.length !== currentInitialIds.length) return true;
+        return !mergedTableIds.every(id => currentInitialIds.includes(id));
+    }, [mergedTableIds, tableId, tableIdToGroupKey]);
+
+    // [WHY] Keep local merge state in sync with backend (selector updates)
+    useEffect(() => {
+        setMergedTableIds(initialMergedIds);
+    }, [initialMergedIds]);
 
     const total = useMemo(() =>
         selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
@@ -72,6 +98,7 @@ export const useCheckoutState = () => {
         successMessage,
         setSuccessMessage,
         isTableChanged,
+        isMergeChanged,
         total,
         totalQuantity
     };
