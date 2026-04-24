@@ -8,10 +8,14 @@
     padding-top: 60px;
 
     &.page-bill {
-        padding-top: 0px;
+
 
         >div:first-child {
-            top: 10px;
+            top: 92px;
+
+            @media (max-width: 767.98px) {
+                top: 70px;
+            }
         }
     }
 
@@ -64,7 +68,7 @@
 
     /* [CRITICAL] Absolute Isolation: Hide ANYTHING that isn't the Receipt when printing */
     /* We use the body class as a secondary hook for maximum reliability */
-    body.is-printing-receipt > *:not(.receipt-print-only) {
+    body.is-printing-receipt>*:not(.receipt-print-only) {
         display: none !important;
         visibility: hidden !important;
     }
@@ -76,7 +80,12 @@
     }
 
     /* Standard no-print classes */
-    header, nav, .fixed, footer, button, .no-print {
+    header,
+    nav,
+    .fixed,
+    footer,
+    button,
+    .no-print {
         display: none !important;
     }
 
