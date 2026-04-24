@@ -102,6 +102,7 @@ export const useCheckoutState = () => {
         isMergeChanged,
         total,
         totalQuantity,
-        orderNote
+        orderNote,
+        guestCount: useAppSelector(state => state.order.guestCount)
     };
 };

@@ -88,6 +88,7 @@ class OrderService
         $order->merged_tables = $data['merged_tables'] ?? null;
         $order->order_type = $data['order_type'] ?? 'dine-in';
         $order->status = 'draft';
+        $order->guest_count = $data['guest_count'] ?? 1;
         $order->total_price = 0;
         $order->save();
 
@@ -100,9 +101,9 @@ class OrderService
     }
 
     // [WHY] Submit kitchen order and sync items
-    public function checkoutOrder($orderId, array $items, $mergedTables = null, $orderNote = null)
+    public function checkoutOrder($orderId, array $items, $mergedTables = null, $orderNote = null, $guestCount = null)
     {
-        $result = DB::transaction(function () use ($orderId, $items, $mergedTables, $orderNote) {
+        $result = DB::transaction(function () use ($orderId, $items, $mergedTables, $orderNote, $guestCount) {
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
@@ -155,7 +156,8 @@ class OrderService
                 'total_price' => $totalPrice,
                 'status' => 'pending',
                 'merged_tables' => $mergedTables ?? $order->merged_tables,
-                'order_note' => $orderNote ?? $order->order_note
+                'order_note' => $orderNote ?? $order->order_note,
+                'guest_count' => $guestCount ?? $order->guest_count
             ]);
 
             if ($order->table_id) {
@@ -200,7 +202,7 @@ class OrderService
         return $order;
     }
 
-    // [WHY] Persist a staff note for an order and notify all connected clients in real-time.
+    // [WHY] Dedicated endpoint to save the order-level staff note without requiring a full re-checkout.
     public function updateOrderNote($orderId, string $note)
     {
         $order = Order::findOrFail($orderId);
@@ -218,6 +220,28 @@ class OrderService
             broadcast(new OrderUpdated($order, 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during order note update: ' . $e->getMessage());
+        }
+
+        return $order;
+    }
+
+    public function updateGuestCount($orderId, int $count)
+    {
+        $order = Order::findOrFail($orderId);
+        $order->guest_count = $count;
+        $order->save();
+
+        $order->load([
+            'items.product:id,name,price,type',
+            'table:id,name',
+            'server:id,name',
+            'cashier:id,name'
+        ]);
+
+        try {
+            broadcast(new OrderUpdated($order, 'order_updated'));
+        } catch (\Exception $e) {
+            Log::error('Broadcast failed during guest count update: ' . $e->getMessage());
         }
 
         return $order;

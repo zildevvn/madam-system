@@ -11,8 +11,8 @@ export const createOrderAsync = createAsyncThunk('order/createOrder', async (cre
   return response.data;
 });
 
-export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null, orderNote = null }) => {
-  const data = await orderApi.checkoutOrder(orderId, items, mergedTables, orderNote);
+export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null, orderNote = null, guestCount = null }) => {
+  const data = await orderApi.checkoutOrder(orderId, items, mergedTables, orderNote, guestCount);
   return data.data;
 });
 
@@ -28,6 +28,11 @@ export const updateOrderTableAsync = createAsyncThunk('order/updateTable', async
 
 export const updateOrderNoteAsync = createAsyncThunk('order/updateNote', async ({ orderId, note }) => {
   const data = await orderApi.updateOrderNote(orderId, note);
+  return data.data;
+});
+
+export const updateGuestCountAsync = createAsyncThunk('order/updateGuestCount', async ({ orderId, count }) => {
+  const data = await orderApi.updateGuestCount(orderId, count);
   return data.data;
 });
 
@@ -49,6 +54,7 @@ const initialState = {
   isModified: false,
   originalItems: {}, // Snapshot of items [id]: { quantity, note, type }
   orderNote: '',     // Order-level staff note, displayed on the bill page
+  guestCount: 1,    // Number of guests for the order
   status: 'idle',
 };
 
@@ -102,6 +108,10 @@ const orderSlice = createSlice({
     setOrderNote: (state, action) => {
       state.orderNote = action.payload;
     },
+    setGuestCount: (state, action) => {
+      state.guestCount = action.payload;
+      state.isModified = true;
+    },
     clearCart: (state) => {
       state.items = { byId: {}, allIds: [] };
       state.isModified = true;
@@ -125,6 +135,7 @@ const orderSlice = createSlice({
           state.tableId = order.table_id;
           state.mergedTables = order.merged_tables;
           state.orderNote = order.order_note || '';
+          state.guestCount = order.guest_count || 1;
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
@@ -146,6 +157,7 @@ const orderSlice = createSlice({
           // No active order found for table
           state.activeOrderId = null;
           state.orderNote = '';
+          state.guestCount = 1;
           state.isModified = false;
           state.items = { byId: {}, allIds: [] };
         }
@@ -155,6 +167,7 @@ const orderSlice = createSlice({
         if (order) {
           state.activeOrderId = order.id;
           state.orderStatus = order.status;
+          state.guestCount = order.guest_count || 1;
           state.isModified = false;
         }
       })
@@ -178,6 +191,7 @@ const orderSlice = createSlice({
           state.orderType = order.order_type;
           state.tableId = order.table_id;
           state.mergedTables = order.merged_tables;
+          state.guestCount = order.guest_count || 1;
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
@@ -207,6 +221,7 @@ export const {
   setOrderType,
   setTableId,
   setOrderNote,
+  setGuestCount,
   clearCart,
   startNewOrder
 } = orderSlice.actions;

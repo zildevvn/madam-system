@@ -37,6 +37,8 @@ export default function Checkout() {
         handleUpdateNote,
         handleUpdateOrderNote,
         orderNote,
+        guestCount,
+        handleUpdateGuestCount,
         handleCheckout,
         handleCancelOrder
     } = useCheckoutLogic();
@@ -61,6 +63,8 @@ export default function Checkout() {
                 selectedItems={selectedItems}
                 handleUpdateQuantity={handleUpdateQuantity}
                 handleUpdateNote={handleUpdateNote}
+                guestCount={guestCount}
+                onUpdateGuestCount={handleUpdateGuestCount}
             />
 
             <CheckoutOrderNote

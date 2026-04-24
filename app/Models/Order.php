@@ -25,6 +25,7 @@ class Order extends Model
         'payment_method',
         'cashier_note',
         'order_note',
+        'guest_count',
     ];
 
     public function server()

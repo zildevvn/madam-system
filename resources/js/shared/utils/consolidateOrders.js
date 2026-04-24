@@ -58,6 +58,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     tableNames: [t.name || t.id.toString()],
                     startTime: new Date(order.created_at || order.updated_at),
                     orderNote: order.order_note || '',
+                    guestCount: order.guest_count || 1,
                     items: [],
                     itemsMap: {},
                     reservation: order.reservation,
