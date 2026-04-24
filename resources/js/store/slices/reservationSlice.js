@@ -12,14 +12,27 @@ export const fetchReservationsAsync = createAsyncThunk(
 
 export const saveReservationAsync = createAsyncThunk(
     'reservation/save',
-    async ({ id, data }) => {
-        let response;
-        if (id) {
-            response = await reservationApi.update(id, data);
-        } else {
-            response = await reservationApi.create(data);
+    async ({ id, data }, { rejectWithValue }) => {
+        try {
+            let response;
+            if (id) {
+                response = await reservationApi.update(id, data);
+            } else {
+                response = await reservationApi.create(data);
+            }
+            return response.data;
+        } catch (err) {
+            // [WHY] Forward the full axios error response so the UI can show exact Laravel validation messages
+            return rejectWithValue(err.response?.data || { message: err.message });
         }
-        return response.data;
+    }
+);
+
+export const deleteReservationAsync = createAsyncThunk(
+    'reservation/delete',
+    async (id) => {
+        await reservationApi.remove(id);
+        return id; // return the ID so the reducer can remove it
     }
 );
 
@@ -75,6 +88,12 @@ const reservationSlice = createSlice({
                     state.allIds.push(reservation.id);
                 }
                 state.lastUpdated = Date.now();
+            })
+            .addCase(deleteReservationAsync.fulfilled, (state, action) => {
+                const id = action.payload;
+                state.allIds = state.allIds.filter(rid => rid !== id);
+                delete state.byId[id];
+                state.lastUpdated = Date.now();
             });
     }
 });
@@ -86,7 +105,11 @@ const selectReservationState = state => state.reservation;
 
 export const selectAllReservations = createSelector(
     [selectReservationState],
-    (reservationState) => reservationState.allIds.map(id => reservationState.byId[id])
+    // [WHY] Filter out undefined — guards against the race window between an optimistic
+    // delete (removes byId entry) and the next fetchReservationsAsync response arriving.
+    (reservationState) => reservationState.allIds
+        .map(id => reservationState.byId[id])
+        .filter(Boolean)
 );
 
 export const selectReservationById = (id) => createSelector(

@@ -15,6 +15,7 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                             <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
+
                     <tbody className="divide-y divide-gray-50">
                         {reservations.length === 0 ? (
                             <tr>

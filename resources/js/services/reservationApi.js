@@ -31,5 +31,9 @@ export const reservationApi = {
     getBill: async (id) => {
         const response = await axios.get(`/api/reservations/${id}/bill`);
         return response.data;
+    },
+    remove: async (id) => {
+        const response = await axios.delete(`/api/reservations/${id}`);
+        return response.data;
     }
 };

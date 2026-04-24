@@ -55,4 +55,9 @@ class Reservation extends Model
     {
         return $this->hasMany(ReservationItem::class);
     }
+
+    public function histories()
+    {
+        return $this->hasMany(ReservationHistory::class)->with('user:id,name')->latest();
+    }
 }

@@ -22,7 +22,7 @@ class ReservationController extends Controller
     public function index(Request $request)
     {
         // [WHY] Allow filtering by type for dashboard scannability.
-        $query = Reservation::with(['table:id,name', 'items', 'updater:id,name']);
+        $query = Reservation::with(['table:id,name', 'items', 'updater:id,name', 'histories']);
 
         if ($request->query('type')) {
             $query->where('type', $request->query('type'));
@@ -34,7 +34,7 @@ class ReservationController extends Controller
 
         if ($request->has('month') && !empty($request->query('month'))) {
             $query->whereMonth('reservation_date', $request->query('month'))
-                  ->whereYear('reservation_date', now()->year);
+                ->whereYear('reservation_date', now()->year);
         }
 
         $reservations = $query->orderBy('reservation_date', 'asc')
@@ -54,7 +54,7 @@ class ReservationController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:individual,group',
             'lead_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => 'nullable|string|max:20',
             'number_of_guests' => 'required|integer|min:1',
             'email' => 'nullable|string|max:255',
             'nationality' => 'nullable|string|max:100',
@@ -78,17 +78,17 @@ class ReservationController extends Controller
 
         try {
             // [WHY] Sanitize inputs to ensure data types match DB expectations
-            if (isset($validated['staff_id']) && trim((string)$validated['staff_id']) === "") {
+            if (isset($validated['staff_id']) && trim((string) $validated['staff_id']) === "") {
                 $validated['staff_id'] = null;
             }
 
-            if (isset($validated['table_id']) && trim((string)$validated['table_id']) === "") {
+            if (isset($validated['table_id']) && trim((string) $validated['table_id']) === "") {
                 $validated['table_id'] = null;
             }
 
             if (!empty($validated['reservation_date'])) {
                 // [FIX] Robustly extract ONLY the YYYY-MM-DD part using regex to handle any time/T format
-                $validated['reservation_date'] = preg_replace('/\s.*|T.*/', '', (string)$validated['reservation_date']);
+                $validated['reservation_date'] = preg_replace('/\s.*|T.*/', '', (string) $validated['reservation_date']);
             }
 
             $reservation = $this->reservationService->createReservation($validated);
@@ -125,9 +125,9 @@ class ReservationController extends Controller
      */
     public function show($id)
     {
-        $reservation = Reservation::with(['items', 'updater:id,name'])->findOrFail($id);
+        $reservation = Reservation::with(['items', 'updater:id,name', 'histories'])->findOrFail($id);
         $reservation->dishes = $reservation->items;
-        
+
         return response()->json([
             'data' => $reservation,
             'message' => 'Success',
@@ -144,7 +144,7 @@ class ReservationController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:individual,group',
             'lead_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone' => 'nullable|string|max:20',
             'number_of_guests' => 'required|integer|min:1',
             'email' => 'nullable|string|max:255',
             'nationality' => 'nullable|string|max:100',
@@ -172,19 +172,19 @@ class ReservationController extends Controller
         try {
             // [WHY] Sanitize inputs to ensure data types match DB expectations
             // We cast to string before comparing to empty string to handle numeric types gracefully
-            if (isset($validated['staff_id']) && trim((string)$validated['staff_id']) === "") {
+            if (isset($validated['staff_id']) && trim((string) $validated['staff_id']) === "") {
                 $validated['staff_id'] = null;
             }
 
-            if (isset($validated['table_id']) && trim((string)$validated['table_id']) === "") {
+            if (isset($validated['table_id']) && trim((string) $validated['table_id']) === "") {
                 $validated['table_id'] = null;
             }
 
             if (!empty($validated['reservation_date'])) {
                 // [FIX] Robustly extract ONLY the YYYY-MM-DD part using regex to handle any time/T format
-                $validated['reservation_date'] = preg_replace('/\s.*|T.*/', '', (string)$validated['reservation_date']);
+                $validated['reservation_date'] = preg_replace('/\s.*|T.*/', '', (string) $validated['reservation_date']);
             }
-            
+
             $reservation = $this->reservationService->updateReservation($id, $validated, $hasDishesKey);
 
             // [WHY] Broadcast real-time event for dashboard synchronization
@@ -193,7 +193,7 @@ class ReservationController extends Controller
             } catch (\Exception $e) {
                 \Log::warning("Reservation update broadcast failed: " . $e->getMessage());
             }
-            
+
             return response()->json([
                 'data' => $reservation,
                 'message' => 'Reservation updated successfully!',
@@ -233,7 +233,7 @@ class ReservationController extends Controller
 
         try {
             $orders = $confirmService->confirmGroupReservation($reservation, $validated['table_ids'], request()->user()?->id);
-            
+
             // [WHY] Broadcast real-time event
             try {
                 broadcast(new \App\Events\ReservationUpdated($reservation, 'confirmed'))->toOthers();
@@ -271,6 +271,45 @@ class ReservationController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to compile bill: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the specified reservation from storage.
+     * [WHY] Deletes the reservation and its items atomically.
+     */
+    public function destroy($id)
+    {
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+                $reservation = Reservation::findOrFail($id);
+                $reservation->items()->delete();
+                $reservation->delete();
+
+                try {
+                    broadcast(new \App\Events\ReservationUpdated($reservation, 'deleted'))->toOthers();
+                } catch (\Exception $e) {
+                    \Log::warning("Reservation delete broadcast failed: " . $e->getMessage());
+                }
+            });
+
+            return response()->json([
+                'data' => null,
+                'message' => 'Reservation removed successfully.',
+                'errors' => null
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Reservation deletion failed: " . $e->getMessage(), [
+                'id' => $id,
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'data' => null,
+                'message' => 'Failed to remove reservation: ' . $e->getMessage(),
+                'errors' => [$e->getMessage()]
             ], 500);
         }
     }

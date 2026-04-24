@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAppDispatch } from '../store/hooks';
 import { saveReservationAsync } from '../store/slices/reservationSlice';
 import { reservationApi } from '../services/reservationApi';
@@ -95,14 +96,18 @@ export const useReservationForm = (id = null, user = null) => {
 
         try {
             await dispatch(saveReservationAsync({ id, data: payload })).unwrap();
-            setMessage({ type: 'success', text: `Reservation ${isEdit ? 'updated' : 'saved'} successfully!` });
-            setTimeout(() => navigate('/reservations'), 2000);
+            toast.success(`Reservation ${isEdit ? 'updated' : 'saved'} successfully!`);
+            navigate('/reservations');
         } catch (err) {
             console.error('Failed to save reservation:', err);
-            const msg = err.response?.data?.errors 
-                ? Object.values(err.response.data.errors).flat().join(' | ')
-                : 'An error occurred. Please try again.';
-            setMessage({ type: 'error', text: msg });
+            const responseData = err?.response?.data || err;
+            let msg = 'An error occurred. Please try again.';
+            if (responseData?.errors && typeof responseData.errors === 'object') {
+                msg = Object.values(responseData.errors).flat().join(' | ');
+            } else if (responseData?.message) {
+                msg = responseData.message;
+            }
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
