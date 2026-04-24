@@ -4,6 +4,7 @@ const TableDetailModal = ({
     tableId,
     mergedTables,
     orderItems,
+    orderNote = '',
     currentTime,
     onClose,
     onToggleStatus
@@ -68,6 +69,9 @@ const TableDetailModal = ({
                 <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
                         <h5 className='label-table'>Chi tiết bàn {(mergedTables || tableId.toString()).replace(/^Bàn\s+/i, '')}</h5>
+                        {orderNote && (
+                            <p className="m-0 text-[14px]  mdt-text-body leading-snug">{orderNote}</p>
+                        )}
                     </div>
                     <button
                         onClick={onClose}

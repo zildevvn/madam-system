@@ -8,7 +8,9 @@ import {
     removeFromCart,
     updateOrderTableAsync,
     clearCart,
-    createOrderAsync
+    createOrderAsync,
+    setOrderNote,
+    updateOrderNoteAsync
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';
@@ -48,6 +50,15 @@ export const useCheckoutLogic = () => {
     const handleUpdateNote = useCallback((id, note) => {
         dispatch(updateItemNote({ id, note }));
     }, [dispatch]);
+
+    // [WHY] Debounce is handled in the UI component. This callback both updates Redux immediately
+    // and persists to the backend. If no order exists yet, only the local state is updated.
+    const handleUpdateOrderNote = useCallback((note) => {
+        dispatch(setOrderNote(note));
+        if (state.activeOrderId) {
+            dispatch(updateOrderNoteAsync({ orderId: state.activeOrderId, note }));
+        }
+    }, [dispatch, state.activeOrderId]);
 
     const triggerBackendPrint = useCallback(async (orderId, title) => {
         if (!title) return;
@@ -147,7 +158,8 @@ export const useCheckoutLogic = () => {
                         note: i.note,
                         table_id: selectedTableId
                     })),
-                    mergedTables: mergedTablesString
+                    mergedTables: mergedTablesString,
+                    orderNote: state.orderNote
                 })).unwrap();
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
@@ -201,6 +213,7 @@ export const useCheckoutLogic = () => {
         toggleMergedTable,
         handleUpdateQuantity,
         handleUpdateNote,
+        handleUpdateOrderNote,
         handleCheckout,
         handleCancelOrder
     };

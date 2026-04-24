@@ -11,8 +11,8 @@ export const createOrderAsync = createAsyncThunk('order/createOrder', async (cre
   return response.data;
 });
 
-export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null }) => {
-  const data = await orderApi.checkoutOrder(orderId, items, mergedTables);
+export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null, orderNote = null }) => {
+  const data = await orderApi.checkoutOrder(orderId, items, mergedTables, orderNote);
   return data.data;
 });
 
@@ -23,6 +23,11 @@ export const cancelOrderAsync = createAsyncThunk('order/cancelOrder', async (ord
 
 export const updateOrderTableAsync = createAsyncThunk('order/updateTable', async ({ orderId, tableId }) => {
   const data = await orderApi.updateOrderTable(orderId, tableId);
+  return data.data;
+});
+
+export const updateOrderNoteAsync = createAsyncThunk('order/updateNote', async ({ orderId, note }) => {
+  const data = await orderApi.updateOrderNote(orderId, note);
   return data.data;
 });
 
@@ -43,6 +48,7 @@ const initialState = {
   orderStatus: 'draft',
   isModified: false,
   originalItems: {}, // Snapshot of items [id]: { quantity, note, type }
+  orderNote: '',     // Order-level staff note, displayed on the bill page
   status: 'idle',
 };
 
@@ -93,6 +99,9 @@ const orderSlice = createSlice({
     setTableId: (state, action) => {
       state.tableId = action.payload;
     },
+    setOrderNote: (state, action) => {
+      state.orderNote = action.payload;
+    },
     clearCart: (state) => {
       state.items = { byId: {}, allIds: [] };
       state.isModified = true;
@@ -115,6 +124,7 @@ const orderSlice = createSlice({
           state.orderType = order.order_type;
           state.tableId = order.table_id;
           state.mergedTables = order.merged_tables;
+          state.orderNote = order.order_note || '';
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
@@ -135,6 +145,7 @@ const orderSlice = createSlice({
         } else {
           // No active order found for table
           state.activeOrderId = null;
+          state.orderNote = '';
           state.isModified = false;
           state.items = { byId: {}, allIds: [] };
         }
@@ -195,6 +206,7 @@ export const {
   updateItemNote,
   setOrderType,
   setTableId,
+  setOrderNote,
   clearCart,
   startNewOrder
 } = orderSlice.actions;

@@ -9,8 +9,12 @@ const orderApi = {
     const response = await axios.post('/api/orders', data);
     return response.data;
   },
-  checkoutOrder: async (orderId, items, mergedTables = null) => {
-    const response = await axios.post(`/api/orders/${orderId}/checkout`, { items, merged_tables: mergedTables });
+  checkoutOrder: async (orderId, items, mergedTables = null, orderNote = null) => {
+    const response = await axios.post(`/api/orders/${orderId}/checkout`, {
+      items,
+      merged_tables: mergedTables,
+      order_note: orderNote
+    });
     return response.data;
   },
   cancelOrder: async (orderId) => {
@@ -23,6 +27,10 @@ const orderApi = {
   },
   updateItemStatus: async (itemId, status) => {
     const response = await axios.put(`/api/order-items/${itemId}/status`, { status });
+    return response.data;
+  },
+  updateOrderNote: async (orderId, note) => {
+    const response = await axios.patch(`/api/orders/${orderId}/note`, { order_note: note });
     return response.data;
   },
   completeOrder: async (orderId, paymentMethod, discountType = null, discountValue = 0, cashierNote = '') => {

@@ -209,6 +209,10 @@ h6,
     color: $color-blue;
 }
 
+.mdt-text-body {
+    color: $color-text;
+}
+
 .mdt-border-red {
     border-color: $color-red;
 }
@@ -216,6 +220,8 @@ h6,
 .mdt-border-yellow {
     border-color: $color-yellow;
 }
+
+
 
 /* Premium Scrollbar Style */
 .mdt-scrollbar {

@@ -30,7 +30,7 @@ const Bar = () => {
 
     const handleToggleItemStatus = async (item, nextStatus) => {
         const ids = item.allIds || [item.id];
-        
+
         // [WHY] For group reservations or merged tables, the items actually belong to the 'owner' table 
         // in the Redux store. We must use the consolidated group's tableId for the optimistic update 
         // to find and patch the items correctly.
@@ -63,15 +63,18 @@ const Bar = () => {
 
             order.items.forEach(item => {
                 if (item.product?.type !== 'drink' && item.type !== 'drink') return;
-                
+
                 counts.total += item.quantity;
                 if (item.status === 'ready' || item.status === 'served') {
                     counts.served += item.quantity;
                 } else {
                     const diffMinutes = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
                     // Bar logic: >= 5 mins is critical
-                    if (diffMinutes >= 5) counts.critical++;
+                    console.log(diffMinutes)
+                    console.log("â")
+                    if (diffMinutes >= 10) counts.critical++;
                     else counts.active++;
+
                 }
             });
         });
