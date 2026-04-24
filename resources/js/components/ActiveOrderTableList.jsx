@@ -49,7 +49,7 @@ const ActiveOrderTableList = ({
 
         let statusClass = "is-busy";
         if (isBar) {
-            if (diff >= 5) statusClass = "mdt-bg-red !text-white";
+            if (diff >= 10) statusClass = "mdt-bg-red !text-white";
         } else {
             if (diff >= 20) statusClass = "mdt-bg-red !text-white";
             else if (diff >= 10) statusClass = "mdt-bg-yellow mdt-text-primary";

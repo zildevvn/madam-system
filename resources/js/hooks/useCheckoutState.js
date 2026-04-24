@@ -20,6 +20,7 @@ export const useCheckoutState = () => {
     const activeOrderId = useAppSelector(state => state.order.activeOrderId);
     const orderStatus = useAppSelector(state => state.order.orderStatus);
     const isModified = useAppSelector(state => state.order.isModified);
+    const orderNote = useAppSelector(state => state.order.orderNote);
     const isConfirmed = orderStatus && orderStatus !== 'draft';
     const selectedItems = useAppSelector(selectSelectedItems);
     const allTables = useAppSelector(selectTables);
@@ -100,6 +101,7 @@ export const useCheckoutState = () => {
         isTableChanged,
         isMergeChanged,
         total,
-        totalQuantity
+        totalQuantity,
+        orderNote
     };
 };

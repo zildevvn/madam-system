@@ -5,6 +5,7 @@ import { useCheckoutLogic } from '../hooks/useCheckoutLogic';
 import CheckoutHeader from '../components/Checkout/CheckoutHeader';
 import CheckoutFooter from '../components/Checkout/CheckoutFooter';
 import CheckoutItemList from '../components/Checkout/CheckoutItemList';
+import CheckoutOrderNote from '../components/Checkout/CheckoutOrderNote';
 import StatusPopups from '../components/Checkout/StatusPopups';
 
 export default function Checkout() {
@@ -34,6 +35,8 @@ export default function Checkout() {
         totalQuantity,
         handleUpdateQuantity,
         handleUpdateNote,
+        handleUpdateOrderNote,
+        orderNote,
         handleCheckout,
         handleCancelOrder
     } = useCheckoutLogic();
@@ -58,6 +61,11 @@ export default function Checkout() {
                 selectedItems={selectedItems}
                 handleUpdateQuantity={handleUpdateQuantity}
                 handleUpdateNote={handleUpdateNote}
+            />
+
+            <CheckoutOrderNote
+                orderNote={orderNote}
+                onUpdateOrderNote={handleUpdateOrderNote}
             />
 
             <CheckoutFooter

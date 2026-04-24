@@ -11,6 +11,18 @@ const BillsContent = ({
     error,
     isBar = false
 }) => {
+    const sortedTables = [...(activeTablesToDisplay || [])].sort((a, b) => {
+        const orderA = activeOrders?.[a.id.toString()];
+        const orderB = activeOrders?.[b.id.toString()];
+        const earliestA = orderA?.items?.length
+            ? Math.min(...orderA.items.map(item => new Date(item.orderTime).getTime()))
+            : Infinity;
+        const earliestB = orderB?.items?.length
+            ? Math.min(...orderB.items.map(item => new Date(item.orderTime).getTime()))
+            : Infinity;
+        return earliestA - earliestB;
+    });
+
     return (
         <div className="md-management-page__content py-4 md:py-8">
             <div className="w-full max-w-[1240px] mx-auto px-[20px]">
@@ -27,7 +39,7 @@ const BillsContent = ({
                         )}
 
                         <ActiveOrderTableList
-                            tables={activeTablesToDisplay}
+                            tables={sortedTables}
                             orders={activeOrders}
                             currentTime={currentTime}
                             onTableClick={handleTableClick}
@@ -35,6 +47,8 @@ const BillsContent = ({
                             isBar={isBar}
                             showNewOrderHighlight={true}
                         />
+
+
                     </div>
 
                     {/* Right: Delay Warnings Sidebar */}

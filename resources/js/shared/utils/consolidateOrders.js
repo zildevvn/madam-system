@@ -57,6 +57,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     mergedTables: (groupKey.split('-').filter(p => p && !isNaN(parseInt(p))).length > 1) ? groupKey : null,
                     tableNames: [t.name || t.id.toString()],
                     startTime: new Date(order.created_at || order.updated_at),
+                    orderNote: order.order_note || '',
                     items: [],
                     itemsMap: {},
                     reservation: order.reservation,

@@ -22,7 +22,7 @@ const BillsStatusBar = ({ statusCounts, isBar = false }) => (
                 )}
                 <p className="item-info flex items-center gap-1 m-0 text-sm text-red-500 font-bold">
                     <span className="w-2 h-2 mdt-bg-red rounded-full"></span>
-                    <span>{isBar ? '> 5p' : '> 20p'}: <span className="text-gray-900">{statusCounts.critical}</span></span>
+                    <span>{isBar ? '> 10p' : '> 20p'}: <span className="text-gray-900">{statusCounts.critical}</span></span>
                 </p>
             </div>
         </div>

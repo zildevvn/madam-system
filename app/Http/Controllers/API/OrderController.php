@@ -92,9 +92,15 @@ class OrderController extends Controller
             'items.*.price' => 'required|numeric|min:0',
             'items.*.note' => 'nullable|string|max:255',
             'merged_tables' => 'nullable|string|max:255',
+            'order_note' => 'nullable|string|max:500',
         ]);
 
-        $order = $this->orderService->checkoutOrder($id, $validated['items'], $validated['merged_tables'] ?? null);
+        $order = $this->orderService->checkoutOrder(
+            $id,
+            $validated['items'],
+            $validated['merged_tables'] ?? null,
+            $validated['order_note'] ?? null
+        );
 
         return response()->json([
             'data' => $order,
@@ -218,5 +224,21 @@ class OrderController extends Controller
             'message' => $success ? 'Print job sent successfully' : 'Printing failed',
             'errors' => $success ? null : 'Printer communication error'
         ], $success ? 200 : 500);
+    }
+
+    // [WHY] Dedicated endpoint to save the order-level staff note without requiring a full re-checkout.
+    public function updateOrderNote(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'order_note' => 'nullable|string|max:500'
+        ]);
+
+        $order = $this->orderService->updateOrderNote($id, $validated['order_note'] ?? '');
+
+        return response()->json([
+            'data' => $order,
+            'message' => 'Order note updated successfully',
+            'errors' => null
+        ]);
     }
 }

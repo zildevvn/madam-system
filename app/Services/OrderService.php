@@ -100,9 +100,9 @@ class OrderService
     }
 
     // [WHY] Submit kitchen order and sync items
-    public function checkoutOrder($orderId, array $items, $mergedTables = null)
+    public function checkoutOrder($orderId, array $items, $mergedTables = null, $orderNote = null)
     {
-        $result = DB::transaction(function () use ($orderId, $items, $mergedTables) {
+        $result = DB::transaction(function () use ($orderId, $items, $mergedTables, $orderNote) {
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
@@ -154,7 +154,8 @@ class OrderService
             $order->update([
                 'total_price' => $totalPrice,
                 'status' => 'pending',
-                'merged_tables' => $mergedTables ?? $order->merged_tables
+                'merged_tables' => $mergedTables ?? $order->merged_tables,
+                'order_note' => $orderNote ?? $order->order_note
             ]);
 
             if ($order->table_id) {
@@ -194,6 +195,29 @@ class OrderService
             broadcast(new OrderUpdated($order, 'item_status_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during item status update: ' . $e->getMessage());
+        }
+
+        return $order;
+    }
+
+    // [WHY] Persist a staff note for an order and notify all connected clients in real-time.
+    public function updateOrderNote($orderId, string $note)
+    {
+        $order = Order::findOrFail($orderId);
+        $order->order_note = $note;
+        $order->save();
+
+        $order->load([
+            'items.product:id,name,price,type',
+            'table:id,name',
+            'server:id,name',
+            'cashier:id,name'
+        ]);
+
+        try {
+            broadcast(new OrderUpdated($order, 'order_updated'));
+        } catch (\Exception $e) {
+            Log::error('Broadcast failed during order note update: ' . $e->getMessage());
         }
 
         return $order;
