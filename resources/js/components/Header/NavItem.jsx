@@ -23,9 +23,6 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
                 to={item.href}
                 onClick={(e) => {
                     setSidebarOpen(false);
-                    if (hasChildren) {
-                        setExpanded(!expanded);
-                    }
                 }}
                 className={`flex items-center justify-between px-6 py-4 text-sm font-bold transition-all duration-300 group rounded-none border-r-2 ${isActive(item.href) || isAnyChildActive
                     ? 'bg-orange-50/50 text-orange-600 border-orange-500'
@@ -36,7 +33,13 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
                     {item.name}
                 </span>
                 {hasChildren && (
-                    <div className={`p-1 rounded-lg transition-colors ${expanded ? 'bg-orange-100 text-orange-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                    <div className={`icon-submenu p-1.5 rounded-lg transition-colors ${expanded ? 'bg-orange-100 text-orange-600' : 'text-slate-400 group-hover:text-slate-600'}`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setExpanded(!expanded);
+                        }}
+                    >
                         <svg
                             className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
                             fill="none"
