@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useReservationForm } from '../../hooks/useReservationForm';
+import { deleteReservationAsync } from '../../store/slices/reservationSlice';
 import ReservationDishesForm from '../../components/reservations/ReservationDishesForm';
 import ReservationTableSelector from '../../components/reservations/ReservationTableSelector';
 
@@ -12,6 +13,8 @@ const ReservationCreate = () => {
     const navigate = useNavigate();
     const isManager = user?.role === 'cashier' || user?.role === 'admin';
 
+    const dispatch = useAppDispatch();
+
     const {
         form: { register, watch, setValue, formState: { errors } },
         fields, append, remove,
@@ -19,6 +22,14 @@ const ReservationCreate = () => {
         reservationData,
         handleTabChange, onSubmit
     } = useReservationForm(id, user);
+
+    const handleRemove = async () => {
+        const name = reservationData?.tour_guide_name || reservationData?.lead_name || 'this reservation';
+        if (window.confirm(`Xóa đặt chỗ cho "${name}"? Hành động này không thể hoàn tác.`)) {
+            await dispatch(deleteReservationAsync(id));
+            navigate('/reservations');
+        }
+    };
 
     const selectedTables = watch('table_ids') || [];
     const inputClasses = "w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-[14px] focus:border-orange-200 outline-none transition-all";
@@ -39,13 +50,19 @@ const ReservationCreate = () => {
                 )}
             </div>
 
-            {message && (
-                <div className={`p-4 mb-6 rounded-2xl text-sm font-bold animate-in fade-in slide-in-from-top-4 duration-300 border ${message.type === 'success' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                    <div className="flex items-center gap-2">{message.text}</div>
-                </div>
-            )}
+            <form onSubmit={onSubmit} className="relative space-y-4">
+                {/* Processing Overlay */}
+                {loading && (
+                    <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center animate-in fade-in duration-300 -mx-4 -my-4 rounded-[16px]">
+                        <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white shadow-xl border border-gray-100">
+                            <div className="w-8 h-8 border-3 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] animate-pulse">
+                                Đang lưu dữ liệu...
+                            </span>
+                        </div>
+                    </div>
+                )}
 
-            <form onSubmit={onSubmit} className="space-y-4">
                 <input type="hidden" {...register('type')} />
 
                 <div className="bg-gray-50/30 p-1 md:p-0 rounded-2xl">
@@ -62,26 +79,26 @@ const ReservationCreate = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label className={labelClasses}>Phone</label><input {...register('phone', { required: 'Required' })} className={inputClasses} /></div>
+                    <div><label className={labelClasses}>Phone</label><input {...register('phone')} className={inputClasses} /></div>
                     <div><label className={labelClasses}>Email</label><input type="email" {...register('email')} className={inputClasses} /></div>
                 </div>
 
                 {activeTab === 'group' && (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
-                            <div><label className={labelClasses}>Tour Guide</label><input {...register('tour_guide_name')} className={inputClasses} /></div>
-                            <div><label className={labelClasses}>Company</label><input {...register('company_name')} className={inputClasses} /></div>
+                            <div><label className={labelClasses}>Tour Guide</label><input {...register('tour_guide_name', { required: 'Required' })} className={inputClasses} /></div>
+                            <div><label className={labelClasses}>Company</label><input {...register('company_name', { required: 'Required' })} className={inputClasses} /></div>
                         </div>
 
                         <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100 flex flex-col gap-6">
-                            <ReservationDishesForm 
-                                fields={fields} 
-                                register={register} 
+                            <ReservationDishesForm
+                                fields={fields}
+                                register={register}
                                 watch={watch}
                                 setValue={setValue}
-                                append={append} 
-                                remove={remove} 
-                                inputClasses={inputClasses} 
+                                append={append}
+                                remove={remove}
+                                inputClasses={inputClasses}
                             />
 
                             <div className="section-container">
@@ -113,13 +130,38 @@ const ReservationCreate = () => {
                     <button type="submit" disabled={loading} className="order-1 md:order-2 flex-[2] py-4 bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] cursor-pointer border-none disabled:opacity-50">
                         {loading ? 'Saving...' : (isEdit ? 'Update' : 'Save')}
                     </button>
+                    {isEdit && (
+                        <button
+                            type="button"
+                            onClick={handleRemove}
+                            className="order-3 py-4 px-6 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] cursor-pointer border-none hover:bg-red-100 transition-all"
+                        >
+                            Remove
+                        </button>
+                    )}
                 </div>
 
                 {isEdit && reservationData && (
-                    <div className="mt-6 text-center animate-in fade-in duration-500">
-                        <p className="text-[10px] font-medium text-gray-400 italic">
-                            Last updated by <span className="font-bold text-gray-500 not-italic">{reservationData.updater?.name || 'Unknown'}</span> at <span className="font-bold text-gray-500 not-italic">{new Date(reservationData.updated_at).toLocaleDateString()} {new Date(reservationData.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </p>
+                    <div className="mt-8 pt-6 border-t border-gray-100 text-center animate-in fade-in duration-700">
+                        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-medium text-gray-400 italic">
+                            {(reservationData.histories || []).map((history, idx) => (
+                                <React.Fragment key={history.id || idx}>
+                                    <span className="whitespace-nowrap">
+                                        <span className="font-bold text-gray-500 not-italic uppercase tracking-tight">{history.user?.name || 'Hệ thống'}</span>
+                                        {' '}{history.action === 'created' ? 'created' : 'edited'} at{' '}
+                                        <span className="font-bold text-gray-500 not-italic">
+                                            {new Date(history.created_at).toLocaleDateString('vi-VN')} {new Date(history.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                        </span>
+                                    </span>
+                                    {idx < reservationData.histories.length - 1 && <span className="text-gray-200 not-italic">—</span>}
+                                </React.Fragment>
+                            ))}
+                            {(!reservationData.histories || reservationData.histories.length === 0) && (
+                                <span className="whitespace-nowrap">
+                                    Last updated by <span className="font-bold text-gray-500 not-italic uppercase tracking-tight">{reservationData.updater?.name || 'Unknown'}</span> at <span className="font-bold text-gray-500 not-italic">{new Date(reservationData.updated_at).toLocaleDateString()}</span>
+                                </span>
+                            )}
+                        </div>
                     </div>
                 )}
             </form>

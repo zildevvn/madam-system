@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Reservation;
+use App\Models\ReservationHistory;
 use Illuminate\Support\Facades\DB;
 
 class ReservationService
@@ -35,8 +36,16 @@ class ReservationService
                 $confirmService->confirmGroupReservation($reservation, $tableIds, $data['staff_id'] ?? null);
             }
 
+            // [WHY] Log the initial creation in the history trail
+            ReservationHistory::create([
+                'reservation_id' => $reservation->id,
+                'user_id' => auth()->id() ?? $data['updated_by'] ?? null,
+                'action' => 'created',
+                'note' => 'Initial reservation recorded.'
+            ]);
+
             // [WHY] Reload items and audit info to ensure they are available in the response
-            $reservation->load(['items', 'table', 'updater:id,name']);
+            $reservation->load(['items', 'table', 'updater:id,name', 'histories']);
 
             return $reservation;
         });
@@ -97,8 +106,16 @@ class ReservationService
                 $confirmService->confirmGroupReservation($reservation, $tableIds, $data['staff_id'] ?? null);
             }
 
+            // [WHY] Log the update in the history trail
+            ReservationHistory::create([
+                'reservation_id' => $reservation->id,
+                'user_id' => auth()->id() ?? $data['updated_by'] ?? null,
+                'action' => 'updated',
+                'note' => isset($data['status']) ? "Information updated (Status: {$data['status']})" : "Information updated."
+            ]);
+
             // [WHY] Reload items and audit info to ensure they are available in the response
-            $reservation->load(['items', 'table', 'updater:id,name']);
+            $reservation->load(['items', 'table', 'updater:id,name', 'histories']);
 
             return $reservation;
         });
