@@ -59,7 +59,7 @@ const DelayWarnings = ({
                     bucket[itemName] = {
                         name: itemName,
                         totalQuantity: item.quantity,
-                        tables: [{ name: tableName, orderTime: item.orderTime }],
+                        tables: [{ name: tableName, orderTime: item.orderTime, status: item.status, orderStartTime: order.startTime || order.created_at }],
                         maxDiff: diff,
                         itemIds: [item.id],
                         orderId: order.id
@@ -68,13 +68,17 @@ const DelayWarnings = ({
                     bucket[itemName].totalQuantity += item.quantity;
                     const existingTable = bucket[itemName].tables.find(t => t.name === tableName);
                     if (!existingTable) {
-                        bucket[itemName].tables.push({ name: tableName, orderTime: item.orderTime });
+                        bucket[itemName].tables.push({ name: tableName, orderTime: item.orderTime, status: item.status, orderStartTime: order.startTime || order.created_at });
                     } else {
                         // Keep the earliest order time for this table's dish
                         const existingTime = new Date(existingTable.orderTime).getTime();
                         const newTime = new Date(item.orderTime).getTime();
                         if (newTime < existingTime) {
                             existingTable.orderTime = item.orderTime;
+                        }
+                        // If any item is pending/new, mark the table as new
+                        if (!item.status || item.status === 'pending') {
+                            existingTable.status = 'pending';
                         }
                     }
                     bucket[itemName].maxDiff = Math.max(bucket[itemName].maxDiff, diff);
@@ -134,9 +138,21 @@ const DelayWarnings = ({
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
-                                    {item.tables.slice().sort((a, b) => new Date(a.orderTime) - new Date(b.orderTime)).map((t, tid) => (
-                                        <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase">Bàn {t.name.toString().replace(/^Bàn\s+/i, '')}</span>
-                                    ))}
+                                    {item.tables.slice().sort((a, b) => new Date(a.orderTime) - new Date(b.orderTime)).map((t, tid) => {
+                                        const isAdditional = (new Date(t.orderTime).getTime() - new Date(t.orderStartTime).getTime()) > 30000;
+                                        const isNew = (!t.status || t.status === 'pending') && isAdditional;
+                                        const isPulsing = isNew && ((currentTime - new Date(t.orderTime)) / 1000 < 300);
+                                        return (
+                                            <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+                                                {isNew && (
+                                                    <svg className={`w-2.5 h-2.5 text-red-500 ${isPulsing ? 'animate-pulse' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 2.25a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0V5a.75.75 0 01.75-.75zM13.25 4a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM17.25 5a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM10 7a3 3 0 100 6 3 3 0 000-6zM7 10a3 3 0 116 0 3 3 0 01-6 0zm10.75 4a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM13.25 15a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM9.25 15a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM5.25 14a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM2.75 11a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM2.75 7a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                                Bàn {t.name.toString().replace(/^Bàn\s+/i, '')}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                                 <span className={`text-[14px] font-black group-hover:scale-110 transition-transform ${config.color}`}>x{item.totalQuantity}</span>
                             </div>

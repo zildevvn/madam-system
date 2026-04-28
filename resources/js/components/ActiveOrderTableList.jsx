@@ -34,13 +34,13 @@ const ActiveOrderTableList = ({
 
     const getTableStatus = (tableId) => {
         const order = getOrderForTable(tableId);
-        if (!order) return { statusClass: "", duration: "BÀN TRỐNG" };
+        if (!order) return { statusClass: "", duration: "BÀN TRỐNG", isNewOrder: false };
 
         if (showSimpleView) {
-            return { statusClass: "is-busy", duration: "" };
+            return { statusClass: "is-busy", duration: "", isNewOrder: false };
         }
 
-        if (isOrderServed(order)) return { statusClass: "mdt-bg-green !text-white", duration: "HOÀN TẤT" };
+        if (isOrderServed(order)) return { statusClass: "mdt-bg-green !text-white", duration: "HOÀN TẤT", isNewOrder: false };
 
         const activeItems = order.items.filter(item => item.status !== 'ready' && item.status !== 'served');
         const diff = activeItems.length > 0
@@ -56,17 +56,31 @@ const ActiveOrderTableList = ({
             else if (diff >= 5) statusClass = "mdt-bg-blue !text-white";
         }
 
-        // Add highlight for new orders (items added within the last 30 seconds)
+        // Add highlight for new orders (only for ADDITIONAL items, not initial order)
+        let isNewOrder = false;
         if (showNewOrderHighlight && order.items && order.items.length > 0) {
-            const minDiffSeconds = Math.min(...order.items.map(item =>
-                (currentTime - new Date(item.orderTime)) / 1000
-            ));
-            if (minDiffSeconds < 30) {
-                statusClass += " is-new-order";
+            // Check if any pending item was added at least 30 seconds after the order was first created
+            const hasAdditionalPendingItems = order.items.some(item => {
+                const isPending = !item.status || item.status === 'pending';
+                const isAdditional = (new Date(item.orderTime).getTime() - new Date(order.startTime).getTime()) > 30000;
+                return isPending && isAdditional;
+            });
+
+            if (hasAdditionalPendingItems) {
+                isNewOrder = true;
+
+                // Pulsing animation (.is-new-order) is removed after 5 minutes
+                const minDiffSeconds = Math.min(...order.items.map(item =>
+                    (currentTime - new Date(item.orderTime)) / 1000
+                ));
+                if (minDiffSeconds < 300) {
+                    statusClass += " is-new-order";
+                }
             }
         }
 
-        return { statusClass, duration: `${diff} PHÚT` };
+
+        return { statusClass, duration: `${diff} PHÚT`, isNewOrder };
     };
 
     const activeTables = tables.filter(table => {
@@ -88,16 +102,23 @@ const ActiveOrderTableList = ({
                     onTableClick={onTableClick}
                     gridClassName="list-tables grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4"
                     renderCard={(table) => {
-                        const { statusClass, duration } = getTableStatus(table.id);
+                        const { statusClass, duration, isNewOrder } = getTableStatus(table.id);
                         const order = getOrderForTable(table.id);
 
                         return (
                             <div
                                 key={table.id}
                                 onClick={() => onTableClick && onTableClick(table)}
-                                className={`bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''} ${table.isGroupLinked ? 'is-group-linked' : ''} ${table.groupColorIndex ? `is-group-color-${table.groupColorIndex}` : ''}`}
+                                className={`relative bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''} ${table.isGroupLinked ? 'is-group-linked' : ''} ${table.groupColorIndex ? `is-group-color-${table.groupColorIndex}` : ''}`}
                             >
-                                <span className={`label-table text-[16px] font-black text-center ${!statusClass ? 'text-gray-900' : ''}`}>
+
+                                <span className={`label-table text-[16px] font-black text-center flex items-center justify-center gap-1.5 ${!statusClass ? 'text-gray-900' : ''}`}>
+                                    <div className="icon-new">
+                                        {isNewOrder && (
+                                            <svg width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff"><path d="M22 14V8.5M6 13V6C6 4.34315 7.34315 3 9 3H14" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M16.9922 4H19.9922M22.9922 4L19.9922 4M19.9922 4V1M19.9922 4V7" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 21H6C3.79086 21 2 19.2091 2 17C2 14.7909 3.79086 13 6 13H17H18C15.7909 13 14 14.7909 14 17C14 19.2091 15.7909 21 18 21C20.2091 21 22 19.2091 22 17V14" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                        )}
+                                    </div>
+
                                     {(() => {
                                         // 1. Detect Group Reservation range from table_ids
                                         if (order?.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
