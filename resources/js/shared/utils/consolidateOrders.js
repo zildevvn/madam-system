@@ -1,3 +1,5 @@
+import { safeParseDate } from './dateUtils';
+
 /**
  * Consolidates active tables and orders into logical groups (merged tables or group reservations).
  * @param {Array} tables - List of all tables with their active orders
@@ -56,7 +58,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     isGroup: !!reservation || isTableInGroupRes,
                     mergedTables: (groupKey.split('-').filter(p => p && !isNaN(parseInt(p))).length > 1) ? groupKey : null,
                     tableNames: [t.name || t.id.toString()],
-                    startTime: new Date(order.created_at || order.updated_at),
+                    startTime: safeParseDate(order.created_at || order.updated_at),
                     orderNote: order.order_note || '',
                     guestCount: order.guest_count || 1,
                     items: [],
@@ -83,7 +85,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             if (handledOrderIds.has(order.id)) return;
             handledOrderIds.add(order.id);
 
-            const orderTime = new Date(order.created_at || order.updated_at);
+            const orderTime = safeParseDate(order.created_at || order.updated_at);
             if (orderTime < group.startTime) {
                 group.startTime = orderTime;
             }
@@ -100,7 +102,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     price: item.price || item.product?.price || 0,
                     status: item.status || 'pending',
                     done: item.status === 'ready' || item.status === 'served',
-                    orderTime: new Date(item.created_at),
+                    orderTime: safeParseDate(item.created_at),
                     product: item.product,
                     product_id: item.product_id,
                     type: productType || filterType,

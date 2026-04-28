@@ -1,4 +1,15 @@
 import React from 'react';
+import { safeParseDate } from '../shared/utils/dateUtils';
+
+// Constants for order delay thresholds (in minutes)
+const THRESHOLD_BAR_CRITICAL = 5;
+const THRESHOLD_KITCHEN_CRITICAL = 20;
+const THRESHOLD_KITCHEN_WARNING = 10;
+const THRESHOLD_KITCHEN_ALERT = 5;
+
+// Constants for "new order" highlight logic
+const ADDITIONAL_ITEM_THRESHOLD_MS = 30000; // 30 seconds buffer
+const NEW_ORDER_PULSING_TIMEOUT_S = 300;    // 5 minutes timeout
 
 const DelayWarnings = ({
     onItemClick,
@@ -22,8 +33,8 @@ const DelayWarnings = ({
         };
 
         const getElapsedTime = (time) => {
-            const timeValue = time instanceof Date ? time.getTime() : new Date(time).getTime();
-            return Math.max(1, Math.floor((currentTime - timeValue) / 60000));
+            const timeValue = safeParseDate(time).getTime();
+            return Math.max(1, Math.floor((safeParseDate(currentTime).getTime() - timeValue) / 60000));
         };
 
         const processOrder = (tableId, order) => {
@@ -42,11 +53,11 @@ const DelayWarnings = ({
                 const diff = getElapsedTime(item.orderTime);
                 let bucketKey = 'active';
                 if (isBar) {
-                    if (diff >= 5) bucketKey = 'critical';
+                    if (diff >= THRESHOLD_BAR_CRITICAL) bucketKey = 'critical';
                 } else {
-                    if (diff >= 20) bucketKey = 'critical';
-                    else if (diff >= 10) bucketKey = 'warning';
-                    else if (diff >= 5) bucketKey = 'alert';
+                    if (diff >= THRESHOLD_KITCHEN_CRITICAL) bucketKey = 'critical';
+                    else if (diff >= THRESHOLD_KITCHEN_WARNING) bucketKey = 'warning';
+                    else if (diff >= THRESHOLD_KITCHEN_ALERT) bucketKey = 'alert';
                 }
 
                 const bucket = result[bucketKey];
@@ -138,10 +149,10 @@ const DelayWarnings = ({
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
-                                    {item.tables.slice().sort((a, b) => new Date(a.orderTime) - new Date(b.orderTime)).map((t, tid) => {
-                                        const isAdditional = (new Date(t.orderTime).getTime() - new Date(t.orderStartTime).getTime()) > 30000;
+                                    {item.tables.slice().sort((a, b) => safeParseDate(a.orderTime).getTime() - safeParseDate(b.orderTime).getTime()).map((t, tid) => {
+                                        const isAdditional = (safeParseDate(t.orderTime).getTime() - safeParseDate(t.orderStartTime).getTime()) > ADDITIONAL_ITEM_THRESHOLD_MS;
                                         const isNew = (!t.status || t.status === 'pending') && isAdditional;
-                                        const isPulsing = isNew && ((currentTime - new Date(t.orderTime)) / 1000 < 300);
+                                        const isPulsing = isNew && ((safeParseDate(currentTime).getTime() - safeParseDate(t.orderTime).getTime()) / 1000 < NEW_ORDER_PULSING_TIMEOUT_S);
                                         return (
                                             <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
                                                 {isNew && (
