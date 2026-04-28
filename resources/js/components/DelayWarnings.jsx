@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { safeParseDate } from '../shared/utils/dateUtils';
 
 // Constants for order delay thresholds (in minutes)
@@ -21,6 +21,7 @@ const DelayWarnings = ({
     filterType = null, // 'food' or 'drink'
     isBar = false
 }) => {
+    const [selectedItem, setSelectedItem] = useState(null);
     const buckets = React.useMemo(() => {
         if (!orders || !currentTime) return { critical: [], warning: [], alert: [], active: [] };
 
@@ -73,10 +74,14 @@ const DelayWarnings = ({
                         tables: [{ name: tableName, orderTime: item.orderTime, status: item.status, orderStartTime: order.startTime || order.created_at }],
                         maxDiff: diff,
                         itemIds: [item.id],
-                        orderId: order.id
+                        orderId: order.id,
+                        tableNotes: item.note ? [{ tableName, note: item.note }] : []
                     };
                 } else {
                     bucket[itemName].totalQuantity += item.quantity;
+                    if (item.note) {
+                        bucket[itemName].tableNotes.push({ tableName, note: item.note });
+                    }
                     const existingTable = bucket[itemName].tables.find(t => t.name === tableName);
                     if (!existingTable) {
                         bucket[itemName].tables.push({ name: tableName, orderTime: item.orderTime, status: item.status, orderStartTime: order.startTime || order.created_at });
@@ -131,16 +136,18 @@ const DelayWarnings = ({
                     <span className={`px-2 py-0.5 rounded-full text-white ${config.bg}`}>{items.length} món</span>
                 </div>
 
-
                 <div className="space-y-3">
                     {items.map((item, idx) => (
                         <div
                             key={`${item.name}-${type}-${idx}`}
-                            className={`p-3 rounded-2xl border-2 transition-all bg-white cursor-pointer group ${config.border}`}
-                            onClick={() => onItemClick && onItemClick(item.orderId, item.itemIds)}
+                            className={`item-food p-3 rounded-2xl border-2 transition-all bg-white cursor-pointer group ${config.border}`}
+                            onClick={() => setSelectedItem(item)}
                         >
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-[14px] font-black text-gray-800 leading-none">{item.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[14px] font-black text-gray-800 leading-none">{item.name}</span>
+
+                                </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg text-white shadow-sm transition-all duration-300 ${config.bg}`}>
                                         {item.maxDiff}P
@@ -150,16 +157,8 @@ const DelayWarnings = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1 items-center max-w-[70%]">
                                     {item.tables.slice().sort((a, b) => safeParseDate(a.orderTime).getTime() - safeParseDate(b.orderTime).getTime()).map((t, tid) => {
-                                        const isAdditional = (safeParseDate(t.orderTime).getTime() - safeParseDate(t.orderStartTime).getTime()) > ADDITIONAL_ITEM_THRESHOLD_MS;
-                                        const isNew = (!t.status || t.status === 'pending') && isAdditional;
-                                        const isPulsing = isNew && ((safeParseDate(currentTime).getTime() - safeParseDate(t.orderTime).getTime()) / 1000 < NEW_ORDER_PULSING_TIMEOUT_S);
                                         return (
                                             <span key={tid} className="text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
-                                                {isNew && (
-                                                    <svg className={`w-2.5 h-2.5 text-red-500 ${isPulsing ? 'animate-pulse' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 2.25a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0V5a.75.75 0 01.75-.75zM13.25 4a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM17.25 5a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM10 7a3 3 0 100 6 3 3 0 000-6zM7 10a3 3 0 116 0 3 3 0 01-6 0zm10.75 4a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM13.25 15a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM9.25 15a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM5.25 14a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5zM2.75 11a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75zM2.75 7a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5a.75.75 0 01.75-.75z" clipRule="evenodd" />
-                                                    </svg>
-                                                )}
                                                 Bàn {t.name.toString().replace(/^Bàn\s+/i, '')}
                                             </span>
                                         );
@@ -202,6 +201,48 @@ const DelayWarnings = ({
                     </div>
                 )}
             </div>
+
+            {/* Detailed Dish Note Modal */}
+            {selectedItem && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-[16px] w-full max-w-sm overflow-hidden shadow-xl animate-in zoom-in-95 duration-200 border border-white/20">
+                        <div className="p-4">
+                            <div className="space-y-3">
+                                <div className="p-4 bg-orange-50 rounded-[12px] border border-orange-100 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    {selectedItem.tableNotes && selectedItem.tableNotes.length > 0 ? (
+                                        <ul className="space-y-3 relative z-10">
+                                            {selectedItem.tableNotes.map((tn, nIdx) => (
+                                                <li key={nIdx} className="flex gap-2 text-[15px]">
+                                                    <span className="text-gray-400 font-bold shrink-0">Bàn {tn.tableName.toString().replace(/^Bàn\s+/i, 'Bàn ')}:</span>
+                                                    <span className="text-orange-950 font-black italic">"{tn.note}"</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <div className="py-4 text-center">
+                                            <p className="text-gray-400 font-bold italic text-sm">Không có ghi chú cho món này</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
+                            <button
+                                onClick={() => setSelectedItem(null)}
+                                className="flex-1 py-4 bg-white text-gray-400 rounded-2xl font-black border border-gray-200 hover:text-gray-900 hover:border-gray-900 transition-all active:scale-[0.98] uppercase tracking-wider text-sm"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
