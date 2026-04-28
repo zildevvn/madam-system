@@ -17,7 +17,13 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
     }, [tableStatus, dispatch]);
 
     // [WHY] Only show tables that are truly free (no active order and not part of a merged set)
-    const availableTables = allTables.filter(t => !t.active_order && !tableIdToGroupKey[t.id.toString()]);
+    // [EXCEPTION] If a table is already part of the 'selectedTables' list for this reservation,
+    // it must remain visible so it can be unselected.
+    const availableTables = allTables.filter(t => {
+        const isSelected = selectedTables.some(sid => sid.toString() === t.id.toString());
+        if (isSelected) return true;
+        return !t.active_order && !tableIdToGroupKey[t.id.toString()];
+    });
 
     return (
         <div className="relative">
@@ -38,23 +44,23 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                     <div className="fixed inset-0 z-[60]" onClick={() => setShowTableDropdown(false)}></div>
                     <div className="absolute bottom-full mb-3 left-0 w-72 bg-white border border-gray-100 rounded-[30px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] z-[70] py-4 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
                         <div className="px-5 py-2 flex items-center justify-between border-b border-gray-50 mb-2 pb-3">
-                            <div className="flex items-center gap-2 group cursor-pointer">
+                                    <div className="flex items-center gap-2 group cursor-pointer">
                                 <input
                                     type="checkbox"
                                     id="select-all-available"
                                     className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
-                                    checked={availableTables.length > 0 && availableTables.every(t => selectedTables.includes(t.id.toString()))}
+                                    checked={availableTables.length > 0 && availableTables.every(t => selectedTables.some(id => id.toString() === t.id.toString()))}
                                     onChange={(e) => {
                                         const allAvailableIds = availableTables.map(t => t.id.toString());
-                                        const isAllSelected = allAvailableIds.every(id => selectedTables.includes(id));
+                                        const isAllSelected = allAvailableIds.every(id => selectedTables.some(sid => sid.toString() === id));
                                         
                                         if (e.target.checked && !isAllSelected) {
                                             allAvailableIds.forEach(id => {
-                                                if (!selectedTables.includes(id)) onToggle(id);
+                                                if (!selectedTables.some(sid => sid.toString() === id)) onToggle(id);
                                             });
                                         } else if (!e.target.checked && isAllSelected) {
                                             allAvailableIds.forEach(id => {
-                                                if (selectedTables.includes(id)) onToggle(id);
+                                                if (selectedTables.some(sid => sid.toString() === id)) onToggle(id);
                                             });
                                         }
                                     }}
@@ -71,13 +77,13 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                                         <input
                                             type="checkbox"
                                             value={table.id}
-                                            checked={selectedTables.includes(table.id.toString())}
+                                            checked={selectedTables.some(id => id.toString() === table.id.toString())}
                                             onChange={() => onToggle(table.id.toString())}
                                             className="w-4 h-4 rounded border-gray-200 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer accent-orange-500"
                                         />
                                     </div>
                                     <div className="ml-4 flex flex-col">
-                                        <span className={`text-sm transition-colors ${selectedTables.includes(table.id.toString()) ? 'font-black text-orange-600' : 'text-gray-700 font-bold group-hover:text-gray-900'}`}>
+                                        <span className={`text-sm transition-colors ${selectedTables.some(id => id.toString() === table.id.toString()) ? 'font-black text-orange-600' : 'text-gray-700 font-bold group-hover:text-gray-900'}`}>
                                             {table.name}
                                         </span>
                                     </div>

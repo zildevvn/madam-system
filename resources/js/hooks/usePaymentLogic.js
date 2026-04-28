@@ -42,21 +42,36 @@ export const usePaymentLogic = ({
         productService.getProducts().then(res => setAllProducts(res.data)).catch(console.error);
     }, []);
 
+    const itemDiscountsTotal = useMemo(() => {
+        return draftItems.reduce((sum, i) => {
+            const val = Number(i.discount || 0);
+            const type = i.discountType || 'fixed';
+            const itemGross = i.price * i.quantity;
+            
+            if (type === 'percent') {
+                return sum + (itemGross * val / 100);
+            }
+            return sum + (val * i.quantity);
+        }, 0);
+    }, [draftItems]);
+
     const draftTotal = useMemo(() => {
         return draftItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
     }, [draftItems]);
 
     const discountAmount = useMemo(() => {
         if (!discountValue || discountValue <= 0) return 0;
+        // Global discount applies to the total AFTER item discounts have been applied
+        const remainingTotal = Math.max(0, draftTotal - itemDiscountsTotal);
         if (discountType === 'percent') {
-            return Math.min(draftTotal, (draftTotal * discountValue) / 100);
+            return Math.min(remainingTotal, (remainingTotal * discountValue) / 100);
         }
-        return Math.min(draftTotal, discountValue);
-    }, [discountType, discountValue, draftTotal]);
+        return Math.min(remainingTotal, discountValue);
+    }, [discountType, discountValue, draftTotal, itemDiscountsTotal]);
 
     const finalTotal = useMemo(() => {
-        return Math.max(0, draftTotal - discountAmount);
-    }, [draftTotal, discountAmount]);
+        return Math.max(0, draftTotal - itemDiscountsTotal - discountAmount);
+    }, [draftTotal, itemDiscountsTotal, discountAmount]);
 
     const handlePayment = useCallback(async () => {
         if (!currentOrder || !paymentMethod || isProcessing) return;
@@ -85,6 +100,8 @@ export const usePaymentLogic = ({
                             quantity: i.quantity,
                             price: i.price,
                             note: i.note,
+                            discount: i.discount || 0,
+                            discount_type: i.discountType || 'fixed', // [NEW] Pass type to backend
                             table_id: i.tableId || currentOrder.tableId
                         })),
                         currentOrder?.mergedTables || selectedTable.merged_tables || null
@@ -131,6 +148,15 @@ export const usePaymentLogic = ({
         onUpdateDraftItems(newItems);
     }, [draftItems, selectedTable.id, onUpdateDraftItems]);
 
+    const handleUpdateItemDiscount = useCallback((productId, tableId, updates) => {
+        const newItems = draftItems.map(i =>
+            ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+                ? { ...i, ...updates }
+                : i
+        );
+        onUpdateDraftItems(newItems);
+    }, [draftItems, selectedTable.id, onUpdateDraftItems]);
+
     const handleAddProduct = useCallback((product) => {
         const activeTId = targetTableId || selectedTable.id;
         const existing = draftItems.find(i =>
@@ -151,6 +177,8 @@ export const usePaymentLogic = ({
                 price: product.price,
                 quantity: 1,
                 note: '',
+                discount: 0,
+                discountType: 'fixed',
                 tableId: activeTId
             }];
         }
@@ -182,6 +210,7 @@ export const usePaymentLogic = ({
         handlePayment,
         handleUpdateQuantity,
         handleUpdateNote,
+        handleUpdateItemDiscount,
         handleAddProduct,
         filteredProducts
     };

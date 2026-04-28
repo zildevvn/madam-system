@@ -1,3 +1,5 @@
+import { safeParseDate } from './dateUtils';
+
 /**
  * Consolidates active tables and orders into logical groups (merged tables or group reservations).
  * @param {Array} tables - List of all tables with their active orders
@@ -27,6 +29,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
     });
 
     // 1. Consolidate into groups
+    // 1. First Pass: Create group objects for any table that HAS an active order.
     tables.forEach(t => {
         const rawPlural = t.active_orders || t.activeOrders;
         const rawSingular = t.active_order || t.activeOrder;
@@ -35,18 +38,12 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
         ordersToProcess.forEach(order => {
             if (!order || !order.items) return;
 
-            // [RULE] A table always follows its assigned group key from the store.
-            let groupKeyBase = tableIdToGroupKey[t.id.toString()] || t.id.toString();
-
-            // [WHY] Identify if this table belongs to a Group Reservation.
-            // We use the pre-pass 'groupReservedTableIds' for this.
-            const isTableInGroupRes = groupReservedTableIds.has(Number(t.id));
-
-            let groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+            const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
             if (!consolidatedGroups[groupKey]) {
                 const reservation = order.reservation;
                 const groupName = reservation ? (reservation.company_name || reservation.lead_name) : null;
+                const isTableInGroupRes = groupReservedTableIds.has(Number(t.id));
 
                 consolidatedGroups[groupKey] = {
                     id: order.id,
@@ -55,8 +52,8 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     groupName: groupName,
                     isGroup: !!reservation || isTableInGroupRes,
                     mergedTables: (groupKey.split('-').filter(p => p && !isNaN(parseInt(p))).length > 1) ? groupKey : null,
-                    tableNames: [t.name || t.id.toString()],
-                    startTime: new Date(order.created_at || order.updated_at),
+                    tableNames: [], // [FIX] Will be populated in second pass
+                    startTime: safeParseDate(order.created_at || order.updated_at),
                     orderNote: order.order_note || '',
                     guestCount: order.guest_count || 1,
                     items: [],
@@ -64,13 +61,6 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     reservation: order.reservation,
                     groupKey: groupKey
                 };
-            } else if (!consolidatedGroups[groupKey].tableNames.includes(t.name || t.id.toString())) {
-                consolidatedGroups[groupKey].tableNames.push(t.name || t.id.toString());
-            }
-
-            const existingMapping = orderDict[t.id.toString()];
-            if (!existingMapping || (order.reservation && order.reservation.type === 'group')) {
-                orderDict[t.id.toString()] = consolidatedGroups[groupKey];
             }
 
             const group = consolidatedGroups[groupKey];
@@ -83,7 +73,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             if (handledOrderIds.has(order.id)) return;
             handledOrderIds.add(order.id);
 
-            const orderTime = new Date(order.created_at || order.updated_at);
+            const orderTime = safeParseDate(order.created_at || order.updated_at);
             if (orderTime < group.startTime) {
                 group.startTime = orderTime;
             }
@@ -100,7 +90,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     price: item.price || item.product?.price || 0,
                     status: item.status || 'pending',
                     done: item.status === 'ready' || item.status === 'served',
-                    orderTime: new Date(item.created_at),
+                    orderTime: safeParseDate(item.created_at),
                     product: item.product,
                     product_id: item.product_id,
                     type: productType || filterType,
@@ -126,6 +116,24 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                 }
             });
         });
+    });
+
+    // 2. Second Pass: Associate ALL tables (including those without orders) with their respective groups.
+    tables.forEach(t => {
+        const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+        const group = consolidatedGroups[groupKey];
+
+        if (group) {
+            // [WHY] Add table name if not already present. This ensures follower tables in a group 
+            // reservation are listed in the 'tableName' string (e.g. Bàn 1-2-3).
+            if (!group.tableNames.includes(t.name || t.id.toString())) {
+                group.tableNames.push(t.name || t.id.toString());
+            }
+            // [WHY] Map this table to its group in the quick-lookup dictionary.
+            if (!orderDict[t.id.toString()]) {
+                orderDict[t.id.toString()] = group;
+            }
+        }
     });
 
     // 2. Finalize groups and build list for display

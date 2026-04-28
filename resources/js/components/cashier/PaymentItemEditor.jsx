@@ -12,6 +12,7 @@ const PaymentItemEditor = ({
     currentOrder,
     draftItems,
     allProducts,
+    allTables = [],
     searchQuery,
     setSearchQuery,
     showProductSearch,
@@ -20,6 +21,7 @@ const PaymentItemEditor = ({
     setTargetTableId,
     handleUpdateQuantity,
     handleUpdateNote,
+    handleUpdateItemDiscount,
     handleAddProduct,
     filteredProducts,
     isReadOnly = false
@@ -37,6 +39,12 @@ const PaymentItemEditor = ({
     const selectorTableIds = groupTableIds.length > 0
         ? groupTableIds
         : (mergedStr ? mergedStr.split('-').map(s => s.trim()).filter(id => id && !isNaN(parseInt(id))).map(Number) : []);
+
+    // [WHY] Map IDs to display names (e.g. 47 -> "44")
+    const resolveTableLabel = (tid) => {
+        const t = allTables.find(tbl => tbl.id.toString() === tid.toString());
+        return t?.name?.replace(/^Bàn\s+/i, '') || tid;
+    };
 
     return (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -69,7 +77,7 @@ const PaymentItemEditor = ({
                                             }
                                         `}
                                     >
-                                        {id}
+                                        {resolveTableLabel(id)}
                                     </button>
                                 ))}
                             </div>
@@ -137,8 +145,8 @@ const PaymentItemEditor = ({
 
                             // [WHY] Display title for each section
                             const displayTableTitle = isSharedSection
-                                ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.join('-')})` : ''}`
-                                : `Bàn ${tGroup.toString().split('-')[0]}`;
+                                ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.map(resolveTableLabel).join('-')})` : ''}`
+                                : `Bàn ${resolveTableLabel(tGroup)}`;
 
                             // [WHY] Shared pre-order items are always read-only.
                             // Individual extras are editable.
@@ -168,6 +176,7 @@ const PaymentItemEditor = ({
                                                 item={item}
                                                 onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q)}
                                                 onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n)}
+                                                onUpdateDiscount={(id, d) => handleUpdateItemDiscount(item.product_id || item.id, parseInt(actualTableId), d)}
                                                 showNoteButton={!itemReadOnly}
                                                 isReadOnly={itemReadOnly}
                                             />

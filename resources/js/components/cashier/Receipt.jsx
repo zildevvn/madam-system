@@ -1,19 +1,45 @@
 import React from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 
-const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }) => {
+/**
+ * Receipt: Thermal-printer optimized layout for order printing.
+ * Updated to support per-item discounts (Fixed or Percent).
+ */
+const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discountValue = 0 }) => {
     const [printDate] = React.useState(new Date());
+
+    const resolveTableLabel = (tid) => {
+        if (!allTables) return tid;
+        const t = allTables.find(tbl => tbl.id.toString() === tid.toString());
+        return t?.name?.replace(/^Bàn\s+/i, '') || tid;
+    };
+
     if (!order) return null;
 
     const orderItems = order.items || [];
-    const subtotal = orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+    // [WHY] Per-item discounts must be summed separately from global discount
+    const itemDiscountsTotal = orderItems.reduce((sum, i) => {
+        const val = Number(i.discount || 0);
+        const type = i.discountType || 'fixed';
+        const itemGross = i.price * i.quantity;
+
+        if (type === 'percent') {
+            return sum + (itemGross * val / 100);
+        }
+        return sum + (val * i.quantity);
+    }, 0);
+
+    const grossTotal = orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     const totalQuantity = orderItems.reduce((total, item) => total + item.quantity, 0);
 
-    const discountAmount = discountType === 'percent'
-        ? Math.min(subtotal, (subtotal * discountValue) / 100)
-        : Math.min(subtotal, discountValue);
+    // [WHY] Global discount applies to the total AFTER item discounts
+    const remainingAfterItemDiscounts = Math.max(0, grossTotal - itemDiscountsTotal);
+    const globalDiscountAmount = discountType === 'percent'
+        ? Math.min(remainingAfterItemDiscounts, (remainingAfterItemDiscounts * discountValue) / 100)
+        : Math.min(remainingAfterItemDiscounts, discountValue);
 
-    const finalTotal = Math.max(0, subtotal - discountAmount);
+    const finalTotal = Math.max(0, remainingAfterItemDiscounts - globalDiscountAmount);
 
     const formatReceiptDate = (date) => {
         if (!date) return '-';
@@ -25,27 +51,19 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
 
     // ─── LOGIC: Table & Group Info ───
     const isGroupReservation = order.reservation && order.reservation.type === 'group';
-    
-    const tableIds = isGroupReservation && Array.isArray(order.reservation.table_ids)
-        ? order.reservation.table_ids
-            .map(id => id.toString().replace(/^Bàn\s+/i, ''))
-            .sort((a, b) => parseInt(a) - parseInt(b))
-        : [];
 
-    const displayTableName = tableIds.length > 0
-        ? tableIds.join('-')
-        : (order.tableName || tableName || order.table?.name || order.table?.id.toString() || '-')
-            .toString()
-            .replace(/^Bàn\s+/i, '');
+    // [RULE] Prefer the tableName provided by the parent (Cashier.jsx), 
+    // which has already resolved IDs to numeric labels.
+    const displayTableName = (tableName || order.tableName || order.table?.name || order.table?.id.toString() || '-')
+        .toString()
+        .replace(/^Bàn\s+/i, '');
 
     const groupedItems = Object.entries(
         orderItems.reduce((acc, item) => {
             let tGroup;
             if (isGroupReservation) {
-                // Shared pre-order items go to GROUP, individual extras go to their table
                 tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
             } else {
-                // Standard staff-merge: group by table
                 tGroup = item.tableId || order.tableId;
             }
             if (!acc[tGroup]) acc[tGroup] = [];
@@ -104,10 +122,6 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                         <span>{order.cashier?.name || 'Nhân viên'}</span>
                     </div>
                     <div className="receipt-meta-row">
-                        <span>Phục vụ</span>
-                        <span>{order.server?.name || order.user?.name || 'Phục vụ'}</span>
-                    </div>
-                    <div className="receipt-meta-row">
                         <span>*Ghi chú</span>
                         <span className="receipt-note">{order.cashier_note || order.note || '-'}</span>
                     </div>
@@ -117,19 +131,25 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                     <thead>
                         <tr>
                             <th align="left">Mặt hàng</th>
-                            <th align="center">SL/TL</th>
+                            <th align="center">SL</th>
                             <th align="right">T.Tiền</th>
                         </tr>
                     </thead>
                     <tbody>
                         {groupedItems.map(([tGroup, tableItems]) => {
-                            const sectionSubtotal = tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+                            const sectionGross = tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+                            const sectionDiscount = tableItems.reduce((sum, i) => {
+                                const val = Number(i.discount || 0);
+                                const type = i.discountType || 'fixed';
+                                if (type === 'percent') return sum + (i.price * i.quantity * val / 100);
+                                return sum + (val * i.quantity);
+                            }, 0);
+
                             const isSharedSection = tGroup === 'GROUP';
 
-                            // [SYNC] Use same naming as PaymentItemEditor
                             const displayTableTitle = isSharedSection
-                                ? `Món chung${tableIds.length > 0 ? ` (Bàn ${tableIds.join('-')})` : ''}`
-                                : `Bàn ${tGroup.toString().split('-')[0]}`;
+                                ? `Món chung (Bàn ${displayTableName})`
+                                : `Bàn ${resolveTableLabel(tGroup)}`;
 
                             return (
                                 <React.Fragment key={tGroup}>
@@ -148,37 +168,61 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                                             </td>
                                         </tr>
                                     )}
-                                    {tableItems.map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td align="left">
-                                                <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
-                                                <div className="receipt-item-price">{formatPrice(item.price || 0)}</div>
-                                            </td>
-                                            <td align="center">{item.quantity}</td>
-                                            <td align="right">{formatPrice((item.price || 0) * item.quantity)}</td>
-                                        </tr>
-                                    ))}
+                                    {tableItems.map((item, idx) => {
+                                        const val = Number(item.discount || 0);
+                                        const type = item.discountType || 'fixed';
+                                        let itemDiscount;
+                                        if (type === 'percent') {
+                                            itemDiscount = (item.price * val / 100);
+                                        } else {
+                                            itemDiscount = val;
+                                        }
+
+                                        const itemTotal = (item.price * item.quantity) - (itemDiscount * item.quantity);
+                                        return (
+                                            <tr key={idx}>
+                                                <td align="left">
+                                                    <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
+                                                    <div className="receipt-item-price">
+                                                        {formatPrice(item.price || 0)}
+                                                        {val > 0 && <span style={{ color: '#666', fontSize: '8px' }}> (-{type === 'percent' ? `${val}%` : formatPrice(val)})</span>}
+                                                    </div>
+                                                </td>
+                                                <td align="center">{item.quantity}</td>
+                                                <td align="right">{formatPrice(itemTotal)}</td>
+                                            </tr>
+                                        );
+                                    })}
                                     {showTableHeaders && (
                                         <tr className="receipt-subtotal-row" style={{ marginBottom: '8px' }}>
                                             <td colSpan="2" align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontStyle: 'italic', color: '#666' }}>
                                                 Cộng {isSharedSection ? 'phần chung' : `bàn ${tGroup}`}:
                                             </td>
                                             <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontWeight: 'bold' }}>
-                                                {formatPrice(sectionSubtotal)}
+                                                {formatPrice(sectionGross - sectionDiscount)}
                                             </td>
                                         </tr>
                                     )}
                                 </React.Fragment>
                             );
                         })}
-                        <tr className="receipt-total-row">
+
+                        <tr className="receipt-total-row" style={{ borderTop: '1px solid #333' }}>
                             <td align="left">Tiền hàng ({totalQuantity})</td>
-                            <td colSpan="2" align="right">{formatPrice(subtotal)}</td>
+                            <td colSpan="2" align="right">{formatPrice(grossTotal)}</td>
                         </tr>
-                        {discountAmount > 0 && (
+
+                        {itemDiscountsTotal > 0 && (
                             <tr className="receipt-total-row">
-                                <td align="left">Giảm giá {discountType === 'percent' ? `(${discountValue}%)` : ''}</td>
-                                <td colSpan="2" align="right">-{formatPrice(discountAmount)}</td>
+                                <td align="left">Giảm giá món</td>
+                                <td colSpan="2" align="right">-{formatPrice(itemDiscountsTotal)}</td>
+                            </tr>
+                        )}
+
+                        {globalDiscountAmount > 0 && (
+                            <tr className="receipt-total-row">
+                                <td align="left">Giảm giá tổng {discountType === 'percent' ? `(${discountValue}%)` : ''}</td>
+                                <td colSpan="2" align="right">-{formatPrice(globalDiscountAmount)}</td>
                             </tr>
                         )}
                     </tbody>

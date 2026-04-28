@@ -1,6 +1,6 @@
 import React from 'react';
 import ActiveOrderTableList from '../ActiveOrderTableList';
-import DelayWarnings from '../DelayWarnings';
+import DelayWarnings from '../delay-warning/DelayWarnings';
 
 const BillsContent = ({
     activeTablesToDisplay,

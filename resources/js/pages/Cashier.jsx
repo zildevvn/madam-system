@@ -36,11 +36,9 @@ const Cashier = () => {
     } = useCashierData(status);
 
     // [WHY] Segment orders into Group Reservations vs Individual Tables
-    // [RULE] Tách UI và logic (custom hook) — README.md Component Rule
     const { groupOrders, individualOrders, individualTables, groupTables } = useCashierSegmentation(orders, allTables);
     
     // [WHY] Force state-driven print isolation
-    // [RULE] High-reliability print strategy for thermal printers
     useEffect(() => {
         const handleBefore = () => document.body.classList.add('is-printing-receipt');
         const handleAfter = () => document.body.classList.remove('is-printing-receipt');
@@ -59,7 +57,6 @@ const Cashier = () => {
         const lookupKey = (table.groupKey || table.id).toString();
         const currentOrder = individualOrders[lookupKey] || groupOrders[lookupKey];
 
-        // [WHY] Initialize context for this table if it doesn't already exist
         if (!tableContexts[lookupKey]) {
             setTableContexts(prev => ({
                 ...prev,
@@ -109,7 +106,6 @@ const Cashier = () => {
         setIsReopening(orderId);
         try {
             await orderApi.reopenOrder(orderId);
-            // toast.success("Order reopened successfully");
             refreshData();
         } catch (err) {
             console.error(err);
@@ -120,17 +116,14 @@ const Cashier = () => {
     };
 
     const handleEditHistoryOrder = (order) => {
-        // [WHY] Map history order to the format expected by PaymentModal
         setEditingHistoryOrder(order);
-        
-        // We set context for this "pseudo-table" if it's not a real active table
         const lookupKey = `history-${order.id}`;
         setTableContexts(prev => ({
             ...prev,
             [lookupKey]: {
-                step: 2, // Jump straight to payment step
-                paymentMethod: order.payment_method || 'cash', // Pre-fill current payment method
-                showExtras: true, // Show Note and Discount by default for history edit
+                step: 2,
+                paymentMethod: order.payment_method || 'cash',
+                showExtras: true,
                 discountType: order.discount_type || 'fixed',
                 discountValue: order.discount_value || 0,
                 cashierNote: order.cashier_note || '',
@@ -145,7 +138,6 @@ const Cashier = () => {
     
     const consolidatedHistory = useCashierHistory(historyOrders);
 
-    // [WHY] Mutually Exclusive Layout Calculations for Top Lanes
     const layout = useMemo(() => {
         if (collapsedSection === 'left') {
             return {
@@ -171,13 +163,43 @@ const Cashier = () => {
         };
     }, [collapsedSection]);
 
-    // History Layout: Simple full-width toggle
     const historyLayout = useMemo(() => ({
         history: collapsedSection === 'history' ? 'w-full !min-h-0' : 'w-full',
         isHistoryCollapsed: collapsedSection === 'history'
     }), [collapsedSection]);
 
-    // [WHY] Early return AFTER all hooks to comply with React's rules of hooks
+    // [WHY] Unified state for Payment Modal to eliminate duplication between Active and History flows
+    const activeModal = useMemo(() => {
+        if (selectedTable && currentContext) {
+            return {
+                id: currentLookupKey,
+                table: selectedTable,
+                order: currentOrder,
+                context: currentContext,
+                isHistory: false,
+                onClose: () => setSelectedTable(null)
+            };
+        }
+        const hKey = editingHistoryOrder ? `history-${editingHistoryOrder.id}` : null;
+        if (editingHistoryOrder && tableContexts[hKey]) {
+            return {
+                id: hKey,
+                table: editingHistoryOrder.table,
+                order: editingHistoryOrder,
+                context: tableContexts[hKey],
+                isHistory: true,
+                onClose: () => setEditingHistoryOrder(null)
+            };
+        }
+        return null;
+    }, [selectedTable, currentContext, editingHistoryOrder, tableContexts, currentLookupKey, currentOrder]);
+
+    const displayTableName = useMemo(() => {
+        if (!activeModal) return '';
+        const name = activeModal.order?.tableName || activeModal.table?.name;
+        return name ? `Bàn ${name.replace(/^Bàn\s+/i, '')}` : 'Mang đi';
+    }, [activeModal]);
+
     if (status === 'loading' && allTables.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -188,129 +210,88 @@ const Cashier = () => {
 
     return (
         <div className="cashier-page pb-20">
+            {/* [RULE] All interactive UI goes inside .no-print for selective isolation */}
             <div className="no-print">
-                {/* [NON-INTRUSIVE FIX] Invisible spacer to satisfy global SCSS first-child:fixed rule */}
                 <div className="hidden" aria-hidden="true"></div>
 
                 <div className="py-8 relative overflow-x-hidden">
-                <div className="w-full max-w-[1600px] mx-auto px-[20px]">
-                    {/* Top Row: Active Lanes */}
-                    <div className="flex flex-col lg:flex-row gap-4 relative items-start">
-                        <CashierIndividualLane 
-                            layout={layout}
-                            individualTables={individualTables}
-                            individualOrders={individualOrders}
-                            currentTime={currentTime}
-                            onTableClick={handleTableClick}
-                            onToggleCollapse={() => setCollapsedSection(collapsedSection === 'left' ? null : 'left')}
-                        />
+                    <div className="w-full max-w-[1600px] mx-auto px-[20px]">
+                        {/* Top Row: Active Lanes */}
+                        <div className="flex flex-col lg:flex-row gap-4 relative items-start">
+                            <CashierIndividualLane 
+                                layout={layout}
+                                individualTables={individualTables}
+                                individualOrders={individualOrders}
+                                currentTime={currentTime}
+                                onTableClick={handleTableClick}
+                                onToggleCollapse={() => setCollapsedSection(collapsedSection === 'left' ? null : 'left')}
+                            />
 
-                        <CashierGroupLane 
-                            layout={layout}
-                            groupTables={groupTables}
-                            groupOrders={groupOrders}
-                            currentTime={currentTime}
-                            onTableClick={handleTableClick}
-                            onToggleCollapse={() => setCollapsedSection(collapsedSection === 'right' ? null : 'right')}
+                            <CashierGroupLane 
+                                layout={layout}
+                                groupTables={groupTables}
+                                groupOrders={groupOrders}
+                                currentTime={currentTime}
+                                onTableClick={handleTableClick}
+                                onToggleCollapse={() => setCollapsedSection(collapsedSection === 'right' ? null : 'right')}
+                            />
+                        </div>
+
+                        {/* Bottom Row: History Lane (Full Width) */}
+                        <CashierHistoryLane 
+                            layout={historyLayout}
+                            historyOrders={consolidatedHistory}
+                            onToggleCollapse={() => setCollapsedSection(collapsedSection === 'history' ? null : 'history')}
+                            onEditOrder={handleEditHistoryOrder}
+                            onReopenOrder={handleReopenOrder}
+                            isReopening={isReopening}
                         />
                     </div>
-
-                    {/* Bottom Row: History Lane (Full Width) */}
-                    < CashierHistoryLane 
-                        layout={historyLayout}
-                        historyOrders={consolidatedHistory}
-                        onToggleCollapse={() => setCollapsedSection(collapsedSection === 'history' ? null : 'history')}
-                        onEditOrder={handleEditHistoryOrder}
-                        onReopenOrder={handleReopenOrder}
-                        isReopening={isReopening}
-                    />
                 </div>
-            </div>
 
-            {/* Original Payment Popup Modal for Active Tables */}
-            {selectedTable && currentContext && (
-                <PaymentModal
-                    selectedTable={selectedTable}
-                    currentOrder={currentOrder}
-                    onClose={() => setSelectedTable(null)}
-                    onPaymentSuccess={handlePaymentSuccess}
-
-                    // Controlled Props from context
-                    draftItems={currentContext.draftItems}
-                    onUpdateDraftItems={(items) => updateTableContext(currentLookupKey, { draftItems: items })}
-
-                    discountType={currentContext.discountType}
-                    onUpdateDiscountType={(type) => updateTableContext(currentLookupKey, { discountType: type })}
-
-                    discountValue={currentContext.discountValue}
-                    onUpdateDiscountValue={(val) => updateTableContext(currentLookupKey, { discountValue: val })}
-
-                    step={currentContext.step}
-                    onUpdateStep={(s) => updateTableContext(currentLookupKey, { step: s })}
-
-                    cashierNote={currentContext.cashierNote}
-                    onUpdateCashierNote={(note) => updateTableContext(currentLookupKey, { cashierNote: note })}
-
-                    paymentMethod={currentContext.paymentMethod}
-                    onUpdatePaymentMethod={(method) => updateTableContext(currentLookupKey, { paymentMethod: method })}
-
-                    showExtras={currentContext.showExtras}
-                    onUpdateShowExtras={(show) => updateTableContext(currentLookupKey, { showExtras: show })}
-                />
-            )}
-
-            {/* Separate Modal Logic for History Editing to avoid Key (RK) conflicts */}
-            {editingHistoryOrder && tableContexts[`history-${editingHistoryOrder.id}`] && (
-                <>
+                {/* Unified Payment Popup Modal */}
+                {activeModal && (
                     <PaymentModal
-                        selectedTable={editingHistoryOrder.table}
-                        currentOrder={editingHistoryOrder}
-                        isHistoryEdit={true}
-                        onClose={() => setEditingHistoryOrder(null)}
+                        selectedTable={activeModal.table}
+                        currentOrder={activeModal.order}
+                        allTables={allTables}
+                        isHistoryEdit={activeModal.isHistory}
+                        onClose={activeModal.onClose}
                         onPaymentSuccess={handlePaymentSuccess}
 
-                        // Controlled Props from context (isolated from active table contexts)
-                        draftItems={editingHistoryOrder.items}
-                        onUpdateDraftItems={(items) => updateTableContext(`history-${editingHistoryOrder.id}`, { draftItems: items })}
+                        // Controlled Props from context
+                        draftItems={activeModal.context.draftItems}
+                        onUpdateDraftItems={(items) => updateTableContext(activeModal.id, { draftItems: items })}
 
-                        discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
-                        onUpdateDiscountType={(type) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountType: type })}
+                        discountType={activeModal.context.discountType}
+                        onUpdateDiscountType={(type) => updateTableContext(activeModal.id, { discountType: type })}
 
-                        discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
-                        onUpdateDiscountValue={(val) => updateTableContext(`history-${editingHistoryOrder.id}`, { discountValue: val })}
+                        discountValue={activeModal.context.discountValue}
+                        onUpdateDiscountValue={(val) => updateTableContext(activeModal.id, { discountValue: val })}
 
-                        step={tableContexts[`history-${editingHistoryOrder.id}`].step}
-                        onUpdateStep={(s) => updateTableContext(`history-${editingHistoryOrder.id}`, { step: s })}
+                        step={activeModal.context.step}
+                        onUpdateStep={(s) => updateTableContext(activeModal.id, { step: s })}
 
-                        cashierNote={tableContexts[`history-${editingHistoryOrder.id}`].cashierNote}
-                        onUpdateCashierNote={(note) => updateTableContext(`history-${editingHistoryOrder.id}`, { cashierNote: note })}
+                        cashierNote={activeModal.context.cashierNote}
+                        onUpdateCashierNote={(note) => updateTableContext(activeModal.id, { cashierNote: note })}
 
-                        paymentMethod={tableContexts[`history-${editingHistoryOrder.id}`].paymentMethod}
-                        onUpdatePaymentMethod={(method) => updateTableContext(`history-${editingHistoryOrder.id}`, { paymentMethod: method })}
+                        paymentMethod={activeModal.context.paymentMethod}
+                        onUpdatePaymentMethod={(method) => updateTableContext(activeModal.id, { paymentMethod: method })}
 
-                        showExtras={tableContexts[`history-${editingHistoryOrder.id}`].showExtras}
-                        onUpdateShowExtras={(show) => updateTableContext(`history-${editingHistoryOrder.id}`, { showExtras: show })}
+                        showExtras={activeModal.context.showExtras}
+                        onUpdateShowExtras={(show) => updateTableContext(activeModal.id, { showExtras: show })}
                     />
-                    {createPortal(
-                        <Receipt
-                            order={editingHistoryOrder}
-                            tableName={editingHistoryOrder.table?.name || (editingHistoryOrder.merged_tables ? `Bàn ${editingHistoryOrder.merged_tables}` : 'Mang đi')}
-                            discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
-                            discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
-                        />,
-                        document.body
-                    )}
-                </>
-            )}
-        </div>
+                )}
+            </div>
 
-            {/* Bulletproof Portal-based Print Area for Active Tables */}
-            {selectedTable && currentOrder && currentContext && createPortal(
+            {/* Unified Receipt Printing Portal */}
+            {activeModal && createPortal(
                 <Receipt
-                    order={currentOrder}
-                    tableName={selectedTable?.name}
-                    discountType={currentContext.discountType}
-                    discountValue={currentContext.discountValue}
+                    order={{...activeModal.order, items: activeModal.context.draftItems}}
+                    tableName={displayTableName}
+                    allTables={allTables}
+                    discountType={activeModal.context.discountType}
+                    discountValue={activeModal.context.discountValue}
                 />,
                 document.body
             )}

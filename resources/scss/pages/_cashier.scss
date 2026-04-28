@@ -6,6 +6,14 @@
             padding-top: 0px;
         }
     }
+
+    .list-tables {
+        >div {
+            >div {
+                display: none;
+            }
+        }
+    }
 }
 
 .is-collapsed {
