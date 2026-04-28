@@ -20,6 +20,7 @@ const PaymentItemEditor = ({
     setTargetTableId,
     handleUpdateQuantity,
     handleUpdateNote,
+    handleUpdateItemDiscount,
     handleAddProduct,
     filteredProducts,
     isReadOnly = false
@@ -168,6 +169,7 @@ const PaymentItemEditor = ({
                                                 item={item}
                                                 onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q)}
                                                 onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n)}
+                                                onUpdateDiscount={(id, d) => handleUpdateItemDiscount(item.product_id || item.id, parseInt(actualTableId), d)}
                                                 showNoteButton={!itemReadOnly}
                                                 isReadOnly={itemReadOnly}
                                             />

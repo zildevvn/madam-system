@@ -16,6 +16,7 @@ const PaymentModalFooter = ({
     cashierNote,
     onUpdateCashierNote,
     discountAmount,
+    itemDiscountsTotal = 0,
     draftTotal,
     finalTotal,
     totalQty,
@@ -29,6 +30,8 @@ const PaymentModalFooter = ({
     draftItemsCount,
     isHistoryEdit = false
 }) => {
+    const hasAnyDiscount = discountAmount > 0 || itemDiscountsTotal > 0;
+
     return (
         <div className="shrink-0 border-t border-gray-100 bg-gray-50/50">
             {/* Collapsible Extras: Discount + Note */}
@@ -42,11 +45,11 @@ const PaymentModalFooter = ({
                     </svg>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Giảm giá & Ghi chú</span>
                 </div>
-                {(discountValue > 0 || cashierNote) && (
+                {(discountValue > 0 || itemDiscountsTotal > 0 || cashierNote) && (
                     <div className="flex items-center gap-1.5">
-                        {discountValue > 0 && (
+                        {(discountValue > 0 || itemDiscountsTotal > 0) && (
                             <span className="text-[9px] font-black text-orange-500 bg-orange-100 px-1.5 py-0.5 rounded-md">
-                                -{discountType === 'percent' ? `${discountValue}%` : formatPrice(discountValue) + 'đ'}
+                                Giảm giá
                             </span>
                         )}
                         {cashierNote && (
@@ -60,7 +63,15 @@ const PaymentModalFooter = ({
 
             {showExtras && (
                 <div className="px-5 pb-3 space-y-3 animate-[fadeSlideDown_0.15s_ease-out]">
-                    {/* Discount Row */}
+                    {/* Item Discounts Summary (Read only here, edited in Item list) */}
+                    {itemDiscountsTotal > 0 && (
+                        <div className="flex items-center justify-between bg-red-50/50 p-2 rounded-lg border border-red-100/50">
+                            <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">Tổng giảm giá món</span>
+                            <span className="text-[11px] font-black text-red-600">-{formatPrice(itemDiscountsTotal)}đ</span>
+                        </div>
+                    )}
+
+                    {/* Global Discount Row */}
                     {!isHistoryEdit ? (
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg shrink-0">
@@ -85,7 +96,7 @@ const PaymentModalFooter = ({
                                         const val = e.target.value;
                                         onUpdateDiscountValue(val === '' ? 0 : Math.max(0, parseFloat(val) || 0));
                                     }}
-                                    placeholder="Nhập mức giảm..."
+                                    placeholder="Nhập mức giảm tổng..."
                                     className="w-full bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-[16px] font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
                                 />
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-[10px] uppercase">
@@ -96,7 +107,7 @@ const PaymentModalFooter = ({
                     ) : (
                         discountAmount > 0 && (
                             <div className="flex items-center justify-between bg-orange-50/50 p-2.5 rounded-xl border border-orange-100/50">
-                                <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Mức giảm giá đã áp dụng</span>
+                                <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Mức giảm tổng đã áp dụng</span>
                                 <span className="text-sm font-black text-orange-500">-{formatPrice(discountAmount)}đ</span>
                             </div>
                         )
@@ -115,15 +126,15 @@ const PaymentModalFooter = ({
 
             {/* Total Summary */}
             <div className="mx-4 mb-2 flex flex-col bg-orange-50 rounded-xl px-4 py-2 gap-0.5">
-                {discountAmount > 0 && (
+                {hasAnyDiscount && (
                     <div className="flex justify-between items-center opacity-60">
-                        <span className="text-[10px] font-bold text-gray-600">Tạm tính</span>
+                        <span className="text-[10px] font-bold text-gray-600">Tạm tính (Gốc)</span>
                         <span className="text-[10px] font-bold text-gray-600 line-through">{formatPrice(draftTotal)}đ</span>
                     </div>
                 )}
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-700 text-sm">Tổng cộng</span>
+                        <span className="font-bold text-gray-700 text-sm">Tổng thanh toán</span>
                         {totalQty > 0 && (
                             <span className="text-[9px] font-black text-orange-500 bg-orange-100 px-1.5 py-0.5 rounded-full">
                                 {totalQty} món
@@ -132,10 +143,10 @@ const PaymentModalFooter = ({
                     </div>
                     <span className="text-lg font-black text-orange-500">{formatPrice(finalTotal)}đ</span>
                 </div>
-                {discountAmount > 0 && (
+                {hasAnyDiscount && (
                     <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-bold text-orange-400">Đã giảm</span>
-                        <span className="text-[9px] font-bold text-orange-400">-{formatPrice(discountAmount)}đ</span>
+                        <span className="text-[9px] font-bold text-orange-400 uppercase tracking-tight">Tổng cộng đã giảm</span>
+                        <span className="text-[9px] font-bold text-orange-400">-{formatPrice(discountAmount + itemDiscountsTotal)}đ</span>
                     </div>
                 )}
             </div>

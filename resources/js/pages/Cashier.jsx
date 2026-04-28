@@ -293,7 +293,10 @@ const Cashier = () => {
                     />
                     {createPortal(
                         <Receipt
-                            order={editingHistoryOrder}
+                            order={{
+                                ...editingHistoryOrder, 
+                                items: tableContexts[`history-${editingHistoryOrder.id}`].draftItems
+                            }}
                             tableName={editingHistoryOrder.table?.name || (editingHistoryOrder.merged_tables ? `Bàn ${editingHistoryOrder.merged_tables}` : 'Mang đi')}
                             discountType={tableContexts[`history-${editingHistoryOrder.id}`].discountType}
                             discountValue={tableContexts[`history-${editingHistoryOrder.id}`].discountValue}
@@ -307,7 +310,7 @@ const Cashier = () => {
             {/* Bulletproof Portal-based Print Area for Active Tables */}
             {selectedTable && currentOrder && currentContext && createPortal(
                 <Receipt
-                    order={currentOrder}
+                    order={{...currentOrder, items: currentContext.draftItems}}
                     tableName={selectedTable?.name}
                     discountType={currentContext.discountType}
                     discountValue={currentContext.discountValue}

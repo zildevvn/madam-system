@@ -44,8 +44,10 @@ const PaymentModal = ({
         handlePayment,
         handleUpdateQuantity,
         handleUpdateNote,
+        handleUpdateItemDiscount,
         handleAddProduct,
-        filteredProducts
+        filteredProducts,
+        itemDiscountsTotal
     } = usePaymentLogic({
         selectedTable,
         currentOrder,
@@ -115,6 +117,7 @@ const PaymentModal = ({
                     setTargetTableId={setTargetTableId}
                     handleUpdateQuantity={handleUpdateQuantity}
                     handleUpdateNote={handleUpdateNote}
+                    handleUpdateItemDiscount={handleUpdateItemDiscount}
                     handleAddProduct={handleAddProduct}
                     filteredProducts={filteredProducts}
                     compact={true}
@@ -132,6 +135,7 @@ const PaymentModal = ({
                     cashierNote={cashierNote}
                     onUpdateCashierNote={onUpdateCashierNote}
                     discountAmount={discountAmount}
+                    itemDiscountsTotal={itemDiscountsTotal}
                     draftTotal={draftTotal}
                     finalTotal={finalTotal}
                     totalQty={totalQty}
