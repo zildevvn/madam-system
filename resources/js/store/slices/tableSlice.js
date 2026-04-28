@@ -198,8 +198,6 @@ export const selectBusyTables = createSelector(
     return tables.filter(t => {
       // [RULE] A table belongs in 'Busy Tables' list if it has an active order.
       if (!t.active_order) {
-        // [EXCEPTION] If a table is busy by group link but has NO order of its own, 
-        // it is NOT considered a candidate for the 'lead' table in the StaffOrder list view.
         return false;
       }
 
@@ -214,6 +212,17 @@ export const selectBusyTables = createSelector(
       if (consolidatedGroups.has(groupKey)) return false;
       consolidatedGroups.add(groupKey);
       return true;
+    }).map(t => {
+      // [WHY] Attach a descriptive tableName that resolves IDs to numeric labels
+      const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+      if (groupKey.includes('-')) {
+        const labels = groupKey.split('-').map(id => {
+          const tableObj = tables.find(allT => allT.id.toString() === id.toString());
+          return tableObj?.name?.replace(/[^0-9]/g, '') || id;
+        }).filter(Boolean);
+        return { ...t, tableName: labels.join('-') };
+      }
+      return { ...t, tableName: t.name?.replace(/[^0-9]/g, '') || t.id.toString() };
     });
   }
 );

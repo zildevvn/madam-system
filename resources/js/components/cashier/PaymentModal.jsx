@@ -11,6 +11,7 @@ import PaymentModalFooter from './PaymentModalFooter';
 const PaymentModal = ({
     selectedTable,
     currentOrder,
+    allTables = [],
     onClose,
     onPaymentSuccess,
     draftItems = [],
@@ -66,14 +67,13 @@ const PaymentModal = ({
     if (!selectedTable) return null;
 
     const tableName = (() => {
-        if (currentOrder?.reservation?.type === 'group' && Array.isArray(currentOrder.reservation.table_ids)) {
-            return currentOrder.reservation.table_ids
-                .map(id => id.toString().replace(/^Bàn\s+/i, ''))
-                .sort((a, b) => parseInt(a) - parseInt(b))
-                .join('-');
+        // [RULE] Prioritize the consolidated tableName from the order object (e.g. "44-45-46")
+        if (currentOrder?.tableName) {
+            return currentOrder.tableName.replace(/^Bàn\s+/i, '');
         }
-        return (currentOrder?.tableName || selectedTable.name || selectedTable.id.toString())
-            .split('-')[0]
+
+        // [FALLBACK] Single table resolution
+        return (selectedTable.name || selectedTable.id.toString())
             .replace(/^Bàn\s+/i, '');
     })();
 
@@ -107,6 +107,7 @@ const PaymentModal = ({
                 <PaymentItemEditor
                     selectedTable={selectedTable}
                     currentOrder={currentOrder}
+                    allTables={allTables}
                     draftItems={draftItems}
                     allProducts={allProducts}
                     searchQuery={searchQuery}
@@ -125,7 +126,7 @@ const PaymentModal = ({
                 />
 
                 {/* ─── FOOTER: Extracted ─── */}
-                <PaymentModalFooter 
+                <PaymentModalFooter
                     showExtras={showExtras}
                     setShowExtras={onUpdateShowExtras}
                     discountType={discountType}

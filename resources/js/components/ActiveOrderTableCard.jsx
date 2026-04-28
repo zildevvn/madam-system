@@ -25,15 +25,22 @@ const ActiveOrderTableCard = React.memo(({
     const { statusClass, duration, isNewOrder } = calculateTableStatus(order, currentTimeTs, options);
 
     const getDisplayName = () => {
-        // 1. Detect Group Reservation range from table_ids
-        if (order?.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
-            return order.reservation.table_ids
-                .map(id => id.toString().replace(/^Bàn\s+/i, ''))
-                .sort((a, b) => parseInt(a) - parseInt(b))
-                .join('-');
+        // [RULE] If the consolidation logic already provided a tableName, use it.
+        // This is the most reliable source as it has already handled the ID-to-Name mapping.
+        if (order?.tableName) {
+            return order.tableName.replace(/^Bàn\s+/i, '');
         }
-        // 2. Fallback to standard merged name or single table name
-        return (order?.tableName || order?.mergedTables || table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
+
+        // [FALLBACK] If tableName is missing (unlikely), manually resolve table_ids to names.
+        if (order?.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
+            // NOTE: We don't have access to allTables here, so we hope the backend or 
+            // previous consolidation step provided the name. 
+            // If not, we resort to the merged_tables string which contains IDs.
+            const raw = order.mergedTables || order.reservation.table_ids.join('-');
+            return raw.toString().replace(/^Bàn\s+/i, '');
+        }
+        
+        return (table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
     };
 
     return (

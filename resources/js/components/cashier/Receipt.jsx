@@ -5,18 +5,25 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
  * Receipt: Thermal-printer optimized layout for order printing.
  * Updated to support per-item discounts (Fixed or Percent).
  */
-const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }) => {
+const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discountValue = 0 }) => {
     const [printDate] = React.useState(new Date());
+
+    const resolveTableLabel = (tid) => {
+        if (!allTables) return tid;
+        const t = allTables.find(tbl => tbl.id.toString() === tid.toString());
+        return t?.name?.replace(/^Bàn\s+/i, '') || tid;
+    };
+
     if (!order) return null;
 
     const orderItems = order.items || [];
-    
+
     // [WHY] Per-item discounts must be summed separately from global discount
     const itemDiscountsTotal = orderItems.reduce((sum, i) => {
         const val = Number(i.discount || 0);
         const type = i.discountType || 'fixed';
         const itemGross = i.price * i.quantity;
-        
+
         if (type === 'percent') {
             return sum + (itemGross * val / 100);
         }
@@ -44,18 +51,12 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
 
     // ─── LOGIC: Table & Group Info ───
     const isGroupReservation = order.reservation && order.reservation.type === 'group';
-    
-    const tableIds = isGroupReservation && Array.isArray(order.reservation.table_ids)
-        ? order.reservation.table_ids
-            .map(id => id.toString().replace(/^Bàn\s+/i, ''))
-            .sort((a, b) => parseInt(a) - parseInt(b))
-        : [];
 
-    const displayTableName = tableIds.length > 0
-        ? tableIds.join('-')
-        : (order.tableName || tableName || order.table?.name || order.table?.id.toString() || '-')
-            .toString()
-            .replace(/^Bàn\s+/i, '');
+    // [RULE] Prefer the tableName provided by the parent (Cashier.jsx), 
+    // which has already resolved IDs to numeric labels.
+    const displayTableName = (tableName || order.tableName || order.table?.name || order.table?.id.toString() || '-')
+        .toString()
+        .replace(/^Bàn\s+/i, '');
 
     const groupedItems = Object.entries(
         orderItems.reduce((acc, item) => {
@@ -147,8 +148,8 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                             const isSharedSection = tGroup === 'GROUP';
 
                             const displayTableTitle = isSharedSection
-                                ? `Món chung${tableIds.length > 0 ? ` (Bàn ${tableIds.join('-')})` : ''}`
-                                : `Bàn ${tGroup.toString().split('-')[0]}`;
+                                ? `Món chung (Bàn ${displayTableName})`
+                                : `Bàn ${resolveTableLabel(tGroup)}`;
 
                             return (
                                 <React.Fragment key={tGroup}>
@@ -176,7 +177,7 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                                         } else {
                                             itemDiscount = val;
                                         }
-                                        
+
                                         const itemTotal = (item.price * item.quantity) - (itemDiscount * item.quantity);
                                         return (
                                             <tr key={idx}>
@@ -205,12 +206,12 @@ const Receipt = ({ order, tableName, discountType = 'fixed', discountValue = 0 }
                                 </React.Fragment>
                             );
                         })}
-                        
+
                         <tr className="receipt-total-row" style={{ borderTop: '1px solid #333' }}>
                             <td align="left">Tiền hàng ({totalQuantity})</td>
                             <td colSpan="2" align="right">{formatPrice(grossTotal)}</td>
                         </tr>
-                        
+
                         {itemDiscountsTotal > 0 && (
                             <tr className="receipt-total-row">
                                 <td align="left">Giảm giá món</td>
