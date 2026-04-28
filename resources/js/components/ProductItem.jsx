@@ -18,6 +18,8 @@ export default function ProductItem({ item, onUpdateQuantity, onUpdateNote, show
                             Ghi chú: {item.note}
                         </p>
                     )}
+
+
                 </div>
                 <div className="flex flex-col items-end gap-1">
                     <span className="font-bold text-on-surface text-[14px]">

@@ -10,7 +10,9 @@ import {
     clearCart,
     createOrderAsync,
     setOrderNote,
-    updateOrderNoteAsync
+    updateOrderNoteAsync,
+    setGuestCount,
+    updateGuestCountAsync
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';
@@ -30,6 +32,7 @@ export const useCheckoutLogic = () => {
         setShowWarningPopup,
         isTableChanged,
         isMergeChanged,
+        guestCount,
         setWarningMessage, setSuccessMessage, setShowSuccessPopup
     } = state;
 
@@ -57,6 +60,14 @@ export const useCheckoutLogic = () => {
         dispatch(setOrderNote(note));
         if (state.activeOrderId) {
             dispatch(updateOrderNoteAsync({ orderId: state.activeOrderId, note }));
+        }
+    }, [dispatch, state.activeOrderId]);
+
+    const handleUpdateGuestCount = useCallback((count) => {
+        const guestCountNum = parseInt(count) || 1;
+        dispatch(setGuestCount(guestCountNum));
+        if (state.activeOrderId) {
+            dispatch(updateGuestCountAsync({ orderId: state.activeOrderId, count: guestCountNum }));
         }
     }, [dispatch, state.activeOrderId]);
 
@@ -159,7 +170,8 @@ export const useCheckoutLogic = () => {
                         table_id: selectedTableId
                     })),
                     mergedTables: mergedTablesString,
-                    orderNote: state.orderNote
+                    orderNote: state.orderNote,
+                    guestCount: state.guestCount
                 })).unwrap();
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
@@ -214,6 +226,7 @@ export const useCheckoutLogic = () => {
         handleUpdateQuantity,
         handleUpdateNote,
         handleUpdateOrderNote,
+        handleUpdateGuestCount,
         handleCheckout,
         handleCancelOrder
     };

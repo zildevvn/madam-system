@@ -106,6 +106,7 @@ const Bills = () => {
                     mergedTables={activeOrders[selectedTable.id.toString()].mergedTables}
                     orderItems={activeOrders[selectedTable.id.toString()].items}
                     orderNote={activeOrders[selectedTable.id.toString()].orderNote || ''}
+                    guestCount={activeOrders[selectedTable.id.toString()].guestCount}
                     currentTime={currentTime}
                     onClose={() => setSelectedTable(null)}
                     onToggleStatus={handleToggleItemStatus}

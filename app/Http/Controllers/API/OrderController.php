@@ -46,7 +46,8 @@ class OrderController extends Controller
         $validated = $request->validate([
             'table_id' => 'nullable|exists:tables,id',
             'merged_tables' => 'nullable|string|max:255',
-            'order_type' => 'string|in:dine-in,takeout'
+            'order_type' => 'string|in:dine-in,takeout',
+            'guest_count' => 'nullable|integer|min:1'
         ]);
 
         $data = array_merge($validated, ['user_id' => $request->user()?->id]);
@@ -93,13 +94,15 @@ class OrderController extends Controller
             'items.*.note' => 'nullable|string|max:255',
             'merged_tables' => 'nullable|string|max:255',
             'order_note' => 'nullable|string|max:500',
+            'guest_count' => 'nullable|integer|min:1',
         ]);
 
         $order = $this->orderService->checkoutOrder(
             $id,
             $validated['items'],
             $validated['merged_tables'] ?? null,
-            $validated['order_note'] ?? null
+            $validated['order_note'] ?? null,
+            $validated['guest_count'] ?? null
         );
 
         return response()->json([
@@ -238,6 +241,21 @@ class OrderController extends Controller
         return response()->json([
             'data' => $order,
             'message' => 'Order note updated successfully',
+            'errors' => null
+        ]);
+    }
+
+    public function updateGuestCount(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'guest_count' => 'required|integer|min:1'
+        ]);
+
+        $order = $this->orderService->updateGuestCount($id, $validated['guest_count']);
+
+        return response()->json([
+            'data' => $order,
+            'message' => 'Guest count updated successfully',
             'errors' => null
         ]);
     }
