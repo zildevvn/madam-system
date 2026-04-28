@@ -1,8 +1,8 @@
 import React from 'react';
-import { getElapsedString } from '../shared/utils/formatTime';
 import { formatPrice } from '../shared/utils/formatCurrency';
+import TimeElapsed from './shared/TimeElapsed';
 
-const OrderList = ({ tables, allTables, onTableClick, now }) => {
+const OrderList = ({ tables, allTables, onTableClick }) => {
     if (tables.length === 0) {
         return (
             <div className="w-full flex-1 flex flex-col items-center justify-center py-20 text-gray-400 italic">
@@ -62,9 +62,7 @@ const OrderList = ({ tables, allTables, onTableClick, now }) => {
                                 {/* Time Row */}
                                 <div className="flex items-center gap-2">
                                     <svg width="18px" height="18px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M12 6L12 12L18 12" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                                    <span className='text-[14px]'>
-                                        {getElapsedString(startTime, now)}
-                                    </span>
+                                    <TimeElapsed timestamp={startTime} />
                                 </div>
 
                                 {/* Shared Horizontal Detail Divider */}
