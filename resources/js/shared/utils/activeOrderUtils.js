@@ -1,14 +1,14 @@
 import React from 'react';
 import { safeParseDate } from './dateUtils';
 
-// Constants for order status thresholds (in minutes)
-const THRESHOLD_BAR_CRITICAL = 10;
-const THRESHOLD_KITCHEN_CRITICAL = 20;
-const THRESHOLD_KITCHEN_WARNING = 10;
-const THRESHOLD_KITCHEN_ALERT = 5;
-
-const ADDITIONAL_ITEM_THRESHOLD_MS = 30000;
-const NEW_ORDER_PULSING_TIMEOUT_S = 300;
+import { 
+    THRESHOLD_BAR_CRITICAL, 
+    THRESHOLD_KITCHEN_CRITICAL, 
+    THRESHOLD_KITCHEN_WARNING, 
+    THRESHOLD_KITCHEN_ALERT,
+    ADDITIONAL_ITEM_THRESHOLD_MS,
+    NEW_ORDER_PULSING_TIMEOUT_S
+} from '../constants/orderThresholds';
 
 /**
  * Calculates the visual status of a table based on its order age and type.

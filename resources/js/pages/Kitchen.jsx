@@ -3,7 +3,7 @@ import { useAppDispatch } from '../store/hooks';
 import { updateItemStatusAsync } from '../store/slices/orderSlice';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import ActiveOrderTableList from '../components/ActiveOrderTableList';
-import DelayWarnings from '../components/DelayWarnings';
+import DelayWarnings from '../components/delay-warning/DelayWarnings';
 import KitchenDishList from '../components/Kitchen/KitchenDishList';
 
 const Kitchen = () => {
