@@ -2,11 +2,11 @@ import React from 'react';
 import { calculateTableStatus } from '../shared/utils/activeOrderUtils';
 
 const NewOrderIcon = () => (
-    <svg width="20px" height="20px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#fff">
-        <path d="M22 14V8.5M6 13V6C6 4.34315 7.34315 3 9 3H14" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-        <path d="M16.9922 4H19.9922M22.9922 4L19.9922 4M19.9922 4V1M19.9922 4V7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-        <path d="M12 21H6C3.79086 21 2 19.2091 2 17C2 14.7909 3.79086 13 6 13H17H18C15.7909 13 14 14.7909 14 17C14 19.2091 15.7909 21 18 21C20.2091 21 22 19.2091 22 17V14" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-    </svg>
+    <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100 overflow-hidden">
+        <svg width="14px" height="14px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5V19M5 12H19" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"></path>
+        </svg>
+    </div>
 );
 
 const NoteIcon = () => (
@@ -15,10 +15,10 @@ const NoteIcon = () => (
     </svg>
 );
 
-const ActiveOrderTableCard = React.memo(({ 
-    table, 
-    order, 
-    currentTimeTs, 
+const ActiveOrderTableCard = React.memo(({
+    table,
+    order,
+    currentTimeTs,
     onTableClick,
     options = {}
 }) => {
@@ -39,19 +39,22 @@ const ActiveOrderTableCard = React.memo(({
             const raw = order.mergedTables || order.reservation.table_ids.join('-');
             return raw.toString().replace(/^Bàn\s+/i, '');
         }
-        
         return (table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
     };
+
+    console.log(order);
 
     return (
         <div
             onClick={() => onTableClick && onTableClick(table)}
             className={`relative bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''} ${table.isGroupLinked ? 'is-group-linked' : ''} ${table.groupColorIndex ? `is-group-color-${table.groupColorIndex}` : ''}`}
         >
-            <span className={`label-table text-[16px] font-black text-center flex items-center justify-center gap-1.5 ${!statusClass ? 'text-gray-900' : ''}`}>
-                <div className="icon-new">
-                    {isNewOrder && <NewOrderIcon />}
-                </div>
+
+            <div className="absolute -top-1 -right-1 z-10">
+                {isNewOrder && <NewOrderIcon />}
+            </div>
+            <span className={`label-table text-[18px] font-black text-center flex items-center justify-center gap-1.5 ${!statusClass ? 'text-gray-900' : ''}`}>
+
                 {getDisplayName()}
             </span>
 
