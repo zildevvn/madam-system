@@ -58,6 +58,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     guestCount: order.guest_count || 1,
                     items: [],
                     itemsMap: {},
+                    orders: [], // [NEW] Track individual orders for split payment support
                     reservation: order.reservation,
                     groupKey: groupKey
                 };
@@ -72,6 +73,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
 
             if (handledOrderIds.has(order.id)) return;
             handledOrderIds.add(order.id);
+            group.orders.push(order); // [NEW] Keep reference to the source order
 
             const orderTime = safeParseDate(order.created_at || order.updated_at);
             if (orderTime < group.startTime) {
@@ -96,6 +98,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     type: productType || filterType,
                     note: item.note || '',
                     tableId: item.table_id || t.id,
+                    order_id: item.order_id, // [NEW] Keep track of which order this item belongs to
                     reservation_item_id: item.reservation_item_id
                 };
 

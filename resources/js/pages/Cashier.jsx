@@ -23,6 +23,7 @@ const Cashier = () => {
     } = useConsolidatedOrders(null, true);
 
     const [selectedTable, setSelectedTable] = useState(null);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
     const [collapsedSection, setCollapsedSection] = useState(null); // Expand all by default
     const [isReopening, setIsReopening] = useState(null);
@@ -54,10 +55,28 @@ const Cashier = () => {
     }, []);
 
     const handleTableClick = (table) => {
-        const lookupKey = (table.groupKey || table.id).toString();
-        const currentOrder = individualOrders[lookupKey] || groupOrders[lookupKey];
+        setSelectedOrderId(null);
+        setSelectedTable(table);
+    };
 
+    const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
+    const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
+
+    // [WHY] Auto-initialize context for selected table/order
+    useEffect(() => {
+        if (!selectedTable || !currentOrder) return;
+        
+        const lookupKey = (selectedTable.groupKey || selectedTable.id).toString();
         if (!tableContexts[lookupKey]) {
+            // [WHY] If selectedOrderId is set, we filter items to show ONLY that order.
+            // Otherwise, we show consolidated items for the whole group.
+            const initialItems = selectedOrderId 
+                ? currentOrder.items.filter(i => i.order_id === selectedOrderId)
+                : currentOrder.items;
+
+            // [WHY] Avoid initializing with an empty list if we're waiting for split data to arrive via Echo/Fetch
+            if (selectedOrderId && initialItems.length === 0) return;
+
             setTableContexts(prev => ({
                 ...prev,
                 [lookupKey]: {
@@ -65,14 +84,13 @@ const Cashier = () => {
                     discountType: 'fixed',
                     discountValue: 0,
                     cashierNote: '',
-                    draftItems: currentOrder ? [...currentOrder.items] : [],
+                    draftItems: [...initialItems],
                     paymentMethod: 'cash',
                     showExtras: false
                 }
             }));
         }
-        setSelectedTable(table);
-    };
+    }, [selectedTable, currentOrder, selectedOrderId, tableContexts]);
 
     const updateTableContext = (tableId, updates) => {
         setTableContexts(prev => ({
@@ -84,7 +102,20 @@ const Cashier = () => {
         }));
     };
 
-    const handlePaymentSuccess = () => {
+    const handlePaymentSuccess = (newOrder = null) => {
+        // [WHY] If we split, we want to immediately focus on the NEW bill
+        if (newOrder) {
+            const tableId = (selectedTable.groupKey || selectedTable.id).toString();
+            // Clear old context to force re-initialization with the new order's items
+            setTableContexts(prev => {
+                const newState = { ...prev };
+                delete newState[tableId];
+                return newState;
+            });
+            setSelectedOrderId(newOrder.id);
+            return;
+        }
+
         if (selectedTable) {
             const lookupKey = (selectedTable.groupKey || selectedTable.id).toString();
             setTableContexts(prev => {
@@ -98,6 +129,7 @@ const Cashier = () => {
             refreshData();
         }
         setSelectedTable(null);
+        setSelectedOrderId(null);
     };
 
     const handleReopenOrder = async (orderId) => {
@@ -132,9 +164,7 @@ const Cashier = () => {
         }));
     };
 
-    const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
     const currentContext = currentLookupKey ? tableContexts[currentLookupKey] : null;
-    const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
     
     const consolidatedHistory = useCashierHistory(historyOrders);
 
@@ -170,12 +200,12 @@ const Cashier = () => {
 
     // [WHY] Unified state for Payment Modal to eliminate duplication between Active and History flows
     const activeModal = useMemo(() => {
-        if (selectedTable && currentContext) {
+        if (selectedTable) {
             return {
                 id: currentLookupKey,
                 table: selectedTable,
                 order: currentOrder,
-                context: currentContext,
+                context: currentContext, // might be null while loading split data
                 isHistory: false,
                 onClose: () => setSelectedTable(null)
             };
@@ -197,8 +227,10 @@ const Cashier = () => {
     const displayTableName = useMemo(() => {
         if (!activeModal) return '';
         const name = activeModal.order?.tableName || activeModal.table?.name;
-        return name ? `Bàn ${name.replace(/^Bàn\s+/i, '')}` : 'Mang đi';
-    }, [activeModal]);
+        let baseName = name ? `Bàn ${name.replace(/^Bàn\s+/i, '')}` : 'Mang đi';
+        if (selectedOrderId) baseName += ' (Hóa đơn tách)';
+        return baseName;
+    }, [activeModal, selectedOrderId]);
 
     if (status === 'loading' && allTables.length === 0) {
         return (
@@ -260,26 +292,27 @@ const Cashier = () => {
                         onPaymentSuccess={handlePaymentSuccess}
 
                         // Controlled Props from context
-                        draftItems={activeModal.context.draftItems}
+                        draftItems={activeModal.context?.draftItems || []}
                         onUpdateDraftItems={(items) => updateTableContext(activeModal.id, { draftItems: items })}
 
-                        discountType={activeModal.context.discountType}
+                        discountType={activeModal.context?.discountType || 'fixed'}
                         onUpdateDiscountType={(type) => updateTableContext(activeModal.id, { discountType: type })}
 
-                        discountValue={activeModal.context.discountValue}
+                        discountValue={activeModal.context?.discountValue || 0}
                         onUpdateDiscountValue={(val) => updateTableContext(activeModal.id, { discountValue: val })}
 
-                        step={activeModal.context.step}
+                        step={activeModal.context?.step || 1}
                         onUpdateStep={(s) => updateTableContext(activeModal.id, { step: s })}
 
-                        cashierNote={activeModal.context.cashierNote}
+                        cashierNote={activeModal.context?.cashierNote || ''}
                         onUpdateCashierNote={(note) => updateTableContext(activeModal.id, { cashierNote: note })}
 
-                        paymentMethod={activeModal.context.paymentMethod}
+                        paymentMethod={activeModal.context?.paymentMethod || 'cash'}
                         onUpdatePaymentMethod={(method) => updateTableContext(activeModal.id, { paymentMethod: method })}
 
-                        showExtras={activeModal.context.showExtras}
+                        showExtras={activeModal.context?.showExtras || false}
                         onUpdateShowExtras={(show) => updateTableContext(activeModal.id, { showExtras: show })}
+                        isLoading={!activeModal.context}
                     />
                 )}
             </div>
@@ -287,11 +320,11 @@ const Cashier = () => {
             {/* Unified Receipt Printing Portal */}
             {activeModal && createPortal(
                 <Receipt
-                    order={{...activeModal.order, items: activeModal.context.draftItems}}
+                    order={{...activeModal.order, items: activeModal.context?.draftItems || []}}
                     tableName={displayTableName}
                     allTables={allTables}
-                    discountType={activeModal.context.discountType}
-                    discountValue={activeModal.context.discountValue}
+                    discountType={activeModal.context?.discountType || 'fixed'}
+                    discountValue={activeModal.context?.discountValue || 0}
                 />,
                 document.body
             )}

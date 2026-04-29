@@ -28,7 +28,11 @@ const PaymentModalFooter = ({
     handlePayment,
     isGroup,
     draftItemsCount,
-    isHistoryEdit = false
+    isHistoryEdit = false,
+    isSplitMode = false,
+    setIsSplitMode,
+    selectedSplitItemsCount = 0,
+    handleSplitOrder
 }) => {
     const hasAnyDiscount = discountAmount > 0 || itemDiscountsTotal > 0;
 
@@ -161,39 +165,71 @@ const PaymentModalFooter = ({
             )}
 
             {/* Action Buttons */}
-            <div className="px-4 pb-4 pt-1 grid grid-cols-2 gap-2">
-                <button onClick={() => window.print()} className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer border-none text-sm py-2.5">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2m8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                    In hóa đơn
-                </button>
-
-                {step === 1 ? (
-                    <button disabled={draftItemsCount === 0} onClick={() => onUpdateStep(2)} className={`mdt-btn cursor-pointer text-sm py-2.5 ${draftItemsCount === 0 ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>
-                        Tiếp theo
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            <div className="px-4 pb-4 pt-1 flex flex-col gap-2">
+                {!isSplitMode && step === 1 && !isHistoryEdit && (
+                    <button 
+                        onClick={() => setIsSplitMode(true)}
+                        className="w-full bg-white border border-orange-100 text-orange-500 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-50 transition-colors cursor-pointer"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 3v18M16 3v18M3 8h18M3 16h18"/></svg>
+                        Tách hóa đơn
                     </button>
-                ) : (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => onUpdateStep(1)}
-                            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                        </button>
-                        <button
-                            disabled={draftItemsCount === 0 || !paymentMethod || isProcessing}
-                            onClick={handlePayment}
-                            className={`flex-1 mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
-                        >
-                            {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
-                                    {isHistoryEdit ? 'Cập nhật' : 'Xác Nhận'}
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                    {isSplitMode ? (
+                        <>
+                            <button 
+                                onClick={() => setIsSplitMode(false)}
+                                className="mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold border-none text-sm py-2.5 cursor-pointer"
+                            >
+                                Hủy tách
+                            </button>
+                            <button 
+                                disabled={selectedSplitItemsCount === 0 || isProcessing}
+                                onClick={handleSplitOrder}
+                                className={`mdt-btn rounded-xl font-bold border-none text-sm py-2.5 cursor-pointer ${selectedSplitItemsCount === 0 || isProcessing ? '!bg-gray-200 !text-gray-400 grayscale shadow-none' : ''}`}
+                            >
+                                {isProcessing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : `Xác nhận tách (${selectedSplitItemsCount})`}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button onClick={() => window.print()} className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer border-none text-sm py-2.5">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2m8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                In hóa đơn
+                            </button>
+
+                            {step === 1 ? (
+                                <button disabled={draftItemsCount === 0} onClick={() => onUpdateStep(2)} className={`mdt-btn cursor-pointer text-sm py-2.5 ${draftItemsCount === 0 ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>
+                                    Tiếp theo
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                </button>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => onUpdateStep(1)}
+                                        className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                    </button>
+                                    <button
+                                        disabled={draftItemsCount === 0 || !paymentMethod || isProcessing}
+                                        onClick={handlePayment}
+                                        className={`flex-1 mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                    >
+                                        {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                {isHistoryEdit ? 'Cập nhật' : 'Xác Nhận'}
+                                            </div>
+                                        )}
+                                    </button>
                                 </div>
                             )}
-                        </button>
-                    </div>
-                )}
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

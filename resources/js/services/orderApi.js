@@ -62,6 +62,10 @@ const orderApi = {
   printDrinks: async (orderId, title) => {
     const response = await axios.post(`/api/orders/${orderId}/print-drinks`, { title });
     return response.data;
+  },
+  splitOrder: async (orderId, items) => {
+    const response = await axios.post(`/api/orders/${orderId}/split`, { items });
+    return response.data;
   }
 };
 

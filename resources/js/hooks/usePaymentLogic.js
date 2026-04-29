@@ -22,6 +22,8 @@ export const usePaymentLogic = ({
     setPaymentMethod
 }) => {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSplitMode, setIsSplitMode] = useState(false);
+    const [selectedSplitItems, setSelectedSplitItems] = useState([]); // Array of { order_item_id, quantity }
 
     // Metadata state (still local as they are transient UI helpers)
     const [allProducts, setAllProducts] = useState([]);
@@ -193,10 +195,54 @@ export const usePaymentLogic = ({
         return allProducts.filter(p => p.name.toLowerCase().includes(query)).slice(0, 5);
     }, [allProducts, searchQuery]);
 
+    const handleSplitOrder = useCallback(async () => {
+        if (!currentOrder || selectedSplitItems.length === 0 || isProcessing) return;
+
+        setIsProcessing(true);
+        try {
+            const response = await orderApi.splitOrder(currentOrder.id, selectedSplitItems);
+            setIsSplitMode(false);
+            setSelectedSplitItems([]);
+            // [WHY] Refresh data after split
+            onPaymentSuccess(response.data.new_order);
+            return response.data;
+        } catch (err) {
+            console.error('Split failed:', err);
+            alert('Có lỗi xảy ra khi tách đơn. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [currentOrder, selectedSplitItems, isProcessing, onPaymentSuccess]);
+
+    const toggleSplitItem = useCallback((item) => {
+        setSelectedSplitItems(prev => {
+            const itemId = item.order_item_id || item.id;
+            const existing = prev.find(i => i.order_item_id === itemId);
+            if (existing) {
+                return prev.filter(i => i.order_item_id !== itemId);
+            } else {
+                // [WHY] Initialize with the full quantity of the item
+                return [...prev, { order_item_id: itemId, quantity: item.quantity }];
+            }
+        });
+    }, []);
+
+    const handleUpdateSplitQuantity = useCallback((itemId, quantity) => {
+        setSelectedSplitItems(prev => 
+            prev.map(i => i.order_item_id === itemId ? { ...i, quantity } : i)
+        );
+    }, []);
+
     return {
         paymentMethod,
         setPaymentMethod,
         isProcessing,
+        isSplitMode,
+        setIsSplitMode,
+        selectedSplitItems,
+        handleSplitOrder,
+        toggleSplitItem,
+        handleUpdateSplitQuantity,
         allProducts,
         searchQuery,
         setSearchQuery,

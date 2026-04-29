@@ -41,6 +41,11 @@ export const updateItemStatusAsync = createAsyncThunk('order/updateItemStatus', 
   return data.data;
 });
 
+export const splitOrderAsync = createAsyncThunk('order/split', async ({ orderId, items }) => {
+  const data = await orderApi.splitOrder(orderId, items);
+  return data.data;
+});
+
 const initialState = {
   items: {
     byId: {},
@@ -143,7 +148,12 @@ const orderSlice = createSlice({
             order.items.forEach(orderItem => {
               const product = orderItem.product;
               if (product) {
-                const itemData = { ...product, quantity: Number(orderItem.quantity), note: orderItem.note || '' };
+                const itemData = { 
+                  ...product, 
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '' 
+                };
                 state.items.byId[product.id] = itemData;
                 state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
                 if (!state.items.allIds.includes(product.id)) {
@@ -199,7 +209,40 @@ const orderSlice = createSlice({
             order.items.forEach(orderItem => {
               const product = orderItem.product;
               if (product) {
-                const itemData = { ...product, quantity: Number(orderItem.quantity), note: orderItem.note || '' };
+                const itemData = { 
+                  ...product, 
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '' 
+                };
+                state.items.byId[product.id] = itemData;
+                state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
+                if (!state.items.allIds.includes(product.id)) {
+                  state.items.allIds.push(product.id);
+                }
+              }
+            });
+          }
+        }
+      })
+      .addCase(splitOrderAsync.fulfilled, (state, action) => {
+        const { source_order } = action.payload;
+        if (source_order) {
+          state.activeOrderId = source_order.id;
+          state.orderStatus = source_order.status;
+          state.isModified = false;
+          state.items.byId = {};
+          state.items.allIds = [];
+          if (source_order.items) {
+            source_order.items.forEach(orderItem => {
+              const product = orderItem.product;
+              if (product) {
+                const itemData = { 
+                  ...product, 
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '' 
+                };
                 state.items.byId[product.id] = itemData;
                 state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
                 if (!state.items.allIds.includes(product.id)) {

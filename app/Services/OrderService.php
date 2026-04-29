@@ -14,12 +14,14 @@ class OrderService
 {
     protected $paymentService;
     protected $tableService;
+    protected $splitService;
 
     // [WHY] Initialize with specialized sub-services for modularity.
-    public function __construct(OrderPaymentService $paymentService, OrderTableService $tableService)
+    public function __construct(OrderPaymentService $paymentService, OrderTableService $tableService, OrderSplitService $splitService)
     {
         $this->paymentService = $paymentService;
         $this->tableService = $tableService;
+        $this->splitService = $splitService;
     }
 
     // [WHY] Get active order to display on tablet/pos
@@ -272,5 +274,10 @@ class OrderService
     public function updateTable($orderId, $newTableId)
     {
         return $this->tableService->updateTable($orderId, $newTableId);
+    }
+
+    public function splitItems($orderId, array $items)
+    {
+        return $this->splitService->splitItems($orderId, $items);
     }
 }

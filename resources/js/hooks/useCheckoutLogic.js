@@ -12,7 +12,8 @@ import {
     setOrderNote,
     updateOrderNoteAsync,
     setGuestCount,
-    updateGuestCountAsync
+    updateGuestCountAsync,
+    splitOrderAsync
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';
@@ -214,6 +215,23 @@ export const useCheckoutLogic = () => {
         navigate('/staff-order');
     }, [activeOrderId, dispatch, navigate]);
 
+    const handleSplitOrder = useCallback(async (itemsToSplit) => {
+        if (!activeOrderId || !itemsToSplit.length) return;
+        try {
+            await dispatch(splitOrderAsync({
+                orderId: activeOrderId,
+                items: itemsToSplit
+            })).unwrap();
+            setSuccessMessage('Đã tách đơn hàng thành công.');
+            setShowSuccessPopup(true);
+            setTimeout(() => setShowSuccessPopup(false), 2000);
+        } catch (error) {
+            console.error(error);
+            setWarningMessage('Tách đơn thất bại. Vui lòng thử lại!');
+            setShowWarningPopup(true);
+        }
+    }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningMessage, setShowWarningPopup]);
+
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (activeOrderId) navigator.sendBeacon(`/api/orders/${activeOrderId}`);
@@ -230,6 +248,7 @@ export const useCheckoutLogic = () => {
         handleUpdateOrderNote,
         handleUpdateGuestCount,
         handleCheckout,
-        handleCancelOrder
+        handleCancelOrder,
+        handleSplitOrder
     };
 };

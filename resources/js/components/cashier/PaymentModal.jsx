@@ -28,7 +28,8 @@ const PaymentModal = ({
     onUpdatePaymentMethod,
     showExtras = false,
     onUpdateShowExtras,
-    isHistoryEdit = false
+    isHistoryEdit = false,
+    isLoading = false
 }) => {
     const {
         isProcessing,
@@ -48,7 +49,13 @@ const PaymentModal = ({
         handleUpdateItemDiscount,
         handleAddProduct,
         filteredProducts,
-        itemDiscountsTotal
+        itemDiscountsTotal,
+        isSplitMode,
+        setIsSplitMode,
+        selectedSplitItems,
+        handleSplitOrder,
+        toggleSplitItem,
+        handleUpdateSplitQuantity
     } = usePaymentLogic({
         selectedTable,
         currentOrder,
@@ -104,26 +111,37 @@ const PaymentModal = ({
                 </div>
 
                 {/* ─── ITEM LIST: Scrollable ─── */}
-                <PaymentItemEditor
-                    selectedTable={selectedTable}
-                    currentOrder={currentOrder}
-                    allTables={allTables}
-                    draftItems={draftItems}
-                    allProducts={allProducts}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    showProductSearch={showProductSearch}
-                    setShowProductSearch={setShowProductSearch}
-                    targetTableId={targetTableId}
-                    setTargetTableId={setTargetTableId}
-                    handleUpdateQuantity={handleUpdateQuantity}
-                    handleUpdateNote={handleUpdateNote}
-                    handleUpdateItemDiscount={handleUpdateItemDiscount}
-                    handleAddProduct={handleAddProduct}
-                    filteredProducts={filteredProducts}
-                    compact={true}
-                    isReadOnly={isHistoryEdit}
-                />
+                {isLoading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                        <div className="w-12 h-12 border-4 border-orange-100 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+                        <p className="text-gray-500 font-medium">Đang cập nhật dữ liệu hóa đơn...</p>
+                    </div>
+                ) : (
+                    <PaymentItemEditor
+                        selectedTable={selectedTable}
+                        currentOrder={currentOrder}
+                        allTables={allTables}
+                        draftItems={draftItems}
+                        allProducts={allProducts}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        showProductSearch={showProductSearch}
+                        setShowProductSearch={setShowProductSearch}
+                        targetTableId={targetTableId}
+                        setTargetTableId={setTargetTableId}
+                        handleUpdateQuantity={handleUpdateQuantity}
+                        handleUpdateNote={handleUpdateNote}
+                        handleUpdateItemDiscount={handleUpdateItemDiscount}
+                        handleAddProduct={handleAddProduct}
+                        filteredProducts={filteredProducts}
+                        compact={true}
+                        isReadOnly={isHistoryEdit}
+                        isSplitMode={isSplitMode}
+                        selectedSplitItems={selectedSplitItems}
+                        onToggleSplitItem={toggleSplitItem}
+                        onUpdateSplitQuantity={handleUpdateSplitQuantity}
+                    />
+                )}
 
                 {/* ─── FOOTER: Extracted ─── */}
                 <PaymentModalFooter
@@ -149,6 +167,10 @@ const PaymentModal = ({
                     isGroup={!!currentOrder?.isGroup}
                     draftItemsCount={draftItems.length}
                     isHistoryEdit={isHistoryEdit}
+                    isSplitMode={isSplitMode}
+                    setIsSplitMode={setIsSplitMode}
+                    selectedSplitItemsCount={selectedSplitItems.length}
+                    handleSplitOrder={handleSplitOrder}
                 />
             </div>
         </div>
