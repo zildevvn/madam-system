@@ -42,8 +42,6 @@ const ActiveOrderTableCard = React.memo(({
         return (table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
     };
 
-    console.log(order);
-
     return (
         <div
             onClick={() => onTableClick && onTableClick(table)}
@@ -67,7 +65,7 @@ const ActiveOrderTableCard = React.memo(({
                         {order.guestCount}
                     </span>
                 )}
-                {order?.orderNote && (
+                {(order?.orderNote || order?.items?.some(i => i.note)) && (
                     <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
                         <NoteIcon />
                     </span>
