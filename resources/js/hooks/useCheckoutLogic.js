@@ -64,9 +64,11 @@ export const useCheckoutLogic = () => {
     }, [dispatch, state.activeOrderId]);
 
     const handleUpdateGuestCount = useCallback((count) => {
-        const guestCountNum = parseInt(count) || 1;
-        dispatch(setGuestCount(guestCountNum));
-        if (state.activeOrderId) {
+        // [WHY] Allow empty string so user can clear and re-type multi-digit numbers
+        dispatch(setGuestCount(count));
+        
+        const guestCountNum = parseInt(count);
+        if (!isNaN(guestCountNum) && guestCountNum >= 1 && state.activeOrderId) {
             dispatch(updateGuestCountAsync({ orderId: state.activeOrderId, count: guestCountNum }));
         }
     }, [dispatch, state.activeOrderId]);
@@ -171,7 +173,7 @@ export const useCheckoutLogic = () => {
                     })),
                     mergedTables: mergedTablesString,
                     orderNote: state.orderNote,
-                    guestCount: state.guestCount
+                    guestCount: parseInt(state.guestCount) || 1
                 })).unwrap();
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
