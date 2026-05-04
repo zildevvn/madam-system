@@ -69,31 +69,81 @@ export const useCashierSegmentation = (orders, allTables) => {
                     return;
                 }
 
-                // [STANDALONE] Not linked to any group — show in Individual lane
-                individualOrders[lookupKey] = order;
-
-                const groupColorIndex = 0;
-                if (order.mergedTables) {
-                    individualTablesList.push({
-                        id: lookupKey,
-                        name: order.tableName,
-                        merged_tables: order.mergedTables,
-                        groupKey: lookupKey,
-                        isGroupLinked: false,
-                        groupColorIndex
+                // [STANDALONE] Not linked to any group
+                // If this table has multiple active orders (e.g. split bills), we MUST un-merge them
+                // so the cashier can interact with them individually.
+                if (order.orders && order.orders.length > 1) {
+                    // Sort orders by ID so the original is first
+                    const sortedOrders = [...order.orders].sort((a, b) => a.id - b.id);
+                    
+                    sortedOrders.forEach((subOrder, index) => {
+                        const subLookupKey = subOrder.id.toString();
+                        
+                        // Reconstruct the order object for this specific sub-order
+                        const reconstructedOrder = {
+                            ...order,
+                            id: subOrder.id,
+                            orders: [subOrder],
+                            items: order.items.filter(i => i.order_id === subOrder.id)
+                        };
+                        
+                        individualOrders[subLookupKey] = reconstructedOrder;
+                        
+                        const groupColorIndex = 0;
+                        const baseName = order.tableName || `Bàn ${order.tableId}`;
+                        const tableName = index > 0 ? `${baseName} (Tách ${index})` : baseName;
+                        
+                        if (order.mergedTables) {
+                            individualTablesList.push({
+                                id: subLookupKey,
+                                name: tableName,
+                                merged_tables: order.mergedTables,
+                                groupKey: subLookupKey,
+                                isGroupLinked: false,
+                                groupColorIndex
+                            });
+                        } else {
+                            const tableObj = allTables.find(tbl => tbl.id === order.tableId);
+                            if (tableObj) {
+                                individualTablesList.push({
+                                    ...tableObj,
+                                    name: tableName,
+                                    id: subLookupKey,
+                                    originalTableId: tableObj.id,
+                                    groupKey: subLookupKey,
+                                    isGroupLinked: false,
+                                    groupColorIndex
+                                });
+                            }
+                        }
                     });
                 } else {
-                    const tableObj = allTables.find(tbl => tbl.id === order.tableId);
-                    if (tableObj) {
+                    // [STANDALONE] Single order for table
+                    individualOrders[lookupKey] = order;
+
+                    const groupColorIndex = 0;
+                    if (order.mergedTables) {
                         individualTablesList.push({
-                            ...tableObj,
-                            name: order.tableName || tableObj.name,
                             id: lookupKey,
-                            originalTableId: tableObj.id,
+                            name: order.tableName,
+                            merged_tables: order.mergedTables,
                             groupKey: lookupKey,
                             isGroupLinked: false,
                             groupColorIndex
                         });
+                    } else {
+                        const tableObj = allTables.find(tbl => tbl.id === order.tableId);
+                        if (tableObj) {
+                            individualTablesList.push({
+                                ...tableObj,
+                                name: order.tableName || tableObj.name,
+                                id: lookupKey,
+                                originalTableId: tableObj.id,
+                                groupKey: lookupKey,
+                                isGroupLinked: false,
+                                groupColorIndex
+                            });
+                        }
                     }
                 }
             }
@@ -108,11 +158,21 @@ export const useCashierSegmentation = (orders, allTables) => {
             groupColorIndex: 0
         }));
 
+        // [OPT] Build an O(1) lookup dictionary for all tables to prevent linear scans
+        const tableDict = {};
+        individualTablesList.forEach(t => {
+            tableDict[(t.groupKey || t.id).toString()] = t;
+        });
+        groupTables.forEach(t => {
+            tableDict[(t.groupKey || t.id).toString()] = t;
+        });
+
         return {
             groupOrders,
             individualOrders,
             individualTables: individualTablesList.sort((a, b) => b.id - a.id),
-            groupTables
+            groupTables,
+            tableDict
         };
     }, [orders, allTables]);
 };

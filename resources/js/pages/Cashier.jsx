@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import { useCashierSegmentation } from '../hooks/useCashierSegmentation';
-import Receipt from '../components/cashier/Receipt';
-import PaymentModal from '../components/cashier/PaymentModal';
 import CashierIndividualLane from '../components/cashier/CashierIndividualLane';
 import CashierGroupLane from '../components/cashier/CashierGroupLane';
 import CashierHistoryLane from '../components/cashier/CashierHistoryLane';
 import orderApi from '../services/orderApi';
 import { useCashierHistory } from '../hooks/useCashierHistory';
 import { useCashierData } from '../hooks/useCashierData';
-import { cleanMergedString } from '../shared/utils/normalizeTableStrings';
+
+
+import CheckoutManager from '../components/cashier/CheckoutManager';
+
+const COLLAPSE_ZONES = {
+    INDIVIDUAL: 'individual',
+    GROUP: 'group',
+    HISTORY: 'history'
+};
 
 const Cashier = () => {
     const {
@@ -22,9 +27,7 @@ const Cashier = () => {
         error
     } = useConsolidatedOrders(null, true);
 
-    const [selectedTable, setSelectedTable] = useState(null);
-    const [selectedOrderId, setSelectedOrderId] = useState(null);
-    const [tableContexts, setTableContexts] = useState({}); // { [tableId]: { step, discountType, discountValue, draftItems } }
+    const [selectedTableId, setSelectedTableId] = useState(null);
     const [collapsedSection, setCollapsedSection] = useState(null); // Expand all by default
     const [isReopening, setIsReopening] = useState(null);
     const [editingHistoryOrder, setEditingHistoryOrder] = useState(null);
@@ -37,8 +40,14 @@ const Cashier = () => {
     } = useCashierData(status);
 
     // [WHY] Segment orders into Group Reservations vs Individual Tables
-    const { groupOrders, individualOrders, individualTables, groupTables } = useCashierSegmentation(orders, allTables);
-    
+    const { groupOrders, individualOrders, individualTables, groupTables, tableDict } = useCashierSegmentation(orders, allTables);
+
+    // [WHY] Derive the full selectedTable object dynamically so it never goes out of sync
+    const selectedTable = useMemo(() => {
+        if (!selectedTableId) return null;
+        return tableDict[selectedTableId] || null;
+    }, [selectedTableId, tableDict]);
+
     // [WHY] Force state-driven print isolation
     useEffect(() => {
         const handleBefore = () => document.body.classList.add('is-printing-receipt');
@@ -54,87 +63,28 @@ const Cashier = () => {
         };
     }, []);
 
-    const handleTableClick = (table) => {
-        setSelectedOrderId(null);
-        setSelectedTable(table);
-    };
+    const handleActiveTableSelect = useCallback((table) => {
+        setSelectedTableId((table.groupKey || table.id).toString());
+    }, []);
 
-    const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
-    const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
-
-    // [WHY] Auto-initialize context for selected table/order
-    useEffect(() => {
-        if (!selectedTable || !currentOrder) return;
-        
-        const lookupKey = (selectedTable.groupKey || selectedTable.id).toString();
-        if (!tableContexts[lookupKey]) {
-            // [WHY] If selectedOrderId is set, we filter items to show ONLY that order.
-            // Otherwise, we show consolidated items for the whole group.
-            const initialItems = selectedOrderId 
-                ? currentOrder.items.filter(i => i.order_id === selectedOrderId)
-                : currentOrder.items;
-
-            // [WHY] Avoid initializing with an empty list if we're waiting for split data to arrive via Echo/Fetch
-            if (selectedOrderId && initialItems.length === 0) return;
-
-            setTableContexts(prev => ({
-                ...prev,
-                [lookupKey]: {
-                    step: 1,
-                    discountType: 'fixed',
-                    discountValue: 0,
-                    cashierNote: '',
-                    draftItems: [...initialItems],
-                    paymentMethod: 'cash',
-                    showExtras: false
-                }
-            }));
-        }
-    }, [selectedTable, currentOrder, selectedOrderId, tableContexts]);
-
-    const updateTableContext = (tableId, updates) => {
-        setTableContexts(prev => ({
-            ...prev,
-            [tableId]: {
-                ...(prev[tableId] || {}),
-                ...updates
-            }
-        }));
-    };
-
-    const handlePaymentSuccess = (newOrder = null) => {
+    const handleSplitSuccess = useCallback((newOrder) => {
         // [WHY] If we split, we want to immediately focus on the NEW bill
-        if (newOrder) {
-            const tableId = (selectedTable.groupKey || selectedTable.id).toString();
-            // Clear old context to force re-initialization with the new order's items
-            setTableContexts(prev => {
-                const newState = { ...prev };
-                delete newState[tableId];
-                return newState;
-            });
-            setSelectedOrderId(newOrder.id);
-            return;
-        }
+        // [FIX] Store only the ID to dynamically pick up the new order card
+        setSelectedTableId(newOrder.id.toString());
+    }, []);
 
-        if (selectedTable) {
-            const lookupKey = (selectedTable.groupKey || selectedTable.id).toString();
-            setTableContexts(prev => {
-                const newState = { ...prev };
-                delete newState[lookupKey];
-                return newState;
-            });
-        }
-        if (editingHistoryOrder) {
-            setEditingHistoryOrder(null);
-            refreshData();
-        }
-        setSelectedTable(null);
-        setSelectedOrderId(null);
-    };
+    const handleHistoryPaymentSuccess = useCallback(() => {
+        setEditingHistoryOrder(null);
+        refreshData();
+    }, [refreshData]);
 
-    const handleReopenOrder = async (orderId) => {
+    const handleActivePaymentSuccess = useCallback(() => {
+        setSelectedTableId(null);
+    }, []);
+
+    const handleReopenOrder = useCallback(async (orderId) => {
         if (!window.confirm("Are you sure you want to reopen this bill? This will move it back to active status.")) return;
-        
+
         setIsReopening(orderId);
         try {
             await orderApi.reopenOrder(orderId);
@@ -145,92 +95,37 @@ const Cashier = () => {
         } finally {
             setIsReopening(null);
         }
-    };
+    }, [refreshData]);
 
-    const handleEditHistoryOrder = (order) => {
+    const handleEditHistoryOrder = useCallback((order) => {
         setEditingHistoryOrder(order);
-        const lookupKey = `history-${order.id}`;
-        setTableContexts(prev => ({
-            ...prev,
-            [lookupKey]: {
-                step: 2,
-                paymentMethod: order.payment_method || 'cash',
-                showExtras: true,
-                discountType: order.discount_type || 'fixed',
-                discountValue: order.discount_value || 0,
-                cashierNote: order.cashier_note || '',
-                draftItems: order.items || []
-            }
-        }));
-    };
+    }, []);
 
-    const currentContext = currentLookupKey ? tableContexts[currentLookupKey] : null;
-    
     const consolidatedHistory = useCashierHistory(historyOrders);
 
-    const layout = useMemo(() => {
-        if (collapsedSection === 'left') {
-            return {
-                left: 'w-full lg:w-[20%] is-collapsed',
-                right: 'w-full lg:w-[80%]',
-                isLeftCollapsed: true,
-                isRightCollapsed: false
-            };
-        }
-        if (collapsedSection === 'right') {
-            return {
-                left: 'w-full lg:w-[80%]',
-                right: 'w-full lg:w-[20%] is-collapsed',
-                isLeftCollapsed: false,
-                isRightCollapsed: true
-            };
-        }
+    const toggleHandlers = useMemo(() => {
+        return Object.values(COLLAPSE_ZONES).reduce((acc, zone) => {
+            acc[zone] = () => setCollapsedSection(prev => prev === zone ? null : zone);
+            return acc;
+        }, {});
+    }, []);
+
+    const laneClasses = useMemo(() => {
+        const getSplitLaneClass = (thisZone, otherZone) => {
+            if (collapsedSection === thisZone) return 'w-full lg:w-[20%] is-collapsed';
+            if (collapsedSection === otherZone) return 'w-full lg:w-[80%]';
+            return 'w-full lg:w-1/2';
+        };
+
         return {
-            left: 'w-full lg:w-1/2',
-            right: 'w-full lg:w-1/2',
-            isLeftCollapsed: false,
-            isRightCollapsed: false
+            [COLLAPSE_ZONES.INDIVIDUAL]: getSplitLaneClass(COLLAPSE_ZONES.INDIVIDUAL, COLLAPSE_ZONES.GROUP),
+            [COLLAPSE_ZONES.GROUP]: getSplitLaneClass(COLLAPSE_ZONES.GROUP, COLLAPSE_ZONES.INDIVIDUAL),
+            [COLLAPSE_ZONES.HISTORY]: collapsedSection === COLLAPSE_ZONES.HISTORY ? 'w-full !min-h-0' : 'w-full'
         };
     }, [collapsedSection]);
 
-    const historyLayout = useMemo(() => ({
-        history: collapsedSection === 'history' ? 'w-full !min-h-0' : 'w-full',
-        isHistoryCollapsed: collapsedSection === 'history'
-    }), [collapsedSection]);
-
-    // [WHY] Unified state for Payment Modal to eliminate duplication between Active and History flows
-    const activeModal = useMemo(() => {
-        if (selectedTable) {
-            return {
-                id: currentLookupKey,
-                table: selectedTable,
-                order: currentOrder,
-                context: currentContext, // might be null while loading split data
-                isHistory: false,
-                onClose: () => setSelectedTable(null)
-            };
-        }
-        const hKey = editingHistoryOrder ? `history-${editingHistoryOrder.id}` : null;
-        if (editingHistoryOrder && tableContexts[hKey]) {
-            return {
-                id: hKey,
-                table: editingHistoryOrder.table,
-                order: editingHistoryOrder,
-                context: tableContexts[hKey],
-                isHistory: true,
-                onClose: () => setEditingHistoryOrder(null)
-            };
-        }
-        return null;
-    }, [selectedTable, currentContext, editingHistoryOrder, tableContexts, currentLookupKey, currentOrder]);
-
-    const displayTableName = useMemo(() => {
-        if (!activeModal) return '';
-        const name = activeModal.order?.tableName || activeModal.table?.name;
-        let baseName = name ? `Bàn ${name.replace(/^Bàn\s+/i, '')}` : 'Mang đi';
-        if (selectedOrderId) baseName += ' (Hóa đơn tách)';
-        return baseName;
-    }, [activeModal, selectedOrderId]);
+    const handleCloseTable = useCallback(() => setSelectedTableId(null), []);
+    const handleCloseHistory = useCallback(() => setEditingHistoryOrder(null), []);
 
     if (status === 'loading' && allTables.length === 0) {
         return (
@@ -250,30 +145,33 @@ const Cashier = () => {
                     <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                         {/* Top Row: Active Lanes */}
                         <div className="flex flex-col lg:flex-row gap-4 relative items-start">
-                            <CashierIndividualLane 
-                                layout={layout}
+                            <CashierIndividualLane
+                                containerClassName={laneClasses[COLLAPSE_ZONES.INDIVIDUAL]}
+                                isCollapsed={collapsedSection === COLLAPSE_ZONES.INDIVIDUAL}
                                 individualTables={individualTables}
                                 individualOrders={individualOrders}
                                 currentTime={currentTime}
-                                onTableClick={handleTableClick}
-                                onToggleCollapse={() => setCollapsedSection(collapsedSection === 'left' ? null : 'left')}
+                                onTableClick={handleActiveTableSelect}
+                                onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.INDIVIDUAL]}
                             />
 
-                            <CashierGroupLane 
-                                layout={layout}
+                            <CashierGroupLane
+                                containerClassName={laneClasses[COLLAPSE_ZONES.GROUP]}
+                                isCollapsed={collapsedSection === COLLAPSE_ZONES.GROUP}
                                 groupTables={groupTables}
                                 groupOrders={groupOrders}
                                 currentTime={currentTime}
-                                onTableClick={handleTableClick}
-                                onToggleCollapse={() => setCollapsedSection(collapsedSection === 'right' ? null : 'right')}
+                                onTableClick={handleActiveTableSelect}
+                                onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.GROUP]}
                             />
                         </div>
 
                         {/* Bottom Row: History Lane (Full Width) */}
-                        <CashierHistoryLane 
-                            layout={historyLayout}
+                        <CashierHistoryLane
+                            containerClassName={laneClasses[COLLAPSE_ZONES.HISTORY]}
+                            isCollapsed={collapsedSection === COLLAPSE_ZONES.HISTORY}
                             historyOrders={consolidatedHistory}
-                            onToggleCollapse={() => setCollapsedSection(collapsedSection === 'history' ? null : 'history')}
+                            onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.HISTORY]}
                             onEditOrder={handleEditHistoryOrder}
                             onReopenOrder={handleReopenOrder}
                             isReopening={isReopening}
@@ -281,53 +179,19 @@ const Cashier = () => {
                     </div>
                 </div>
 
-                {/* Unified Payment Popup Modal */}
-                {activeModal && (
-                    <PaymentModal
-                        selectedTable={activeModal.table}
-                        currentOrder={activeModal.order}
-                        allTables={allTables}
-                        isHistoryEdit={activeModal.isHistory}
-                        onClose={activeModal.onClose}
-                        onPaymentSuccess={handlePaymentSuccess}
-
-                        // Controlled Props from context
-                        draftItems={activeModal.context?.draftItems || []}
-                        onUpdateDraftItems={(items) => updateTableContext(activeModal.id, { draftItems: items })}
-
-                        discountType={activeModal.context?.discountType || 'fixed'}
-                        onUpdateDiscountType={(type) => updateTableContext(activeModal.id, { discountType: type })}
-
-                        discountValue={activeModal.context?.discountValue || 0}
-                        onUpdateDiscountValue={(val) => updateTableContext(activeModal.id, { discountValue: val })}
-
-                        step={activeModal.context?.step || 1}
-                        onUpdateStep={(s) => updateTableContext(activeModal.id, { step: s })}
-
-                        cashierNote={activeModal.context?.cashierNote || ''}
-                        onUpdateCashierNote={(note) => updateTableContext(activeModal.id, { cashierNote: note })}
-
-                        paymentMethod={activeModal.context?.paymentMethod || 'cash'}
-                        onUpdatePaymentMethod={(method) => updateTableContext(activeModal.id, { paymentMethod: method })}
-
-                        showExtras={activeModal.context?.showExtras || false}
-                        onUpdateShowExtras={(show) => updateTableContext(activeModal.id, { showExtras: show })}
-                        isLoading={!activeModal.context}
-                    />
-                )}
-            </div>
-
-            {/* Unified Receipt Printing Portal */}
-            {activeModal && createPortal(
-                <Receipt
-                    order={{...activeModal.order, items: activeModal.context?.draftItems || []}}
-                    tableName={displayTableName}
+                <CheckoutManager
+                    selectedTable={selectedTable}
+                    editingHistoryOrder={editingHistoryOrder}
+                    individualOrders={individualOrders}
+                    groupOrders={groupOrders}
                     allTables={allTables}
-                    discountType={activeModal.context?.discountType || 'fixed'}
-                    discountValue={activeModal.context?.discountValue || 0}
-                />,
-                document.body
-            )}
+                    onSplitSuccess={handleSplitSuccess}
+                    onHistoryPaymentSuccess={handleHistoryPaymentSuccess}
+                    onActivePaymentSuccess={handleActivePaymentSuccess}
+                    onCloseTable={handleCloseTable}
+                    onCloseHistory={handleCloseHistory}
+                />
+            </div>
         </div>
     );
 };

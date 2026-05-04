@@ -141,7 +141,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
 
     // 2. Finalize groups and build list for display
     const displayedGroups = new Set();
-    
+
     // [WHY] Ensure all tables that are part of a group reservation point to the same group object.
     // This handles Case 3 (Hybrid) where followers might receive individual orders later.
     Object.values(consolidatedGroups).forEach(group => {

@@ -6,17 +6,16 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
  * Allows viewing recently completed bills, editing payment details, or reopening orders.
  */
 const CashierHistoryLane = ({
-    layout,
+    containerClassName,
+    isCollapsed,
     historyOrders,
     onToggleCollapse,
     onEditOrder,
     onReopenOrder,
     isReopening
 }) => {
-    const isCollapsed = layout.isHistoryCollapsed;
-
     return (
-        <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] mt-8 ${layout.history}`}>
+        <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] mt-8 ${containerClassName}`}>
             <div className={`py-6 ${!isCollapsed ? 'px-6' : 'px-2'} flex flex-col gap-6 bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden min-h-[100px]`}>
                 <div className="flex items-center justify-between px-2">
                     <div className="flex flex-col">
@@ -112,4 +111,4 @@ const CashierHistoryLane = ({
     );
 };
 
-export default CashierHistoryLane;
+export default React.memo(CashierHistoryLane);
