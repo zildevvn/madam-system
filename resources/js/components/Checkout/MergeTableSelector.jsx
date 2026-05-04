@@ -1,13 +1,13 @@
 import React from 'react';
 
-const MergeTableSelector = ({ 
-    allTables, 
-    tableId, 
-    tableIdToGroupKey, 
-    mergedTableIds, 
-    toggleMergedTable, 
-    showMergeDropdown, 
-    setShowMergeDropdown 
+const MergeTableSelector = ({
+    allTables,
+    tableId,
+    tableIdToGroupKey,
+    mergedTableIds,
+    toggleMergedTable,
+    showMergeDropdown,
+    setShowMergeDropdown
 }) => {
     return (
         <div className="relative flex items-center">
@@ -41,7 +41,7 @@ const MergeTableSelector = ({
                                             />
                                         </div>
                                         <span className={`text-[13px] ml-3 transition-colors ${mergedTableIds.includes(t.id) ? 'font-bold text-orange-600' : 'text-gray-700 font-medium group-hover:text-gray-900'}`}>
-                                            Bàn {t.id}
+                                            Bàn {t.name.replace(/^Bàn\s+/i, '')}
                                         </span>
                                         {t.active_order && (
                                             <span className="ml-auto w-2 h-2 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.6)]"></span>

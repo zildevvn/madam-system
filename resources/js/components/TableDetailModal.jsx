@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const TableDetailModal = ({
     tableId,
+    tableName,
     mergedTables,
     orderItems,
     orderNote = '',
@@ -69,7 +70,7 @@ const TableDetailModal = ({
             <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h5 className='label-table'>Chi tiết bàn {(mergedTables || tableId.toString()).replace(/^Bàn\s+/i, '')}</h5>
+                        <h5 className='label-table'>Chi tiết bàn {(tableName || mergedTables || tableId.toString()).replace(/^Bàn\s+/i, '')}</h5>
                         <div className="flex items-center gap-2 mt-1">
                             {guestCount > 0 && (
                                 <span className="text-[12px] font-bold text-gray-500 flex items-center gap-1">
