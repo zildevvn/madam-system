@@ -58,8 +58,8 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                 const bucket = result[bucketKey];
                 const itemName = item.name;
                 const tableObj = tables?.find(t => t.id.toString() === tableId.toString());
-                const tableNumber = tableObj?.name?.replace(/[^0-9]/g, '') || tableId;
-                const tableName = order.mergedTables || tableNumber;
+                const tableNumber = tableObj?.name || tableId;
+                const tableName = order.tableName || order.mergedTables || tableNumber;
 
                 const tableInfo = { 
                     name: tableName, 

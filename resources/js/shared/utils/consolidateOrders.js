@@ -166,9 +166,14 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             }
 
             const tablesString = group.tableNames
-                .map(name => (name || '').toString().replace(/[^0-9]/g, ''))
+                .map(name => (name || '').toString().replace(/^Bàn\s+/i, ''))
                 .filter(Boolean)
-                .sort((a, b) => parseInt(a) - parseInt(b))
+                .sort((a, b) => {
+                    const numA = parseInt(a);
+                    const numB = parseInt(b);
+                    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                    return a.localeCompare(b);
+                })
                 .join('-');
 
             if (group.isGroup || (tablesString && tablesString.includes('-'))) {
@@ -176,6 +181,8 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             } else {
                 group.tableName = group.tableName || `Bàn ${group.tableId}`;
             }
+
+            group.relatedOrderIds = group.orders.map(o => o.id);
 
             // [WHY] Group is considered served if all items are either 'ready' (cooked) or 'served' (at table).
             // This matches the logic in ActiveOrderTableList.jsx for showing "HOÀN TẤT".

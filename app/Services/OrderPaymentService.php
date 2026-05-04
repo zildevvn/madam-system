@@ -32,13 +32,21 @@ class OrderPaymentService
             // [RULE] If it's a standard order (even merged), we only complete the specific order ID 
             // to allow split bills (multiple orders on the same table) to be paid independently.
             $relatedOrders = Order::whereIn('status', ['pending', 'processing', 'draft'])
-                ->where(function($query) use ($order, $involvedTableIds) {
+                ->where(function($query) use ($order, $involvedTableIds, $data) {
                     if ($order->reservation && $order->reservation->type === 'group') {
                         // For group reservations, complete everything in the reservation
                         $query->where('reservation_id', $order->reservation_id);
                     } else {
-                        // For standard/merged/split orders, only complete the specific order
+                        // For standard/merged/split orders, complete specific order + explicit siblings
                         $query->where('id', $order->id);
+
+                        if ($order->merged_tables) {
+                            $query->orWhere('merged_tables', $order->merged_tables);
+                        }
+
+                        if (!empty($data['sibling_order_ids'])) {
+                            $query->orWhereIn('id', (array)$data['sibling_order_ids']);
+                        }
                     }
                 })
                 ->get();

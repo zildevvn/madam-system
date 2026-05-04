@@ -110,10 +110,16 @@ export const usePaymentLogic = ({
                     );
                 }
 
-                // 2. Complete payment for ALL related orders
-                for (const orderId of orderIds) {
-                    await orderApi.completeOrder(orderId, paymentMethod, discountType, discountValue, cashierNote);
-                }
+                // 2. Complete payment for ALL related orders in ONE atomic call
+                const relatedIds = currentOrder.relatedOrderIds || [currentOrder.id];
+                await orderApi.completeOrder(
+                    currentOrder.id, 
+                    paymentMethod, 
+                    discountType, 
+                    discountValue, 
+                    cashierNote, 
+                    relatedIds
+                );
             }
 
             onPaymentSuccess();

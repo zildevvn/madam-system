@@ -6,12 +6,12 @@ import { ADDITIONAL_ITEM_THRESHOLD_MS, NEW_ORDER_PULSING_TIMEOUT_S } from '../..
  * Individual card representing a delayed dish and the tables waiting for it.
  * Memoized to prevent unnecessary re-renders.
  */
-const DelayWarningCard = React.memo(({ 
-    item, 
-    type, 
-    config, 
-    currentTimeTs, 
-    onCardClick 
+const DelayWarningCard = React.memo(({
+    item,
+    type,
+    config,
+    currentTimeTs,
+    onCardClick
 }) => {
     return (
         <div

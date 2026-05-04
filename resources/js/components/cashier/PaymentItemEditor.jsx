@@ -47,7 +47,7 @@ const PaymentItemEditor = ({
     // [WHY] Map IDs to display names (e.g. 47 -> "44")
     const resolveTableLabel = (tid) => {
         const t = allTables.find(tbl => tbl.id.toString() === tid.toString());
-        return t?.name?.replace(/^Bàn\s+/i, '') || tid;
+        return (t?.name || tid).toString().replace(/^Bàn\s+/i, '');
     };
 
     return (
@@ -176,7 +176,7 @@ const PaymentItemEditor = ({
                                         const itemId = item.order_item_id || item.id;
                                         const splitEntry = selectedSplitItems.find(i => i.order_item_id === itemId);
                                         const isSelected = !!splitEntry;
-                                        
+
                                         // [WHY] When splitting, we disable regular quantity/note editing to avoid conflicts
                                         const productItemReadOnly = isReadOnly || sectionReadOnly || isSplitMode;
 
@@ -184,17 +184,17 @@ const PaymentItemEditor = ({
                                             <div key={`${item.product_id || item.id}-${actualTableId}`} className="flex items-center gap-4 py-1">
                                                 {isSplitMode && !sectionReadOnly && (
                                                     <div className="flex flex-col items-center gap-2 shrink-0">
-                                                        <div 
+                                                        <div
                                                             onClick={() => onToggleSplitItem(item)}
                                                             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-orange-500 border-orange-500 shadow-md shadow-orange-200' : 'border-gray-200 bg-white hover:border-gray-400'}`}
                                                         >
                                                             {isSelected && (
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4"><path d="M20 6L9 17l-5-5" /></svg>
                                                             )}
                                                         </div>
                                                         {isSelected && item.quantity > 1 && (
                                                             <div className="flex flex-col items-center bg-orange-50 rounded-lg p-1 border border-orange-100 shadow-sm">
-                                                                <button 
+                                                                <button
                                                                     onClick={() => onUpdateSplitQuantity(itemId, Math.min(item.quantity, splitEntry.quantity + 1))}
                                                                     disabled={splitEntry.quantity >= item.quantity}
                                                                     className="w-5 h-5 flex items-center justify-center text-[12px] font-black text-orange-400 hover:text-orange-600 disabled:opacity-30 border-none bg-transparent cursor-pointer"
@@ -202,7 +202,7 @@ const PaymentItemEditor = ({
                                                                     +
                                                                 </button>
                                                                 <span className="text-[11px] font-black text-orange-600 leading-none py-1">{splitEntry.quantity}</span>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => onUpdateSplitQuantity(itemId, Math.max(1, splitEntry.quantity - 1))}
                                                                     disabled={splitEntry.quantity <= 1}
                                                                     className="w-5 h-5 flex items-center justify-center text-[12px] font-black text-orange-400 hover:text-orange-600 disabled:opacity-30 border-none bg-transparent cursor-pointer"
