@@ -177,6 +177,7 @@ const Cashier = () => {
                             containerClassName={laneClasses[COLLAPSE_ZONES.HISTORY]}
                             isCollapsed={collapsedSection === COLLAPSE_ZONES.HISTORY}
                             historyOrders={consolidatedHistory}
+                            allTables={allTables}
                             onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.HISTORY]}
                             onEditOrder={handleEditHistoryOrder}
                             onReopenOrder={handleReopenOrder}

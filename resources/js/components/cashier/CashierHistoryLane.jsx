@@ -9,11 +9,29 @@ const CashierHistoryLane = ({
     containerClassName,
     isCollapsed,
     historyOrders,
+    allTables = [],
     onToggleCollapse,
     onEditOrder,
     onReopenOrder,
     isReopening
 }) => {
+    const resolveTableName = (order) => {
+        if (order.merged_tables) {
+            const ids = order.merged_tables.split('-').filter(Boolean);
+            const names = ids.map(id => {
+                const t = allTables.find(tbl => tbl.id.toString() === id.toString());
+                return (t?.name || id).toString().replace(/^Bàn\s+/i, '');
+            });
+            return `Bàn ${names.join('-')}`;
+        }
+
+        const table = order.table || allTables.find(t => t.id === order.table_id);
+        if (!table) return 'Mang đi';
+
+        const name = (table.name || table.id).toString();
+        return name.startsWith('Bàn') ? name : `Bàn ${name}`;
+    };
+
     return (
         <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] mt-8 ${containerClassName}`}>
             <div className={`py-6 ${!isCollapsed ? 'px-6' : 'px-2'} flex flex-col gap-6 bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden min-h-[100px]`}>
@@ -25,14 +43,25 @@ const CashierHistoryLane = ({
                         {!isCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Recently Paid Bills</span>}
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                            {historyOrders.length} Bill
+                        <button
+                            onClick={onToggleCollapse}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                            title={!isCollapsed ? "Collapse View" : "Expand View"}
+                        >
+                            {!isCollapsed ? (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                            ) : (
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                            )}
+                        </button>
+                        <span className="bg-gray-50 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                            {historyOrders.length} {!isCollapsed ? 'Orders' : ''}
                         </span>
                     </div>
                 </div>
 
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 overflow-y-auto mdt-scrollbar px-2 max-h-[600px] ${isCollapsed ? 'hidden' : 'grid'}`}>
-                    {historyOrders.map((order) => (
+                <div className={`grid ${!isCollapsed ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1'} gap-6 overflow-y-auto max-h-[400px] px-2 custom-scrollbar`}>
+                    {historyOrders.map(order => (
                         <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-orange-200 transition-all group relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
                             {/* Visual indicator of payment method */}
                             <div className={`absolute top-0 left-0 w-1 h-full ${order.payment_method === 'cash' ? 'bg-green-400' :
@@ -43,13 +72,7 @@ const CashierHistoryLane = ({
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="text-[13px] font-black text-gray-900 uppercase">
-                                            {order.merged_tables
-                                                ? `Bàn ${order.merged_tables}`
-                                                : (order.table?.name
-                                                    ? (order.table.name.startsWith('Bàn') ? order.table.name : `Bàn ${order.table.name}`)
-                                                    : 'Mang đi'
-                                                )
-                                            }
+                                            {resolveTableName(order)}
                                         </span>
                                         <span className="text-[10px] bg-gray-50 text-gray-400 px-2 py-0.5 rounded-full font-bold">#{order.id}</span>
                                     </div>
