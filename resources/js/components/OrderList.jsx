@@ -3,6 +3,7 @@ import { formatPrice } from '../shared/utils/formatCurrency';
 import TimeElapsed from './shared/TimeElapsed';
 
 const OrderList = ({ tables, allTables, onTableClick }) => {
+
     if (tables.length === 0) {
         return (
             <div className="w-full flex-1 flex flex-col items-center justify-center py-20 text-gray-400 italic">
