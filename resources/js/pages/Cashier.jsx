@@ -7,6 +7,8 @@ import CashierHistoryLane from '../components/cashier/CashierHistoryLane';
 import orderApi from '../services/orderApi';
 import { useCashierHistory } from '../hooks/useCashierHistory';
 import { useCashierData } from '../hooks/useCashierData';
+import { useAppDispatch } from '../store/hooks';
+import { optimisticallyCompleteOrder } from '../store/slices/tableSlice';
 
 
 import CheckoutManager from '../components/cashier/CheckoutManager';
@@ -18,6 +20,7 @@ const COLLAPSE_ZONES = {
 };
 
 const Cashier = () => {
+    const dispatch = useAppDispatch();
     const {
         orders,
         orderDict,
@@ -78,9 +81,12 @@ const Cashier = () => {
         refreshData();
     }, [refreshData]);
 
-    const handleActivePaymentSuccess = useCallback(() => {
+    const handleActivePaymentSuccess = useCallback((paidOrderId) => {
         setSelectedTableId(null);
-    }, []);
+        if (paidOrderId) {
+            dispatch(optimisticallyCompleteOrder(paidOrderId));
+        }
+    }, [dispatch]);
 
     const handleReopenOrder = useCallback(async (orderId) => {
         if (!window.confirm("Are you sure you want to reopen this bill? This will move it back to active status.")) return;

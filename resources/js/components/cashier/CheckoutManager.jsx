@@ -147,6 +147,7 @@ const CheckoutManager = ({
 
     const handlePaymentSuccessProxy = (newOrder) => {
         if (activeModal) {
+            const paidOrderId = activeModal.order?.id;
             dispatch({ type: 'CLEAR', payload: { lookupKey: activeModal.id } });
             
             if (newOrder) {
@@ -154,7 +155,7 @@ const CheckoutManager = ({
             } else if (activeModal.isHistory) {
                 onHistoryPaymentSuccess();
             } else {
-                onActivePaymentSuccess();
+                onActivePaymentSuccess(paidOrderId);
             }
         }
     };

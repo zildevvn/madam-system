@@ -47,6 +47,20 @@ const tableSlice = createSlice({
         }
       });
     },
+    // [WHY] Optimistically removes a completed order from the active orders list immediately.
+    // Prevents "ghost" duplicates from lingering on the UI before the WebSocket confirmation arrives.
+    optimisticallyCompleteOrder: (state, action) => {
+      const orderId = action.payload;
+      state.allIds.forEach(id => {
+        const table = state.byId[id];
+        if (table?.active_order?.id === orderId) {
+          table.active_order = null;
+        }
+        if (table?.active_orders) {
+          table.active_orders = table.active_orders.filter(o => o.id !== orderId);
+        }
+      });
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -129,7 +143,7 @@ const tableSlice = createSlice({
   },
 });
 
-export const { setActiveTab, patchItemsStatus } = tableSlice.actions;
+export const { setActiveTab, patchItemsStatus, optimisticallyCompleteOrder } = tableSlice.actions;
 
 // Selectors
 const selectTablesState = state => state.table;
