@@ -41,38 +41,8 @@ export default function Checkout() {
         handleUpdateGuestCount,
         handleCheckout,
         handleCancelOrder,
-        handleSplitOrder,
         isSaving
     } = useCheckoutLogic();
-
-    const [isSplitMode, setIsSplitMode] = React.useState(false);
-    const [splitItems, setSplitItems] = React.useState([]); // Array of { order_item_id, quantity, product_id }
-
-    const toggleSplitItem = React.useCallback((item) => {
-        setSplitItems(prev => {
-            // [FIX] Use order_item_id as the primary unique key to prevent data corruption
-            // when multiple identical products exist with different notes/modifiers.
-            const itemKey = item.order_item_id || item.id;
-            const existing = prev.find(i => (i.order_item_id || i.product_id) === itemKey);
-            
-            if (existing) {
-                return prev.filter(i => (i.order_item_id || i.product_id) !== itemKey);
-            } else {
-                return [...prev, { 
-                    order_item_id: item.order_item_id, 
-                    quantity: item.quantity, 
-                    product_id: item.id 
-                }];
-            }
-        });
-    }, []);
-
-    const confirmSplit = async () => {
-        if (splitItems.length === 0) return;
-        await handleSplitOrder(splitItems.map(({ order_item_id, quantity }) => ({ order_item_id, quantity })));
-        setIsSplitMode(false);
-        setSplitItems([]);
-    };
 
     return (
         <div className="mdt-bg-light mdt-checkout-page min-h-screen pb-40 no-print">
@@ -96,9 +66,6 @@ export default function Checkout() {
                 handleUpdateNote={handleUpdateNote}
                 guestCount={guestCount}
                 onUpdateGuestCount={handleUpdateGuestCount}
-                isSplitMode={isSplitMode}
-                splitItems={splitItems}
-                onToggleSplitItem={toggleSplitItem}
             />
 
             <CheckoutOrderNote
@@ -119,10 +86,6 @@ export default function Checkout() {
                 handleCheckout={handleCheckout}
                 hasItems={selectedItems.length > 0}
                 activeOrderId={activeOrderId}
-                isSplitMode={isSplitMode}
-                setIsSplitMode={setIsSplitMode}
-                splitItemsCount={splitItems.length}
-                onConfirmSplit={confirmSplit}
                 isSaving={isSaving}
             />
 
