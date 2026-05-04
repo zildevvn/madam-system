@@ -106,6 +106,7 @@ const Bar = () => {
             {selectedTable && activeOrders[selectedTable.id.toString()] && (
                 <TableDetailModal
                     tableId={selectedTable.id}
+                    tableName={activeOrders[selectedTable.id.toString()].tableName}
                     tableIndex={allTables.findIndex(t => t.id === selectedTable.id)}
                     mergedTables={activeOrders[selectedTable.id.toString()].mergedTables}
                     orderItems={activeOrders[selectedTable.id.toString()].items}

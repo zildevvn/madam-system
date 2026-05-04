@@ -34,7 +34,8 @@ export const useCheckoutLogic = () => {
         isMergeChanged,
         guestCount,
         orderNote,
-        setWarningMessage, setSuccessMessage, setShowSuccessPopup
+        setWarningMessage, setSuccessMessage, setShowSuccessPopup,
+        allTables
     } = state;
 
     const [isSaving, setIsSaving] = useState(false);
@@ -116,12 +117,15 @@ export const useCheckoutLogic = () => {
                 orderId: currentOrderId,
                 tableId: finalTableId
             })).unwrap();
-            setSuccessMessage(`Đã chuyển sang Bàn số ${finalTableId}`);
+            
+            const currentTable = allTables.find(t => t.id.toString() === finalTableId);
+            const tableName = currentTable?.name || `Bàn số ${finalTableId}`;
+            setSuccessMessage(`Đã chuyển sang ${tableName}`);
         } else {
             setSuccessMessage('Đơn hàng đã được lưu thành công.');
         }
         return currentOrderId;
-    }, [selectedTableId, tableId, activeOrderId, dispatch, setSuccessMessage]);
+    }, [selectedTableId, tableId, activeOrderId, dispatch, setSuccessMessage, allTables]);
 
     const checkForDrinkChanges = useCallback((allDrinks) => {
         const hasModifiedDrinks = allDrinks.some(item => {
