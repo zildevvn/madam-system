@@ -109,24 +109,39 @@ class OrderService
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
-            $existingItems = OrderItem::where('order_id', $orderId)
-                ->get()
-                ->keyBy('product_id');
+            $existingItems = OrderItem::where('order_id', $orderId)->get();
+            $existingItemsById = $existingItems->keyBy('id');
+            $existingItemsByProduct = $existingItems->groupBy('product_id');
 
             $productIds = collect($items)->pluck('product_id')->toArray();
             $productTypes = Product::whereIn('id', $productIds)->pluck('type', 'id');
 
+            $handledItemIds = [];
+
             foreach ($items as $itemData) {
                 $productId = $itemData['product_id'];
-                $orderItem = $existingItems->get($productId);
-                $productType = $productTypes->get($productId);
+                $orderItemId = $itemData['order_item_id'] ?? null;
+                
+                // [WHY] Try to find the item by its specific ID first (most accurate).
+                // Fallback to finding by product_id if it's a new item or from an older client.
+                $orderItem = $orderItemId ? $existingItemsById->get($orderItemId) : null;
+                
+                if (!$orderItem && !$orderItemId) {
+                    // Legacy/Draft fallback: find first available item for this product that hasn't been handled
+                    $potentialMatches = $existingItemsByProduct->get($productId);
+                    if ($potentialMatches) {
+                        $orderItem = $potentialMatches->first(fn($item) => !in_array($item->id, $handledItemIds));
+                    }
+                }
 
+                $productType = $productTypes->get($productId);
                 if (!$productType) {
                     Log::warning("Order item checkout: Product ID {$productId} has no type defined. Defaulting to 'food'.");
                     $productType = 'food';
                 }
 
                 if ($orderItem) {
+                    $handledItemIds[] = $orderItem->id;
                     $orderItem->quantity = $itemData['quantity'];
                     $orderItem->table_id = $itemData['table_id'] ?? $order->table_id;
                     if (array_key_exists('note', $itemData)) {
@@ -143,14 +158,16 @@ class OrderService
                         'note' => $itemData['note'] ?? null,
                         'status' => 'pending'
                     ]);
+                    $handledItemIds[] = $orderItem->id;
                 }
 
                 $totalPrice += ($orderItem->price * $orderItem->quantity);
             }
 
-            $itemProductIds = collect($items)->pluck('product_id')->toArray();
+            // [WHY] Delete only the items that were NOT handled in the loop above.
+            // This correctly removes specific rows while preserving duplicates of the same product.
             OrderItem::where('order_id', $orderId)
-                ->whereNotIn('product_id', $itemProductIds)
+                ->whereNotIn('id', $handledItemIds)
                 ->delete();
 
             $wasDraft = $order->status === 'draft';

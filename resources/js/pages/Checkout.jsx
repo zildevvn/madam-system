@@ -41,7 +41,8 @@ export default function Checkout() {
         handleUpdateGuestCount,
         handleCheckout,
         handleCancelOrder,
-        handleSplitOrder
+        handleSplitOrder,
+        isSaving
     } = useCheckoutLogic();
 
     const [isSplitMode, setIsSplitMode] = React.useState(false);
@@ -49,11 +50,19 @@ export default function Checkout() {
 
     const toggleSplitItem = React.useCallback((item) => {
         setSplitItems(prev => {
-            const existing = prev.find(i => i.product_id === item.id);
+            // [FIX] Use order_item_id as the primary unique key to prevent data corruption
+            // when multiple identical products exist with different notes/modifiers.
+            const itemKey = item.order_item_id || item.id;
+            const existing = prev.find(i => (i.order_item_id || i.product_id) === itemKey);
+            
             if (existing) {
-                return prev.filter(i => i.product_id !== item.id);
+                return prev.filter(i => (i.order_item_id || i.product_id) !== itemKey);
             } else {
-                return [...prev, { order_item_id: item.order_item_id, quantity: item.quantity, product_id: item.id }];
+                return [...prev, { 
+                    order_item_id: item.order_item_id, 
+                    quantity: item.quantity, 
+                    product_id: item.id 
+                }];
             }
         });
     }, []);
@@ -114,6 +123,7 @@ export default function Checkout() {
                 setIsSplitMode={setIsSplitMode}
                 splitItemsCount={splitItems.length}
                 onConfirmSplit={confirmSplit}
+                isSaving={isSaving}
             />
 
             <StatusPopups

@@ -144,20 +144,34 @@ const orderSlice = createSlice({
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
+          state.originalItems = {}; // Reset original items
+          
           if (order.items) {
             order.items.forEach(orderItem => {
               const product = orderItem.product;
               if (product) {
+                // [WHY] Use order_item_id with a prefix as the unique key in Redux.
+                // This prevents product ID collisions and allows multiple rows of the same product.
+                const uniqueKey = `item-${orderItem.id}`;
                 const itemData = { 
                   ...product, 
+                  id: uniqueKey, // Use unique key for UI callbacks (ProductItem)
+                  product_id: product.id, // Store actual product ID for API calls
                   order_item_id: orderItem.id,
                   quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '' 
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
                 };
-                state.items.byId[product.id] = itemData;
-                state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
-                if (!state.items.allIds.includes(product.id)) {
-                  state.items.allIds.push(product.id);
+                
+                state.items.byId[uniqueKey] = itemData;
+                state.originalItems[uniqueKey] = { 
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '', 
+                  type: product.type 
+                };
+                if (!state.items.allIds.includes(uniqueKey)) {
+                  state.items.allIds.push(uniqueKey);
                 }
               }
             });
@@ -170,6 +184,7 @@ const orderSlice = createSlice({
           state.guestCount = 1;
           state.isModified = false;
           state.items = { byId: {}, allIds: [] };
+          state.originalItems = {};
         }
       })
       .addCase(createOrderAsync.fulfilled, (state, action) => {
@@ -186,12 +201,14 @@ const orderSlice = createSlice({
         state.activeOrderId = null;
         state.orderStatus = null;
         state.isModified = false;
+        state.originalItems = {};
       })
       .addCase(cancelOrderAsync.fulfilled, (state) => {
         state.items = { byId: {}, allIds: [] };
         state.activeOrderId = null;
         state.orderStatus = null;
         state.isModified = false;
+        state.originalItems = {};
       })
       .addCase(updateOrderTableAsync.fulfilled, (state, action) => {
         const order = action.payload;
@@ -205,20 +222,31 @@ const orderSlice = createSlice({
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
+          state.originalItems = {};
+
           if (order.items) {
             order.items.forEach(orderItem => {
               const product = orderItem.product;
               if (product) {
+                const uniqueKey = `item-${orderItem.id}`;
                 const itemData = { 
                   ...product, 
+                  id: uniqueKey,
+                  product_id: product.id,
                   order_item_id: orderItem.id,
                   quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '' 
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
                 };
-                state.items.byId[product.id] = itemData;
-                state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
-                if (!state.items.allIds.includes(product.id)) {
-                  state.items.allIds.push(product.id);
+                state.items.byId[uniqueKey] = itemData;
+                state.originalItems[uniqueKey] = { 
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '', 
+                  type: product.type 
+                };
+                if (!state.items.allIds.includes(uniqueKey)) {
+                  state.items.allIds.push(uniqueKey);
                 }
               }
             });
@@ -233,20 +261,31 @@ const orderSlice = createSlice({
           state.isModified = false;
           state.items.byId = {};
           state.items.allIds = [];
+          state.originalItems = {};
+
           if (source_order.items) {
             source_order.items.forEach(orderItem => {
               const product = orderItem.product;
               if (product) {
+                const uniqueKey = `item-${orderItem.id}`;
                 const itemData = { 
                   ...product, 
+                  id: uniqueKey,
+                  product_id: product.id,
                   order_item_id: orderItem.id,
                   quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '' 
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
                 };
-                state.items.byId[product.id] = itemData;
-                state.originalItems[product.id] = { quantity: Number(orderItem.quantity), note: orderItem.note || '', type: product.type };
-                if (!state.items.allIds.includes(product.id)) {
-                  state.items.allIds.push(product.id);
+                state.items.byId[uniqueKey] = itemData;
+                state.originalItems[uniqueKey] = { 
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '', 
+                  type: product.type 
+                };
+                if (!state.items.allIds.includes(uniqueKey)) {
+                  state.items.allIds.push(uniqueKey);
                 }
               }
             });

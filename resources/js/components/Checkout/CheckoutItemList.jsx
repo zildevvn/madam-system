@@ -39,10 +39,11 @@ const CheckoutItemList = ({
                             </div>
                         )}
 
-                        {selectedItems.map((item) => {
-                            const isSelected = splitItems?.some(i => i.product_id === item.id);
+                        {selectedItems.map((item, index) => {
+                            const itemKey = item.order_item_id || item.id;
+                            const isSelected = splitItems?.some(i => (i.order_item_id || i.product_id) === itemKey);
                             return (
-                                <div key={item.id} className="flex items-start gap-3">
+                                <div key={itemKey || index} className="flex items-start gap-3">
                                     {isSplitMode && (
                                         <div 
                                             onClick={() => onToggleSplitItem(item)}
