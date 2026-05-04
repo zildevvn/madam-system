@@ -38,12 +38,13 @@ const orderApi = {
     const response = await axios.patch(`/api/orders/${orderId}/guest-count`, { guest_count: count });
     return response.data;
   },
-  completeOrder: async (orderId, paymentMethod, discountType = null, discountValue = 0, cashierNote = '') => {
+  completeOrder: async (orderId, paymentMethod, discountType = null, discountValue = 0, cashierNote = '', siblingOrderIds = []) => {
     const response = await axios.post(`/api/orders/${orderId}/complete`, {
       payment_method: paymentMethod,
       discount_type: discountType,
       discount_value: discountValue,
-      cashier_note: cashierNote || null
+      cashier_note: cashierNote || null,
+      sibling_order_ids: siblingOrderIds
     });
     return response.data;
   },

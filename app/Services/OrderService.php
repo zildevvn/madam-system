@@ -179,7 +179,14 @@ class OrderService
                 'guest_count' => $guestCount ?? $order->guest_count
             ]);
 
-            if ($order->table_id) {
+            if ($mergedTables) {
+                $ids = explode('-', $mergedTables);
+                Order::whereIn('table_id', $ids)
+                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->update(['merged_tables' => $mergedTables]);
+                
+                Table::whereIn('id', $ids)->update(['status' => 'busy']);
+            } else if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'busy']);
             }
 

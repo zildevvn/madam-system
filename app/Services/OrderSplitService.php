@@ -28,7 +28,7 @@ class OrderSplitService
             $newOrder = Order::create([
                 'table_id' => $sourceOrder->table_id,
                 'user_id' => $sourceOrder->user_id,
-                'merged_tables' => $sourceOrder->merged_tables,
+                'merged_tables' => null, // [WHY] Split bills are independent from the source merge grouping.
                 'reservation_id' => $sourceOrder->reservation_id,
                 'order_type' => $sourceOrder->order_type,
                 'status' => $sourceOrder->status,
