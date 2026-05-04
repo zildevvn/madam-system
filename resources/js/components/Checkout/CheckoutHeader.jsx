@@ -1,19 +1,20 @@
 import React from 'react';
 import MergeTableSelector from './MergeTableSelector';
 
-const CheckoutHeader = ({ 
-    isConfirmed, 
-    navigate, 
-    tableId, 
-    selectedTableId, 
-    setSelectedTableId, 
-    allTables, 
+const CheckoutHeader = ({
+    isConfirmed,
+    navigate,
+    tableId,
+    selectedTableId,
+    setSelectedTableId,
+    allTables,
     tableIdToGroupKey,
     mergedTableIds,
     toggleMergedTable,
     showMergeDropdown,
     setShowMergeDropdown
 }) => {
+
     return (
         <div className="w-full sticky top-0 z-50 bg-white">
             <div className="flex items-center justify-between px-2 py-4 w-full">
@@ -35,19 +36,21 @@ const CheckoutHeader = ({
                             onChange={(e) => setSelectedTableId(e.target.value)}
                             className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-4 pr-8 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
                         >
-                            <option value={tableId}>Bàn {tableId.toString().replace(/^Bàn\s+/i, '')}</option>
+                            <option value={tableId}>
+                                {allTables.find(t => t.id.toString() === tableId?.toString())?.name || `Bàn ${tableId.toString().replace(/^Bàn\s+/i, '')}`}
+                            </option>
                             {allTables
                                 .filter(t => !t.active_order && !tableIdToGroupKey[t.id.toString()] && t.id.toString() !== tableId?.toString())
                                 .map(t => (
                                     <option key={t.id} value={t.id.toString()}>
-                                        Bàn {t.id}
+                                        {t.name}
                                     </option>
                                 ))}
                         </select>
                         <svg className="w-3.5 h-3.5 absolute right-3 pointer-events-none text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                     </div>
 
-                    <MergeTableSelector 
+                    <MergeTableSelector
                         allTables={allTables}
                         tableId={tableId}
                         tableIdToGroupKey={tableIdToGroupKey}

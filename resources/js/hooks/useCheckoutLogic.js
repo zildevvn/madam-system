@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCheckoutState } from './useCheckoutState';
 import {
     updateQuantity,
@@ -12,7 +12,8 @@ import {
     setOrderNote,
     updateOrderNoteAsync,
     setGuestCount,
-    updateGuestCountAsync
+    updateGuestCountAsync,
+    splitOrderAsync
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';
@@ -27,14 +28,17 @@ export const useCheckoutLogic = () => {
     const {
         dispatch, navigate, tableId, activeOrderId, isConfirmed,
         isModified, selectedItems, originalItems, selectedTableId,
-        mergedTableIds, setMergedTableIds, showWarningPopup,
-        warningMessage,
+        mergedTableIds, setMergedTableIds,
         setShowWarningPopup,
         isTableChanged,
         isMergeChanged,
         guestCount,
+        orderNote,
         setWarningMessage, setSuccessMessage, setShowSuccessPopup
     } = state;
+
+    const [isSaving, setIsSaving] = useState(false);
+    const isProcessing = useRef(false);
 
     const toggleMergedTable = useCallback((id) => {
         setMergedTableIds(prev =>
@@ -58,20 +62,20 @@ export const useCheckoutLogic = () => {
     // and persists to the backend. If no order exists yet, only the local state is updated.
     const handleUpdateOrderNote = useCallback((note) => {
         dispatch(setOrderNote(note));
-        if (state.activeOrderId) {
-            dispatch(updateOrderNoteAsync({ orderId: state.activeOrderId, note }));
+        if (activeOrderId) {
+            dispatch(updateOrderNoteAsync({ orderId: activeOrderId, note }));
         }
-    }, [dispatch, state.activeOrderId]);
+    }, [dispatch, activeOrderId]);
 
     const handleUpdateGuestCount = useCallback((count) => {
         // [WHY] Allow empty string so user can clear and re-type multi-digit numbers
         dispatch(setGuestCount(count));
         
-        const guestCountNum = parseInt(count);
-        if (!isNaN(guestCountNum) && guestCountNum >= 1 && state.activeOrderId) {
-            dispatch(updateGuestCountAsync({ orderId: state.activeOrderId, count: guestCountNum }));
+        const guestCountNum = Number(count);
+        if (!isNaN(guestCountNum) && guestCountNum >= 1 && activeOrderId) {
+            dispatch(updateGuestCountAsync({ orderId: activeOrderId, count: guestCountNum }));
         }
-    }, [dispatch, state.activeOrderId]);
+    }, [dispatch, activeOrderId]);
 
     const triggerBackendPrint = useCallback(async (orderId, title) => {
         if (!title) return;
@@ -89,7 +93,7 @@ export const useCheckoutLogic = () => {
         const otherIds = mergedTableIds
             .filter(id => id.toString() !== finalTableId)
             .sort((a, b) => a - b);
-        const combinedIds = [parseInt(finalTableId), ...otherIds];
+        const combinedIds = [Number(finalTableId), ...otherIds];
         return combinedIds.length > 1 ? combinedIds.join('-') : null;
     }, [selectedTableId, mergedTableIds]);
 
@@ -121,6 +125,7 @@ export const useCheckoutLogic = () => {
 
     const checkForDrinkChanges = useCallback((allDrinks) => {
         const hasModifiedDrinks = allDrinks.some(item => {
+            // [WHY] item.id is now the unique key (item-ID or numeric product ID)
             const original = originalItems[item.id];
             if (!original) return true;
             return Number(original.quantity) !== Number(item.quantity) ||
@@ -129,7 +134,8 @@ export const useCheckoutLogic = () => {
 
         const hasRemovedDrinks = Object.keys(originalItems).some(id => {
             const original = originalItems[id];
-            const stillInCart = selectedItems.some(i => Number(i.id) === Number(id));
+            // [WHY] Convert both to strings for strict equality to safely compare string-prefixed vs numeric IDs.
+            const stillInCart = selectedItems.some(i => String(i.id) === String(id));
             return original.type === 'drink' && !stillInCart;
         });
 
@@ -150,6 +156,12 @@ export const useCheckoutLogic = () => {
     }, [selectedTableId, tableId]);
 
     const handleCheckout = useCallback(async () => {
+        // [WHY] useRef (isProcessing) provides a synchronous guard against race conditions,
+        // which useState (isSaving) cannot guarantee because state updates are asynchronous.
+        if (isProcessing.current) return; 
+        isProcessing.current = true;
+        setIsSaving(true);
+
         try {
             const mergedTablesString = prepareMergedTables();
             const currentOrderId = await ensureOrderSynced(mergedTablesString);
@@ -165,19 +177,20 @@ export const useCheckoutLogic = () => {
                 await dispatch(checkoutOrderAsync({
                     orderId: currentOrderId,
                     items: selectedItems.map(i => ({
-                        product_id: i.id,
+                        product_id: i.product_id || i.id,
+                        order_item_id: i.order_item_id || null, // [NEW] Pass row ID for granular backend updates
                         quantity: i.quantity,
                         price: i.price,
                         note: i.note,
                         table_id: selectedTableId
                     })),
                     mergedTables: mergedTablesString,
-                    orderNote: state.orderNote,
-                    guestCount: parseInt(state.guestCount) || 1
+                    orderNote: orderNote,
+                    guestCount: Number(guestCount) || 1
                 })).unwrap();
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
-                    triggerBackendPrint(currentOrderId, drinkPrintTitle);
+                    await triggerBackendPrint(currentOrderId, drinkPrintTitle);
                 }
 
                 dispatch(fetchTables());
@@ -192,7 +205,7 @@ export const useCheckoutLogic = () => {
                 const drinkPrintTitle = buildDrinkTitle(false, true, wasConfirmed);
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
-                    triggerBackendPrint(currentOrderId, drinkPrintTitle);
+                    await triggerBackendPrint(currentOrderId, drinkPrintTitle);
                 }
 
                 dispatch(clearCart());
@@ -206,13 +219,46 @@ export const useCheckoutLogic = () => {
         } catch (error) {
             console.error(error);
             alert("Lỗi Order");
+        } finally {
+            isProcessing.current = false;
+            setIsSaving(false);
         }
-    }, [prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId, tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, setShowSuccessPopup]);
+    }, [
+        prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, 
+        isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId, 
+        tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, 
+        setShowSuccessPopup, orderNote, guestCount
+    ]);
 
     const handleCancelOrder = useCallback(async () => {
         if (activeOrderId) await dispatch(cancelOrderAsync(activeOrderId));
         navigate('/staff-order');
     }, [activeOrderId, dispatch, navigate]);
+
+    const handleSplitOrder = useCallback(async (itemsToSplit) => {
+        if (isProcessing.current || !activeOrderId || !itemsToSplit.length) return;
+        isProcessing.current = true;
+        setIsSaving(true);
+        try {
+            await dispatch(splitOrderAsync({
+                orderId: activeOrderId,
+                items: itemsToSplit
+            })).unwrap();
+            
+            dispatch(fetchTables()); // [NEW] Refresh global table state to reflect the new split order
+            
+            setSuccessMessage('Đã tách đơn hàng thành công.');
+            setShowSuccessPopup(true);
+            setTimeout(() => setShowSuccessPopup(false), 2000);
+        } catch (error) {
+            console.error(error);
+            setWarningMessage('Tách đơn thất bại. Vui lòng thử lại!');
+            setShowWarningPopup(true);
+        } finally {
+            isProcessing.current = false;
+            setIsSaving(false);
+        }
+    }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningMessage, setShowWarningPopup]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -224,12 +270,14 @@ export const useCheckoutLogic = () => {
 
     return {
         ...state,
+        isSaving,
         toggleMergedTable,
         handleUpdateQuantity,
         handleUpdateNote,
         handleUpdateOrderNote,
         handleUpdateGuestCount,
         handleCheckout,
-        handleCancelOrder
+        handleCancelOrder,
+        handleSplitOrder
     };
 };

@@ -40,7 +40,8 @@ export default function Checkout() {
         guestCount,
         handleUpdateGuestCount,
         handleCheckout,
-        handleCancelOrder
+        handleCancelOrder,
+        isSaving
     } = useCheckoutLogic();
 
     return (
@@ -85,6 +86,7 @@ export default function Checkout() {
                 handleCheckout={handleCheckout}
                 hasItems={selectedItems.length > 0}
                 activeOrderId={activeOrderId}
+                isSaving={isSaving}
             />
 
             <StatusPopups

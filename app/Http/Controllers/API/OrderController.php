@@ -259,4 +259,21 @@ class OrderController extends Controller
             'errors' => null
         ]);
     }
+
+    public function split(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.order_item_id' => 'required|exists:order_items,id',
+            'items.*.quantity' => 'required|integer|min:1'
+        ]);
+
+        $result = $this->orderService->splitItems($id, $validated['items']);
+
+        return response()->json([
+            'data' => $result,
+            'message' => 'Order split successfully',
+            'errors' => null
+        ]);
+    }
 }

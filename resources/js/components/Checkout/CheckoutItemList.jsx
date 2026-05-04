@@ -15,7 +15,6 @@ const CheckoutItemList = ({
                     <p className="text-center text-gray-500 py-10">Chưa có món nào được chọn</p>
                 ) : (
                     <>
-
                         <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-4">
                             <label className='flex-shrink-0 font-bold text-gray-700'>Số lượng khách:</label>
                             <input 
@@ -28,15 +27,22 @@ const CheckoutItemList = ({
                             />
                         </div>
 
-                        {selectedItems.map((item) => (
-                            <ProductItem
-                                key={item.id}
-                                item={item}
-                                onUpdateQuantity={handleUpdateQuantity}
-                                onUpdateNote={handleUpdateNote}
-                                showNoteButton={true}
-                            />
-                        ))}
+                        {selectedItems.map((item, index) => {
+                            const itemKey = item.order_item_id || item.id;
+                            return (
+                                <div key={itemKey || index} className="flex items-start gap-3">
+                                    <div className="flex-1">
+                                        <ProductItem
+                                            item={item}
+                                            onUpdateQuantity={handleUpdateQuantity}
+                                            onUpdateNote={handleUpdateNote}
+                                            showNoteButton={true}
+                                            isReadOnly={false}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </>
                 )}
             </div>

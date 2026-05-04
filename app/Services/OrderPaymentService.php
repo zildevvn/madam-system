@@ -17,7 +17,7 @@ class OrderPaymentService
     public function completeOrder($orderId, $data)
     {
         $result = DB::transaction(function () use ($orderId, $data) {
-            $order = Order::findOrFail($orderId);
+            $order = Order::with('reservation')->findOrFail($orderId);
 
             // [WHY] Identify all involved table IDs in the merge group
             $involvedTableIds = [$order->table_id];
@@ -27,12 +27,18 @@ class OrderPaymentService
             }
             $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
-            // [WHY] Identify all active orders that should be completed together as a group
+            // [WHY] Identify all active orders that should be completed together.
+            // [RULE] If it's a group reservation, we complete the entire reservation group.
+            // [RULE] If it's a standard order (even merged), we only complete the specific order ID 
+            // to allow split bills (multiple orders on the same table) to be paid independently.
             $relatedOrders = Order::whereIn('status', ['pending', 'processing', 'draft'])
                 ->where(function($query) use ($order, $involvedTableIds) {
-                    $query->whereIn('table_id', $involvedTableIds);
-                    if ($order->reservation_id) {
-                        $query->orWhere('reservation_id', $order->reservation_id);
+                    if ($order->reservation && $order->reservation->type === 'group') {
+                        // For group reservations, complete everything in the reservation
+                        $query->where('reservation_id', $order->reservation_id);
+                    } else {
+                        // For standard/merged/split orders, only complete the specific order
+                        $query->where('id', $order->id);
                     }
                 })
                 ->get();

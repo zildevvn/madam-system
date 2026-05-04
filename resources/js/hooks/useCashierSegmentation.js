@@ -69,31 +69,105 @@ export const useCashierSegmentation = (orders, allTables) => {
                     return;
                 }
 
-                // [STANDALONE] Not linked to any group — show in Individual lane
-                individualOrders[lookupKey] = order;
-
-                const groupColorIndex = 0;
-                if (order.mergedTables) {
-                    individualTablesList.push({
-                        id: lookupKey,
-                        name: order.tableName,
-                        merged_tables: order.mergedTables,
-                        groupKey: lookupKey,
-                        isGroupLinked: false,
-                        groupColorIndex
+                // [STANDALONE] Not linked to any group
+                // If this table has multiple active orders, we must distinguish between:
+                // 1. Merged Tables: Multiple orders from DIFFERENT tables (keep as ONE card)
+                // 2. Split Bills: Multiple orders from the SAME table (un-merge into MULTIPLE cards)
+                let splitOrders = [];
+                let mainOrders = [];
+                
+                if (order.orders && order.orders.length > 1) {
+                    const sortedOrders = [...order.orders].sort((a, b) => a.id - b.id);
+                    const seenTableIds = new Set();
+                    sortedOrders.forEach(subOrder => {
+                        // The first order we see for any given table is a "main" order.
+                        // Any subsequent order for the SAME table is a "split" bill.
+                        if (!seenTableIds.has(subOrder.table_id)) {
+                            seenTableIds.add(subOrder.table_id);
+                            mainOrders.push(subOrder);
+                        } else {
+                            splitOrders.push(subOrder);
+                        }
                     });
                 } else {
-                    const tableObj = allTables.find(tbl => tbl.id === order.tableId);
-                    if (tableObj) {
+                    mainOrders = order.orders || [];
+                }
+
+                if (splitOrders.length > 0) {
+                    // There are split bills! We must un-merge them.
+                    
+                    // Card 1: Main Orders Combined (Original table + any merged tables)
+                    const mainLookupKey = lookupKey; 
+                    const mainOrderIds = mainOrders.map(o => o.id);
+                    const mainReconstructed = {
+                        ...order,
+                        id: mainOrders[0].id,
+                        orders: mainOrders,
+                        items: order.items.filter(i => mainOrderIds.includes(i.order_id))
+                    };
+                    
+                    individualOrders[mainLookupKey] = mainReconstructed;
+                    individualTablesList.push({
+                        id: mainLookupKey,
+                        name: order.tableName || `Bàn ${order.tableId}`,
+                        merged_tables: order.mergedTables,
+                        groupKey: mainLookupKey,
+                        isGroupLinked: false,
+                        groupColorIndex: 0
+                    });
+
+                    // Card 2+: Split Orders
+                    splitOrders.forEach((subOrder, index) => {
+                        const subLookupKey = subOrder.id.toString();
+                        const subReconstructed = {
+                            ...order,
+                            id: subOrder.id,
+                            orders: [subOrder],
+                            items: order.items.filter(i => i.order_id === subOrder.id)
+                        };
+                        
+                        individualOrders[subLookupKey] = subReconstructed;
+                        
+                        const baseName = order.tableName || `Bàn ${order.tableId}`;
+                        const tableName = `${baseName} (Tách ${index + 1})`;
+                        
                         individualTablesList.push({
-                            ...tableObj,
-                            name: order.tableName || tableObj.name,
+                            id: subLookupKey,
+                            name: tableName,
+                            merged_tables: order.mergedTables,
+                            groupKey: subLookupKey,
+                            isGroupLinked: false,
+                            groupColorIndex: 0
+                        });
+                    });
+                } else {
+                    // [STANDALONE] Single order OR Merged tables with NO split bills.
+                    // Keep them consolidated into a single card.
+                    individualOrders[lookupKey] = order;
+
+                    const groupColorIndex = 0;
+                    if (order.mergedTables) {
+                        individualTablesList.push({
                             id: lookupKey,
-                            originalTableId: tableObj.id,
+                            name: order.tableName,
+                            merged_tables: order.mergedTables,
                             groupKey: lookupKey,
                             isGroupLinked: false,
                             groupColorIndex
                         });
+                    } else {
+                        const tableObj = allTables.find(tbl => tbl.id === order.tableId);
+                        if (tableObj) {
+                            individualTablesList.push({
+                                ...tableObj,
+                                name: order.tableName || tableObj.name,
+                                id: lookupKey,
+                                originalTableId: tableObj.id,
+                                groupKey: lookupKey,
+                                isGroupLinked: false,
+                                groupColorIndex
+                            });
+                        }
                     }
                 }
             }
@@ -108,11 +182,21 @@ export const useCashierSegmentation = (orders, allTables) => {
             groupColorIndex: 0
         }));
 
+        // [OPT] Build an O(1) lookup dictionary for all tables to prevent linear scans
+        const tableDict = {};
+        individualTablesList.forEach(t => {
+            tableDict[(t.groupKey || t.id).toString()] = t;
+        });
+        groupTables.forEach(t => {
+            tableDict[(t.groupKey || t.id).toString()] = t;
+        });
+
         return {
             groupOrders,
             individualOrders,
             individualTables: individualTablesList.sort((a, b) => b.id - a.id),
-            groupTables
+            groupTables,
+            tableDict
         };
     }, [orders, allTables]);
 };
