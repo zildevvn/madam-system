@@ -33,7 +33,7 @@ export const useCashierHistory = (historyOrders = []) => {
             const roundedTime = Math.floor(new Date(order.updated_at).getTime() / 2000) * 2000;
             const timeKey = roundedTime.toString();
             const cleanedMerged = cleanMergedString(order.merged_tables);
-            
+
             const signals = [
                 order.reservation_id ? `res-${order.reservation_id}` : null,
                 cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null, // [WHY] Scoped by time to avoid cross-day grouping
@@ -80,12 +80,12 @@ export const useCashierHistory = (historyOrders = []) => {
                     const key = `${item.product_id || item.name}-${item.note || ''}`; // [WHY] No tid in key to merge across tables
                     groups[groupKey].itemsMap[key] = { ...item, tableId: tid };
                 });
-                
+
                 // Track all table IDs involved
                 const cm = cleanMergedString(order.merged_tables);
                 if (cm) cm.split('-').forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
                 else if (order.table_id) groups[groupKey].allTableIds.add(parseInt(order.table_id));
-                
+
                 if (order.reservation?.table_ids) {
                     order.reservation.table_ids.forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
                 }
@@ -93,7 +93,7 @@ export const useCashierHistory = (historyOrders = []) => {
                 const g = groups[groupKey];
                 g.total_price += Number(order.total_price);
                 g.discount_amount += Number(order.discount_amount);
-                
+
                 // [WHY] Merge items into the existing itemsMap
                 (order.items || []).forEach(item => {
                     const itemId = item.id || item.order_item_id;
@@ -108,23 +108,23 @@ export const useCashierHistory = (historyOrders = []) => {
                         g.itemsMap[key] = { ...item, tableId: tid };
                     }
                 });
-                
+
                 // Inherit cashier note
                 if (order.cashier_note && !g.cashier_note) {
                     g.cashier_note = order.cashier_note;
                 }
-                
+
                 // [WHY] Inherit reservation metadata if found in any related order
                 if (order.reservation && !g.reservation) {
                     g.reservation = order.reservation;
                     g.reservation_id = order.reservation_id;
                     g.isGroup = true;
                 }
-                
+
                 const cm = cleanMergedString(order.merged_tables);
                 if (cm) cm.split('-').forEach(id => g.allTableIds.add(parseInt(id)));
                 else if (order.table_id) g.allTableIds.add(parseInt(order.table_id));
-                
+
                 if (order.reservation?.table_ids) {
                     order.reservation.table_ids.forEach(id => g.allTableIds.add(parseInt(id)));
                 }
@@ -139,7 +139,7 @@ export const useCashierHistory = (historyOrders = []) => {
         return Object.values(groups).map(g => {
             // [WHY] Convert itemsMap back to array for UI consumption
             g.items = Object.values(g.itemsMap);
-            
+
             // [WHY] Ensure each item has a tableId for the PaymentItemEditor's grouping logic
             // If the item doesn't have one, fallback to the group's primary table_id.
             g.items.forEach(item => {

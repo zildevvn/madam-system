@@ -76,7 +76,7 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
         return Number(a) - Number(b);
     });
 
-    const showTableHeaders = groupedItems.length > 1 || isGroupReservation || !!order.mergedTables;
+    const showTableHeaders = groupedItems.length > 1 || isGroupReservation;
 
     return (
         <div id="receipt-print-area" className="receipt-print-only">
@@ -196,7 +196,7 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                     {showTableHeaders && (
                                         <tr className="receipt-subtotal-row" style={{ marginBottom: '8px' }}>
                                             <td colSpan="2" align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontStyle: 'italic', color: '#666' }}>
-                                                Cộng {isSharedSection ? 'phần chung' : `bàn ${resolveTableLabel(tGroup)}`}:
+                                                Cộng {isSharedSection ? 'phần chung' : `bàn ${tGroup}`}:
                                             </td>
                                             <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontWeight: 'bold' }}>
                                                 {formatPrice(sectionGross - sectionDiscount)}

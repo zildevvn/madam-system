@@ -49,7 +49,7 @@ export const usePaymentLogic = ({
             const val = Number(i.discount || 0);
             const type = i.discountType || 'fixed';
             const itemGross = i.price * i.quantity;
-            
+
             if (type === 'percent') {
                 return sum + (itemGross * val / 100);
             }
@@ -113,11 +113,11 @@ export const usePaymentLogic = ({
                 // 2. Complete payment for ALL related orders in ONE atomic call
                 const relatedIds = currentOrder.relatedOrderIds || [currentOrder.id];
                 await orderApi.completeOrder(
-                    currentOrder.id, 
-                    paymentMethod, 
-                    discountType, 
-                    discountValue, 
-                    cashierNote, 
+                    currentOrder.id,
+                    paymentMethod,
+                    discountType,
+                    discountValue,
+                    cashierNote,
                     relatedIds
                 );
             }
@@ -234,7 +234,7 @@ export const usePaymentLogic = ({
     }, []);
 
     const handleUpdateSplitQuantity = useCallback((itemId, quantity) => {
-        setSelectedSplitItems(prev => 
+        setSelectedSplitItems(prev =>
             prev.map(i => i.order_item_id === itemId ? { ...i, quantity } : i)
         );
     }, []);
