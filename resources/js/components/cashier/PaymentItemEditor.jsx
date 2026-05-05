@@ -136,7 +136,8 @@ const PaymentItemEditor = ({
                                     tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
                                 } else {
                                     // Standard staff-merge: group by table
-                                    tGroup = item.tableId || selectedTable.originalTableId || selectedTable.id;
+                                    const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+                                    tGroup = item.tableId || dbTableId || selectedTable?.id;
                                 }
 
                                 if (!acc[tGroup]) acc[tGroup] = [];
@@ -171,7 +172,8 @@ const PaymentItemEditor = ({
                                         </div>
                                     )}
                                     {tableItems.map((item, idx) => {
-                                        const actualTableId = item.tableId || selectedTable.id;
+                                        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+                                        const actualTableId = item.tableId || dbTableId || selectedTable?.id;
                                         // [WHY] Per-item read-only: shared dishes (reservation_item_id) are locked
                                         const itemId = item.order_item_id || item.id;
                                         const splitEntry = selectedSplitItems.find(i => i.order_item_id === itemId);

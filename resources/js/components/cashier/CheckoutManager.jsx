@@ -19,6 +19,7 @@ const checkoutReducer = (state, action) => {
                     discountValue: 0,
                     cashierNote: '',
                     draftItems: action.payload.items,
+                    serverItems: action.payload.items, // [FIX] Track server state to avoid local adjustment wipes
                     paymentMethod: 'cash',
                     showExtras: false,
                     initializedOrderId: action.payload.orderId
@@ -35,6 +36,7 @@ const checkoutReducer = (state, action) => {
                     discountValue: action.payload.order.discount_value || 0,
                     cashierNote: action.payload.order.cashier_note || '',
                     draftItems: action.payload.order.items || [],
+                    serverItems: action.payload.order.items || [], // [FIX] For consistency
                     initializedOrderId: action.payload.order.id
                 }
             };
@@ -51,7 +53,8 @@ const checkoutReducer = (state, action) => {
                 ...state,
                 [action.payload.lookupKey]: {
                     ...state[action.payload.lookupKey],
-                    draftItems: action.payload.items
+                    draftItems: action.payload.items,
+                    serverItems: action.payload.items // [FIX] Sync server state tracker
                 }
             };
         case 'CLEAR':
@@ -90,18 +93,23 @@ const CheckoutManager = ({
         if (!selectedTable || !currentOrder) return;
 
         const lookupKey = currentLookupKey;
-        const initialItems = currentOrder.items;
+        const initialItems = currentOrder.items || [];
 
         const existing = contexts[lookupKey];
         // [FIX] Since split orders are now their own table cards, we don't need initializedOrderId check
         // for switching between split and full bill. However, we still need to know if the underlying
         // order ID changed (e.g. table merged or reassigned).
         const isOrderSwitched = existing && existing.initializedOrderId !== currentOrder.id;
-        const itemsChanged = existing && existing.step === 1 && existing.draftItems.length !== initialItems.length;
+
+        // [FIX] Detect if items changed ON THE SERVER by comparing currentOrder.items (initialItems)
+        // with our last known serverItems. We do NOT compare with draftItems because draftItems
+        // contains local adjustments which would trigger a false-positive refresh and wipe those adjustments.
+        const serverItemsChanged = existing && existing.step === 1 &&
+            JSON.stringify(existing.serverItems) !== JSON.stringify(initialItems);
 
         if (!existing || isOrderSwitched) {
             dispatch({ type: 'INITIALIZE_TABLE', payload: { lookupKey, items: initialItems, orderId: currentOrder.id } });
-        } else if (itemsChanged) {
+        } else if (serverItemsChanged) {
             dispatch({ type: 'REFRESH_ITEMS', payload: { lookupKey, items: initialItems } });
         }
     }, [selectedTable, currentOrder, currentLookupKey]);
@@ -149,7 +157,7 @@ const CheckoutManager = ({
         if (activeModal) {
             const paidOrderId = activeModal.order?.id;
             dispatch({ type: 'CLEAR', payload: { lookupKey: activeModal.id } });
-            
+
             if (newOrder) {
                 onSplitSuccess(newOrder);
             } else if (activeModal.isHistory) {
@@ -174,7 +182,7 @@ const CheckoutManager = ({
                 onClose={activeModal.onClose}
                 onPaymentSuccess={handlePaymentSuccessProxy}
                 isLoading={!ctx}
-                
+
                 // Controlled props from the isolated state
                 draftItems={ctx?.draftItems || []}
                 onUpdateDraftItems={(items) => updateContext(activeModal.id, { draftItems: items })}

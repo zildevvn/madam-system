@@ -36,7 +36,9 @@ export const usePaymentLogic = ({
         if (currentOrder?.reservation?.type === 'group' && Array.isArray(tableIds) && tableIds.length > 0) {
             return Number([...tableIds].sort((a, b) => Number(a) - Number(b))[0]);
         }
-        return selectedTable?.id;
+        // [FIX] Ensure we use the database table ID (not the order lookup key)
+        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+        return dbTableId || selectedTable?.id;
     });
 
     // Fetch products for "Add new items"
@@ -132,44 +134,51 @@ export const usePaymentLogic = ({
     }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess, isHistoryEdit]);
 
     const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
+        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+        const fallbackTId = dbTableId || selectedTable?.id;
         let newItems;
         if (quantity < 1) {
             newItems = draftItems.filter(i =>
-                !((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+                !((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
             );
         } else {
             newItems = draftItems.map(i =>
-                ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+                ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
                     ? { ...i, quantity }
                     : i
             );
         }
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable.id, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
 
     const handleUpdateNote = useCallback((productId, tableId, note) => {
+        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+        const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
-            ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
                 ? { ...i, note }
                 : i
         );
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable.id, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
 
     const handleUpdateItemDiscount = useCallback((productId, tableId, updates) => {
+        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+        const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
-            ((i.product_id || i.id) === productId && (i.tableId || selectedTable.id) === tableId)
+            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
                 ? { ...i, ...updates }
                 : i
         );
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable.id, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
 
     const handleAddProduct = useCallback((product) => {
-        const activeTId = targetTableId || selectedTable.id;
+        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+        const activeTId = targetTableId || dbTableId || selectedTable?.id;
         const existing = draftItems.find(i =>
             (i.product_id || i.id) === product.id &&
-            (i.tableId || selectedTable.id) === activeTId
+            (i.tableId || activeTId) === activeTId
         );
 
         let newItems;

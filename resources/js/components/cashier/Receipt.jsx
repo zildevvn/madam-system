@@ -64,7 +64,16 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
             if (isGroupReservation) {
                 tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
             } else {
-                tGroup = item.tableId || order.tableId;
+                // [FIX] Normalize grouping ID to database table ID. 
+                // Prevents items from splitting into a separate "Bàn [OrderId]" group.
+                const dbTableId = order.tableId || order.table_id || order.table?.id;
+                tGroup = item.tableId || dbTableId;
+
+                // If the resolved tGroup matches the current order ID (lookup key), 
+                // force fallback to the actual table ID.
+                if (tGroup?.toString() === order.id?.toString() && dbTableId) {
+                    tGroup = dbTableId;
+                }
             }
             if (!acc[tGroup]) acc[tGroup] = [];
             acc[tGroup].push(item);
