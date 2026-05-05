@@ -46,15 +46,34 @@ const CheckoutItemList = ({
                                                 onChange={() => toggleSplitItem(item)}
                                                 className="w-5 h-5 accent-orange-500 cursor-pointer"
                                             />
-                                            {isSelected && (
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max={item.quantity}
-                                                    value={splitItem.quantity}
-                                                    onChange={(e) => handleUpdateSplitQuantity(itemKey, Math.min(item.quantity, Number(e.target.value)))}
-                                                    className="w-12 px-1 py-0.5 border border-gray-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-orange-500"
-                                                />
+                                            {isSelected && item.quantity > 1 && (
+                                                <div className="flex items-center bg-gray-100 rounded-full p-0.5 border border-gray-200 shadow-sm mt-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleUpdateSplitQuantity(itemKey, Math.max(1, splitItem.quantity - 1));
+                                                        }}
+                                                        disabled={splitItem.quantity <= 1}
+                                                        className={`w-6 h-6 flex items-center justify-center rounded-full border-none transition-all ${splitItem.quantity <= 1 ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
+                                                    >
+                                                        <svg width="12" height="12" strokeWidth="2.5" viewBox="0 0 24 24" fill="none"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                    </button>
+
+                                                    <span className="px-2 font-black text-gray-800 text-[10px] min-w-[18px] text-center">
+                                                        {splitItem.quantity}
+                                                    </span>
+
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleUpdateSplitQuantity(itemKey, Math.min(item.quantity, splitItem.quantity + 1));
+                                                        }}
+                                                        disabled={splitItem.quantity >= item.quantity}
+                                                        className={`w-6 h-6 flex items-center justify-center rounded-full border-none transition-all ${splitItem.quantity >= item.quantity ? 'bg-transparent text-gray-300' : 'bg-orange-500 text-white shadow-md active:scale-90 cursor-pointer'}`}
+                                                    >
+                                                        <svg width="12" height="12" strokeWidth="3" viewBox="0 0 24 24" fill="none"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     )}

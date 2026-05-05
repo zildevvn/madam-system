@@ -104,7 +104,10 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
 
                 if (groupByCompositeKey) {
                     const idKey = item.product_id || itemData.name;
-                    const compositeKey = `${idKey}-${itemData.note}-${item.status}`;
+                    // [FIX] Include order_id in the composite key to prevent merging items from separate orders 
+                    // on the same table (split bills). This ensures useCashierSegmentation can correctly 
+                    // redistribute items to their respective table cards.
+                    const compositeKey = `${idKey}-${itemData.note}-${item.status}-${item.order_id}`;
                     if (group.itemsMap[compositeKey]) {
                         group.itemsMap[compositeKey].quantity += itemData.quantity;
                         group.itemsMap[compositeKey].allIds.push(item.id);
