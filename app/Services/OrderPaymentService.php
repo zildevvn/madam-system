@@ -19,23 +19,28 @@ class OrderPaymentService
         $result = DB::transaction(function () use ($orderId, $data) {
             $order = Order::with('reservation')->findOrFail($orderId);
 
-            // [WHY] Identify all involved table IDs in the merge group
+            // [WHY] Identify all involved table IDs in the merge group or reservation
             $involvedTableIds = [$order->table_id];
             if ($order->merged_tables) {
                 $mergedIds = explode('-', $order->merged_tables);
                 $involvedTableIds = array_merge($involvedTableIds, $mergedIds);
             }
+            if ($order->reservation && $order->reservation->table_ids) {
+                $involvedTableIds = array_merge($involvedTableIds, (array)$order->reservation->table_ids);
+            }
             $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
             // [WHY] Identify all active orders that should be completed together.
-            // [RULE] If it's a group reservation, we complete the entire reservation group.
+            // [RULE] If it's a group reservation, we complete the entire reservation group AND any orders on those tables.
             // [RULE] If it's a standard order (even merged), we only complete the specific order ID 
             // to allow split bills (multiple orders on the same table) to be paid independently.
             $relatedOrders = Order::whereIn('status', ['pending', 'processing', 'draft'])
                 ->where(function ($query) use ($order, $involvedTableIds, $data) {
                     if ($order->reservation && $order->reservation->type === 'group') {
-                        // For group reservations, complete everything in the reservation
-                        $query->where('reservation_id', $order->reservation_id);
+                        // For group reservations, complete everything in the reservation 
+                        // OR anything active on the reservation tables (individual extras).
+                        $query->where('reservation_id', $order->reservation_id)
+                              ->orWhereIn('table_id', $involvedTableIds);
                     } else {
                         // For standard/merged/split orders, complete specific order + explicit siblings
                         $query->where('id', $order->id);

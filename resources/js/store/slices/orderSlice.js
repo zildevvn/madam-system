@@ -112,6 +112,7 @@ const orderSlice = createSlice({
     },
     setOrderNote: (state, action) => {
       state.orderNote = action.payload;
+      state.isModified = true;
     },
     setGuestCount: (state, action) => {
       state.guestCount = action.payload;

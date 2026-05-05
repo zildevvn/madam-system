@@ -21,11 +21,11 @@ const CheckoutItemList = ({
                     <>
                         <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-4">
                             <label className='flex-shrink-0 font-bold text-gray-700'>Số lượng khách:</label>
-                            <input 
-                                className='w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500' 
-                                type="number" 
+                            <input
+                                className='w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500'
+                                type="number"
                                 min="1"
-                                placeholder="Số lượng khách" 
+                                placeholder="Số lượng khách"
                                 value={guestCount}
                                 onChange={(e) => onUpdateGuestCount(e.target.value)}
                             />
