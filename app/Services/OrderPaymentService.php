@@ -32,7 +32,7 @@ class OrderPaymentService
             // [RULE] If it's a standard order (even merged), we only complete the specific order ID 
             // to allow split bills (multiple orders on the same table) to be paid independently.
             $relatedOrders = Order::whereIn('status', ['pending', 'processing', 'draft'])
-                ->where(function($query) use ($order, $involvedTableIds, $data) {
+                ->where(function ($query) use ($order, $involvedTableIds, $data) {
                     if ($order->reservation && $order->reservation->type === 'group') {
                         // For group reservations, complete everything in the reservation
                         $query->where('reservation_id', $order->reservation_id);
@@ -45,7 +45,7 @@ class OrderPaymentService
                         }
 
                         if (!empty($data['sibling_order_ids'])) {
-                            $query->orWhereIn('id', (array)$data['sibling_order_ids']);
+                            $query->orWhereIn('id', (array) $data['sibling_order_ids']);
                         }
                     }
                 })
@@ -62,13 +62,13 @@ class OrderPaymentService
             } elseif ($discountType === 'fixed') {
                 $groupDiscountAmount = $discountValue;
             }
-            
+
             $groupDiscountAmount = min($groupSubtotal, $groupDiscountAmount);
 
             // [WHY] Finalize ALL related orders
             foreach ($relatedOrders as $o) {
                 $isPrimary = $o->id == $orderId;
-                
+
                 $updateData = [
                     'status' => 'completed',
                     'payment_method' => $data['payment_method'] ?? null,
@@ -138,7 +138,7 @@ class OrderPaymentService
     {
         $result = DB::transaction(function () use ($orderId) {
             $order = Order::findOrFail($orderId);
-            
+
             $involvedTableIds = [$order->table_id];
             if ($order->merged_tables) {
                 $mergedIds = explode('-', $order->merged_tables);
@@ -147,13 +147,13 @@ class OrderPaymentService
             $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
             $relatedOrders = Order::where('status', 'completed')
-                ->where(function($query) use ($order, $involvedTableIds) {
+                ->where(function ($query) use ($order, $involvedTableIds) {
                     $query->whereIn('table_id', $involvedTableIds);
                     if ($order->reservation_id) {
                         $query->orWhere('reservation_id', $order->reservation_id);
                     }
                 })
-                ->where(function($query) use ($order) {
+                ->where(function ($query) use ($order) {
                     if ($order->merged_tables) {
                         $query->where('merged_tables', $order->merged_tables);
                     }
@@ -168,7 +168,7 @@ class OrderPaymentService
                     $isTableOccupied = Order::where('table_id', $o->table_id)
                         ->whereIn('status', ['pending', 'processing', 'draft'])
                         ->exists();
-                    
+
                     if ($isTableOccupied) {
                         throw new \Exception("Cannot reopen order: Table {$o->table_id} is currently occupied by another active order.");
                     }
@@ -219,7 +219,7 @@ class OrderPaymentService
     public function updatePayment($orderId, $data)
     {
         $order = Order::findOrFail($orderId);
-        
+
         $involvedTableIds = [$order->table_id];
         if ($order->merged_tables) {
             $mergedIds = explode('-', $order->merged_tables);
@@ -228,13 +228,13 @@ class OrderPaymentService
         $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
         $relatedOrders = Order::where('status', 'completed')
-            ->where(function($query) use ($order, $involvedTableIds) {
+            ->where(function ($query) use ($order, $involvedTableIds) {
                 $query->whereIn('table_id', $involvedTableIds);
                 if ($order->reservation_id) {
                     $query->orWhere('reservation_id', $order->reservation_id);
                 }
             })
-            ->where(function($query) use ($order) {
+            ->where(function ($query) use ($order) {
                 if ($order->merged_tables) {
                     $query->where('merged_tables', $order->merged_tables);
                 }
@@ -244,7 +244,7 @@ class OrderPaymentService
             })
             ->get();
 
-        $groupSubtotal = $relatedOrders->sum(function($o) {
+        $groupSubtotal = $relatedOrders->sum(function ($o) {
             return $o->subtotal ?? ($o->total_price + $o->discount_amount);
         });
 
@@ -257,12 +257,12 @@ class OrderPaymentService
         } elseif ($discountType === 'fixed') {
             $groupDiscountAmount = $discountValue;
         }
-        
+
         $groupDiscountAmount = min($groupSubtotal, $groupDiscountAmount);
 
         foreach ($relatedOrders as $o) {
             $isPrimary = $o->id == $orderId;
-            
+
             $updateData = [
                 'payment_method' => $data['payment_method'] ?? $o->payment_method,
                 'cashier_note' => $data['cashier_note'] ?? $o->cashier_note,
@@ -284,7 +284,7 @@ class OrderPaymentService
         }
 
         $order->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
-        
+
         try {
             broadcast(new OrderUpdated($order, 'order_updated'));
         } catch (\Exception $e) {

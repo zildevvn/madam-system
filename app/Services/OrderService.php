@@ -121,11 +121,11 @@ class OrderService
             foreach ($items as $itemData) {
                 $productId = $itemData['product_id'];
                 $orderItemId = $itemData['order_item_id'] ?? null;
-                
+
                 // [WHY] Try to find the item by its specific ID first (most accurate).
                 // Fallback to finding by product_id if it's a new item or from an older client.
                 $orderItem = $orderItemId ? $existingItemsById->get($orderItemId) : null;
-                
+
                 if (!$orderItem && !$orderItemId) {
                     // Legacy/Draft fallback: find first available item for this product that hasn't been handled
                     $potentialMatches = $existingItemsByProduct->get($productId);
@@ -184,7 +184,7 @@ class OrderService
                 Order::whereIn('table_id', $ids)
                     ->whereIn('status', ['draft', 'pending', 'processing'])
                     ->update(['merged_tables' => $mergedTables]);
-                
+
                 Table::whereIn('id', $ids)->update(['status' => 'busy']);
             } else if ($order->table_id) {
                 Table::where('id', $order->table_id)->update(['status' => 'busy']);
