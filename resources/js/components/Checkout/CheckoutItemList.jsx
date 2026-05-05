@@ -6,7 +6,11 @@ const CheckoutItemList = ({
     handleUpdateQuantity,
     handleUpdateNote,
     guestCount,
-    onUpdateGuestCount
+    onUpdateGuestCount,
+    isSplitMode,
+    selectedSplitItems,
+    toggleSplitItem,
+    handleUpdateSplitQuantity
 }) => {
     return (
         <main className="px-2 pt-4 max-w-2xl mx-auto space-y-4">
@@ -29,15 +33,38 @@ const CheckoutItemList = ({
 
                         {selectedItems.map((item, index) => {
                             const itemKey = item.order_item_id || item.id;
+                            const splitItem = selectedSplitItems.find(si => si.order_item_id === itemKey);
+                            const isSelected = !!splitItem;
+
                             return (
                                 <div key={itemKey || index} className="flex items-start gap-3">
+                                    {isSplitMode && (
+                                        <div className="flex flex-col items-center gap-2 pt-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleSplitItem(item)}
+                                                className="w-5 h-5 accent-orange-500 cursor-pointer"
+                                            />
+                                            {isSelected && (
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max={item.quantity}
+                                                    value={splitItem.quantity}
+                                                    onChange={(e) => handleUpdateSplitQuantity(itemKey, Math.min(item.quantity, Number(e.target.value)))}
+                                                    className="w-12 px-1 py-0.5 border border-gray-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                                />
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="flex-1">
                                         <ProductItem
                                             item={item}
                                             onUpdateQuantity={handleUpdateQuantity}
                                             onUpdateNote={handleUpdateNote}
-                                            showNoteButton={true}
-                                            isReadOnly={false}
+                                            showNoteButton={!isSplitMode}
+                                            isReadOnly={isSplitMode}
                                         />
                                     </div>
                                 </div>
