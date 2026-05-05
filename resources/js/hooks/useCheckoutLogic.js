@@ -41,6 +41,10 @@ export const useCheckoutLogic = () => {
     const [isSaving, setIsSaving] = useState(false);
     const isProcessing = useRef(false);
 
+    // Split Bill State
+    const [isSplitMode, setIsSplitMode] = useState(false);
+    const [selectedSplitItems, setSelectedSplitItems] = useState([]); // Array of { order_item_id, quantity }
+
     const toggleMergedTable = useCallback((id) => {
         setMergedTableIds(prev =>
             prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
@@ -264,6 +268,36 @@ export const useCheckoutLogic = () => {
         }
     }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningMessage, setShowWarningPopup]);
 
+    const toggleSplitMode = useCallback(() => {
+        setIsSplitMode(prev => !prev);
+        setSelectedSplitItems([]);
+    }, []);
+
+    const toggleSplitItem = useCallback((item) => {
+        setSelectedSplitItems(prev => {
+            const itemId = item.order_item_id || item.id;
+            const existing = prev.find(i => i.order_item_id === itemId);
+            if (existing) {
+                return prev.filter(i => i.order_item_id !== itemId);
+            } else {
+                return [...prev, { order_item_id: itemId, quantity: item.quantity }];
+            }
+        });
+    }, []);
+
+    const handleUpdateSplitQuantity = useCallback((itemId, quantity) => {
+        setSelectedSplitItems(prev =>
+            prev.map(i => i.order_item_id === itemId ? { ...i, quantity } : i)
+        );
+    }, []);
+
+    const onConfirmSplit = useCallback(async () => {
+        if (!selectedSplitItems.length) return;
+        await handleSplitOrder(selectedSplitItems);
+        setIsSplitMode(false);
+        setSelectedSplitItems([]);
+    }, [selectedSplitItems, handleSplitOrder]);
+
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (activeOrderId) navigator.sendBeacon(`/api/orders/${activeOrderId}`);
@@ -282,6 +316,13 @@ export const useCheckoutLogic = () => {
         handleUpdateGuestCount,
         handleCheckout,
         handleCancelOrder,
-        handleSplitOrder
+        handleSplitOrder,
+        isSplitMode,
+        setIsSplitMode,
+        toggleSplitMode,
+        selectedSplitItems,
+        toggleSplitItem,
+        handleUpdateSplitQuantity,
+        onConfirmSplit
     };
 };

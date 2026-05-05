@@ -41,7 +41,13 @@ export default function Checkout() {
         handleUpdateGuestCount,
         handleCheckout,
         handleCancelOrder,
-        isSaving
+        isSaving,
+        isSplitMode,
+        toggleSplitMode,
+        selectedSplitItems,
+        toggleSplitItem,
+        handleUpdateSplitQuantity,
+        onConfirmSplit
     } = useCheckoutLogic();
 
     return (
@@ -66,12 +72,18 @@ export default function Checkout() {
                 handleUpdateNote={handleUpdateNote}
                 guestCount={guestCount}
                 onUpdateGuestCount={handleUpdateGuestCount}
+                isSplitMode={isSplitMode}
+                selectedSplitItems={selectedSplitItems}
+                toggleSplitItem={toggleSplitItem}
+                handleUpdateSplitQuantity={handleUpdateSplitQuantity}
             />
 
-            <CheckoutOrderNote
-                orderNote={orderNote}
-                onUpdateOrderNote={handleUpdateOrderNote}
-            />
+            {!isSplitMode && (
+                <CheckoutOrderNote
+                    orderNote={orderNote}
+                    onUpdateOrderNote={handleUpdateOrderNote}
+                />
+            )}
 
             <CheckoutFooter
                 totalQuantity={totalQuantity}
@@ -87,6 +99,10 @@ export default function Checkout() {
                 hasItems={selectedItems.length > 0}
                 activeOrderId={activeOrderId}
                 isSaving={isSaving}
+                isSplitMode={isSplitMode}
+                toggleSplitMode={toggleSplitMode}
+                selectedSplitItems={selectedSplitItems}
+                onConfirmSplit={onConfirmSplit}
             />
 
             <StatusPopups
