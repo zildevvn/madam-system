@@ -81,6 +81,61 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                     </div>
                     <span className="uppercase tracking-widest">Add New Dish</span>
                 </button>
+
+                <div className="mt-6 pt-6 border-t border-gray-100 space-y-3 px-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Subtotal</span>
+                        <span className="text-[14px] font-bold text-gray-700">
+                            {formatPrice(
+                                (watch('dishes') || []).reduce((sum, dish) => {
+                                    const qty = parseInt(dish.quantity) || 0;
+                                    const price = parseInt(dish.price) || 0;
+                                    return sum + (qty * price);
+                                }, 0)
+                            )}
+                            <span className="text-[10px] ml-1 opacity-60">VND</span>
+                        </span>
+                    </div>
+
+                    {watch('apply_vat') && (
+                        <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-300">
+                            <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">VAT (8%)</span>
+                            <span className="text-[14px] font-bold text-orange-500">
+                                {formatPrice(
+                                    (watch('dishes') || []).reduce((sum, dish) => {
+                                        const qty = parseInt(dish.quantity) || 0;
+                                        const price = parseInt(dish.price) || 0;
+                                        return sum + (qty * price * 0.08);
+                                    }, 0)
+                                )}
+                                <span className="text-[10px] ml-1 opacity-60">VND</span>
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Total Amount</span>
+                            <span className="text-[20px] font-black text-orange-600 tracking-tight">
+                                {formatPrice(
+                                    (watch('dishes') || []).reduce((sum, dish) => {
+                                        const qty = parseInt(dish.quantity) || 0;
+                                        const price = parseInt(dish.price) || 0;
+                                        const subtotal = qty * price;
+                                        return sum + (watch('apply_vat') ? subtotal * 1.08 : subtotal);
+                                    }, 0)
+                                )}
+                                <span className="text-[12px] ml-1 opacity-60">VND</span>
+                            </span>
+                        </div>
+                        <div className={`px-4 py-2 rounded-2xl border transition-all ${watch('apply_vat') ? 'bg-orange-500 text-white border-orange-600 shadow-lg shadow-orange-500/20' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                            <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                {watch('apply_vat') ? 'VAT Applied' : 'No VAT'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </>
     );

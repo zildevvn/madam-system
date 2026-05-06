@@ -26,12 +26,14 @@ class Reservation extends Model
         'note',
         'status',
         'updated_by',
-        'staff_id'
+        'staff_id',
+        'apply_vat'
     ];
 
     protected $casts = [
         'table_ids' => 'array',
-        'reservation_date' => 'date:Y-m-d'
+        'reservation_date' => 'date:Y-m-d',
+        'apply_vat' => 'boolean'
     ];
 
     protected $appends = ['dishes'];

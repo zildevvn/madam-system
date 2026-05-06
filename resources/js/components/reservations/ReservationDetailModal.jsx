@@ -95,21 +95,21 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                 <>
                                     <div>
                                         <span className={labelStyle}>Company</span>
-                                        <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.company_name || 'N/A'}</span>
+                                        <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.company_name || ''}</span>
                                     </div>
                                     <div>
                                         <span className={labelStyle}>Guide</span>
-                                        <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.tour_guide_name || 'N/A'}</span>
+                                        <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.tour_guide_name || ''}</span>
                                     </div>
                                 </>
                             )}
                             <div>
                                 <span className={labelStyle}>Phone</span>
-                                <span className="text-[13px] font-bold text-gray-800 break-all">{reservation.phone || 'N/A'}</span>
+                                <span className="text-[13px] font-bold text-gray-800 break-all">{reservation.phone || ''}</span>
                             </div>
                             <div className="col-span-1 md:col-span-1">
                                 <span className={labelStyle}>Email</span>
-                                <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.email || 'N/A'}</span>
+                                <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.email || ''}</span>
                             </div>
 
                         </div>
@@ -131,7 +131,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                         <div key={i} className="px-4 py-3 flex justify-between items-center hover:bg-gray-50/30 transition-colors">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-800">{dish.name}</span>
-                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity}x @ {formatPrice(dish.price || 0)}đ</span>
+                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity}x {formatPrice(dish.price || 0)}đ</span>
                                             </div>
                                             <span className="text-sm font-black text-orange-600">
                                                 {formatPrice((dish.price || 0) * (dish.quantity || 1))}đ
@@ -158,6 +158,44 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Financial Breakdown */}
+                            <div className="mt-4 p-4 rounded-xl bg-white border border-gray-100 shadow-sm space-y-2">
+                                <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                    <span>Subtotal</span>
+                                    <span className="text-gray-700">
+                                        {formatPrice(
+                                            reservation.dishes.reduce((sum, dish) => {
+                                                const total = (dish.price || 0) * (dish.quantity || 1);
+                                                return sum + (reservation.apply_vat ? total / 1.08 : total);
+                                            }, 0)
+                                        )}đ
+                                    </span>
+                                </div>
+                                {reservation.apply_vat && (
+                                    <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-orange-500">
+                                        <span>VAT (8%)</span>
+                                        <span>
+                                            {formatPrice(
+                                                reservation.dishes.reduce((sum, dish) => {
+                                                    const total = (dish.price || 0) * (dish.quantity || 1);
+                                                    return sum + (total - (total / 1.08));
+                                                }, 0)
+                                            )}đ
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center pt-2 border-t border-gray-50">
+                                    <span className="text-xs font-black uppercase tracking-[0.2em] text-gray-900">Total Amount</span>
+                                    <span className="text-lg font-black text-orange-600">
+                                        {formatPrice(
+                                            reservation.dishes.reduce((sum, dish) => {
+                                                return sum + ((dish.price || 0) * (dish.quantity || 1));
+                                            }, 0)
+                                        )}đ
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     )}

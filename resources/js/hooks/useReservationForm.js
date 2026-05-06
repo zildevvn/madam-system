@@ -22,7 +22,8 @@ export const useReservationForm = (id = null, user = null) => {
             number_of_guests: 1,
             dishes: [{ name: '', quantity: 1, price: 0, type: 'food' }],
             table_ids: [],
-            status: 'pending'
+            status: 'pending',
+            apply_vat: false
         }
     });
 
@@ -44,6 +45,15 @@ export const useReservationForm = (id = null, user = null) => {
                         // Handles both ISO (T separator) and DB (space separator) formats
                         data.reservation_date = data.reservation_date.toString().split(/[\sT]/)[0];
                     }
+
+                    // [FIX] Reverse VAT calculation if applied, so the user edits the base price
+                    if (data.apply_vat && data.items) {
+                        data.dishes = data.items.map(item => ({
+                            ...item,
+                            price: Math.round(item.price / 1.08)
+                        }));
+                    }
+
                     form.reset(data);
                     setActiveTab(data.type);
                     setFetching(false);

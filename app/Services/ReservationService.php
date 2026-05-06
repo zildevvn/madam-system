@@ -23,7 +23,14 @@ class ReservationService
             $reservation = Reservation::create($data);
 
             if (!empty($dishes)) {
-                $reservation->items()->createMany($dishes);
+                $applyVat = $reservation->apply_vat;
+                $processedDishes = array_map(function($dish) use ($applyVat) {
+                    if ($applyVat) {
+                        $dish['price'] = round($dish['price'] * 1.08);
+                    }
+                    return $dish;
+                }, $dishes);
+                $reservation->items()->createMany($processedDishes);
             }
 
             // [WHY] Orchestrate group confirmation ONLY if tables are assigned AND it is for TODAY
@@ -76,17 +83,21 @@ class ReservationService
                 $reservation->items()->whereNotIn('id', $incomingDishIds)->delete();
 
                 // 2. Process incoming dishes
+                $applyVat = $reservation->apply_vat;
                 foreach ($dishes as $dishData) {
+                    $finalPrice = $applyVat ? round($dishData['price'] * 1.08) : $dishData['price'];
+                    
                     if (isset($dishData['id'])) {
                         // Update existing
                         $reservation->items()->where('id', $dishData['id'])->update([
                             'name' => $dishData['name'],
                             'type' => $dishData['type'],
                             'quantity' => $dishData['quantity'],
-                            'price' => $dishData['price'],
+                            'price' => $finalPrice,
                         ]);
                     } else {
                         // Create new
+                        $dishData['price'] = $finalPrice;
                         $reservation->items()->create($dishData);
                     }
                 }

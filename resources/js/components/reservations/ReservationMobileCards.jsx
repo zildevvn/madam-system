@@ -18,11 +18,21 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                     >
                         <div className="flex justify-between items-start">
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-1.5 mb-1.5">
-                                    <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
+                                <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                                    <div className="flex items-center gap-1.5">
+                                        <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
+                                    </div>
+                                    {r.apply_vat && (
+                                        <span className="px-1.5 py-0.5 bg-red-600 text-white text-[8px] font-black uppercase rounded-[4px] tracking-widest shadow-sm animate-in zoom-in duration-300">
+                                            CÓ VAT
+                                        </span>
+                                    )}
                                 </div>
-                                <span className="text-base font-black text-gray-900">{r.type === 'group' ? r.tour_guide_name : r.lead_name}</span>
+                                <span className="text-base font-black text-gray-900">
+                                    {r.type === 'group' ? r.tour_guide_name : r.lead_name}
+                                    {r.phone && ` | ${r.phone}`}
+                                </span>
                                 {r.company_name && (
                                     <span className="text-[12px] text-gray-400 font-medium">{r.company_name}</span>
                                 )}

@@ -34,13 +34,23 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                                     `}
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col gap-1.5">
                                             <span className="text-sm font-black text-gray-700">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
+                                            {r.apply_vat && (
+                                                <div className="flex animate-in zoom-in duration-300">
+                                                    <span className="px-2 py-0.5 bg-red-600 text-white text-[9px] font-black uppercase rounded-[6px] tracking-widest shadow-sm">
+                                                        CÓ VAT
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-gray-700">{r.type === 'group' ? r.tour_guide_name : r.lead_name}</span>
+                                            <span className="text-sm font-bold text-gray-700">
+                                                {r.type === 'group' ? r.tour_guide_name : r.lead_name}
+                                                {r.phone && ` | ${r.phone}`}
+                                            </span>
                                             {r.company_name && (
                                                 <span className="text-[12px] text-gray-400 font-medium">{r.company_name}</span>
                                             )}
