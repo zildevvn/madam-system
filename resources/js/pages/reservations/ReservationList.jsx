@@ -139,7 +139,7 @@ const ReservationList = () => {
                         <button
                             key={type}
                             onClick={() => setFilterType(type)}
-                            className={`px-4 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-2 py-1 md:px-4 md:py-2 md:rounded-[14px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {type}
                         </button>
@@ -147,10 +147,10 @@ const ReservationList = () => {
                 </div>
 
                 {/* Date Filter */}
-                <div className="flex bg-gray-100/80 p-1 rounded-[18px] w-fit shadow-inner border border-gray-200/50 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex bg-gray-100/80 p-1 rounded-[10px] w-fit shadow-inner border border-gray-200/50 overflow-x-auto no-scrollbar max-w-full">
                     <button
                         onClick={() => setDateFilter('today')}
-                        className={`px-6 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === 'today' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`px-2 py-1 md:px-6 md:py-2  md:rounded-[14px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === 'today' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Today
                     </button>
@@ -159,7 +159,7 @@ const ReservationList = () => {
                         <button
                             key={month.full}
                             onClick={() => setDateFilter((idx + 1).toString())}
-                            className={`px-4 py-2 rounded-[14px] text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === (idx + 1).toString() ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-2 py-1 md:px-6 md:py-2  md:rounded-[14px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === (idx + 1).toString() ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {month.short}
                         </button>
