@@ -32,7 +32,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{reservation.type} Booking</span>
                         </div>
                         <h3 className="text-gray-900 m-0 tracking-tight leading-tight truncate pr-4 text-lg">
-                            {isGroup ? (reservation.tour_guide_name || 'Group Booking') : reservation.lead_name}
+                            {isGroup ? (reservation.company_name || 'Group Booking') : reservation.lead_name}
                         </h3>
                     </div>
                     <button
