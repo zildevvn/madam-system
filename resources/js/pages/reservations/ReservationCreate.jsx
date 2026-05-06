@@ -32,7 +32,7 @@ const ReservationCreate = () => {
     };
 
     const selectedTables = watch('table_ids') || [];
-    const inputClasses = "w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-[14px] focus:border-orange-200 outline-none transition-all";
+    const inputClasses = "w-full bg-gray-200 border border-gray-100 rounded-xl px-3 py-3 text-[14px] focus:border-orange-200 outline-none transition-all";
     const labelClasses = "block text-[12px] font-bold text-gray-800 tracking-widest mb-2";
 
     if (fetching) return <div className="flex items-center justify-center min-h-[400px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div></div>;
@@ -65,21 +65,6 @@ const ReservationCreate = () => {
 
                 <input type="hidden" {...register('type')} />
 
-                {/* <div className="flex items-center justify-between bg-gray-50/50 p-4 rounded-[20px] border border-gray-100 mb-6 group hover:border-orange-100 transition-colors">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${watch('apply_vat') ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-gray-100 text-gray-400'}`}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                            </svg>
-                        </div>
-                        <span className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em]">VAT Application</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" {...register('apply_vat')} className="sr-only peer" />
-                        <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 shadow-inner"></div>
-                    </label>
-                </div> */}
-
                 <div className="bg-gray-50/30 p-1 md:p-0 rounded-2xl">
                     <label className={labelClasses}>{activeTab === 'individual' ? "Lead's Name" : "Contact Person"}</label>
                     <input {...register('lead_name', { required: 'Required' })} className={inputClasses} placeholder="Full Name" />
@@ -108,7 +93,7 @@ const ReservationCreate = () => {
                         <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100 flex flex-col gap-6">
                             <div className="flex items-center justify-between bg-gray-50/50 p-4 rounded-[20px] border border-gray-100 mb-6 group hover:border-orange-100 transition-colors">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${watch('apply_vat') ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-gray-100 text-gray-400'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${watch('apply_vat') ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-gray-300 text-gray-900'}`}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                                         </svg>
@@ -117,7 +102,7 @@ const ReservationCreate = () => {
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" {...register('apply_vat')} className="sr-only peer" />
-                                    <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 shadow-inner"></div>
+                                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 shadow-inner"></div>
                                 </label>
                             </div>
 

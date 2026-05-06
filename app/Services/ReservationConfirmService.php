@@ -40,7 +40,7 @@ class ReservationConfirmService
             // [WHY] Create ONE standard order for the combined group
             if ($existingOrders->has($mainTableId)) {
                 $mainOrder = $existingOrders->get($mainTableId);
-                
+
                 // [WHY] Update to link to reservation if not linked
                 if (!$mainOrder->reservation_id || $mainOrder->merged_tables !== $mergedTablesString || $mainOrder->user_id !== $staffId) {
                     $mainOrder->update([
@@ -72,23 +72,23 @@ class ReservationConfirmService
 
             $orderItemsToInsert = [];
             $now = now();
-            
+
             // [WHY] Filter only for genuinely NEW reservation items (prevents kitchen duplicates on edit)
-            $newItems = $reservation->items->filter(function($item) use ($existingReservationItemIds) {
+            $newItems = $reservation->items->filter(function ($item) use ($existingReservationItemIds) {
                 return !in_array($item->id, $existingReservationItemIds);
             });
 
             foreach ($newItems as $resItem) {
                 $orderItemsToInsert[] = [
                     'order_id' => $mainOrder->id,
-                    'product_id' => null, 
+                    'product_id' => null,
                     'name' => $resItem->name,
-                    'type' => $resItem->type ?? 'food', 
-                    'table_id' => null, 
+                    'type' => $resItem->type ?? 'food',
+                    'table_id' => null,
                     'quantity' => $resItem->quantity,
                     'price' => $resItem->price,
-                    'status' => 'pending', 
-                    'source' => 'reservation', 
+                    'status' => 'pending',
+                    'source' => 'reservation',
                     'reservation_item_id' => $resItem->id,
                     'created_at' => $now,
                     'updated_at' => $now

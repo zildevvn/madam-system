@@ -52,7 +52,7 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                                                 {r.phone && ` | ${r.phone}`}
                                             </span>
                                             {r.company_name && (
-                                                <span className="text-[12px] text-gray-400 font-medium">{r.company_name}</span>
+                                                <span className="text-[12px] text-gray-600 font-medium">{r.company_name}</span>
                                             )}
                                         </div>
                                     </td>

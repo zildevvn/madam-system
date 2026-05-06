@@ -128,12 +128,6 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                                 <span className="text-[12px] ml-1 opacity-60">VND</span>
                             </span>
                         </div>
-                        <div className={`px-4 py-2 rounded-2xl border transition-all ${watch('apply_vat') ? 'bg-orange-500 text-white border-orange-600 shadow-lg shadow-orange-500/20' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
-                            <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                                {watch('apply_vat') ? 'VAT Applied' : 'No VAT'}
-                            </span>
-                        </div>
                     </div>
                 </div>
             </div>
