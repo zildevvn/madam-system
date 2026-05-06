@@ -6,13 +6,13 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="bg-gray-50/50">
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Booking Time</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer Name</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Guests</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Note</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                        <tr className="mdt-bg-primary">
+                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Booking Time</th>
+                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Customer Name</th>
+                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider text-center">Guests</th>
+                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Type</th>
+                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Note</th>
+                            <th className="px-6 py-4 text-xs font-bold text-white uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
 

@@ -90,15 +90,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                     {/* Contact Intelligence - More Compact */}
                     <div className="space-y-4 pt-4 border-t border-gray-50">
                         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest block px-1">Contact Details</span>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-1">
-                            <div>
-                                <span className={labelStyle}>Phone</span>
-                                <span className="text-[13px] font-bold text-gray-800 break-all">{reservation.phone || 'N/A'}</span>
-                            </div>
-                            <div className="col-span-1 md:col-span-1">
-                                <span className={labelStyle}>Email</span>
-                                <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.email || 'N/A'}</span>
-                            </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 px-1">
                             {isGroup && (
                                 <>
                                     <div>
@@ -111,6 +103,15 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                     </div>
                                 </>
                             )}
+                            <div>
+                                <span className={labelStyle}>Phone</span>
+                                <span className="text-[13px] font-bold text-gray-800 break-all">{reservation.phone || 'N/A'}</span>
+                            </div>
+                            <div className="col-span-1 md:col-span-1">
+                                <span className={labelStyle}>Email</span>
+                                <span className="text-[13px] font-bold text-gray-800 truncate block">{reservation.email || 'N/A'}</span>
+                            </div>
+
                         </div>
                     </div>
 

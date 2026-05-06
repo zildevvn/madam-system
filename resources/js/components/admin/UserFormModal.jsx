@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processing = false }) => {
@@ -11,12 +11,15 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
         }
     });
 
+    const [showPassword, setShowPassword] = useState(true);
+
     useEffect(() => {
         if (isOpen) {
+            setShowPassword(true);
             reset(user ? {
                 name: user.name || '',
                 email: user.email || '',
-                password: '', // Never populate password for editing
+                password: user.password || '', // Populate if available
                 role: user.role || 'order_staff'
             } : {
                 name: '',
@@ -52,7 +55,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
 
                 <form onSubmit={handleSubmit(onFormSubmit)} className="px-3 py-2 lg:px-6 lg:py-4 space-y-3 lg:space-y-4">
                     <div>
-                        <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Họ & Tên</label>
+                        <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">User Name</label>
                         <input
                             {...register('name', { required: true })}
                             type="text"
@@ -77,13 +80,26 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                         <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">
                             {user ? 'Mật khẩu (Để trống nếu không đổi)' : 'Mật khẩu'}
                         </label>
-                        <input
-                            {...register('password', { required: !user, minLength: 6 })}
-                            type="text"
-                            autoComplete="new-password"
-                            className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.password ? 'ring-2 ring-red-500/20' : ''}`}
-                            placeholder="••••••••"
-                        />
+                        <div className="relative">
+                            <input
+                                {...register('password', { required: !user, minLength: 6 })}
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="off"
+                                className={`is-password text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 pr-10 lg:pr-12 text-slate-900 font-normal focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.password ? 'ring-2 ring-red-500/20' : ''}`}
+                                placeholder={showPassword ? "Nhập mật khẩu" : "••••••••"}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                            >
+                                {showPassword ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                                )}
+                            </button>
+                        </div>
                         {errors.password && <span className="text-[10px] text-red-500 mt-1 font-bold">Mật khẩu tối thiểu 6 ký tự</span>}
                     </div>
 

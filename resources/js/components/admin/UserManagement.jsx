@@ -139,7 +139,7 @@ const UserManagement = ({ currentUser }) => {
                                         <div className="flex items-center justify-end gap-3">
                                             <button
                                                 onClick={() => handleEditUser(u)}
-                                                className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white text-slate-400 hover:text-orange-500 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-100 border border-transparent transition-all shadow-sm active:scale-90"
+                                                className="btn-edit-user w-11 h-11 flex items-center justify-center rounded-2xl bg-white text-slate-400 hover:text-orange-500 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-100 border border-transparent transition-all shadow-sm active:scale-90"
                                                 title="Sửa thông tin"
                                             >
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -193,7 +193,7 @@ const UserManagement = ({ currentUser }) => {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleEditUser(u)}
-                                    className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500 active:scale-95 transition-all outline-none"
+                                    className="btn-edit-user w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500 active:scale-95 transition-all outline-none"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                 </button>
