@@ -1,16 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import LogoImg from '../../images/Logo.png';
 import { ROLES } from '../shared/constants/roles';
 import NavItem from './Header/NavItem';
+import HeaderMessageModal from './Header/HeaderMessageModal';
+import NotificationModal from './Header/NotificationModal';
+import { getSystemMessagesApi } from '../services/systemMessageService';
 
 export default function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+    const [hasNewNotification, setHasNewNotification] = useState(false);
+
+    useEffect(() => {
+        // Initial check for recent messages (last 10 minutes)
+        const checkRecentMessages = async () => {
+            try {
+                const response = await getSystemMessagesApi();
+                const latestMsg = response.data?.[0];
+                if (latestMsg) {
+                    const msgTime = new Date(latestMsg.created_at).getTime();
+                    const now = new Date().getTime();
+                    const diff = (now - msgTime) / (1000 * 60);
+                    if (diff < 10) {
+                        setHasNewNotification(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking recent messages:', error);
+            }
+        };
+
+        checkRecentMessages();
+
+        // Real-time listener
+        if (window.Echo) {
+            const channel = window.Echo.channel('system-notifications');
+            channel.listen('.new-message', (e) => {
+                setHasNewNotification(true);
+            });
+            return () => window.Echo.leaveChannel('system-notifications');
+        }
+    }, []);
+
+    // Timer to reset notification state after 10 minutes
+    useEffect(() => {
+        if (hasNewNotification) {
+            const timer = setTimeout(() => {
+                // Double check if there's really no message in the last 10 mins
+                // (in case the tab was inactive)
+                setHasNewNotification(false);
+            }, 10 * 60 * 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [hasNewNotification]);
 
     const { user } = useAppSelector(state => state.auth);
 
@@ -69,31 +118,48 @@ export default function Header() {
                             </Link>
                         </div>
 
-                        <div className="flex items-center gap-2 md:gap-4">
-                            <button
-                                type="button"
-                                className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
-                                aria-label="Notifications"
-                            >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                </svg>
-                            </button>
+                        {user && (
+                            <div className="flex items-center gap-2 md:gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMessageModalOpen(true)}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all active:scale-95 border border-slate-100"
+                                    aria-label="Messages"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={() => setSidebarOpen(true)}
-                                className="flex flex-col justify-center items-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all active:scale-95 border border-slate-100"
-                                aria-label="Open menu"
-                            >
-                                <div className="space-y-1">
-                                    <span className="block w-5 h-0.5 bg-current rounded-full"></span>
-                                    <span className="block w-5 h-0.5 bg-current rounded-full"></span>
-                                    <span className="block w-5 h-0.5 bg-current rounded-full"></span>
-                                </div>
-                            </button>
-                        </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsNotificationModalOpen(true)}
+                                    className="btn-notifications p-2 text-slate-400 hover:text-slate-900 transition-colors relative"
+                                    aria-label="Notifications"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    {hasNewNotification && (
+                                        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                                    )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setSidebarOpen(true)}
+                                    className="flex flex-col justify-center items-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all active:scale-95 border border-slate-100"
+                                    aria-label="Open menu"
+                                >
+                                    <div className="space-y-1">
+                                        <span className="block w-5 h-0.5 bg-current rounded-full"></span>
+                                        <span className="block w-5 h-0.5 bg-current rounded-full"></span>
+                                        <span className="block w-5 h-0.5 bg-current rounded-full"></span>
+                                    </div>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
@@ -159,6 +225,14 @@ export default function Header() {
                     </div>
                 </div>
             </aside>
+            <HeaderMessageModal
+                isOpen={isMessageModalOpen}
+                onClose={() => setIsMessageModalOpen(false)}
+            />
+            <NotificationModal
+                isOpen={isNotificationModalOpen}
+                onClose={() => setIsNotificationModalOpen(false)}
+            />
         </>
     );
 }

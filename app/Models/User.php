@@ -48,4 +48,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function readSystemMessages()
+    {
+        return $this->belongsToMany(SystemMessage::class, 'system_message_user')->withPivot('read_at')->withTimestamps();
+    }
 }
