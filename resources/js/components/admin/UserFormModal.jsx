@@ -19,7 +19,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
             reset(user ? {
                 name: user.name || '',
                 email: user.email || '',
-                password: user.password || '', // Populate if available
+                password: user.plain_password || '', // Populate with plain password
                 role: user.role || 'order_staff'
             } : {
                 name: '',
@@ -78,7 +78,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
 
                     <div>
                         <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">
-                            {user ? 'Mật khẩu (Để trống nếu không đổi)' : 'Mật khẩu'}
+                            {'Mật khẩu'}
                         </label>
                         <div className="relative">
                             <input

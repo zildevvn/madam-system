@@ -42,6 +42,7 @@ class UserService
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'plain_password' => $data['password'],
             'role' => $data['role'] ?? 'order_staff',
         ]);
     }
@@ -58,6 +59,7 @@ class UserService
 
         if (!empty($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);
+            $updateData['plain_password'] = $data['password'];
         }
 
         $user->update($updateData);
