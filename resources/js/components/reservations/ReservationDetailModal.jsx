@@ -165,8 +165,8 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                     <div className="space-y-3 pt-4 border-t border-gray-50">
                         <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest block px-1">Special Requests</span>
                         <div className="bg-white p-4 rounded-xl border border-dashed border-gray-200 shadow-inner">
-                            <p className="text-[12px] text-gray-600 leading-relaxed font-medium m-0 italic">
-                                "{reservation.note || "No special requests recorded."}"
+                            <p className="text-[12px] text-gray-600 leading-relaxed font-medium m-0 italic whitespace-pre-wrap">
+                                {reservation.note || "No special requests recorded."}
                             </p>
                         </div>
                     </div>

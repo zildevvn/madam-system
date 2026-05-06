@@ -122,7 +122,7 @@ const ReservationCreate = () => {
 
                 <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100/50">
                     <label className={labelClasses}>Notes</label>
-                    <textarea {...register('note')} rows="2" className={`${inputClasses} resize-none`} />
+                    <textarea {...register('note')} rows="5" className={`${inputClasses} resize-none`} />
                 </div>
 
                 <div className="pt-4 flex flex-col md:flex-row gap-3">
