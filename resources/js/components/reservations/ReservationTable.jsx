@@ -35,7 +35,7 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                                 >
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-black text-gray-700">{formatDate(r.reservation_date)} - {formatTime(r.reservation_time)}</span>
+                                            <span className="text-sm font-black text-gray-700">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">

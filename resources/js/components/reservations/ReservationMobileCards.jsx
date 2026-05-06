@@ -20,7 +20,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-1.5 mb-1.5">
                                     <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{formatDate(r.reservation_date)} - {formatTime(r.reservation_time)}</span>
+                                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
                                 </div>
                                 <span className="text-base font-black text-gray-900">{r.type === 'group' ? r.tour_guide_name : r.lead_name}</span>
                                 {r.company_name && (

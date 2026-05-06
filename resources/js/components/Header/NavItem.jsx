@@ -33,7 +33,7 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
                     {item.name}
                 </span>
                 {hasChildren && (
-                    <div className={`icon-submenu p-1.5 rounded-lg transition-colors ${expanded ? 'bg-orange-100 text-orange-600' : 'text-slate-400 group-hover:text-slate-600'}`}
+                    <div className={`icon-submenu p-2.5 rounded-lg transition-colors ${expanded ? 'bg-orange-100 text-orange-600' : 'text-slate-400 group-hover:text-slate-600'}`}
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
