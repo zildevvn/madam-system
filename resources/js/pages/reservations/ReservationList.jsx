@@ -28,6 +28,13 @@ const ReservationList = () => {
             const m = String(renderTime.getMonth() + 1).padStart(2, '0');
             const d = String(renderTime.getDate()).padStart(2, '0');
             params.date = `${y}-${m}-${d}`;
+        } else if (dateFilter === 'yesterday') {
+            const yesterday = new Date(renderTime);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const y = yesterday.getFullYear();
+            const m = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const d = String(yesterday.getDate()).padStart(2, '0');
+            params.date = `${y}-${m}-${d}`;
         } else if (dateFilter !== 'all') {
             params.month = dateFilter;
         }
@@ -139,7 +146,7 @@ const ReservationList = () => {
                         <button
                             key={type}
                             onClick={() => setFilterType(type)}
-                            className={`px-2 py-1 md:px-4 md:py-2 md:rounded-[14px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-2 py-1 md:px-3 md:py-2 md:rounded-[10px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none ${filterType === type ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {type}
                         </button>
@@ -149,8 +156,15 @@ const ReservationList = () => {
                 {/* Date Filter */}
                 <div className="flex bg-gray-100/80 p-1 rounded-[10px] w-fit shadow-inner border border-gray-200/50 overflow-x-auto no-scrollbar max-w-full">
                     <button
+                        onClick={() => setDateFilter('yesterday')}
+                        className={`px-2 py-1 md:px-3 md:py-2  md:rounded-[10px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === 'yesterday' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        Yesterday
+                    </button>
+
+                    <button
                         onClick={() => setDateFilter('today')}
-                        className={`px-2 py-1 md:px-6 md:py-2  md:rounded-[14px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === 'today' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        className={`px-2 py-1 md:px-3 md:py-2  md:rounded-[10px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === 'today' ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                         Today
                     </button>
@@ -159,13 +173,39 @@ const ReservationList = () => {
                         <button
                             key={month.full}
                             onClick={() => setDateFilter((idx + 1).toString())}
-                            className={`px-2 py-1 md:px-6 md:py-2  md:rounded-[14px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === (idx + 1).toString() ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-2 py-1 md:px-3 md:py-2  md:rounded-[10px] rounded-[8px] md:text-[10px] text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer border-none whitespace-nowrap ${dateFilter === (idx + 1).toString() ? 'bg-white text-orange-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {month.short}
                         </button>
                     ))}
                 </div>
             </div>
+
+            {/* Statistics Summary Bar */}
+            {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {(() => {
+                    const stats = [
+                        { label: 'Total Bookings', value: sortedReservations.length, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'blue' },
+                        { label: 'Total Guests', value: sortedReservations.reduce((sum, r) => sum + (r.number_of_guests || 0), 0), icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m12-9a4 4 0 11-8 0 4 4 0 018 0z', color: 'orange' },
+                        { label: 'Individual', value: sortedReservations.filter(r => r.type === 'individual').length, icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', color: 'teal' },
+                        { label: 'Group', value: sortedReservations.filter(r => r.type === 'group').length, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5', color: 'purple' },
+                    ];
+
+                    return stats.map((stat, i) => (
+                        <div key={i} className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${i * 100}ms` }}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-${stat.color}-50 text-${stat.color}-500 shadow-sm`}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d={stat.icon} />
+                                </svg>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</span>
+                                <span className="text-xl font-black text-gray-900 tracking-tight">{stat.value}</span>
+                            </div>
+                        </div>
+                    ));
+                })()}
+            </div> */}
 
             {/* Desktop View */}
             <ReservationTable
