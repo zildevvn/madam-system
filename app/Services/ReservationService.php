@@ -24,9 +24,10 @@ class ReservationService
 
             if (!empty($dishes)) {
                 $applyVat = $reservation->apply_vat;
-                $processedDishes = array_map(function($dish) use ($applyVat) {
-                    if ($applyVat) {
-                        $dish['price'] = round($dish['price'] * 1.08);
+                $vatRate = 1 + ($reservation->vat_percentage / 100);
+                $processedDishes = array_map(function($dish) use ($applyVat, $vatRate) {
+                    if ($applyVat && isset($dish['price'])) {
+                        $dish['price'] = round($dish['price'] * $vatRate);
                     }
                     return $dish;
                 }, $dishes);
@@ -84,8 +85,9 @@ class ReservationService
 
                 // 2. Process incoming dishes
                 $applyVat = $reservation->apply_vat;
+                $vatRate = 1 + ($reservation->vat_percentage / 100);
                 foreach ($dishes as $dishData) {
-                    $finalPrice = $applyVat ? round($dishData['price'] * 1.08) : $dishData['price'];
+                    $finalPrice = $applyVat ? round($dishData['price'] * $vatRate) : $dishData['price'];
                     
                     if (isset($dishData['id'])) {
                         // Update existing

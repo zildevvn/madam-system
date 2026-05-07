@@ -30,7 +30,7 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
             <button
                 type="button"
                 onClick={() => setShowTableDropdown(!showTableDropdown)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-[12px] font-black transition-all border ${selectedTables.length > 0 ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-sm' : 'bg-gray-50 text-gray-500 border-gray-100'} hover:border-orange-300 cursor-pointer w-full md:w-auto`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md text-[12px] font-black transition-all border ${selectedTables.length > 0 ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-sm' : 'bg-gray-200 text-gray-600 border-gray-200'} hover:border-orange-300 cursor-pointer w-full md:w-auto`}
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                 <span className="tracking-widest">
@@ -44,7 +44,7 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                     <div className="fixed inset-0 z-[60]" onClick={() => setShowTableDropdown(false)}></div>
                     <div className="absolute bottom-full mb-3 left-0 w-72 bg-white border border-gray-100 rounded-[30px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] z-[70] py-4 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
                         <div className="px-5 py-2 flex items-center justify-between border-b border-gray-50 mb-2 pb-3">
-                                    <div className="flex items-center gap-2 group cursor-pointer">
+                            <div className="flex items-center gap-2 group cursor-pointer">
                                 <input
                                     type="checkbox"
                                     id="select-all-available"
@@ -53,7 +53,7 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                                     onChange={(e) => {
                                         const allAvailableIds = availableTables.map(t => t.id.toString());
                                         const isAllSelected = allAvailableIds.every(id => selectedTables.some(sid => sid.toString() === id));
-                                        
+
                                         if (e.target.checked && !isAllSelected) {
                                             allAvailableIds.forEach(id => {
                                                 if (!selectedTables.some(sid => sid.toString() === id)) onToggle(id);

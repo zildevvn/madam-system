@@ -74,7 +74,8 @@ class ReservationController extends Controller
             'note' => 'nullable|string',
             'staff_id' => 'nullable|exists:users,id',
             'updated_by' => 'nullable|exists:users,id',
-            'apply_vat' => 'nullable|boolean'
+            'apply_vat' => 'nullable|boolean',
+            'vat_percentage' => 'nullable|numeric|min:0|max:100'
         ]);
 
         try {
@@ -166,7 +167,8 @@ class ReservationController extends Controller
             'status' => 'nullable|in:pending,confirmed,cancelled,completed',
             'staff_id' => 'nullable|exists:users,id',
             'updated_by' => 'nullable|exists:users,id',
-            'apply_vat' => 'nullable|boolean'
+            'apply_vat' => 'nullable|boolean',
+            'vat_percentage' => 'nullable|numeric|min:0|max:100'
         ]);
 
         $hasDishesKey = in_array('dishes', array_keys($request->all()));

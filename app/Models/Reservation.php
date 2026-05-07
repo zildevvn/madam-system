@@ -27,13 +27,15 @@ class Reservation extends Model
         'status',
         'updated_by',
         'staff_id',
-        'apply_vat'
+        'apply_vat',
+        'vat_percentage'
     ];
 
     protected $casts = [
         'table_ids' => 'array',
         'reservation_date' => 'date:Y-m-d',
-        'apply_vat' => 'boolean'
+        'apply_vat' => 'boolean',
+        'vat_percentage' => 'integer'
     ];
 
     protected $appends = ['dishes'];

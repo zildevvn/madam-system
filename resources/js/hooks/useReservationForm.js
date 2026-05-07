@@ -23,7 +23,8 @@ export const useReservationForm = (id = null, user = null) => {
             dishes: [{ name: '', quantity: 1, price: 0, type: 'food' }],
             table_ids: [],
             status: 'pending',
-            apply_vat: false
+            apply_vat: false,
+            vat_percentage: 0
         }
     });
 
@@ -48,9 +49,10 @@ export const useReservationForm = (id = null, user = null) => {
 
                     // [FIX] Reverse VAT calculation if applied, so the user edits the base price
                     if (data.apply_vat && data.items) {
+                        const vatRate = 1 + (data.vat_percentage / 100);
                         data.dishes = data.items.map(item => ({
                             ...item,
-                            price: Math.round(item.price / 1.08)
+                            price: Math.round(item.price / vatRate)
                         }));
                     }
 

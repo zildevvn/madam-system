@@ -168,19 +168,21 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                         {formatPrice(
                                             reservation.dishes.reduce((sum, dish) => {
                                                 const total = (dish.price || 0) * (dish.quantity || 1);
-                                                return sum + (reservation.apply_vat ? total / 1.08 : total);
+                                                const vatRate = 1 + ((reservation.vat_percentage || 0) / 100);
+                                                return sum + (reservation.apply_vat ? total / vatRate : total);
                                             }, 0)
                                         )}đ
                                     </span>
                                 </div>
                                 {reservation.apply_vat && (
                                     <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-orange-500">
-                                        <span>VAT (8%)</span>
+                                        <span>VAT ({reservation.vat_percentage || 0}%)</span>
                                         <span>
                                             {formatPrice(
                                                 reservation.dishes.reduce((sum, dish) => {
                                                     const total = (dish.price || 0) * (dish.quantity || 1);
-                                                    return sum + (total - (total / 1.08));
+                                                    const vatRate = 1 + ((reservation.vat_percentage || 0) / 100);
+                                                    return sum + (total - (total / vatRate));
                                                 }, 0)
                                             )}đ
                                         </span>

@@ -91,20 +91,7 @@ const ReservationCreate = () => {
                         </div>
 
                         <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100 flex flex-col gap-6">
-                            <div className="flex items-center justify-between bg-gray-50/50 p-4 rounded-[20px] border border-gray-100 mb-6 group hover:border-orange-100 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${watch('apply_vat') ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-gray-300 text-gray-900'}`}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-[11px] font-black text-gray-900 uppercase tracking-[0.2em]">VAT Application</span>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" {...register('apply_vat')} className="sr-only peer" />
-                                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500 shadow-inner"></div>
-                                </label>
-                            </div>
+
 
                             <ReservationDishesForm
                                 fields={fields}
@@ -115,6 +102,44 @@ const ReservationCreate = () => {
                                 remove={remove}
                                 inputClasses={inputClasses}
                             />
+
+                            <div className="vat-element flex flex-col gap-4 bg-gray-50/50 p-4 rounded-[10px] border border-gray-200 group hover:border-orange-100 transition-colors">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${watch('apply_vat') ? ' text-white ' : ''}`}>
+
+                                            <svg width="800px" height="800px" viewBox="0 -32 1088 1088" fill="#000000" className="icon" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M992 64H768c-52.8 0-126.546 30.546-163.882 67.882L227.882 508.118c-37.334 37.334-37.334 98.428 0 135.764l280.236 280.232c37.334 37.336 98.428 37.336 135.764 0l376.232-376.232C1057.454 510.546 1088 436.8 1088 384V160c0-52.8-43.2-96-96-96z m-128 320c-53.02 0-96-42.98-96-96s42.98-96 96-96 96 42.98 96 96-42.98 96-96 96zM86.626 598.624l342.378 342.378c-36.264 19.16-82.462 13.54-112.886-16.888L35.882 643.882c-37.334-37.336-37.334-98.43 0-135.764L412.118 131.882C449.454 94.546 523.2 64 576 64L86.626 553.372c-12.444 12.446-12.444 32.808 0 45.252z" />
+                                            </svg>
+                                        </div>
+
+                                        <div>
+                                            <span className="w-full flex text-[11px] font-black text-gray-900 uppercase tracking-[0.2em]">VAT Application</span>
+
+                                            <div className="flex items-center gap-3 mt-2">
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" {...register('apply_vat')} className="sr-only peer" />
+                                                    <div className="w-10 h-5  bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[10px]  after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3  after:transition-all peer-checked:bg-orange-500 shadow-inner"></div>
+                                                </label>
+
+                                                {watch('apply_vat') && (
+                                                    <div className="relative w-20">
+                                                        <input
+                                                            type="number"
+                                                            {...register('vat_percentage', { required: watch('apply_vat'), min: 0, max: 100 })}
+                                                            className="w-full bg-white border border-gray-100 rounded-md px-2 py-1 text-[12px] font-bold text-orange-600 focus:border-orange-200 outline-none transition-all text-center"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+
+                                </div>
+                            </div>
 
                             <div className="section-container">
                                 {isManager ? (

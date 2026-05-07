@@ -83,52 +83,54 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                 </button>
 
                 <div className="mt-6 pt-6 border-t border-gray-100 space-y-3 px-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Subtotal</span>
-                        <span className="text-[14px] font-bold text-gray-700">
-                            {formatPrice(
-                                (watch('dishes') || []).reduce((sum, dish) => {
-                                    const qty = parseInt(dish.quantity) || 0;
-                                    const price = parseInt(dish.price) || 0;
-                                    return sum + (qty * price);
-                                }, 0)
-                            )}
-                            <span className="text-[10px] ml-1 opacity-60">VND</span>
-                        </span>
-                    </div>
+                    {/* Calculation Logic */}
+                    {(() => {
+                        const dishes = watch('dishes') || [];
+                        const applyVat = watch('apply_vat');
+                        const vatPercentage = Number(watch('vat_percentage') || 0);
+                        const vatRate = vatPercentage / 100;
 
-                    {watch('apply_vat') && (
-                        <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-300">
-                            <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">VAT (8%)</span>
-                            <span className="text-[14px] font-bold text-orange-500">
-                                {formatPrice(
-                                    (watch('dishes') || []).reduce((sum, dish) => {
-                                        const qty = parseInt(dish.quantity) || 0;
-                                        const price = parseInt(dish.price) || 0;
-                                        return sum + (qty * price * 0.08);
-                                    }, 0)
-                                )}
-                                <span className="text-[10px] ml-1 opacity-60">VND</span>
-                            </span>
-                        </div>
-                    )}
+                        const subtotal = dishes.reduce((sum, dish) => {
+                            const qty = parseInt(dish.quantity) || 0;
+                            const price = parseInt(dish.price) || 0;
+                            return sum + (qty * price);
+                        }, 0);
 
-                    <div className="flex items-center justify-between pt-2">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Total Amount</span>
-                            <span className="text-[20px] font-black text-orange-600 tracking-tight">
-                                {formatPrice(
-                                    (watch('dishes') || []).reduce((sum, dish) => {
-                                        const qty = parseInt(dish.quantity) || 0;
-                                        const price = parseInt(dish.price) || 0;
-                                        const subtotal = qty * price;
-                                        return sum + (watch('apply_vat') ? subtotal * 1.08 : subtotal);
-                                    }, 0)
+                        const vatAmount = applyVat ? subtotal * vatRate : 0;
+                        const totalAmount = subtotal + vatAmount;
+
+                        return (
+                            <>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Subtotal</span>
+                                    <span className="text-[14px] font-bold text-gray-700">
+                                        {formatPrice(subtotal)}
+                                        <span className="text-[10px] ml-1 opacity-60">VND</span>
+                                    </span>
+                                </div>
+
+                                {applyVat && (
+                                    <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-300">
+                                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">VAT ({vatPercentage}%)</span>
+                                        <span className="text-[14px] font-bold text-orange-500">
+                                            {formatPrice(vatAmount)}
+                                            <span className="text-[10px] ml-1 opacity-60">VND</span>
+                                        </span>
+                                    </div>
                                 )}
-                                <span className="text-[12px] ml-1 opacity-60">VND</span>
-                            </span>
-                        </div>
-                    </div>
+
+                                <div className="flex items-center justify-between pt-2">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Total Amount</span>
+                                        <span className="text-[20px] font-black text-orange-600 tracking-tight">
+                                            {formatPrice(totalAmount)}
+                                            <span className="text-[12px] ml-1 opacity-60">VND</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
             </div>
         </>
