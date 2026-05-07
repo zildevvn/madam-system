@@ -5,6 +5,8 @@ export const reservationApi = {
         const queryParams = new URLSearchParams();
         if (params.type && params.type !== 'all') queryParams.append('type', params.type);
         if (params.date) queryParams.append('date', params.date);
+        if (params.start_date) queryParams.append('start_date', params.start_date);
+        if (params.end_date) queryParams.append('end_date', params.end_date);
         if (params.month) queryParams.append('month', params.month);
 
         const queryString = queryParams.toString();

@@ -32,6 +32,10 @@ class ReservationController extends Controller
             $query->whereDate('reservation_date', $request->query('date'));
         }
 
+        if ($request->has('start_date') && $request->has('end_date') && !empty($request->query('start_date')) && !empty($request->query('end_date'))) {
+            $query->whereBetween('reservation_date', [$request->query('start_date'), $request->query('end_date')]);
+        }
+
         if ($request->has('month') && !empty($request->query('month'))) {
             $query->whereMonth('reservation_date', $request->query('month'))
                 ->whereYear('reservation_date', now()->year);

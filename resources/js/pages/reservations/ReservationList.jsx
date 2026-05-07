@@ -1,12 +1,17 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { format } from 'date-fns';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { format, isBefore, isAfter, startOfDay } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
+import { Calendar as CalendarIcon, FilterX } from 'lucide-react';
 import { useReservations } from '../../hooks/useReservations';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { saveReservationAsync } from '../../store/slices/reservationSlice';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
 import ReservationTable from '../../components/reservations/ReservationTable';
 import ReservationMobileCards from '../../components/reservations/ReservationMobileCards';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
+import { Calendar } from '../../components/ui/calendar';
+import { Button } from '../../components/ui/button';
+import { cn } from '../../lib/utils';
 import { capitalizeWords } from '../../shared/utils/formatCurrency';
 
 const months = Array.from({ length: 12 }, (_, i) => ({
@@ -16,14 +21,47 @@ const months = Array.from({ length: 12 }, (_, i) => ({
 
 const ReservationList = () => {
     const [filterType, setFilterType] = useState('all'); // 'all' | 'individual' | 'group'
-    const [dateFilter, setDateFilter] = useState('today'); // 'today' | '1'...'12'
+    const [dateFilter, setDateFilter] = useState('today'); // 'today' | 'yesterday' | 'range' | '1'...'12'
+    const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
+    const [isDragging, setIsDragging] = useState(false);
+
+    // [DRAG-TO-SELECT] Implementation for smoother desktop interaction
+    useEffect(() => {
+        const handleGlobalPointerUp = () => setIsDragging(false);
+        window.addEventListener('pointerup', handleGlobalPointerUp);
+        return () => window.removeEventListener('pointerup', handleGlobalPointerUp);
+    }, []);
+
+    const handleDayPointerDown = useCallback((day) => {
+        setIsDragging(true);
+        const d = startOfDay(day);
+        setDateRange({ from: d, to: d });
+        setDateFilter('range');
+    }, []);
+
+    const handleDayPointerEnter = useCallback((day) => {
+        if (!isDragging || !dateRange.from) return;
+
+        const current = startOfDay(day);
+        const from = dateRange.from;
+
+        if (isBefore(current, from)) {
+            setDateRange({ from: current, to: from });
+        } else {
+            setDateRange({ from: from, to: current });
+        }
+    }, [isDragging, dateRange.from]);
 
     // [STABILITY] Use a stable reference for the current time to avoid filter jumping on re-renders
     const [renderTime] = useState(new Date());
 
     const filters = useMemo(() => {
         const params = { type: filterType === 'all' ? null : filterType };
-        if (dateFilter === 'today') {
+
+        if (dateFilter === 'range' && dateRange?.from) {
+            params.start_date = format(dateRange.from, 'yyyy-MM-dd');
+            params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : params.start_date;
+        } else if (dateFilter === 'today') {
             const y = renderTime.getFullYear();
             const m = String(renderTime.getMonth() + 1).padStart(2, '0');
             const d = String(renderTime.getDate()).padStart(2, '0');
@@ -39,7 +77,7 @@ const ReservationList = () => {
             params.month = dateFilter;
         }
         return params;
-    }, [filterType, dateFilter, renderTime]);
+    }, [filterType, dateFilter, dateRange, renderTime]);
 
     const { reservations, tables, loading } = useReservations(filters);
     const user = useAppSelector(state => state.auth.user);
@@ -120,14 +158,6 @@ const ReservationList = () => {
         }
     }), [navigate, dispatch]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-            </div>
-        );
-    }
-
     return (
         <div className="max-w-6xl mx-auto p-4 lg:p-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
@@ -180,6 +210,65 @@ const ReservationList = () => {
                         </button>
                     ))}
                 </div>
+
+                {/* Custom Date Range Filter */}
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={`h-[42px] px-4 rounded-[18px] bg-gray-100/80 border-gray-200/50 shadow-inner flex items-center gap-2 transition-all group ${dateFilter === 'range' ? 'bg-white border-orange-200 ring-1 ring-orange-100' : ''}`}
+                            >
+                                <CalendarIcon className={`w-3.5 h-3.5 ${dateFilter === 'range' ? 'text-orange-500' : 'text-gray-400'}`} />
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${dateFilter === 'range' ? 'text-orange-500' : 'text-gray-400'}`}>
+                                    {dateFilter === 'range' && dateRange?.from ? (
+                                        dateRange.to ? (
+                                            `${format(dateRange.from, 'dd/MM')} - ${format(dateRange.to, 'dd/MM/yy')}`
+                                        ) : (
+                                            format(dateRange.from, 'dd/MM/yyyy')
+                                        )
+                                    ) : (
+                                        'dd/MM/yyyy'
+                                    )}
+                                </span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                mode="range"
+                                selected={dateRange}
+                                onSelect={(range) => {
+                                    if (!isDragging) {
+                                        setDateRange(range || { from: undefined, to: undefined });
+                                        if (range?.from && dateFilter !== 'range') {
+                                            setDateFilter('range');
+                                        }
+                                    }
+                                }}
+                                onDayPointerDown={handleDayPointerDown}
+                                onDayPointerEnter={handleDayPointerEnter}
+                                numberOfMonths={1}
+                                className={cn("rounded-md border shadow", isDragging && "select-none")}
+                                classNames={{
+                                    outside: "opacity-100 text-slate-900 hover:bg-slate-100 rounded-md aria-selected:bg-orange-600 aria-selected:text-white aria-selected:opacity-100"
+                                }}
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    {dateFilter === 'range' && (
+                        <button
+                            onClick={() => {
+                                setDateFilter('today');
+                                setDateRange({ from: undefined, to: undefined });
+                            }}
+                            className="p-2.5 rounded-full bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors"
+                            title="Clear Range"
+                        >
+                            <FilterX className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Statistics Summary Bar */}
@@ -204,24 +293,32 @@ const ReservationList = () => {
             </div>
 
             {/* Desktop View */}
-            <ReservationTable
-                reservations={sortedReservations}
-                isManager={isManager}
-                formatDate={formatDate}
-                formatTime={formatTime}
-                onView={handlers.onView}
-                onEdit={handlers.onEdit}
-                onDone={handlers.onDone}
-            />
+            {loading ? (
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                </div>
+            ) : (
+                <>
+                    <ReservationTable
+                        reservations={sortedReservations}
+                        isManager={isManager}
+                        formatDate={formatDate}
+                        formatTime={formatTime}
+                        onView={handlers.onView}
+                        onEdit={handlers.onEdit}
+                        onDone={handlers.onDone}
+                    />
 
-            {/* Mobile View */}
-            <ReservationMobileCards
-                reservations={sortedReservations}
-                filterType={filterType}
-                formatDate={formatDate}
-                formatTime={formatTime}
-                {...handlers}
-            />
+                    {/* Mobile View */}
+                    <ReservationMobileCards
+                        reservations={sortedReservations}
+                        filterType={filterType}
+                        formatDate={formatDate}
+                        formatTime={formatTime}
+                        {...handlers}
+                    />
+                </>
+            )}
 
             <ReservationDetailModal
                 reservation={viewingReservation}
