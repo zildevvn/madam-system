@@ -1,46 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { getSystemMessagesApi, markSystemMessageAsReadApi } from '../../services/systemMessageService';
+import React, { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { fetchNotificationsAsync, markNotificationAsReadAsync } from '../../store/slices/notificationSlice';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { useAppSelector } from '../../store/hooks';
 
 const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
-    const [messages, setMessages] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const dispatch = useAppDispatch();
+    const messages = useAppSelector(state => state.notification.messages);
+    const status = useAppSelector(state => state.notification.status);
+    const loading = status === 'loading';
     const { user } = useAppSelector(state => state.auth);
 
     useEffect(() => {
         if (isOpen && user) {
-            fetchMessages();
+            dispatch(fetchNotificationsAsync(user.id));
         }
-    }, [isOpen, user]);
-
-    const fetchMessages = async () => {
-        if (!user) return;
-        try {
-            setLoading(true);
-            const response = await getSystemMessagesApi(user.id);
-            setMessages(response.data || []);
-        } catch (error) {
-            console.error('Failed to fetch messages:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [isOpen, user, dispatch]);
 
     const handleMarkAsRead = async (messageId) => {
         if (!user) return;
+        dispatch(markNotificationAsReadAsync({ messageId, userId: user.id }));
+        if (onUpdate) onUpdate();
+    };
 
-        // Optimistic UI update
-        setMessages(prev => prev.map(msg =>
-            msg.id === messageId ? { ...msg, is_read: true } : msg
-        ));
-
-        try {
-            await markSystemMessageAsReadApi(messageId, user.id);
-            if (onUpdate) onUpdate();
-        } catch (error) {
-            console.error('Failed to mark message as read:', error);
+    const handleRefresh = () => {
+        if (user) {
+            dispatch(fetchNotificationsAsync(user.id));
         }
     };
 
@@ -48,7 +33,7 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[24px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col font-primary max-h-[85vh]">
+            <div className="bg-white rounded-[24px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col font-primary max-h-[80vh]">
                 {/* Header */}
                 <div className="px-4 py-3.5 md:px-6 md:py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                     <div>
@@ -56,7 +41,7 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                     </div>
                     <div className="flex items-center gap-2 md:gap-3">
                         <button
-                            onClick={fetchMessages}
+                            onClick={handleRefresh}
                             className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-orange-500 hover:bg-orange-50 transition-all border border-slate-100 active:scale-90"
                             title="Refresh"
                         >

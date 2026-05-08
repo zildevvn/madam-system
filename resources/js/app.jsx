@@ -40,6 +40,7 @@ import { ROLES } from "./shared/constants/roles";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { updateReservationFromSocket } from "./store/slices/reservationSlice";
+import { addNotificationFromSocket, fetchNotificationsAsync } from "./store/slices/notificationSlice";
 import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 
@@ -120,6 +121,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
     const dispatch = useAppDispatch();
+    const { user } = useAppSelector(state => state.auth);
 
     // [WHY] Initial Data Fetch for Products and Categories
     useEffect(() => {
@@ -131,9 +133,8 @@ function App() {
     // [RULE] Real-time updates must go through Redux (Rule 412)
     useEffect(() => {
         if (window.Echo) {
-            const channel = window.Echo.channel('orders');
-
-            channel.listen('.reservation_updated', (data) => {
+            const orderChannel = window.Echo.channel('orders');
+            orderChannel.listen('.reservation_updated', (data) => {
                 // [WHY] Update the normalized Redux store directly from the socket payload
                 // The backend sends { id: ..., action: ..., reservation: ... }
                 // Note: The backend event might need a small update to include the full reservation if it doesn't already
@@ -145,9 +146,22 @@ function App() {
                 }));
             });
 
-            return () => window.Echo.leaveChannel('orders');
+            const notificationChannel = window.Echo.channel('system-notifications');
+            notificationChannel.listen('.new-message', (data) => {
+                if (data.message) {
+                    dispatch(addNotificationFromSocket(data.message));
+                    if (user) {
+                        dispatch(fetchNotificationsAsync(user.id));
+                    }
+                }
+            });
+
+            return () => {
+                window.Echo.leaveChannel('orders');
+                window.Echo.leaveChannel('system-notifications');
+            };
         }
-    }, [dispatch]);
+    }, [dispatch, user]);
 
     return (
         <BrowserRouter>

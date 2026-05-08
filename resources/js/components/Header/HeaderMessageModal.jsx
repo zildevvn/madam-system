@@ -58,7 +58,7 @@ const HeaderMessageModal = ({ isOpen, onClose, onSuccess }) => {
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
-                                className="w-full bg-slate-200 border-2 border-transparent rounded-[16px] md:rounded-[20px] p-3.5 md:p-4 text-slate-900 placeholder:text-slate-900 transition-all min-h-[140px] md:min-h-[160px] resize-none text-[14px] leading-relaxed"
+                                className="w-full bg-slate-200 border-2 border-transparent rounded-[16px] md:rounded-[20px] p-3.5 md:p-4 text-slate-900 placeholder:text-slate-900 transition-all min-h-[140px] md:min-h-[160px] resize-none text-[16px] leading-relaxed"
                                 placeholder="Enter your message..."
                                 required
                                 autoFocus
