@@ -30,9 +30,9 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
 
     const handleMarkAsRead = async (messageId) => {
         if (!user) return;
-        
+
         // Optimistic UI update
-        setMessages(prev => prev.map(msg => 
+        setMessages(prev => prev.map(msg =>
             msg.id === messageId ? { ...msg, is_read: true } : msg
         ));
 
@@ -48,28 +48,27 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[32px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col font-primary max-h-[85vh]">
+            <div className="bg-white rounded-[24px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col font-primary max-h-[85vh]">
                 {/* Header */}
-                <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="px-4 py-3.5 md:px-6 md:py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                     <div>
-                        <h3 className="text-slate-900 font-black uppercase tracking-[0.2em] text-[13px]">Notifications</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">System-wide updates</p>
+                        <h3 className="text-slate-900 font-black uppercase tracking-[0.15em]">Notifications</h3>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-3">
                         <button
                             onClick={fetchMessages}
-                            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-all border border-slate-100"
+                            className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-orange-500 hover:bg-orange-50 transition-all border border-slate-100 active:scale-90"
                             title="Refresh"
                         >
-                            <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </button>
                         <button
                             onClick={onClose}
-                            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-100"
+                            className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-100 active:scale-90"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
@@ -77,60 +76,57 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto no-scrollbar p-6 bg-slate-50/30">
+                <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-6 bg-slate-50/30">
                     {loading && messages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                            <div className="w-10 h-10 border-4 border-orange-500/10 border-t-orange-500 rounded-full animate-spin"></div>
-                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Loading messages...</p>
+                        <div className="flex flex-col items-center justify-center py-16 md:py-20 space-y-4">
+                            <div className="w-9 h-9 border-4 border-orange-500/10 border-t-orange-500 rounded-full animate-spin"></div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading messages...</p>
                         </div>
                     ) : messages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                            <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-300">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <div className="flex flex-col items-center justify-center py-16 md:py-20 space-y-4">
+                            <div className="w-14 h-14 bg-slate-100 rounded-[20px] flex items-center justify-center text-slate-300">
+                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                 </svg>
                             </div>
-                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">No notifications yet</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No notifications yet</p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3 md:space-y-4">
                             {messages.map((msg) => (
-                                <div 
-                                    key={msg.id} 
+                                <div
+                                    key={msg.id}
                                     onClick={() => !msg.is_read && handleMarkAsRead(msg.id)}
-                                    className={`p-6 rounded-[24px] border transition-all group cursor-pointer relative overflow-hidden ${
-                                        msg.is_read 
-                                        ? 'bg-white border-slate-100 shadow-sm hover:shadow-md' 
-                                        : 'bg-orange-50/30 border-orange-100 shadow-md ring-1 ring-orange-500/10'
-                                    }`}
+                                    className={`p-4 md:p-5 rounded-[20px] border transition-all group cursor-pointer relative overflow-hidden ${msg.is_read
+                                        ? 'bg-white border-slate-100 shadow-sm hover:shadow-md'
+                                        : 'bg-orange-50/20 border-orange-100 shadow-md ring-1 ring-orange-500/5'
+                                        }`}
                                 >
                                     {!msg.is_read && (
                                         <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
                                     )}
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-[13px] font-black shadow-lg ${
-                                                msg.is_read ? 'bg-slate-400 shadow-slate-400/20' : 'bg-orange-500 shadow-orange-500/20'
-                                            }`}>
+                                    <div className="flex justify-between items-start mb-3 md:mb-4">
+                                        <div className="flex items-center gap-2.5 md:gap-3">
+                                            <div className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center text-white text-[11px] md:text-[13px] font-black shadow-lg ${msg.is_read ? 'bg-slate-400 shadow-slate-400/20' : 'bg-orange-500 shadow-orange-500/20'
+                                                }`}>
                                                 {msg.user?.name?.[0].toUpperCase()}
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-2">
-                                                    <h4 className="text-[13px] font-black text-slate-900 uppercase tracking-tight">{msg.user?.name}</h4>
+                                                <div className="flex items-center gap-1.5 md:gap-2">
+                                                    <h4 className="text-[12px] md:text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none">{msg.user?.name}</h4>
                                                     {!msg.is_read && (
-                                                        <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
+                                                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
                                                     )}
                                                 </div>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{msg.user?.role}</p>
+
                                             </div>
                                         </div>
-                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md">
+                                        <span className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded-md">
                                             {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                                         </span>
                                     </div>
-                                    <div className={`text-[15px] leading-relaxed font-medium whitespace-pre-wrap ${
-                                        msg.is_read ? 'text-slate-500' : 'text-slate-800'
-                                    }`}>
+                                    <div className={`text-[13px] md:text-[15px] leading-relaxed font-medium whitespace-pre-wrap ${msg.is_read ? 'text-slate-500' : 'text-slate-700'
+                                        }`}>
                                         {msg.content}
                                     </div>
                                 </div>
@@ -140,12 +136,12 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-slate-50 bg-white">
+                <div className="p-4 md:p-6 border-t border-slate-50 bg-white">
                     <button
                         onClick={onClose}
-                        className="w-full py-4 bg-slate-900 text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-900/10"
+                        className="w-full py-3.5 md:py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-900/10"
                     >
-                        Close Notifications
+                        Close
                     </button>
                 </div>
             </div>
