@@ -9,7 +9,7 @@ import HeaderMessageModal from './Header/HeaderMessageModal';
 import NotificationModal from './Header/NotificationModal';
 import { getSystemMessagesApi, markSystemMessageAsReadApi } from '../services/systemMessageService';
 
-export default function Header() {
+export default function Header({ onlyBanner = false }) {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -17,6 +17,7 @@ export default function Header() {
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
     const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
     const [hasNewNotification, setHasNewNotification] = useState(false);
+    const [latestMessage, setLatestMessage] = useState(null);
     const [lastEventTime, setLastEventTime] = useState(0);
     const { user } = useAppSelector(state => state.auth);
 
@@ -28,11 +29,12 @@ export default function Header() {
             const now = Date.now();
 
             let latestUnreadRecentTime = 0;
+            let foundLatest = null;
             const expiredIds = [];
 
             const hasRecentUnread = messages.some(msg => {
                 if (msg.is_read) return false;
-
+                
                 let msgTime = new Date(msg.created_at).getTime();
                 // Fallback for different date formats
                 if (isNaN(msgTime) && msg.created_at) {
@@ -44,7 +46,10 @@ export default function Header() {
                 const diff = now - msgTime;
                 // Indicator shows for messages created in the last 10 minutes
                 if (diff < 10 * 60 * 1000) {
-                    if (msgTime > latestUnreadRecentTime) latestUnreadRecentTime = msgTime;
+                    if (msgTime > latestUnreadRecentTime) {
+                        latestUnreadRecentTime = msgTime;
+                        foundLatest = msg;
+                    }
                     return true;
                 } else {
                     // Automatically mark as read if older than 10 minutes
@@ -54,6 +59,7 @@ export default function Header() {
             });
 
             setHasNewNotification(hasRecentUnread);
+            setLatestMessage(foundLatest);
             if (hasRecentUnread) {
                 setLastEventTime(latestUnreadRecentTime);
             }
@@ -83,6 +89,9 @@ export default function Header() {
             channel.listen('.new-message', (e) => {
                 setHasNewNotification(true);
                 setLastEventTime(Date.now());
+                if (e.message) {
+                    setLatestMessage(e.message);
+                }
             });
             return () => window.Echo.leaveChannel('system-notifications');
         }
@@ -137,16 +146,59 @@ export default function Header() {
         return location.pathname + location.search === path || location.pathname === path;
     };
 
+    const isFixedLayout = location.pathname === '/staff-order' || location.pathname === '/bills' || location.pathname === '/cashier' || location.pathname === '/kitchen' || location.pathname === '/bar';
+    const bannerPages = ['staff-order', 'kitchen', 'bar', 'bills', 'cashier', 'reservations', 'expenses'];
+    const showBanner = bannerPages.some(page => location.pathname.includes(page)) && hasNewNotification && latestMessage;
+
+    useEffect(() => {
+        if (showBanner) {
+            document.body.classList.add('has-marquee');
+        } else {
+            document.body.classList.remove('has-marquee');
+        }
+        return () => document.body.classList.remove('has-marquee');
+    }, [showBanner]);
+
     const handleLogout = () => {
         dispatch(logout());
         navigate('/');
     };
 
-    const isFixedLayout = location.pathname === '/staff-order' || location.pathname === '/bills' || location.pathname === '/cashier' || location.pathname === '/kitchen' || location.pathname === '/bar';
+    const renderBanner = () => {
+        if (!showBanner) return null;
+        return (
+            <div className="bg-orange-500 text-white py-1.5 overflow-hidden border-b border-orange-600 shadow-sm">
+                <div className="animate-marquee flex items-center whitespace-nowrap">
+                    {[1, 2, 3, 4].map((i) => (
+                        <React.Fragment key={i}>
+                            <div className="flex items-center gap-3 px-8">
+                                <span className="flex items-center gap-1.5 font-black uppercase tracking-[0.15em] text-[10px] bg-white/20 px-2 py-0.5 rounded-full">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    Notice
+                                </span>
+                                <span className="text-[11px] md:text-[12px] font-bold uppercase tracking-wide">
+                                    {latestMessage.user?.name}: {latestMessage.content}
+                                </span>
+                            </div>
+                            <div className="w-1.5 h-1.5 bg-white/30 rounded-full"></div>
+                        </React.Fragment>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    if (onlyBanner) {
+        return <div className="fixed top-0 left-0 right-0 z-[100] font-primary">{renderBanner()}</div>;
+    }
 
     return (
         <>
-            <header className={`bg-white/90 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-100 transition-all duration-300 ${isFixedLayout ? 'shadow-sm' : 'shadow-none'}`}>
+            <header className={`bg-white/95 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-100 transition-all duration-300 ${isFixedLayout || showBanner ? 'shadow-sm' : 'shadow-none'}`}>
+                {renderBanner()}
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16 md:h-20">
                         <div className="flex">
