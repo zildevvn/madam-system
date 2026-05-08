@@ -97,7 +97,7 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                                 <div
                                     key={msg.id}
                                     onClick={() => !msg.is_read && handleMarkAsRead(msg.id)}
-                                    className={`p-4 md:p-5 rounded-[20px] border transition-all group cursor-pointer relative overflow-hidden ${msg.is_read
+                                    className={`p-4 md:p-5 rounded-[10px] border transition-all group cursor-pointer relative overflow-hidden ${msg.is_read
                                         ? 'bg-white border-slate-100 shadow-sm hover:shadow-md'
                                         : 'bg-orange-50/20 border-orange-100 shadow-md ring-1 ring-orange-500/5'
                                         }`}

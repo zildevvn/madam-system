@@ -26,13 +26,13 @@ export default function Header() {
             const response = await getSystemMessagesApi(user.id);
             const messages = response.data || [];
             const now = Date.now();
-            
+
             let latestUnreadRecentTime = 0;
             const expiredIds = [];
 
             const hasRecentUnread = messages.some(msg => {
                 if (msg.is_read) return false;
-                
+
                 let msgTime = new Date(msg.created_at).getTime();
                 // Fallback for different date formats
                 if (isNaN(msgTime) && msg.created_at) {
@@ -61,7 +61,7 @@ export default function Header() {
             // Sync expired notifications to backend
             if (expiredIds.length > 0) {
                 expiredIds.forEach(id => {
-                    markSystemMessageAsReadApi(id, user.id).catch(err => 
+                    markSystemMessageAsReadApi(id, user.id).catch(err =>
                         console.error(`Failed to auto-mark message ${id} as read:`, err)
                     );
                 });
@@ -94,7 +94,7 @@ export default function Header() {
             const now = Date.now();
             const elapsed = now - lastEventTime;
             const remaining = Math.max(0, 10 * 60 * 1000 - elapsed);
-            
+
             const timer = setTimeout(() => {
                 checkNotifications();
             }, remaining + 1000); // Small buffer to ensure time has passed
@@ -164,10 +164,10 @@ export default function Header() {
                                 <button
                                     type="button"
                                     onClick={() => setIsMessageModalOpen(true)}
-                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all active:scale-95 border border-slate-100"
+                                    className="btn-messages cursor-pointer w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl bg-slate-100/50 hover:bg-slate-200/50 text-slate-600 hover:text-slate-900 transition-all active:scale-95 border border-slate-200/40"
                                     aria-label="Messages"
                                 >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="18" height="18" className="md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                     </svg>
                                 </button>
@@ -175,15 +175,19 @@ export default function Header() {
                                 <button
                                     type="button"
                                     onClick={() => setIsNotificationModalOpen(true)}
-                                    className="btn-notifications p-2 text-slate-400 hover:text-slate-900 transition-colors relative"
+                                    className={`btn-notifications cursor-pointer w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 border relative ${
+                                        hasNewNotification 
+                                        ? 'bg-orange-50 border-orange-200/50 text-orange-600 hover:bg-orange-100/80 hover:text-orange-700 shadow-sm shadow-orange-500/10' 
+                                        : 'bg-slate-100/50 border-slate-200/40 text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+                                    }`}
                                     aria-label="Notifications"
                                 >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="20" height="20" className="md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                     </svg>
                                     {hasNewNotification && (
-                                        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                                        <span className="absolute top-1.5 right-1.5 md:top-2 md:right-2 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-white animate-pulse shadow-sm shadow-orange-500/50"></span>
                                     )}
                                 </button>
 
