@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
@@ -7,7 +7,7 @@ import { ROLES } from '../shared/constants/roles';
 import NavItem from './Header/NavItem';
 import HeaderMessageModal from './Header/HeaderMessageModal';
 import NotificationModal from './Header/NotificationModal';
-import { getSystemMessagesApi } from '../services/systemMessageService';
+import { getSystemMessagesApi, markSystemMessageAsReadApi } from '../services/systemMessageService';
 
 export default function Header() {
     const location = useLocation();
@@ -17,51 +17,92 @@ export default function Header() {
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
     const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
     const [hasNewNotification, setHasNewNotification] = useState(false);
+    const [lastEventTime, setLastEventTime] = useState(0);
+    const { user } = useAppSelector(state => state.auth);
+
+    const checkNotifications = useCallback(async () => {
+        if (!user) return;
+        try {
+            const response = await getSystemMessagesApi(user.id);
+            const messages = response.data || [];
+            const now = Date.now();
+            
+            let latestUnreadRecentTime = 0;
+            const expiredIds = [];
+
+            const hasRecentUnread = messages.some(msg => {
+                if (msg.is_read) return false;
+                
+                let msgTime = new Date(msg.created_at).getTime();
+                // Fallback for different date formats
+                if (isNaN(msgTime) && msg.created_at) {
+                    msgTime = new Date(msg.created_at.replace(' ', 'T')).getTime();
+                }
+
+                if (isNaN(msgTime)) return false;
+
+                const diff = now - msgTime;
+                // Indicator shows for messages created in the last 10 minutes
+                if (diff < 10 * 60 * 1000) {
+                    if (msgTime > latestUnreadRecentTime) latestUnreadRecentTime = msgTime;
+                    return true;
+                } else {
+                    // Automatically mark as read if older than 10 minutes
+                    expiredIds.push(msg.id);
+                }
+                return false;
+            });
+
+            setHasNewNotification(hasRecentUnread);
+            if (hasRecentUnread) {
+                setLastEventTime(latestUnreadRecentTime);
+            }
+
+            // Sync expired notifications to backend
+            if (expiredIds.length > 0) {
+                expiredIds.forEach(id => {
+                    markSystemMessageAsReadApi(id, user.id).catch(err => 
+                        console.error(`Failed to auto-mark message ${id} as read:`, err)
+                    );
+                });
+            }
+        } catch (error) {
+            console.error('Error checking notifications:', error);
+        }
+    }, [user]);
 
     useEffect(() => {
-        // Initial check for recent messages (last 10 minutes)
-        const checkRecentMessages = async () => {
-            try {
-                const response = await getSystemMessagesApi();
-                const latestMsg = response.data?.[0];
-                if (latestMsg) {
-                    const msgTime = new Date(latestMsg.created_at).getTime();
-                    const now = new Date().getTime();
-                    const diff = (now - msgTime) / (1000 * 60);
-                    if (diff < 10) {
-                        setHasNewNotification(true);
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking recent messages:', error);
-            }
-        };
+        if (user) {
+            checkNotifications();
+        }
+    }, [user, checkNotifications]);
 
-        checkRecentMessages();
-
-        // Real-time listener
+    useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('system-notifications');
             channel.listen('.new-message', (e) => {
                 setHasNewNotification(true);
+                setLastEventTime(Date.now());
             });
             return () => window.Echo.leaveChannel('system-notifications');
         }
     }, []);
 
-    // Timer to reset notification state after 10 minutes
+    // Timer to re-check notifications when the 10-minute window expires
     useEffect(() => {
-        if (hasNewNotification) {
+        if (hasNewNotification && lastEventTime > 0) {
+            const now = Date.now();
+            const elapsed = now - lastEventTime;
+            const remaining = Math.max(0, 10 * 60 * 1000 - elapsed);
+            
             const timer = setTimeout(() => {
-                // Double check if there's really no message in the last 10 mins
-                // (in case the tab was inactive)
-                setHasNewNotification(false);
-            }, 10 * 60 * 1000);
+                checkNotifications();
+            }, remaining + 1000); // Small buffer to ensure time has passed
             return () => clearTimeout(timer);
         }
-    }, [hasNewNotification]);
+    }, [hasNewNotification, lastEventTime, checkNotifications]);
 
-    const { user } = useAppSelector(state => state.auth);
+
 
     const navigation = React.useMemo(() => {
         const baseNav = [
@@ -228,10 +269,15 @@ export default function Header() {
             <HeaderMessageModal
                 isOpen={isMessageModalOpen}
                 onClose={() => setIsMessageModalOpen(false)}
+                onSuccess={checkNotifications}
             />
             <NotificationModal
                 isOpen={isNotificationModalOpen}
-                onClose={() => setIsNotificationModalOpen(false)}
+                onClose={() => {
+                    setIsNotificationModalOpen(false);
+                    checkNotifications();
+                }}
+                onUpdate={checkNotifications}
             />
         </>
     );

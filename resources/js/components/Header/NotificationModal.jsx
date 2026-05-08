@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useAppSelector } from '../../store/hooks';
 
-const NotificationModal = ({ isOpen, onClose }) => {
+const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const { user } = useAppSelector(state => state.auth);
@@ -38,6 +38,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
 
         try {
             await markSystemMessageAsReadApi(messageId, user.id);
+            if (onUpdate) onUpdate();
         } catch (error) {
             console.error('Failed to mark message as read:', error);
         }

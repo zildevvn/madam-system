@@ -3,7 +3,7 @@ import { createSystemMessageApi } from '../../services/systemMessageService';
 import { useAppSelector } from '../../store/hooks';
 import toast from 'react-hot-toast';
 
-const HeaderMessageModal = ({ isOpen, onClose }) => {
+const HeaderMessageModal = ({ isOpen, onClose, onSuccess }) => {
     const [message, setMessage] = useState('');
     const [processing, setProcessing] = useState(false);
     const { user } = useAppSelector(state => state.auth);
@@ -22,6 +22,7 @@ const HeaderMessageModal = ({ isOpen, onClose }) => {
             });
             toast.success('Message broadcasted successfully');
             setMessage('');
+            if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
             console.error('Failed to send message:', error);
@@ -36,12 +37,8 @@ const HeaderMessageModal = ({ isOpen, onClose }) => {
             <div className="bg-white rounded-[32px] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col font-primary">
                 {/* Header */}
                 <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
-                    <div>
-                        <h3 className="text-slate-900 font-black uppercase tracking-[0.2em] text-[13px]">System Message</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Broadcast to all staff</p>
-                    </div>
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-100"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
