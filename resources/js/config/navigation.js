@@ -29,13 +29,7 @@ export const NAVIGATION_ITEMS = [
  * [WHY] Externalizing route-based UI triggers for easier maintenance.
  */
 export const BANNER_PAGES = [
-    '/staff-order',
-    '/kitchen',
-    '/bar',
-    '/bills',
-    '/cashier',
-    '/reservations',
-    '/expenses'
+    '/staff-order'
 ];
 
 export const FIXED_LAYOUT_ROUTES = [
