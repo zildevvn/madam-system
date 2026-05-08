@@ -145,9 +145,7 @@ const Cashier = () => {
         <div className="cashier-page pb-20">
             {/* [RULE] All interactive UI goes inside .no-print for selective isolation */}
             <div className="no-print">
-                <div className="hidden" aria-hidden="true"></div>
-
-                <div className="py-8 relative overflow-x-hidden">
+                <div className="main-inner pb-8 relative overflow-x-hidden">
                     <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                         {/* Top Row: Active Lanes */}
                         <div className="flex flex-col lg:flex-row gap-4 relative items-start">

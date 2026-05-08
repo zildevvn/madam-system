@@ -34,7 +34,7 @@ export default function Header({ onlyBanner = false }) {
 
             const hasRecentUnread = messages.some(msg => {
                 if (msg.is_read) return false;
-                
+
                 let msgTime = new Date(msg.created_at).getTime();
                 // Fallback for different date formats
                 if (isNaN(msgTime) && msg.created_at) {
@@ -169,7 +169,7 @@ export default function Header({ onlyBanner = false }) {
         return (
             <div className="bg-orange-500 text-white py-1.5 overflow-hidden border-b border-orange-600 shadow-sm">
                 <div className="animate-marquee flex items-center whitespace-nowrap">
-                    {[1, 2, 3, 4].map((i) => (
+                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                         <React.Fragment key={i}>
                             <div className="flex items-center gap-3 px-8">
                                 <span className="flex items-center gap-1.5 font-black uppercase tracking-[0.15em] text-[10px] bg-white/20 px-2 py-0.5 rounded-full">
@@ -213,25 +213,26 @@ export default function Header({ onlyBanner = false }) {
 
                         {user && (
                             <div className="flex items-center gap-2 md:gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsMessageModalOpen(true)}
-                                    className="btn-messages cursor-pointer w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl bg-slate-100/50 hover:bg-slate-200/50 text-slate-600 hover:text-slate-900 transition-all active:scale-95 border border-slate-200/40"
-                                    aria-label="Messages"
-                                >
-                                    <svg width="18" height="18" className="md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                    </svg>
-                                </button>
+                                {![ROLES.BAR, ROLES.ORDER_STAFF].includes(user.role) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsMessageModalOpen(true)}
+                                        className="btn-messages cursor-pointer w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl bg-slate-100/50 hover:bg-slate-200/50 text-slate-600 hover:text-slate-900 transition-all active:scale-95 border border-slate-200/40"
+                                        aria-label="Messages"
+                                    >
+                                        <svg width="18" height="18" className="md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                    </button>
+                                )}
 
                                 <button
                                     type="button"
                                     onClick={() => setIsNotificationModalOpen(true)}
-                                    className={`btn-notifications cursor-pointer w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 border relative ${
-                                        hasNewNotification 
-                                        ? 'bg-orange-50 border-orange-200/50 text-orange-600 hover:bg-orange-100/80 hover:text-orange-700 shadow-sm shadow-orange-500/10' 
+                                    className={`btn-notifications cursor-pointer w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl transition-all active:scale-95 border relative ${hasNewNotification
+                                        ? 'bg-orange-50 border-orange-200/50 text-orange-600 hover:bg-orange-100/80 hover:text-orange-700 shadow-sm shadow-orange-500/10'
                                         : 'bg-slate-100/50 border-slate-200/40 text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
-                                    }`}
+                                        }`}
                                     aria-label="Notifications"
                                 >
                                     <svg width="20" height="20" className="md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

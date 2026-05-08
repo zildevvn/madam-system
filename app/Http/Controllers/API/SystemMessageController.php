@@ -43,6 +43,13 @@ class SystemMessageController extends Controller
             'user_id' => 'required|exists:users,id'
         ]);
 
+        $user = \App\Models\User::find($validated['user_id']);
+        if (!$user || in_array($user->role, ['bar', 'order_staff'])) {
+            return response()->json([
+                'message' => 'You do not have permission to broadcast messages.'
+            ], 403);
+        }
+
         $message = SystemMessage::create($validated);
         
         // Broadcast the new message event

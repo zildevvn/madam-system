@@ -113,7 +113,7 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-1.5 md:gap-2">
-                                                    <h4 className="text-[12px] md:text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none">{msg.user?.name}</h4>
+                                                    <h6 className="font-black text-slate-900 uppercase tracking-tight leading-none">{msg.user?.name}</h6>
                                                     {!msg.is_read && (
                                                         <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
                                                     )}

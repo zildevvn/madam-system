@@ -14,6 +14,16 @@
             }
         }
     }
+
+    &.has-marquee {
+        .main-inner {
+            padding-top: 50px;
+        }
+    }
+
+    .main-inner {
+        padding-top: 24px;
+    }
 }
 
 .is-collapsed {
