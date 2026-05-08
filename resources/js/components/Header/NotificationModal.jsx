@@ -1,0 +1,152 @@
+import React, { useState, useEffect } from 'react';
+import { getSystemMessagesApi, markSystemMessageAsReadApi } from '../../services/systemMessageService';
+import { formatDistanceToNow } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { useAppSelector } from '../../store/hooks';
+
+const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const { user } = useAppSelector(state => state.auth);
+
+    useEffect(() => {
+        if (isOpen && user) {
+            fetchMessages();
+        }
+    }, [isOpen, user]);
+
+    const fetchMessages = async () => {
+        if (!user) return;
+        try {
+            setLoading(true);
+            const response = await getSystemMessagesApi(user.id);
+            setMessages(response.data || []);
+        } catch (error) {
+            console.error('Failed to fetch messages:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMarkAsRead = async (messageId) => {
+        if (!user) return;
+
+        // Optimistic UI update
+        setMessages(prev => prev.map(msg =>
+            msg.id === messageId ? { ...msg, is_read: true } : msg
+        ));
+
+        try {
+            await markSystemMessageAsReadApi(messageId, user.id);
+            if (onUpdate) onUpdate();
+        } catch (error) {
+            console.error('Failed to mark message as read:', error);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[24px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col font-primary max-h-[85vh]">
+                {/* Header */}
+                <div className="px-4 py-3.5 md:px-6 md:py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
+                    <div>
+                        <h3 className="text-slate-900 font-black uppercase tracking-[0.15em]">Notifications</h3>
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <button
+                            onClick={fetchMessages}
+                            className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-orange-500 hover:bg-orange-50 transition-all border border-slate-100 active:scale-90"
+                            title="Refresh"
+                        >
+                            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-100 active:scale-90"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-6 bg-slate-50/30">
+                    {loading && messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 md:py-20 space-y-4">
+                            <div className="w-9 h-9 border-4 border-orange-500/10 border-t-orange-500 rounded-full animate-spin"></div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading messages...</p>
+                        </div>
+                    ) : messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 md:py-20 space-y-4">
+                            <div className="w-14 h-14 bg-slate-100 rounded-[20px] flex items-center justify-center text-slate-300">
+                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No notifications yet</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3 md:space-y-4">
+                            {messages.map((msg) => (
+                                <div
+                                    key={msg.id}
+                                    onClick={() => !msg.is_read && handleMarkAsRead(msg.id)}
+                                    className={`p-4 md:p-5 rounded-[10px] border transition-all group cursor-pointer relative overflow-hidden ${msg.is_read
+                                        ? 'bg-white border-slate-100 shadow-sm hover:shadow-md'
+                                        : 'bg-orange-50/20 border-orange-100 shadow-md ring-1 ring-orange-500/5'
+                                        }`}
+                                >
+                                    {!msg.is_read && (
+                                        <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+                                    )}
+                                    <div className="flex justify-between items-start mb-3 md:mb-4">
+                                        <div className="flex items-center gap-2.5 md:gap-3">
+                                            <div className={`w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center text-white text-[11px] md:text-[13px] font-black shadow-lg ${msg.is_read ? 'bg-slate-400 shadow-slate-400/20' : 'bg-orange-500 shadow-orange-500/20'
+                                                }`}>
+                                                {msg.user?.name?.[0].toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-1.5 md:gap-2">
+                                                    <h6 className="font-black text-slate-900 uppercase tracking-tight leading-none">{msg.user?.name}</h6>
+                                                    {!msg.is_read && (
+                                                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
+                                                    )}
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <span className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded-md">
+                                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                                        </span>
+                                    </div>
+                                    <div className={`text-[13px] md:text-[15px] leading-relaxed font-medium whitespace-pre-wrap ${msg.is_read ? 'text-slate-500' : 'text-slate-700'
+                                        }`}>
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 md:p-6 border-t border-slate-50 bg-white">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3.5 md:py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-900/10"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default NotificationModal;

@@ -165,7 +165,7 @@ function App() {
                     <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Cashier page: Access by admin, cashier */}
-                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout hideHeader={true}><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Expenses: Access by admin, cashier */}
                     <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />

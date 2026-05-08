@@ -31,6 +31,14 @@
             @media (max-width: 767.98px) {
                 top: 70px;
             }
+
+            body.has-marquee & {
+                top: calc(92px + 32px);
+
+                @media (max-width: 767.98px) {
+                    top: calc(82px + 28px);
+                }
+            }
         }
     }
 

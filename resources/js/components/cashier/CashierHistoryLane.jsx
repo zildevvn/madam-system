@@ -34,29 +34,13 @@ const CashierHistoryLane = ({
 
     return (
         <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] mt-8 ${containerClassName}`}>
-            <div className={`py-6 ${!isCollapsed ? 'px-6' : 'px-2'} flex flex-col gap-6 bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden min-h-[100px]`}>
+            <div className={`py-3 md:py-6 ${!isCollapsed ? 'px-3 md:px-6' : 'px-1 md:px-2'} flex flex-col gap-3 md:gap-6 bg-white rounded-[12px] shadow-sm border border-gray-100 overflow-hidden min-h-[100px]`}>
                 <div className="flex items-center justify-between px-2">
                     <div className="flex flex-col">
                         <h5 className={`mb-0 text-gray-900 font-black uppercase tracking-tight ${!isCollapsed ? 'text-[15px]' : 'text-[12px]'}`}>
                             {!isCollapsed ? 'Lịch Sử Thanh Toán' : 'Lịch Sử'}
                         </h5>
                         {!isCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Recently Paid Bills</span>}
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={onToggleCollapse}
-                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
-                            title={!isCollapsed ? "Collapse View" : "Expand View"}
-                        >
-                            {!isCollapsed ? (
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-                            ) : (
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                            )}
-                        </button>
-                        <span className="bg-gray-50 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                            {historyOrders.length} {!isCollapsed ? 'Orders' : ''}
-                        </span>
                     </div>
                 </div>
 
@@ -85,17 +69,6 @@ const CashierHistoryLane = ({
                                     {order.discount_amount > 0 && (
                                         <div className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">-{formatPrice(order.discount_amount)}đ</div>
                                     )}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                                    {order.cashier?.name || 'Staff'}
-                                </div>
-                                <div className="w-1 h-1 bg-gray-200 rounded-full"></div>
-                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                    {order.items?.length || 0} món
                                 </div>
                             </div>
 
