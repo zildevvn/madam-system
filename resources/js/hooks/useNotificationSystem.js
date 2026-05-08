@@ -18,12 +18,14 @@ export const useNotificationSystem = (user) => {
             const messages = response.data || [];
             const now = Date.now();
             
-            let latestUnreadRecentTime = 0;
+            let hasRecentUnread = false;
             let foundLatest = null;
+            let latestUnreadRecentTime = 0;
+            let earliestUnreadRecentTime = Infinity;
             const expiredIds = [];
 
-            const hasRecentUnread = messages.some(msg => {
-                if (msg.is_read) return false;
+            messages.forEach(msg => {
+                if (msg.is_read) return;
                 
                 let msgTime = new Date(msg.created_at).getTime();
                 // Fallback for different date formats
@@ -31,27 +33,33 @@ export const useNotificationSystem = (user) => {
                     msgTime = new Date(msg.created_at.replace(' ', 'T')).getTime();
                 }
 
-                if (isNaN(msgTime)) return false;
+                if (isNaN(msgTime)) return;
 
                 const diff = now - msgTime;
                 // Indicator shows for messages created in the last 10 minutes
                 if (diff < 10 * 60 * 1000) {
+                    hasRecentUnread = true;
                     if (msgTime > latestUnreadRecentTime) {
                         latestUnreadRecentTime = msgTime;
                         foundLatest = msg;
                     }
-                    return true;
+                    if (msgTime < earliestUnreadRecentTime) {
+                        earliestUnreadRecentTime = msgTime;
+                    }
                 } else {
                     // Automatically mark as read if older than 10 minutes
                     expiredIds.push(msg.id);
                 }
-                return false;
             });
 
             setHasNewNotification(hasRecentUnread);
             setLatestMessage(foundLatest);
+            
+            // Set lastEventTime to the earliest unread message to trigger timer for the first one that will expire
             if (hasRecentUnread) {
-                setLastEventTime(latestUnreadRecentTime);
+                setLastEventTime(earliestUnreadRecentTime);
+            } else {
+                setLastEventTime(0);
             }
 
             // Sync expired notifications to backend
@@ -79,15 +87,12 @@ export const useNotificationSystem = (user) => {
         if (window.Echo) {
             const channel = window.Echo.channel('system-notifications');
             channel.listen('.new-message', (e) => {
-                setHasNewNotification(true);
-                setLastEventTime(Date.now());
-                if (e.message) {
-                    setLatestMessage(e.message);
-                }
+                // When a new message arrives, we trigger a full check to update states and timers
+                checkNotifications();
             });
             return () => window.Echo.leaveChannel('system-notifications');
         }
-    }, []);
+    }, [checkNotifications]);
 
     // Expiry timer
     useEffect(() => {
@@ -98,7 +103,7 @@ export const useNotificationSystem = (user) => {
             
             const timer = setTimeout(() => {
                 checkNotifications();
-            }, remaining + 1000); 
+            }, remaining + 500); // 500ms buffer
             return () => clearTimeout(timer);
         }
     }, [hasNewNotification, lastEventTime, checkNotifications]);
