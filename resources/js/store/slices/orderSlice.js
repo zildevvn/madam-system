@@ -129,6 +129,52 @@ const orderSlice = createSlice({
       state.isModified = true;
       state.items = { byId: {}, allIds: [] };
     },
+    updateOrderFromSocket: (state, action) => {
+      const order = action.payload;
+      // [WHY] Only update if this order belongs to the currently viewed table
+      // or is the specific order we are already tracking.
+      if (order && (order.id === state.activeOrderId || order.table_id === state.tableId)) {
+        state.activeOrderId = order.id;
+        state.orderStatus = order.status;
+        state.orderType = order.order_type;
+        state.tableId = order.table_id;
+        state.mergedTables = order.merged_tables;
+        state.orderNote = order.order_note || '';
+        state.guestCount = order.guest_count || 1;
+        state.isModified = false;
+        
+        // Surgical items update
+        state.items.byId = {};
+        state.items.allIds = [];
+        state.originalItems = {};
+        
+        if (order.items) {
+          order.items.forEach(orderItem => {
+            const product = orderItem.product;
+            if (product) {
+              const uniqueKey = `item-${orderItem.id}`;
+              const itemData = { 
+                ...product, 
+                id: uniqueKey,
+                product_id: product.id,
+                order_item_id: orderItem.id,
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '',
+                discount: orderItem.discount || 0,
+                discountType: orderItem.discount_type || 'fixed'
+              };
+              state.items.byId[uniqueKey] = itemData;
+              state.originalItems[uniqueKey] = { 
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '', 
+                type: product.type 
+              };
+              state.items.allIds.push(uniqueKey);
+            }
+          });
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -306,7 +352,8 @@ export const {
   setOrderNote,
   setGuestCount,
   clearCart,
-  startNewOrder
+  startNewOrder,
+  updateOrderFromSocket
 } = orderSlice.actions;
 
 // Selectors

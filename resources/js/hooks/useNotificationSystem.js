@@ -1,71 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getSystemMessagesApi, markSystemMessageAsReadApi } from '../services/systemMessageService';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { 
+    fetchNotificationsAsync, 
+    markNotificationAsReadAsync,
+    selectHasNewNotification,
+    selectLatestNotification,
+    selectNotificationLastUpdated,
+    selectNotificationSequence
+} from '../store/slices/notificationSlice';
+import { markSystemMessageAsReadApi } from '../services/systemMessageService';
 
 /**
  * useNotificationSystem Hook
- * [WHY] Decouples notification logic (fetching, marking as read, Echo listeners) 
- * from the Header component to adhere to SRP.
+ * [WHY] Decouples notification logic (expiry timers, API synchronization) 
+ * from the Header component while adhering to Rule 412 (Redux as source of truth).
  */
 export const useNotificationSystem = (user) => {
-    const [hasNewNotification, setHasNewNotification] = useState(false);
-    const [latestMessage, setLatestMessage] = useState(null);
-    const [lastEventTime, setLastEventTime] = useState(0);
+    const dispatch = useAppDispatch();
+    
+    // [RULE] Select from Redux state instead of local useState
+    const hasNewNotification = useAppSelector(selectHasNewNotification);
+    const latestMessage = useAppSelector(selectLatestNotification);
+    const lastUpdated = useAppSelector(selectNotificationLastUpdated);
+    const socketSequence = useAppSelector(selectNotificationSequence);
 
-    const checkNotifications = useCallback(async () => {
+    const checkNotifications = useCallback(() => {
         if (!user) return;
-        try {
-            const response = await getSystemMessagesApi(user.id);
-            const messages = response.data || [];
-            const now = Date.now();
-            
-            let latestUnreadRecentTime = 0;
-            let foundLatest = null;
-            const expiredIds = [];
-
-            const hasRecentUnread = messages.some(msg => {
-                if (msg.is_read) return false;
-                
-                let msgTime = new Date(msg.created_at).getTime();
-                // Fallback for different date formats
-                if (isNaN(msgTime) && msg.created_at) {
-                    msgTime = new Date(msg.created_at.replace(' ', 'T')).getTime();
-                }
-
-                if (isNaN(msgTime)) return false;
-
-                const diff = now - msgTime;
-                // Indicator shows for messages created in the last 10 minutes
-                if (diff < 10 * 60 * 1000) {
-                    if (msgTime > latestUnreadRecentTime) {
-                        latestUnreadRecentTime = msgTime;
-                        foundLatest = msg;
-                    }
-                    return true;
-                } else {
-                    // Automatically mark as read if older than 10 minutes
-                    expiredIds.push(msg.id);
-                }
-                return false;
-            });
-
-            setHasNewNotification(hasRecentUnread);
-            setLatestMessage(foundLatest);
-            if (hasRecentUnread) {
-                setLastEventTime(latestUnreadRecentTime);
-            }
-
-            // Sync expired notifications to backend
-            if (expiredIds.length > 0) {
-                expiredIds.forEach(id => {
-                    markSystemMessageAsReadApi(id, user.id).catch(err => 
-                        console.error(`Failed to auto-mark message ${id} as read:`, err)
-                    );
-                });
-            }
-        } catch (error) {
-            console.error('Error checking notifications:', error);
-        }
-    }, [user]);
+        dispatch(fetchNotificationsAsync(user.id));
+    }, [user, dispatch]);
 
     // Initial check
     useEffect(() => {
@@ -74,38 +36,25 @@ export const useNotificationSystem = (user) => {
         }
     }, [user, checkNotifications]);
 
-    // Real-time listener
+    // [WHY] Automatic expiry of notifications (older than 10 mins)
     useEffect(() => {
-        if (window.Echo) {
-            const channel = window.Echo.channel('system-notifications');
-            channel.listen('.new-message', (e) => {
-                setHasNewNotification(true);
-                setLastEventTime(Date.now());
-                if (e.message) {
-                    setLatestMessage(e.message);
-                }
-            });
-            return () => window.Echo.leaveChannel('system-notifications');
-        }
-    }, []);
+        if (!user || !hasNewNotification || !lastUpdated) return;
 
-    // Expiry timer
-    useEffect(() => {
-        if (hasNewNotification && lastEventTime > 0) {
-            const now = Date.now();
-            const elapsed = now - lastEventTime;
-            const remaining = Math.max(0, 10 * 60 * 1000 - elapsed);
-            
-            const timer = setTimeout(() => {
-                checkNotifications();
-            }, remaining + 1000); 
-            return () => clearTimeout(timer);
-        }
-    }, [hasNewNotification, lastEventTime, checkNotifications]);
+        const now = Date.now();
+        const diff = now - lastUpdated;
+        const remaining = Math.max(0, 10 * 60 * 1000 - diff);
+        
+        const timer = setTimeout(() => {
+            checkNotifications();
+        }, remaining + 1000); 
+
+        return () => clearTimeout(timer);
+    }, [user, hasNewNotification, lastUpdated, checkNotifications]);
 
     return {
         hasNewNotification,
         latestMessage,
-        checkNotifications
+        checkNotifications,
+        socketSequence
     };
 };

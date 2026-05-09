@@ -46,6 +46,7 @@ class ReservationUpdated implements ShouldBroadcastNow
         return [
             'id' => $this->reservation->id,
             'action' => $this->action,
+            'reservation' => $this->reservation,
         ];
     }
 

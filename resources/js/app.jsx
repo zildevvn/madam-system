@@ -40,6 +40,9 @@ import { ROLES } from "./shared/constants/roles";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { updateReservationFromSocket } from "./store/slices/reservationSlice";
+import { updateOrderFromSocket } from "./store/slices/orderSlice";
+import { updateTableFromSocket, fetchTables } from "./store/slices/tableSlice";
+import { addNotificationFromSocket } from "./store/slices/notificationSlice";
 import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 
@@ -127,25 +130,59 @@ function App() {
         dispatch(fetchCategories());
     }, [dispatch]);
 
-    // [WHY] Global Real-time Listeners for Reservations
-    // [RULE] Real-time updates must go through Redux (Rule 412)
+    // [WHY] Global Real-time Listeners (Rule 412)
+    // [RULE] Public channel listeners should be registered once and stay active.
     useEffect(() => {
         if (window.Echo) {
-            const channel = window.Echo.channel('orders');
+            // 1. System Notifications (Public Channel)
+            const notificationChannel = window.Echo.channel('system-notifications');
+            notificationChannel.stopListening('.new-message'); // Prevent duplicates
+            notificationChannel.listen('.new-message', (data) => {
+                const message = data.message || data;
+                if (message) {
+                    dispatch(addNotificationFromSocket(message));
+                }
+            });
 
-            channel.listen('.reservation_updated', (data) => {
-                // [WHY] Update the normalized Redux store directly from the socket payload
-                // The backend sends { id: ..., action: ..., reservation: ... }
-                // Note: The backend event might need a small update to include the full reservation if it doesn't already
-                // but for now we follow the 'id' + 'reservation' payload structure.
+            // 2. Orders & Reservations (Public Channel)
+            const orderChannel = window.Echo.channel('orders');
+            
+            // Reservation updates
+            orderChannel.stopListening('.reservation_updated');
+            orderChannel.listen('.reservation_updated', (data) => {
                 dispatch(updateReservationFromSocket({
                     id: data.id.toString(),
                     reservation: data.reservation,
                     action: data.action
                 }));
+                
+                if (data.reservation?.table_id) {
+                    dispatch(updateTableFromSocket({
+                        id: data.reservation.table_id,
+                        status: data.action === 'confirmed' ? 'busy' : 'available'
+                    }));
+                }
             });
 
-            return () => window.Echo.leaveChannel('orders');
+            // Order updates
+            const handleOrderEvent = (data) => {
+                if (data.order) {
+                    dispatch(updateOrderFromSocket(data.order));
+                    if (data.order.table) {
+                        dispatch(updateTableFromSocket(data.order.table));
+                    }
+                }
+                // [WHY] Always refresh tables list to keep Dashboard in sync
+                dispatch(fetchTables());
+            };
+
+            orderChannel.stopListening('.order_created');
+            orderChannel.stopListening('.order_updated');
+            orderChannel.stopListening('.item_status_updated');
+
+            orderChannel.listen('.order_created', handleOrderEvent);
+            orderChannel.listen('.order_updated', handleOrderEvent);
+            orderChannel.listen('.item_status_updated', handleOrderEvent);
         }
     }, [dispatch]);
 

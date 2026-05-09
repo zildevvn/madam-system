@@ -38,7 +38,7 @@ const HeaderMessageModal = ({ isOpen, onClose, onSuccess }) => {
                 {/* Header */}
                 <div className="px-4 py-3.5 md:px-6 md:py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                     <div>
-                        <h3 className="text-slate-900 font-black uppercase tracking-[0.15em] text-[13px]">New message</h3>
+                        <h4 className="text-slate-900 font-black uppercase tracking-[0.15em]">New message</h4>
                     </div>
                     <button
                         onClick={onClose}
