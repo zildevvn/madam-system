@@ -1,13 +1,28 @@
 import { useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { fetchNotificationsAsync, markNotificationAsReadAsync } from '../store/slices/notificationSlice';
+import { 
+    fetchNotificationsAsync, 
+    markNotificationAsReadAsync,
+    selectHasNewNotification,
+    selectLatestNotification,
+    selectNotificationLastUpdated,
+    selectNotificationSequence
+} from '../store/slices/notificationSlice';
 
+/**
+ * useNotificationSystem Hook
+ * [WHY] Decouples notification logic (expiry timers, API synchronization) 
+ * from the Header component while adhering to Rule 412 (Redux as source of truth).
+ */
 export const useNotificationSystem = (user) => {
     const dispatch = useAppDispatch();
+    
+    // [RULE] Select from Redux state instead of local useState
     const messages = useAppSelector(state => state.notification.messages);
-    const hasNewNotification = useAppSelector(state => state.notification.hasNewNotification);
-    const latestMessage = useAppSelector(state => state.notification.latestMessage);
-    const lastUpdated = useAppSelector(state => state.notification.lastUpdated);
+    const hasNewNotification = useAppSelector(selectHasNewNotification);
+    const latestMessage = useAppSelector(selectLatestNotification);
+    const lastUpdated = useAppSelector(selectNotificationLastUpdated);
+    const socketSequence = useAppSelector(selectNotificationSequence);
 
     const checkNotifications = useCallback(() => {
         if (!user) return;
@@ -26,7 +41,7 @@ export const useNotificationSystem = (user) => {
         dispatch(markNotificationAsReadAsync({ messageId, userId: user.id }));
     }, [user, dispatch]);
 
-    // Expiry timer and auto-mark-as-read logic
+    // Expiry timer and auto-mark-as-read logic (10-minute rule)
     useEffect(() => {
         if (hasNewNotification && messages.length > 0) {
             const now = Date.now();
@@ -70,6 +85,7 @@ export const useNotificationSystem = (user) => {
         hasNewNotification,
         latestMessage,
         checkNotifications,
-        markAsRead
+        markAsRead,
+        socketSequence
     };
 };

@@ -24,6 +24,7 @@ const initialState = {
     hasNewNotification: false,
     latestMessage: null,
     lastUpdated: null,
+    socketSequence: 0,
 };
 
 const notificationSlice = createSlice({
@@ -33,15 +34,24 @@ const notificationSlice = createSlice({
         addNotificationFromSocket: (state, action) => {
             const message = action.payload;
             if (message) {
-                // Avoid duplicates
-                if (!state.messages.find(m => m.id === message.id)) {
+                // [WHY] Merge into existing messages or update existing one
+                const existingIdx = state.messages.findIndex(m => String(m.id) === String(message.id));
+                if (existingIdx === -1) {
                     state.messages = [message, ...state.messages];
+                } else {
+                    state.messages[existingIdx] = { ...state.messages[existingIdx], ...message };
                 }
-
-                // Update new indicator and latest message
-                state.hasNewNotification = true;
-                state.latestMessage = message;
-                state.lastUpdated = Date.now();
+                
+                // Sort by date descending to ensure consistency
+                state.messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                // [RULE] Real-time updates must trigger immediate visibility if unread
+                if (!message.is_read) {
+                    state.hasNewNotification = true;
+                    state.latestMessage = message;
+                    state.lastUpdated = Date.now();
+                    state.socketSequence += 1;
+                }
             }
         },
         clearNewNotificationIndicator: (state) => {
@@ -55,9 +65,25 @@ const notificationSlice = createSlice({
             })
             .addCase(fetchNotificationsAsync.fulfilled, (state, action) => {
                 state.status = 'idle';
-                state.messages = action.payload;
+                
+                // [WHY] Use a Map for efficient, deduplicated merging of API and Socket data
+                const apiMessages = action.payload || [];
+                const messageMap = new Map();
+                
+                // 1. Seed with existing state (might contain fresh socket messages)
+                state.messages.forEach(m => messageMap.set(String(m.id), m));
+                
+                // 2. Merge API data (might contain updates like is_read status)
+                apiMessages.forEach(m => {
+                    const id = String(m.id);
+                    messageMap.set(id, { ...messageMap.get(id), ...m });
+                });
 
-                // Recalculate hasNewNotification and latestMessage based on 10 min rule
+                // 3. Update state with sorted array
+                state.messages = Array.from(messageMap.values()).sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
+                });
+                
                 const now = Date.now();
                 let latestUnreadRecent = null;
                 let latestUnreadRecentTime = 0;
@@ -66,13 +92,15 @@ const notificationSlice = createSlice({
                 state.messages.forEach(msg => {
                     if (msg.is_read) return;
 
+                    // Robust date parsing
                     let msgTime = new Date(msg.created_at).getTime();
-                    if (isNaN(msgTime) && msg.created_at) {
+                    if (isNaN(msgTime) && typeof msg.created_at === 'string') {
                         msgTime = new Date(msg.created_at.replace(' ', 'T')).getTime();
                     }
 
                     if (!isNaN(msgTime)) {
                         const diff = now - msgTime;
+                        // Recent = within last 10 minutes
                         if (diff < 10 * 60 * 1000) {
                             hasRecentUnread = true;
                             if (msgTime > latestUnreadRecentTime) {
@@ -83,6 +111,7 @@ const notificationSlice = createSlice({
                     }
                 });
 
+                // [RULE] Always update visibility to match the source of truth
                 state.hasNewNotification = hasRecentUnread;
                 state.latestMessage = latestUnreadRecent;
                 state.lastUpdated = now;
@@ -96,10 +125,9 @@ const notificationSlice = createSlice({
                 if (msg) {
                     msg.is_read = true;
                 }
-
+                
                 // Check if we still have any recent unread messages
                 if (state.latestMessage && state.latestMessage.id === messageId) {
-                    // Recalculate if the one we just read was the latest
                     const now = Date.now();
                     let nextLatest = null;
                     let nextLatestTime = 0;
@@ -132,5 +160,7 @@ export const { addNotificationFromSocket, clearNewNotificationIndicator } = noti
 export const selectNotifications = state => state.notification.messages;
 export const selectHasNewNotification = state => state.notification.hasNewNotification;
 export const selectLatestNotification = state => state.notification.latestMessage;
+export const selectNotificationLastUpdated = state => state.notification.lastUpdated;
+export const selectNotificationSequence = state => state.notification.socketSequence;
 
 export default notificationSlice.reducer;

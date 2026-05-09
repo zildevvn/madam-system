@@ -28,6 +28,7 @@ export default function Header({ onlyBanner = false }) {
         hasNewNotification,
         latestMessage,
         checkNotifications,
+        markAsRead,
         socketSequence
     } = useNotificationSystem(user);
 
@@ -62,7 +63,7 @@ export default function Header({ onlyBanner = false }) {
     if (onlyBanner) {
         return (
             <div className="fixed top-0 left-0 right-0 z-[100] font-primary">
-                {showBanner && <HeaderBanner key={latestMessage?.id} />}
+                {showBanner && <HeaderBanner key={`banner-${latestMessage?.id}-${socketSequence}`} />}
             </div>
         );
     }
@@ -70,7 +71,7 @@ export default function Header({ onlyBanner = false }) {
     return (
         <>
             <header className={`bg-white/95 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-100 transition-all duration-300 ${isFixedLayout || showBanner ? 'shadow-sm' : 'shadow-none'}`}>
-                {showBanner && <HeaderBanner key={latestMessage?.id} />}
+                {showBanner && <HeaderBanner key={`header-banner-${latestMessage?.id}-${socketSequence}`} />}
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16 md:h-20">
                         <div className="flex">

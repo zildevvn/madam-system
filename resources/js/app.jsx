@@ -40,13 +40,9 @@ import { ROLES } from "./shared/constants/roles";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { updateReservationFromSocket } from "./store/slices/reservationSlice";
-<<<<<<< HEAD
-import { addNotificationFromSocket, fetchNotificationsAsync } from "./store/slices/notificationSlice";
-=======
 import { updateOrderFromSocket } from "./store/slices/orderSlice";
 import { updateTableFromSocket, fetchTables } from "./store/slices/tableSlice";
-import { addNotificationFromSocket } from "./store/slices/notificationSlice";
->>>>>>> feature-notification
+import { addNotificationFromSocket, fetchNotificationsAsync } from "./store/slices/notificationSlice";
 import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 
@@ -98,22 +94,20 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
                 case ROLES.MANAGER:
                 case ROLES.ORDER_STAFF:
                 case ROLES.SELLER: return { path: '/staff-order', label: 'Go to Order Page' };
-                default: return { path: '/', label: 'Return to Home' };
+                default: return { path: '/', label: 'Go to Home' };
             }
         };
 
         const redirect = getRoleRedirect(user.role);
 
         return (
-            <div className="min-h-screen bg-gray-50">
-                <Header />
-                <div className="flex flex-col items-center justify-center pt-50 px-4">
-                    <div className="text-red-500 font-bold text-3xl mb-4">403</div>
-                    <h3 className="mb-3">Unauthorized Access</h3>
-                    <p className="text-gray-500 mb-8 max-w-md text-center">You do not have the required permissions to view this page. Please return to your designated workspace.</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
+                <div className="bg-red-50 p-6 rounded-2xl border border-red-100 max-w-md">
+                    <h3 className="text-red-800 font-bold text-lg mb-2">Access Denied</h3>
+                    <p className="text-red-600 mb-6">You don't have permission to access this page.</p>
                     <Link
                         to={redirect.path}
-                        className="mdt-btn"
+                        className="inline-block px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
                     >
                         {redirect.label}
                     </Link>
@@ -139,31 +133,10 @@ function App() {
     // [RULE] Public channel listeners should be registered once and stay active.
     useEffect(() => {
         if (window.Echo) {
-<<<<<<< HEAD
+            // 1. Orders & Reservations (Public Channel)
             const orderChannel = window.Echo.channel('orders');
-            orderChannel.listen('.reservation_updated', (data) => {
-                // [WHY] Update the normalized Redux store directly from the socket payload
-                // The backend sends { id: ..., action: ..., reservation: ... }
-                // Note: The backend event might need a small update to include the full reservation if it doesn't already
-                // but for now we follow the 'id' + 'reservation' payload structure.
-=======
-            // 1. System Notifications (Public Channel)
-            const notificationChannel = window.Echo.channel('system-notifications');
-            notificationChannel.stopListening('.new-message'); // Prevent duplicates
-            notificationChannel.listen('.new-message', (data) => {
-                const message = data.message || data;
-                if (message) {
-                    dispatch(addNotificationFromSocket(message));
-                }
-            });
-
-            // 2. Orders & Reservations (Public Channel)
-            const orderChannel = window.Echo.channel('orders');
-
-            // Reservation updates
             orderChannel.stopListening('.reservation_updated');
             orderChannel.listen('.reservation_updated', (data) => {
->>>>>>> feature-notification
                 dispatch(updateReservationFromSocket({
                     id: data.id.toString(),
                     reservation: data.reservation,
@@ -178,13 +151,30 @@ function App() {
                 }
             });
 
-            const notificationChannel = window.Echo.channel('system-notifications');
-            notificationChannel.listen('.new-message', (data) => {
-                if (data.message) {
-                    dispatch(addNotificationFromSocket(data.message));
-                    if (user) {
-                        dispatch(fetchNotificationsAsync(user.id));
+            const handleOrderEvent = (data) => {
+                if (data.order) {
+                    dispatch(updateOrderFromSocket(data.order));
+                    if (data.order.table) {
+                        dispatch(updateTableFromSocket(data.order.table));
                     }
+                }
+                dispatch(fetchTables());
+            };
+
+            orderChannel.stopListening('.order_created');
+            orderChannel.stopListening('.order_updated');
+            orderChannel.stopListening('.item_status_updated');
+            orderChannel.listen('.order_created', handleOrderEvent);
+            orderChannel.listen('.order_updated', handleOrderEvent);
+            orderChannel.listen('.item_status_updated', handleOrderEvent);
+
+            // 2. System Notifications (Public Channel)
+            const notificationChannel = window.Echo.channel('system-notifications');
+            notificationChannel.stopListening('.new-message');
+            notificationChannel.listen('.new-message', (data) => {
+                const message = data.message || data;
+                if (message) {
+                    dispatch(addNotificationFromSocket(message));
                 }
             });
 
@@ -193,7 +183,7 @@ function App() {
                 window.Echo.leaveChannel('system-notifications');
             };
         }
-    }, [dispatch, user]);
+    }, [dispatch]);
 
     return (
         <BrowserRouter>
@@ -219,32 +209,30 @@ function App() {
                     {/* Bill page: Access by admin, bill */}
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
 
-                    {/* Kitchen page: Access by admin, kitchen */}
-                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout hideHeader={true}><Kitchen /></DefaultLayout></RoleProtectedRoute>} />
-
-                    {/* Bar page: Access by admin, bar */}
-                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
-
-                    {/* Admin: strictly admin only - Refactored to subpages */}
-                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
+                    {/* Admin Dashboard */}
+                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
                         <Route index element={<AdminContent />} />
-                        <Route path="revenue" element={<AdminContent />} />
                         <Route path="personnel" element={<PersonnelPage />} />
                         <Route path="tables" element={<TableManagement />} />
                         <Route path="products" element={<ProductManagement />} />
                     </Route>
 
-                    {/* Checkout (Related to cashier/billing) */}
-                    <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={['cashier', 'bill']}><Checkout /></RoleProtectedRoute>} />
+                    {/* Kitchen and Bar: Access by admin, kitchen, bar */}
+                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout><Kitchen mode="bar" /></DefaultLayout></RoleProtectedRoute>} />
                 </Route>
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <Toaster position="top-right" />
         </BrowserRouter>
     );
 }
 
-ReactDOM.createRoot(document.getElementById("app")).render(
-    <Provider store={store}>
-        <Toaster position="top-right" reverseOrder={false} />
-        <App />
-    </Provider>
-);
+if (document.getElementById('app')) {
+    const root = ReactDOM.createRoot(document.getElementById('app'));
+    root.render(
+        <Provider store={store}>
+            <App />
+        </Provider>
+    );
+}
