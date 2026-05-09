@@ -37,7 +37,7 @@ const notificationSlice = createSlice({
                 if (!state.messages.find(m => m.id === message.id)) {
                     state.messages = [message, ...state.messages];
                 }
-                
+
                 // Update new indicator and latest message
                 state.hasNewNotification = true;
                 state.latestMessage = message;
@@ -56,7 +56,7 @@ const notificationSlice = createSlice({
             .addCase(fetchNotificationsAsync.fulfilled, (state, action) => {
                 state.status = 'idle';
                 state.messages = action.payload;
-                
+
                 // Recalculate hasNewNotification and latestMessage based on 10 min rule
                 const now = Date.now();
                 let latestUnreadRecent = null;
@@ -96,7 +96,7 @@ const notificationSlice = createSlice({
                 if (msg) {
                     msg.is_read = true;
                 }
-                
+
                 // Check if we still have any recent unread messages
                 if (state.latestMessage && state.latestMessage.id === messageId) {
                     // Recalculate if the one we just read was the latest

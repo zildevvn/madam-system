@@ -61,6 +61,14 @@ const tableSlice = createSlice({
         }
       });
     },
+    updateTableFromSocket: (state, action) => {
+      const { id, status, active_order, active_orders } = action.payload;
+      if (state.byId[id]) {
+        if (status) state.byId[id].status = status;
+        if (active_order !== undefined) state.byId[id].active_order = active_order;
+        if (active_orders !== undefined) state.byId[id].active_orders = active_orders;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -143,7 +151,7 @@ const tableSlice = createSlice({
   },
 });
 
-export const { setActiveTab, patchItemsStatus, optimisticallyCompleteOrder } = tableSlice.actions;
+export const { setActiveTab, patchItemsStatus, optimisticallyCompleteOrder, updateTableFromSocket } = tableSlice.actions;
 
 // Selectors
 const selectTablesState = state => state.table;

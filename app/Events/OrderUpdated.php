@@ -44,6 +44,7 @@ class OrderUpdated implements ShouldBroadcastNow
             'id' => $this->order->id,
             'table_id' => $this->order->table_id,
             'action' => $this->action,
+            'order' => $this->order->load(['items.product', 'table', 'server', 'cashier']),
         ];
     }
 

@@ -37,7 +37,7 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                 {/* Header */}
                 <div className="px-4 py-3.5 md:px-6 md:py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                     <div>
-                        <h3 className="text-slate-900 font-black uppercase tracking-[0.15em]">Notifications</h3>
+                        <h4 className="text-slate-900 font-black uppercase tracking-[0.15em]">Notifications</h4>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3">
                         <button

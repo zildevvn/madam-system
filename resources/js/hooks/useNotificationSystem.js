@@ -9,7 +9,7 @@ export const useNotificationSystem = (user) => {
     const latestMessage = useAppSelector(state => state.notification.latestMessage);
     const lastUpdated = useAppSelector(state => state.notification.lastUpdated);
 
-    const checkNotifications = useCallback(async () => {
+    const checkNotifications = useCallback(() => {
         if (!user) return;
         dispatch(fetchNotificationsAsync(user.id));
     }, [user, dispatch]);
@@ -39,7 +39,7 @@ export const useNotificationSystem = (user) => {
                 if (isNaN(msgTime) && msg.created_at) {
                     msgTime = new Date(msg.created_at.replace(' ', 'T')).getTime();
                 }
-                
+
                 if (!isNaN(msgTime)) {
                     const expiry = msgTime + 10 * 60 * 1000;
                     if (expiry <= now) {

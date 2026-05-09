@@ -17,7 +17,7 @@ export default function Header({ onlyBanner = false }) {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { user } = useAppSelector(state => state.auth);
-    
+
     // UI State
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
@@ -27,7 +27,8 @@ export default function Header({ onlyBanner = false }) {
     const {
         hasNewNotification,
         latestMessage,
-        checkNotifications
+        checkNotifications,
+        socketSequence
     } = useNotificationSystem(user);
 
     // Navigation logic
@@ -135,7 +136,7 @@ export default function Header({ onlyBanner = false }) {
                 </div>
             </header>
 
-            <Sidebar 
+            <Sidebar
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
                 user={user}

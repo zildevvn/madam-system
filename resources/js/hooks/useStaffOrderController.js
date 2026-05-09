@@ -33,26 +33,7 @@ export const useStaffOrderController = () => {
         }
     }, [status, dispatch]);
 
-    // ✅ Realtime (safe)
-    useEffect(() => {
-        if (!window.Echo) return;
 
-        const channel = window.Echo.channel('orders');
-
-        const handleUpdate = () => {
-            dispatch(fetchTables());
-        };
-
-        channel.listen('.order_created', handleUpdate)
-            .listen('.order_updated', handleUpdate)
-            .listen('.item_status_updated', handleUpdate);
-
-        return () => {
-            channel.stopListening('.order_created', handleUpdate);
-            channel.stopListening('.order_updated', handleUpdate);
-            channel.stopListening('.item_status_updated', handleUpdate);
-        };
-    }, [dispatch]);
 
     // ✅ Stable action
     const handleTableClick = useCallback(async (tableId) => {

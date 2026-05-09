@@ -5,6 +5,7 @@ import orderReducer from './slices/orderSlice';
 import authReducer from './slices/authSlice';
 import reservationReducer from './slices/reservationSlice';
 import expenseReducer from './slices/expenseSlice';
+import notificationReducer from './slices/notificationSlice';
 
 import notificationReducer from './slices/notificationSlice';
 
