@@ -194,6 +194,7 @@ function App() {
                     {/* Order page: Access by admin, manager, order_staff, seller */}
                     <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
                     <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
+                    <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><Checkout /></RoleProtectedRoute>} />
 
                     {/* Reservations: Access by admin, manager, order_staff, seller */}
                     <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
