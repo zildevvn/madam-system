@@ -60,6 +60,64 @@ const RevenueStatsContent = ({ stats, loading }) => {
                         </div>
                     </div>
                 </div>
+                <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-slate-100 to-transparent mb-3 md:mb-6"></div>
+                
+                <p className="w-full text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 text-center">Phân loại thanh toán</p>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                    {/* Cash */}
+                    <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100/50 group transition-all hover:bg-emerald-50">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-white rounded-lg text-emerald-600 shadow-sm">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Tiền mặt</span>
+                        </div>
+                        <div className="text-xl font-black text-slate-900">{formatPrice(stats?.cash_revenue)}đ</div>
+                    </div>
+
+                    {/* Bank */}
+                    <div className="bg-blue-50/40 p-4 rounded-2xl border border-blue-100/50 group transition-all hover:bg-blue-50">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Chuyển khoản</span>
+                        </div>
+                        <div className="text-xl font-black text-slate-900">{formatPrice(stats?.bank_revenue)}đ</div>
+                    </div>
+
+                    {/* Card */}
+                    <div className="bg-orange-50/40 p-4 rounded-2xl border border-orange-100/50 group transition-all hover:bg-orange-50">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-white rounded-lg text-orange-600 shadow-sm">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6" />
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">Cà thẻ</span>
+                        </div>
+                        <div className="text-xl font-black text-slate-900">{formatPrice(stats?.card_revenue)}đ</div>
+                    </div>
+
+                    {/* Debt */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 group transition-all hover:bg-slate-100">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-white rounded-lg text-slate-600 shadow-sm border border-slate-100">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Công nợ</span>
+                        </div>
+                        <div className="text-xl font-black text-slate-900">{formatPrice(stats?.debt_revenue)}đ</div>
+                    </div>
+                </div>
             </div>
         </div>
     );

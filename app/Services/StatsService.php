@@ -47,7 +47,11 @@ class StatsService
                 COALESCE(SUM(orders.total_price), 0) as total_revenue,
                 COUNT(orders.id) as total_orders,
                 COUNT(CASE WHEN orders.reservation_id IS NULL OR reservations.type = 'individual' THEN 1 END) as individual_orders,
-                COUNT(CASE WHEN reservations.type = 'group' THEN 1 END) as group_orders
+                COUNT(CASE WHEN reservations.type = 'group' THEN 1 END) as group_orders,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.total_price ELSE 0 END), 0) as cash_revenue,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'bank' THEN orders.total_price ELSE 0 END), 0) as bank_revenue,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.total_price ELSE 0 END), 0) as card_revenue,
+                COALESCE(SUM(CASE WHEN orders.payment_method = 'debt' THEN orders.total_price ELSE 0 END), 0) as debt_revenue
             ")
             ->first();
 
@@ -85,6 +89,10 @@ class StatsService
             'total_orders' => (int)$stats->total_orders,
             'individual_orders' => (int)$stats->individual_orders,
             'group_orders' => (int)$stats->group_orders,
+            'cash_revenue' => (float)$stats->cash_revenue,
+            'bank_revenue' => (float)$stats->bank_revenue,
+            'card_revenue' => (float)$stats->card_revenue,
+            'debt_revenue' => (float)$stats->debt_revenue,
             'total_expenses' => (float)$expenseStats->total_expenses,
             'fixed_expenses' => (float)$expenseStats->fixed_expenses,
             'variable_expenses' => (float)$expenseStats->variable_expenses,

@@ -84,7 +84,15 @@ const ExpenseManagement = () => {
     }
 
     return (
-        <div className="space-y-4 py-5 lg:space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 overflow-x-hidden">
+        <div className="space-y-4 py-5 lg:space-y-6 duration-700 overflow-x-hidden">
+            <ExpenseFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleFormSubmit}
+                expense={editingExpense}
+                categories={categories}
+                processing={processing}
+            />
             <div className="w-full max-w-[1600px] mx-auto px-[20px]">
                 {/* Header / Actions Area */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -145,15 +153,6 @@ const ExpenseManagement = () => {
                         </div>
                     )}
                 </div>
-
-                <ExpenseFormModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSubmit={handleFormSubmit}
-                    expense={editingExpense}
-                    categories={categories}
-                    processing={processing}
-                />
             </div>
         </div>
     );
