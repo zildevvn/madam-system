@@ -47,7 +47,7 @@ const PaymentModalFooter = ({
                     <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${showExtras ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                     </svg>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Giảm giá & Ghi chú</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Giảm giá tổng & Ghi chú Tổng</span>
                 </div>
                 {(discountValue > 0 || itemDiscountsTotal > 0 || cashierNote) && (
                     <div className="flex items-center gap-1.5">
@@ -167,11 +167,11 @@ const PaymentModalFooter = ({
             {/* Action Buttons */}
             <div className="px-4 pb-4 pt-1 flex flex-col gap-2">
                 {!isSplitMode && step === 1 && !isHistoryEdit && (
-                    <button 
+                    <button
                         onClick={() => setIsSplitMode(true)}
                         className="w-full bg-white border border-orange-100 text-orange-500 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-50 transition-colors cursor-pointer"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 3v18M16 3v18M3 8h18M3 16h18"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 3v18M16 3v18M3 8h18M3 16h18" /></svg>
                         Tách hóa đơn
                     </button>
                 )}
@@ -179,13 +179,13 @@ const PaymentModalFooter = ({
                 <div className="grid grid-cols-2 gap-2">
                     {isSplitMode ? (
                         <>
-                            <button 
+                            <button
                                 onClick={() => setIsSplitMode(false)}
                                 className="mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold border-none text-sm py-2.5 cursor-pointer"
                             >
                                 Hủy tách
                             </button>
-                            <button 
+                            <button
                                 disabled={selectedSplitItemsCount === 0 || isProcessing}
                                 onClick={handleSplitOrder}
                                 className={`mdt-btn rounded-xl font-bold border-none text-sm py-2.5 cursor-pointer ${selectedSplitItemsCount === 0 || isProcessing ? '!bg-gray-200 !text-gray-400 grayscale shadow-none' : ''}`}
