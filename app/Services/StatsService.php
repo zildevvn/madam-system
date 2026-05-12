@@ -55,34 +55,44 @@ class StatsService
             ")
             ->first();
 
-        // Calculate Expenses for the same period
-        $expenseQuery = Expense::query();
+        // [RULE] Fixed expenses only respond to Month and Year filters.
+        // [RULE] Variable expenses respond to all filters (Day, Week, Month, Year).
+        
+        // 1. Variable Expenses Query (Responds to all filters)
+        $variableQuery = Expense::where('type', 'variable');
         switch ($period) {
             case 'week':
                 if ($startDate && $endDate) {
-                    $expenseQuery->whereBetween('date', [$startDate, $endDate]);
+                    $variableQuery->whereBetween('date', [$startDate, $endDate]);
                 } else {
-                    $expenseQuery->whereBetween('date', [$referenceDate->copy()->startOfWeek()->toDateString(), $referenceDate->copy()->endOfWeek()->toDateString()]);
+                    $variableQuery->whereBetween('date', [$referenceDate->copy()->startOfWeek()->toDateString(), $referenceDate->copy()->endOfWeek()->toDateString()]);
                 }
                 break;
             case 'month':
-                $expenseQuery->whereMonth('date', $referenceDate->month)
-                             ->whereYear('date', $referenceDate->year);
+                $variableQuery->whereMonth('date', $referenceDate->month)
+                              ->whereYear('date', $referenceDate->year);
                 break;
             case 'year':
-                $expenseQuery->whereYear('date', $referenceDate->year);
+                $variableQuery->whereYear('date', $referenceDate->year);
                 break;
             case 'day':
             default:
-                $expenseQuery->whereDate('date', $referenceDate->toDateString());
+                $variableQuery->whereDate('date', $referenceDate->toDateString());
                 break;
         }
 
-        $expenseStats = $expenseQuery->selectRaw("
-            COALESCE(SUM(amount), 0) as total_expenses,
-            COALESCE(SUM(CASE WHEN type = 'fixed' THEN amount ELSE 0 END), 0) as fixed_expenses,
-            COALESCE(SUM(CASE WHEN type = 'variable' THEN amount ELSE 0 END), 0) as variable_expenses
-        ")->first();
+        // 2. Fixed Expenses Query (Only Month/Year)
+        // [RULE] If period is day or week, we show fixed expenses for the whole month.
+        $fixedQuery = Expense::where('type', 'fixed');
+        if ($period === 'year') {
+            $fixedQuery->whereYear('date', $referenceDate->year);
+        } else {
+            $fixedQuery->whereMonth('date', $referenceDate->month)
+                       ->whereYear('date', $referenceDate->year);
+        }
+
+        $fixedExpenses = (float)(clone $fixedQuery)->sum('amount');
+        $variableExpenses = (float)(clone $variableQuery)->sum('amount');
 
         return [
             'total_revenue' => (float)$stats->total_revenue,
@@ -93,14 +103,14 @@ class StatsService
             'bank_revenue' => (float)$stats->bank_revenue,
             'card_revenue' => (float)$stats->card_revenue,
             'debt_revenue' => (float)$stats->debt_revenue,
-            'total_expenses' => (float)$expenseStats->total_expenses,
-            'fixed_expenses' => (float)$expenseStats->fixed_expenses,
-            'variable_expenses' => (float)$expenseStats->variable_expenses,
-            // [WHY] Specialized operational metrics and itemized lists requested by the user.
+            'total_expenses' => $fixedExpenses + $variableExpenses,
+            'fixed_expenses' => $fixedExpenses,
+            'variable_expenses' => $variableExpenses,
+            'fixed_items' => $fixedQuery->orderBy('date', 'desc')->get(),
+            'variable_items' => $variableQuery->orderBy('date', 'desc')->get(),
+            // [RULE] Keep legacy values for backward compatibility
             'fixed_expenses_month' => (float)Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('amount'),
             'variable_expenses_day' => (float)Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->sum('amount'),
-            'fixed_items_month' => Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->orderBy('date', 'desc')->get(),
-            'variable_items_day' => Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->orderBy('created_at', 'desc')->get(),
             'period' => $period
         ];
     }

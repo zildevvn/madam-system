@@ -65,6 +65,7 @@ const ActiveOrderTableCard = React.memo(({
                         {order.guestCount}
                     </span>
                 )}
+
                 {(order?.orderNote || order?.items?.some(i => i.note)) && (
                     <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
                         <NoteIcon />

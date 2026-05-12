@@ -1,11 +1,11 @@
 import React from 'react';
 
 /**
- * RevenuePeriodSelector
- * [WHY] Provides a clean segmented control for switching report scope.
+ * AdminPeriodSelector
+ * [WHY] Provides a clean segmented control for switching report scope across the admin panel.
  * [RULE] Minimal UI component, logic is passed down via props.
  */
-const RevenuePeriodSelector = ({ periods, currentPeriod, onPeriodChange }) => {
+const AdminPeriodSelector = ({ periods, currentPeriod, onPeriodChange }) => {
     return (
         <div className="flex bg-slate-200/50 p-1 rounded-[14px] w-full md:w-auto overflow-x-auto no-scrollbar">
             {periods.map((p) => (
@@ -23,4 +23,4 @@ const RevenuePeriodSelector = ({ periods, currentPeriod, onPeriodChange }) => {
     );
 };
 
-export default RevenuePeriodSelector;
+export default AdminPeriodSelector;
