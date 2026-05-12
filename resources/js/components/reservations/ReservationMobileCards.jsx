@@ -12,7 +12,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                     <div
                         key={r.id}
                         className={`
-                            rounded-xl p-2 shadow-sm transition-all space-y-2 bg-white
+                            rounded-lg p-2 shadow-sm transition-all space-y-2 bg-white
                             ${r.status === 'completed' ? 'opacity-50 line-through' : ''}
                         `}
                     >
@@ -29,7 +29,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                                         </span>
                                     )}
                                 </div>
-                                <span className="text-base font-black text-gray-900">
+                                <span className="text-[13px] font-black text-gray-900">
                                     {r.type === 'group' ? r.tour_guide_name : r.lead_name}
                                     {r.phone && ` | ${r.phone}`}
                                 </span>
@@ -43,28 +43,36 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                                 </span>
                                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100/30 rounded-lg">
                                     <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-                                    <span className="text-[13px] font-black text-gray-700">{r.number_of_guests}</span>
+                                    <span className="text-[12px] font-black text-gray-700">{r.number_of_guests}</span>
                                 </div>
                             </div>
                         </div>
 
+                        {r.note && (
+                            <div className="px-2">
+                                <p className="text-[11px] text-gray-500 leading-relaxed italic line-clamp-2">
+                                    "{r.note}"
+                                </p>
+                            </div>
+                        )}
+
                         <div className={`grid ${(r.type === 'individual' && r.status !== 'completed') ? 'grid-cols-3' : 'grid-cols-2'} gap-3 pt-2`}>
                             <button
                                 onClick={() => onView(r)}
-                                className="py-2 bg-gray-100 text-gray-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all border-none cursor-pointer"
+                                className="py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all border-none cursor-pointer"
                             >
                                 View
                             </button>
                             <button
                                 onClick={() => onEdit(r.id)}
-                                className="py-2 bg-orange-100 text-orange-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer"
+                                className="py-1 bg-orange-100 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer"
                             >
                                 Edit
                             </button>
                             {r.type === 'individual' && r.status !== 'completed' && (
                                 <button
                                     onClick={() => onDone(r)}
-                                    className="py-2 bg-green-100 text-green-600 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-green-200 transition-all border-none cursor-pointer"
+                                    className="py-1 bg-green-100 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-200 transition-all border-none cursor-pointer"
                                 >
                                     Arrived
                                 </button>

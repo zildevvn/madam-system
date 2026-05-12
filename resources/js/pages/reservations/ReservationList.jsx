@@ -284,8 +284,8 @@ const ReservationList = () => {
                     return stats.map((stat, i) => (
                         <div key={i} className="flex items-center gap-2" style={{ animationDelay: `${i * 100}ms` }}>
                             <div className="flex items-center w-full gap-1">
-                                <span className="text-[13px] font-black text-gray-900 tracking-widest uppercase">{stat.label}:</span>
-                                <span className="text-[13px] font-black text-gray-900 tracking-tight">{stat.value}</span>
+                                <span className="text-[11px] md:text-[13px] font-black text-gray-900 tracking-widest uppercase">{stat.label}:</span>
+                                <span className="text-[11px] md:text-[13px] font-black text-gray-900 tracking-tight">{stat.value}</span>
                             </div>
                         </div>
                     ));
