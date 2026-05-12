@@ -60,6 +60,7 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                 const tableObj = tables?.find(t => t.id.toString() === tableId.toString());
                 const tableNumber = tableObj?.name || tableId;
                 const tableName = order.tableName || order.mergedTables || tableNumber;
+                const itemNote = item.note || order.orderNote;
 
                 const tableInfo = { 
                     name: tableName, 
@@ -76,12 +77,12 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                         maxDiff: diff,
                         itemIds: [item.id],
                         orderId: order.id,
-                        tableNotes: item.note ? [{ tableName, note: item.note }] : []
+                        tableNotes: itemNote ? [{ tableName, note: itemNote }] : []
                     };
                 } else {
                     bucket[itemName].totalQuantity += item.quantity;
-                    if (item.note) {
-                        bucket[itemName].tableNotes.push({ tableName, note: item.note });
+                    if (itemNote) {
+                        bucket[itemName].tableNotes.push({ tableName, note: itemNote });
                     }
                     const existingTable = bucket[itemName].tables.find(t => t.name === tableName);
                     if (!existingTable) {

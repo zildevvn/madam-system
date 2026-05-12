@@ -3,9 +3,9 @@ import React from 'react';
 /**
  * Modal to display detailed notes for a dish, categorized by table.
  */
-const DelayWarningModal = ({ 
-    item, 
-    onClose 
+const DelayWarningModal = ({
+    item,
+    onClose
 }) => {
     if (!item) return null;
 
@@ -24,7 +24,7 @@ const DelayWarningModal = ({
                                 <ul className="space-y-3 relative z-10">
                                     {item.tableNotes.map((tn, nIdx) => (
                                         <li key={nIdx} className="flex gap-2 text-[15px]">
-                                            <span className="text-gray-400 font-bold shrink-0">Bàn {tn.tableName.toString().replace(/^Bàn\s+/i, 'Bàn ')}:</span>
+                                            <span className="text-gray-400 font-bold shrink-0">{tn.tableName.toString().replace(/^Bàn\s+/i, 'Bàn ')}:</span>
                                             <span className="text-orange-950 font-black italic">"{tn.note}"</span>
                                         </li>
                                     ))}

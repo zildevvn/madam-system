@@ -8,11 +8,12 @@ import { Button } from '../../ui/button';
 import { cn } from '../../../lib/utils';
 
 /**
- * RevenueDateFilters
- * [WHY] Houses all popover selectors for specific report dates.
+ * AdminDateFilters
+ * [WHY] Houses all popover selectors for specific report dates across the admin panel.
  * [RULE] Decoupled from state, communicates changes via callback props.
+ * Reusable for any admin section requiring Date, Week, Month, Year filtering.
  */
-const RevenueDateFilters = ({
+const AdminDateFilters = ({
     period,
     selectedDate,
     startDate,
@@ -28,6 +29,11 @@ const RevenueDateFilters = ({
         "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
     ];
 
+    // [WHY] Parsing once at the top level avoids repetitive splitting/parsing logic inside the JSX.
+    const dateObj = parseISO(selectedDate);
+    const currentYear = dateObj.getFullYear();
+    const currentMonthIdx = dateObj.getMonth();
+
     return (
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
             {period === 'day' && (
@@ -37,14 +43,14 @@ const RevenueDateFilters = ({
                             <span className="text-[6px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Chọn ngày</span>
                             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
                                 <CalendarIcon className="w-3 h-3 text-orange-500" />
-                                {format(parseISO(selectedDate), 'dd/MM/yyyy')}
+                                {format(dateObj, 'dd/MM/yyyy')}
                             </div>
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
                         <Calendar
                             mode="single"
-                            selected={parseISO(selectedDate)}
+                            selected={dateObj}
                             onSelect={(date) => date && setSelectedDate(format(date, 'yyyy-MM-dd'))}
                             disabled={{ after: new Date() }}
                             weekStartsOn={1}
@@ -101,27 +107,27 @@ const RevenueDateFilters = ({
                         <Button variant="outline" className="h-auto px-4 py-2 rounded-[14px] flex flex-col items-start bg-white border-slate-100 shadow-sm hover:border-orange-200">
                             <span className="text-[6px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Chọn tháng</span>
                             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase">
-                                {format(parseISO(selectedDate), 'MMMM yyyy', { locale: vi })}
+                                {format(dateObj, 'MMMM yyyy', { locale: vi })}
                                 <ChevronDown className="w-3 h-3 text-slate-400" />
                             </div>
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="p-4 w-72" align="end">
                         <div className="flex items-center justify-between mb-4 px-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Năm {selectedDate.split('-')[0]}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Năm {currentYear}</span>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                             {months.map((m, i) => {
-                                const isFuture = parseInt(selectedDate.split('-')[0]) === new Date().getFullYear() && i > new Date().getMonth();
-                                const isActive = parseInt(selectedDate.split('-')[1]) === i + 1;
+                                const isFuture = currentYear === new Date().getFullYear() && i > new Date().getMonth();
+                                const isActive = currentMonthIdx === i;
 
                                 return (
                                     <button
                                         key={m}
                                         disabled={isFuture}
                                         onClick={() => {
-                                            const currentYear = selectedDate.split('-')[0];
-                                            setSelectedDate(`${currentYear}-${(i + 1).toString().padStart(2, '0')}-01`);
+                                            const newDate = new Date(currentYear, i, 1);
+                                            setSelectedDate(format(newDate, 'yyyy-MM-dd'));
                                         }}
                                         className={cn(
                                             "px-2 py-3.5 text-[10px] font-bold rounded-xl text-center transition-all border",
@@ -148,7 +154,7 @@ const RevenueDateFilters = ({
                         <Button variant="outline" className="h-auto px-4 py-2 rounded-[14px] flex flex-col items-start bg-white border-slate-100 shadow-sm hover:border-orange-200">
                             <span className="text-[6px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Chọn năm</span>
                             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
-                                {selectedDate.split('-')[0]}
+                                {currentYear}
                                 <ChevronDown className="w-3 h-3 text-slate-400" />
                             </div>
                         </Button>
@@ -164,7 +170,7 @@ const RevenueDateFilters = ({
                                     onClick={() => setSelectedDate(`${year}-01-01`)}
                                     className={cn(
                                         "px-2 py-4 text-[11px] font-bold rounded-xl text-center transition-all border",
-                                        selectedDate.startsWith(year.toString())
+                                        currentYear === year
                                             ? "bg-orange-600 text-white border-orange-600 shadow-md scale-105"
                                             : "text-slate-600 border-transparent hover:border-slate-100 hover:bg-slate-50"
                                     )}
@@ -180,4 +186,4 @@ const RevenueDateFilters = ({
     );
 };
 
-export default RevenueDateFilters;
+export default AdminDateFilters;
