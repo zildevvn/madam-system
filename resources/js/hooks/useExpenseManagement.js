@@ -94,12 +94,16 @@ export const useExpenseManagement = () => {
             { value: 'other_fixed', label: 'Khác (Cố định)' },
         ],
         variable: [
-            { value: 'ingredients', label: 'Nguyên liệu thực phẩm' },
-            { value: 'drinks', label: 'Đồ uống & Bar' },
-            { value: 'marketing', label: 'Marketing / QC' },
-            { value: 'maintenance', label: 'Bảo trì / Sửa chữa' },
-            { value: 'supplies', label: 'Đồ dùng tiêu hao' },
-            { value: 'other_variable', label: 'Khác (Biến đổi)' },
+            { value: 'other', label: 'Other' },
+            { value: 'Cá', label: 'Cá' },
+            { value: 'Tôm', label: 'Tôm' },
+            { value: 'Thịt', label: 'Thịt' },
+            { value: 'Rau', label: 'Rau' },
+            { value: 'Gạo', label: 'Gạo' },
+            { value: 'Bún', label: 'Bún' },
+            { value: 'Bia', label: 'Bia' },
+            { value: 'Nước ngọt', label: 'Nước ngọt' },
+            { value: 'Nước suối', label: 'Nước suối' },
         ]
     }), []);
 

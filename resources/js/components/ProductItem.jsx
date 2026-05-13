@@ -161,10 +161,18 @@ export default function ProductItem({
                         
                         <div className="relative flex-1">
                             <input
-                                type="number"
+                                type={discountType === 'percent' ? 'number' : 'text'}
+                                inputMode={discountType === 'fixed' ? 'numeric' : 'decimal'}
                                 placeholder={discountType === 'percent' ? "Mức giảm %..." : "Mức giảm VNĐ..."}
-                                value={discountValue || ''}
-                                onChange={(e) => setDiscountValue(e.target.value)}
+                                value={discountValue === 0 ? '' : (discountType === 'fixed' ? formatPrice(discountValue) : discountValue)}
+                                onChange={(e) => {
+                                    if (discountType === 'percent') {
+                                        setDiscountValue(e.target.value);
+                                    } else {
+                                        const rawValue = e.target.value.replace(/\D/g, "");
+                                        setDiscountValue(rawValue ? parseInt(rawValue, 10) : 0);
+                                    }
+                                }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         if (onUpdateDiscount) onUpdateDiscount(item.id, { 
