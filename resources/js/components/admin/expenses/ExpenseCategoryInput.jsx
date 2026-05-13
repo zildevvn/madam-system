@@ -36,12 +36,21 @@ const ExpenseCategoryInput = ({
                             </div>
                         </>
                     ) : (
-                        <input
-                            {...register('category', { required: true })}
-                            type="text"
-                            placeholder="Nhập tên danh mục..."
-                            className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal placeholder:text-slate-300 transition-all shadow-inner ${error ? 'ring-2 ring-red-500/20 bg-red-50/20' : ''}`}
-                        />
+                        <>
+                            <select
+                                {...register('category', { required: true })}
+                                value={currentCategory || ''}
+                                className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-normal appearance-none transition-all shadow-inner tracking-tight ${error ? 'ring-2 ring-red-500/20 bg-red-50/20' : ''}`}
+                            >
+                                <option value="" disabled>Chọn danh mục...</option>
+                                {categories.variable.map(cat => (
+                                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
