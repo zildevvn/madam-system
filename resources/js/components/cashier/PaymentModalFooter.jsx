@@ -94,11 +94,17 @@ const PaymentModalFooter = ({
                             </div>
                             <div className="relative flex-1">
                                 <input
-                                    type="number"
-                                    value={discountValue === 0 ? '' : discountValue}
+                                    type={discountType === 'percent' ? 'number' : 'text'}
+                                    inputMode={discountType === 'fixed' ? 'numeric' : 'decimal'}
+                                    value={discountValue === 0 ? '' : (discountType === 'fixed' ? formatPrice(discountValue) : discountValue)}
                                     onChange={(e) => {
-                                        const val = e.target.value;
-                                        onUpdateDiscountValue(val === '' ? 0 : Math.max(0, parseFloat(val) || 0));
+                                        if (discountType === 'percent') {
+                                            const val = e.target.value;
+                                            onUpdateDiscountValue(val === '' ? 0 : Math.max(0, parseFloat(val) || 0));
+                                        } else {
+                                            const rawValue = e.target.value.replace(/\D/g, "");
+                                            onUpdateDiscountValue(rawValue ? parseInt(rawValue, 10) : 0);
+                                        }
                                     }}
                                     placeholder="Nhập mức giảm tổng..."
                                     className="w-full bg-white border border-gray-100 rounded-lg px-3 py-1.5 text-[16px] font-bold text-gray-700 outline-none focus:border-orange-200 transition-colors"
