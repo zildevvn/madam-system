@@ -149,9 +149,12 @@ class OrderService
                     }
                     $orderItem->save();
                 } else {
+                    $product = Product::find($productId);
                     $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $productId,
+                        'name' => $product?->name ?? 'Unknown Product',
+                        'type' => $productType,
                         'table_id' => $itemData['table_id'] ?? $order->table_id,
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
