@@ -81,14 +81,27 @@ class StatsService
                 break;
         }
 
-        // 2. Fixed Expenses Query (Only Month/Year)
-        // [RULE] If period is day or week, we show fixed expenses for the whole month.
+        // 2. Fixed Expenses Query (Responds to all filters)
         $fixedQuery = Expense::where('type', 'fixed');
-        if ($period === 'year') {
-            $fixedQuery->whereYear('date', $referenceDate->year);
-        } else {
-            $fixedQuery->whereMonth('date', $referenceDate->month)
-                       ->whereYear('date', $referenceDate->year);
+        switch ($period) {
+            case 'week':
+                if ($startDate && $endDate) {
+                    $fixedQuery->whereBetween('date', [$startDate, $endDate]);
+                } else {
+                    $fixedQuery->whereBetween('date', [$referenceDate->copy()->startOfWeek()->toDateString(), $referenceDate->copy()->endOfWeek()->toDateString()]);
+                }
+                break;
+            case 'month':
+                $fixedQuery->whereMonth('date', $referenceDate->month)
+                           ->whereYear('date', $referenceDate->year);
+                break;
+            case 'year':
+                $fixedQuery->whereYear('date', $referenceDate->year);
+                break;
+            case 'day':
+            default:
+                $fixedQuery->whereDate('date', $referenceDate->toDateString());
+                break;
         }
 
         $fixedExpenses = (float)(clone $fixedQuery)->sum('amount');

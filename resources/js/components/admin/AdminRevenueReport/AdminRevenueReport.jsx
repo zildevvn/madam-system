@@ -24,7 +24,7 @@ const AdminRevenueReport = ({ stats, loading }) => {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Unified Revenue Report Card */}
-            <div className={`bg-white rounded-[16px] shadow-sm border border-slate-100 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+            <div className={`bg-white rounded-[24px] shadow-sm border border-slate-100 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
                 
                 {/* Content Section: Metrics & Analytics */}
                 <RevenueStatsContent 

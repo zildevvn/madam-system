@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-export const getUsersApi = async () => {
-    const response = await axios.get('/api/users');
+export const getUsersApi = async (options = {}) => {
+    const response = await axios.get('/api/users', { signal: options.signal });
     return response.data;
 };
 
