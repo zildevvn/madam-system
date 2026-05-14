@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRevenueReport } from '../../hooks/useRevenueReport';
 import AdminRevenueReport from '../../components/admin/AdminRevenueReport/AdminRevenueReport';
+import AdminItemStats from '../../components/admin/AdminRevenueReport/AdminItemStats';
 import AdminProfitReport from '../../components/admin/AdminRevenueReport/AdminProfitReport';
 import AdminExpenses from '../../components/admin/AdminRevenueReport/AdminExpenses';
 import AdminPeriodSelector from '../../components/admin/shared/AdminPeriodSelector';
@@ -66,16 +67,29 @@ const AdminContent = () => {
             <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
                     <div className="w-1 h-6 mdt-bg-primary rounded-full" />
-                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em]">Phân tích doanh thu</h4>
+                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.01em]">Phân tích doanh thu</h4>
                 </div>
                 <AdminRevenueReport stats={stats} loading={loading} />
+            </div>
+
+            {/* ─── ITEM STATISTICS SECTION ─── */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-3 px-2">
+                    <div className="w-1 h-6 mdt-bg-primary rounded-full" />
+                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.01em]">Hiệu suất sản phẩm</h4>
+                </div>
+                <AdminItemStats
+                    stats={stats}
+                    loading={loading}
+                    filters={{ period, selectedDate, startDate, endDate }}
+                />
             </div>
 
             {/* ─── EXPENSES SECTION ─── */}
             <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
                     <div className="w-1 h-6 mdt-bg-primary  rounded-full" />
-                    <h4 className="tracking-[0.2em]">Chi phí vận hành</h4>
+                    <h4 className="tracking-[0.01em]">Chi phí vận hành</h4>
                 </div>
                 <AdminExpenses stats={stats} loading={loading} period={period} />
             </div>

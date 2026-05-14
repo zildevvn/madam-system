@@ -42,11 +42,31 @@ class StatsController extends Controller
         $date = $request->query('date');
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
-        
+
         $report = $this->statsService->getRevenueReport($period, $date, $startDate, $endDate);
 
         return response()->json([
             'data' => $report,
+            'message' => 'Success',
+            'errors' => null
+        ]);
+    }
+
+    /**
+     * itemStats
+     * [WHY] Returns the full ranked list of products for the selected period.
+     */
+    public function itemStats(Request $request)
+    {
+        $period = $request->query('period', 'day');
+        $date = $request->query('date');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $stats = $this->statsService->getItemSalesStats($period, $date, $startDate, $endDate);
+
+        return response()->json([
+            'data' => $stats,
             'message' => 'Success',
             'errors' => null
         ]);

@@ -137,7 +137,8 @@ export const useCashierSegmentation = (orders, allTables) => {
                             merged_tables: order.mergedTables,
                             groupKey: subLookupKey,
                             isGroupLinked: false,
-                            groupColorIndex: 0
+                            groupColorIndex: 0,
+                            isSplit: true
                         });
                     });
                 } else {
