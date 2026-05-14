@@ -29,15 +29,15 @@ const AdminContent = () => {
     } = useRevenueReport();
 
     return (
-        <div className="admin-content flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+        <div className="admin-content flex flex-col gap-6 pb-20">
             {/* ─── HEADER: Exact Match to Design ─── */}
-            <div className="border-b border-slate-100 p-4 lg:px-8 lg:py-4 sticky top-0 z-[60] -mx-4 lg:-mx-8">
+            <div className="bg-white border-b border-slate-100 p-4 lg:px-6 lg:py-4 sticky top-15 md:top-20 z-[10] -mx-4 lg:-mx-6">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                     <div>
                         <h1 className="h3">Quản trị Tài chính</h1>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full lg:w-auto">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
                         <div className="flex-1 lg:flex-none">
                             <AdminPeriodSelector
                                 periods={periods}

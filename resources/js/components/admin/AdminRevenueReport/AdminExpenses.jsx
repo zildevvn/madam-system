@@ -27,7 +27,7 @@ const AdminExpenses = ({ stats, loading, period }) => {
 
     if (loading && !stats) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[16px] border border-slate-100 shadow-sm animate-pulse">
+            <div className="rounded-[12px] flex flex-col items-center justify-center py-20 bg-white border border-slate-100">
                 <div className="w-10 h-10 rounded-full border-4 border-slate-100 border-t-rose-500 animate-spin mb-4"></div>
                 <p className="text-slate-400 font-bold text-[10px] tracking-widest uppercase">Đang tải chi phí vận hành...</p>
             </div>
@@ -35,60 +35,60 @@ const AdminExpenses = ({ stats, loading, period }) => {
     }
 
     return (
-        <div className="bg-white rounded-[12px] border border-slate-100 shadow-sm p-8 lg:p-14">
+        <div className="bg-white rounded-[12px] border border-slate-100 shadow-sm p-4 md:p-10 lg:p-14">
             <div className="flex flex-col items-center">
                 {/* ─── IDENTIFICATION BADGE ─── */}
-                <h5 className="mb-4 uppercase tracking-[0.4em]">Báo cáo chi phí vận hành</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 w-full max-w-7xl">
+                <h5 className="mb-4 uppercase tracking-[0.01em] text-center">Báo cáo chi phí vận hành</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 md:gap-12 w-full max-w-7xl">
                     {/* ─── FIXED EXPENSES ─── */}
                     <div className="flex flex-col">
                         <div className="flex flex-col items-center mb-10">
                             <p className="text-slate-900 text-[14px] font-black uppercase tracking-widest mb-1">Cố định</p>
                             <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest mb-4 italic">({getFixedLabel()})</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-[48px] font-black text-rose-600 tracking-tighter leading-none">
+                                <span className="text-[32px] md:text-[48px] font-black text-rose-600 tracking-tighter leading-none">
                                     {formatPrice(stats?.fixed_expenses || 0)}
                                 </span>
                                 <span className="text-sm font-black text-slate-300 uppercase tracking-widest">vnd</span>
                             </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {stats?.fixed_items?.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[13px] font-black text-slate-800">{item.description || item.category}</span>
+                                <div key={idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
+                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                        <span className="text-[13px] font-black text-slate-800 truncate">{item.description || item.category}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.date}</span>
                                     </div>
-                                    <span className="text-[16px] font-black text-rose-600">{formatPrice(item.amount)}</span>
+                                    <span className="text-[15px] sm:text-[16px] font-black text-rose-600 whitespace-nowrap">{formatPrice(item.amount)}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* ─── VARIABLE EXPENSES ─── */}
-                    <div className="flex flex-col border-t md:border-t-0 md:border-l border-slate-50 pt-12 md:pt-0 md:pl-20">
+                    <div className="flex flex-col border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-8 md:pt-0 md:pl-12">
                         <div className="flex flex-col items-center mb-10">
                             <p className="text-slate-900 text-[14px] font-black uppercase tracking-widest mb-1">Biến đổi</p>
                             <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest mb-4 italic">({getVariableLabel()})</p>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-[48px] font-black text-rose-600 tracking-tighter leading-none">
+                                <span className="text-[32px] md:text-[48px] font-black text-rose-600 tracking-tighter leading-none">
                                     {formatPrice(stats?.variable_expenses || 0)}
                                 </span>
                                 <span className="text-sm font-black text-slate-300 uppercase tracking-widest">vnd</span>
                             </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {stats?.variable_items?.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[13px] font-black text-slate-800">{item.description || item.category}</span>
+                                <div key={idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
+                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                        <span className="text-[13px] font-black text-slate-800 truncate">{item.description || item.category}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                             {item.date} {item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
                                     </div>
-                                    <span className="text-[16px] font-black text-rose-600">{formatPrice(item.amount)}</span>
+                                    <span className="text-[15px] sm:text-[16px] font-black text-rose-600 whitespace-nowrap">{formatPrice(item.amount)}</span>
                                 </div>
                             ))}
                         </div>
@@ -96,7 +96,7 @@ const AdminExpenses = ({ stats, loading, period }) => {
                 </div>
 
                 {/* ─── TOTAL EXPENSES SUMMARY ─── */}
-                <div className="mt-20 pt-12 border-t border-slate-100 w-full flex flex-col items-center">
+                <div className="mt-6 pt-6 md:mt-12 md:pt-12 border-t border-slate-100 w-full flex flex-col items-center">
                     <span className="h6 uppercase">Tổng chi phí vận hành</span>
                     <div className="flex items-baseline gap-4">
                         <span className="h1 mdt-text-primary tracking-tighter leading-none">{formatPrice(stats?.total_expenses || 0)}</span>

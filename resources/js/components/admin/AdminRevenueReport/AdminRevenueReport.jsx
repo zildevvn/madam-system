@@ -14,7 +14,7 @@ const AdminRevenueReport = ({ stats, loading }) => {
      */
     if (loading && !stats) {
         return (
-            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[16px] border border-slate-100 shadow-sm animate-pulse">
+            <div className="flex flex-col rounded-[24px items-center justify-center py-32 bg-white ] border border-slate-100 shadow-sm">
                 <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-orange-500 animate-spin mb-4"></div>
                 <p className="text-slate-400 font-bold text-[11px] tracking-widest uppercase">Đang tổng hợp báo cáo doanh thu...</p>
             </div>
@@ -22,12 +22,12 @@ const AdminRevenueReport = ({ stats, loading }) => {
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="">
             {/* Unified Revenue Report Card */}
             <div className={`bg-white rounded-[24px] shadow-sm border border-slate-100 transition-all duration-500 ${loading ? 'opacity-50' : 'opacity-100'}`}>
-                
+
                 {/* Content Section: Metrics & Analytics */}
-                <RevenueStatsContent 
+                <RevenueStatsContent
                     stats={stats}
                     loading={loading}
                 />

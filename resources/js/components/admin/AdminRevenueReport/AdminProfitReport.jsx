@@ -22,7 +22,7 @@ const AdminProfitReport = ({ stats, loading }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* ─── LỢI NHUẬN RÒNG CARD ─── */}
-            <div className="lg:col-span-2 bg-white rounded-[12px] border border-slate-100 shadow-sm p-8 flex flex-col justify-between min-h-[280px]">
+            <div className="lg:col-span-2 bg-white rounded-[12px] border border-slate-100 shadow-sm p-4 md:p-8 flex flex-col justify-between ">
                 <div>
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-100 mb-8">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -31,8 +31,8 @@ const AdminProfitReport = ({ stats, loading }) => {
                         <span className="text-[10px] font-black uppercase tracking-widest leading-none">Lợi nhuận ròng ước tính</span>
                     </div>
 
-                    <div className="flex items-baseline gap-4 mb-8">
-                        <span className={`h1 mdt-text-primary tracking-tighter leading-none ${isPositive ? 'text-emerald-500' : 'text-rose-600'}`}>
+                    <div className="flex flex-wrap items-baseline gap-4 mb-8">
+                        <span className={`text-[42px] md:text-[64px] lg:text-[72px] font-black tracking-tighter leading-none ${isPositive ? 'text-emerald-500' : 'mdt-text-primary '}`}>
                             {profit < 0 ? '-' : ''}{formatPrice(Math.abs(profit))}
                         </span>
                         <span className="h5 text-slate-400 uppercase tracking-widest">VND</span>
@@ -47,14 +47,14 @@ const AdminProfitReport = ({ stats, loading }) => {
             {/* ─── QUICK METRICS SIDEBAR ─── */}
             <div className="flex flex-col gap-6">
                 {/* Revenue Quick Card */}
-                <div className="flex-1 bg-white rounded-[12px] border border-slate-100 shadow-sm p-6 flex flex-col justify-between relative overflow-hidden group">
+                <div className="flex-1 bg-white rounded-[12px] border border-slate-100 shadow-sm p-3 md:p-6 flex flex-col justify-between relative overflow-hidden group">
                     <div className="flex justify-between items-start relative z-10">
                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Doanh thu</span>
                         <div className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full group-hover:scale-110 transition-transform">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                         </div>
                     </div>
-                    <div className="text-[32px] font-black text-slate-900 tracking-tight leading-none mt-4">
+                    <div className="text-[28px] md:text-[32px] font-black text-slate-900 tracking-tight leading-none mt-2 md:mt-4">
                         {formatPrice(revenue)}đ
                     </div>
                     {/* Background Accent */}
@@ -62,16 +62,16 @@ const AdminProfitReport = ({ stats, loading }) => {
                 </div>
 
                 {/* Costs Breakdown Row */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white rounded-[12px] border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
-                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">CP Cố định</span>
-                        <div className="text-[20px] font-black text-slate-900 leading-none">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="item-costs-breakdown bg-white rounded-[12px] border border-slate-100 shadow-sm p-5 flex flex-row items-center justify-between gap-3">
+                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest whitespace-nowrap">CP Cố định</span>
+                        <div className="text-[18px] font-black text-slate-900 leading-none whitespace-nowrap">
                             {formatPrice(fixedCosts)}đ
                         </div>
                     </div>
-                    <div className="bg-white rounded-[12px] border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
-                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">CP Biến đổi</span>
-                        <div className="text-[20px] font-black text-slate-900 leading-none">
+                    <div className="item-costs-breakdown bg-white rounded-[12px] border border-slate-100 shadow-sm p-5 flex flex-row items-center justify-between gap-3">
+                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest whitespace-nowrap">CP Biến đổi</span>
+                        <div className="text-[18px] font-black text-slate-900 leading-none whitespace-nowrap">
                             {formatPrice(variableCosts)}đ
                         </div>
                     </div>
