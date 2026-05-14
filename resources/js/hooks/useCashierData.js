@@ -51,7 +51,7 @@ export const useCashierData = (status) => {
         historyAbortRef.current = controller;
 
         try {
-            const res = await orderApi.getHistory(15, {
+            const res = await orderApi.fetchHistory(15, {
                 signal: controller.signal
             });
 

@@ -62,9 +62,6 @@ const AdminContent = () => {
                 </div>
             </div>
 
-            {/* ─── TOP OVERVIEW: Profit + Quick Stats ─── */}
-            <AdminProfitReport stats={stats} loading={loading} />
-
             {/* ─── REVENUE SECTION ─── */}
             <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
@@ -82,6 +79,10 @@ const AdminContent = () => {
                 </div>
                 <AdminExpenses stats={stats} loading={loading} period={period} />
             </div>
+
+
+            {/* ─── TOP OVERVIEW: Profit + Quick Stats ─── */}
+            <AdminProfitReport stats={stats} loading={loading} />
         </div>
     );
 };

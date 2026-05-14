@@ -2,32 +2,37 @@ import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit'
 import orderApi from '../../services/orderApi';
 
 export const fetchActiveOrderAsync = createAsyncThunk('order/fetchActiveOrder', async (tableId) => {
-  const data = await orderApi.getActiveOrder(tableId);
+  const data = await orderApi.fetchActiveOrder(tableId);
   return data.data;
 });
 
 export const createOrderAsync = createAsyncThunk('order/createOrder', async (createData) => {
-  const response = await orderApi.createOrder(createData);
+  const response = await orderApi.create(createData);
   return response.data;
 });
 
 export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null, orderNote = null, guestCount = null }) => {
-  const data = await orderApi.checkoutOrder(orderId, items, mergedTables, orderNote, guestCount);
+  const data = await orderApi.checkout(orderId, {
+    items,
+    merged_tables: mergedTables,
+    order_note: orderNote,
+    guest_count: guestCount
+  });
   return data.data;
 });
 
 export const cancelOrderAsync = createAsyncThunk('order/cancelOrder', async (orderId) => {
-  const data = await orderApi.cancelOrder(orderId);
+  const data = await orderApi.cancel(orderId);
   return data.data;
 });
 
 export const updateOrderTableAsync = createAsyncThunk('order/updateTable', async ({ orderId, tableId }) => {
-  const data = await orderApi.updateOrderTable(orderId, tableId);
+  const data = await orderApi.updateTable(orderId, tableId);
   return data.data;
 });
 
 export const updateOrderNoteAsync = createAsyncThunk('order/updateNote', async ({ orderId, note }) => {
-  const data = await orderApi.updateOrderNote(orderId, note);
+  const data = await orderApi.updateNote(orderId, note);
   return data.data;
 });
 
@@ -42,7 +47,7 @@ export const updateItemStatusAsync = createAsyncThunk('order/updateItemStatus', 
 });
 
 export const splitOrderAsync = createAsyncThunk('order/split', async ({ orderId, items }) => {
-  const data = await orderApi.splitOrder(orderId, items);
+  const data = await orderApi.split(orderId, items);
   return data.data;
 });
 

@@ -112,7 +112,7 @@ export const useCheckoutLogic = () => {
     const triggerBackendPrint = useCallback(async (orderId, title) => {
         if (!title) return;
         try {
-            await orderApi.printDrinks(orderId, title);
+            await orderApi.print(orderId, title);
         } catch (err) {
             console.error("Printing failed:", err);
             setWarningMessage('Lỗi kết nối máy in Bar. Vui lòng báo Bar thủ công!');

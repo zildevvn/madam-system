@@ -104,9 +104,8 @@ export const usePaymentLogic = ({
 
                 // 1. Persist changes to DB if draft items changed (Skip for pure group reservations which are read-only)
                 if (!currentOrder.isGroup) {
-                    await orderApi.checkoutOrder(
-                        currentOrder.id,
-                        draftItems.map(i => ({
+                    await orderApi.checkout(currentOrder.id, {
+                        items: draftItems.map(i => ({
                             product_id: i.product_id || i.id,
                             quantity: i.quantity,
                             price: i.price,
@@ -115,20 +114,19 @@ export const usePaymentLogic = ({
                             discount_type: i.discountType || 'fixed', // [NEW] Pass type to backend
                             table_id: i.tableId || currentOrder.tableId
                         })),
-                        currentOrder?.mergedTables || selectedTable.merged_tables || null
-                    );
+                        merged_tables: currentOrder?.mergedTables || selectedTable.merged_tables || null
+                    });
                 }
 
                 // 2. Complete payment for ALL related orders in ONE atomic call
                 const relatedIds = currentOrder.relatedOrderIds || [currentOrder.id];
-                await orderApi.completeOrder(
-                    currentOrder.id,
-                    paymentMethod,
-                    discountType,
-                    discountValue,
-                    cashierNote,
-                    relatedIds
-                );
+                await orderApi.complete(currentOrder.id, {
+                    payment_method: paymentMethod,
+                    discount_type: discountType,
+                    discount_value: discountValue,
+                    cashier_note: cashierNote,
+                    sibling_order_ids: relatedIds
+                });
             }
 
             onPaymentSuccess();
@@ -218,7 +216,7 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            const response = await orderApi.splitOrder(currentOrder.id, selectedSplitItems);
+            const response = await orderApi.split(currentOrder.id, selectedSplitItems);
             setIsSplitMode(false);
             setSelectedSplitItems([]);
             // [WHY] Refresh data after split
