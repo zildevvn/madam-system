@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
+import statsApi from '../services/statsApi';
 
 /**
  * useRevenueReport Hook
@@ -32,16 +32,17 @@ export const useRevenueReport = () => {
     const fetchReport = useCallback(async () => {
         try {
             setLoading(true);
-            let url = `/api/stats/revenue-report?period=${period}`;
+            const params = { period };
 
             if (period === 'week' && startDate && endDate) {
-                url += `&start_date=${startDate}&end_date=${endDate}`;
+                params.start_date = startDate;
+                params.end_date = endDate;
             } else {
-                url += `&date=${selectedDate}`;
+                params.date = selectedDate;
             }
 
-            const res = await axios.get(url);
-            setStats(res.data.data);
+            const res = await statsApi.getRevenueReport(params);
+            setStats(res.data);
         } catch (error) {
             console.error('Failed to fetch revenue report:', error);
         } finally {

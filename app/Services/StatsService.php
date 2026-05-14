@@ -31,7 +31,7 @@ class StatsService
                 break;
             case 'month':
                 $query->whereMonth('orders.updated_at', $referenceDate->month)
-                      ->whereYear('orders.updated_at', $referenceDate->year);
+                    ->whereYear('orders.updated_at', $referenceDate->year);
                 break;
             case 'year':
                 $query->whereYear('orders.updated_at', $referenceDate->year);
@@ -57,7 +57,7 @@ class StatsService
 
         // [RULE] Fixed expenses only respond to Month and Year filters.
         // [RULE] Variable expenses respond to all filters (Day, Week, Month, Year).
-        
+
         // 1. Variable Expenses Query (Responds to all filters)
         $variableQuery = Expense::where('type', 'variable');
         switch ($period) {
@@ -70,7 +70,7 @@ class StatsService
                 break;
             case 'month':
                 $variableQuery->whereMonth('date', $referenceDate->month)
-                              ->whereYear('date', $referenceDate->year);
+                    ->whereYear('date', $referenceDate->year);
                 break;
             case 'year':
                 $variableQuery->whereYear('date', $referenceDate->year);
@@ -93,7 +93,7 @@ class StatsService
                 break;
             case 'month':
                 $fixedQuery->whereMonth('date', $referenceDate->month)
-                           ->whereYear('date', $referenceDate->year);
+                    ->whereYear('date', $referenceDate->year);
                 break;
             case 'year':
                 $fixedQuery->whereYear('date', $referenceDate->year);
@@ -104,28 +104,131 @@ class StatsService
                 break;
         }
 
-        $fixedExpenses = (float)(clone $fixedQuery)->sum('amount');
-        $variableExpenses = (float)(clone $variableQuery)->sum('amount');
+        $fixedExpenses = (float) (clone $fixedQuery)->sum('amount');
+        $variableExpenses = (float) (clone $variableQuery)->sum('amount');
+
+        // 3. Item Statistics (Top & Bottom Sellers)
+        $subQuery = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->select('order_items.product_id', 'order_items.quantity', 'order_items.price');
+
+        // Apply same time filters as revenue to the SUBQUERY
+        switch ($period) {
+            case 'week':
+                if ($startDate && $endDate) {
+                    $subQuery->whereBetween('orders.updated_at', [
+                        \Illuminate\Support\Carbon::parse($startDate)->startOfDay(),
+                        \Illuminate\Support\Carbon::parse($endDate)->endOfDay()
+                    ]);
+                } else {
+                    $subQuery->whereBetween('orders.updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
+                }
+                break;
+            case 'month':
+                $subQuery->whereMonth('orders.updated_at', $referenceDate->month)
+                    ->whereYear('orders.updated_at', $referenceDate->year);
+                break;
+            case 'year':
+                $subQuery->whereYear('orders.updated_at', $referenceDate->year);
+                break;
+            case 'day':
+            default:
+                $subQuery->whereDate('orders.updated_at', $referenceDate->toDateString());
+                break;
+        }
+
+        $itemQuery = DB::table('products')
+            ->leftJoinSub($subQuery, 'oi', function ($join) {
+                $join->on('products.id', '=', 'oi.product_id');
+            })
+            ->select(
+                'products.name',
+                DB::raw('COALESCE(SUM(oi.quantity), 0) as total_quantity'),
+                DB::raw('COALESCE(SUM(oi.price * oi.quantity), 0) as total_sales')
+            )
+            ->groupBy('products.id', 'products.name');
+
+        $topItems = (clone $itemQuery)->orderByDesc('total_quantity')->orderBy('products.name')->limit(10)->get();
+        $bottomItems = (clone $itemQuery)->orderBy('total_quantity')->orderBy('products.name')->limit(10)->get();
+        $totalItemsCount = DB::table('products')->count();
 
         return [
-            'total_revenue' => (float)$stats->total_revenue,
-            'total_orders' => (int)$stats->total_orders,
-            'individual_orders' => (int)$stats->individual_orders,
-            'group_orders' => (int)$stats->group_orders,
-            'cash_revenue' => (float)$stats->cash_revenue,
-            'bank_revenue' => (float)$stats->bank_revenue,
-            'card_revenue' => (float)$stats->card_revenue,
-            'debt_revenue' => (float)$stats->debt_revenue,
+            'total_revenue' => (float) $stats->total_revenue,
+            'total_orders' => (int) $stats->total_orders,
+            'individual_orders' => (int) $stats->individual_orders,
+            'group_orders' => (int) $stats->group_orders,
+            'cash_revenue' => (float) $stats->cash_revenue,
+            'bank_revenue' => (float) $stats->bank_revenue,
+            'card_revenue' => (float) $stats->card_revenue,
+            'debt_revenue' => (float) $stats->debt_revenue,
             'total_expenses' => $fixedExpenses + $variableExpenses,
             'fixed_expenses' => $fixedExpenses,
             'variable_expenses' => $variableExpenses,
-            'fixed_items' => $fixedQuery->orderBy('date', 'desc')->get(),
-            'variable_items' => $variableQuery->orderBy('date', 'desc')->get(),
-            // [RULE] Keep legacy values for backward compatibility
-            'fixed_expenses_month' => (float)Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('amount'),
-            'variable_expenses_day' => (float)Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->sum('amount'),
+            // [WHY] Selecting only required fields as per README Rule 21.
+            'fixed_items' => $fixedQuery->select('amount', 'date', 'description', 'category')->orderBy('date', 'desc')->get(),
+            'variable_items' => $variableQuery->select('amount', 'date', 'description', 'category', 'created_at')->orderBy('date', 'desc')->get(),
+            'top_items' => $topItems,
+            'bottom_items' => $bottomItems,
+            'total_items_count' => $totalItemsCount,
+            // [RULE] Legacy values kept for backward compatibility with older components if any.
+            'fixed_expenses_month' => (float) Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('amount'),
+            'variable_expenses_day' => (float) Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->sum('amount'),
             'period' => $period
         ];
+    }
+
+    public function getItemSalesStats($period = 'day', $date = null, $startDate = null, $endDate = null, $type = 'top')
+    {
+        $referenceDate = $date ? \Illuminate\Support\Carbon::parse($date) : now();
+
+        $subQuery = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'completed')
+            ->select('order_items.product_id', 'order_items.quantity', 'order_items.price');
+
+        switch ($period) {
+            case 'week':
+                if ($startDate && $endDate) {
+                    $subQuery->whereBetween('orders.updated_at', [
+                        \Illuminate\Support\Carbon::parse($startDate)->startOfDay(),
+                        \Illuminate\Support\Carbon::parse($endDate)->endOfDay()
+                    ]);
+                } else {
+                    $subQuery->whereBetween('orders.updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
+                }
+                break;
+            case 'month':
+                $subQuery->whereMonth('orders.updated_at', $referenceDate->month)
+                    ->whereYear('orders.updated_at', $referenceDate->year);
+                break;
+            case 'year':
+                $subQuery->whereYear('orders.updated_at', $referenceDate->year);
+                break;
+            case 'day':
+            default:
+                $subQuery->whereDate('orders.updated_at', $referenceDate->toDateString());
+                break;
+        }
+
+        $itemQuery = DB::table('products')
+            ->leftJoinSub($subQuery, 'oi', function ($join) {
+                $join->on('products.id', '=', 'oi.product_id');
+            })
+            ->select(
+                'products.name',
+                DB::raw('COALESCE(SUM(oi.quantity), 0) as total_quantity'),
+                DB::raw('COALESCE(SUM(oi.price * oi.quantity), 0) as total_sales')
+            )
+            ->groupBy('products.id', 'products.name');
+
+        if ($type === 'bottom') {
+            $itemQuery->orderBy('total_quantity', 'asc');
+        } else {
+            $itemQuery->orderBy('total_quantity', 'desc');
+        }
+
+        return $itemQuery->orderBy('products.name')->get();
     }
 
     /**
