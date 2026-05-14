@@ -223,80 +223,84 @@ class OrderPaymentService
     // [WHY] Updates payment metadata (note, method, discount) for finalized bills.
     public function updatePayment($orderId, $data)
     {
-        $order = Order::findOrFail($orderId);
+        $result = DB::transaction(function () use ($orderId, $data) {
+            $order = Order::findOrFail($orderId);
 
-        $involvedTableIds = [$order->table_id];
-        if ($order->merged_tables) {
-            $mergedIds = explode('-', $order->merged_tables);
-            $involvedTableIds = array_merge($involvedTableIds, $mergedIds);
-        }
-        $involvedTableIds = array_unique(array_filter($involvedTableIds));
+            $involvedTableIds = [$order->table_id];
+            if ($order->merged_tables) {
+                $mergedIds = explode('-', $order->merged_tables);
+                $involvedTableIds = array_merge($involvedTableIds, $mergedIds);
+            }
+            $involvedTableIds = array_unique(array_filter($involvedTableIds));
 
-        $relatedOrders = Order::where('status', 'completed')
-            ->where(function ($query) use ($order, $involvedTableIds) {
-                $query->whereIn('table_id', $involvedTableIds);
-                if ($order->reservation_id) {
-                    $query->orWhere('reservation_id', $order->reservation_id);
-                }
-            })
-            ->where(function ($query) use ($order) {
-                if ($order->merged_tables) {
-                    $query->where('merged_tables', $order->merged_tables);
-                }
-                if ($order->reservation_id) {
-                    $query->orWhere('reservation_id', $order->reservation_id);
-                }
-            })
-            ->get();
+            $relatedOrders = Order::where('status', 'completed')
+                ->where(function ($query) use ($order, $involvedTableIds) {
+                    $query->whereIn('table_id', $involvedTableIds);
+                    if ($order->reservation_id) {
+                        $query->orWhere('reservation_id', $order->reservation_id);
+                    }
+                })
+                ->where(function ($query) use ($order) {
+                    if ($order->merged_tables) {
+                        $query->where('merged_tables', $order->merged_tables);
+                    }
+                    if ($order->reservation_id) {
+                        $query->orWhere('reservation_id', $order->reservation_id);
+                    }
+                })
+                ->get();
 
-        $groupSubtotal = $relatedOrders->sum(function ($o) {
-            return $o->subtotal ?? ($o->total_price + $o->discount_amount);
-        });
+            $groupSubtotal = $relatedOrders->sum(function ($o) {
+                return $o->subtotal ?? ($o->total_price + $o->discount_amount);
+            });
 
-        $discountType = $data['discount_type'] ?? $order->discount_type;
-        $discountValue = $data['discount_value'] ?? $order->discount_value;
-        $groupDiscountAmount = 0;
+            $discountType = $data['discount_type'] ?? $order->discount_type;
+            $discountValue = $data['discount_value'] ?? $order->discount_value;
+            $groupDiscountAmount = 0;
 
-        if ($discountType === 'percent') {
-            $groupDiscountAmount = floor(($groupSubtotal * $discountValue) / 100);
-        } elseif ($discountType === 'fixed') {
-            $groupDiscountAmount = $discountValue;
-        }
-
-        $groupDiscountAmount = min($groupSubtotal, $groupDiscountAmount);
-
-        foreach ($relatedOrders as $o) {
-            $isPrimary = $o->id == $orderId;
-
-            $updateData = [
-                'payment_method' => $data['payment_method'] ?? $o->payment_method,
-                'cashier_note' => $data['cashier_note'] ?? $o->cashier_note,
-            ];
-
-            if ($isPrimary) {
-                $updateData['discount_type'] = $discountType;
-                $updateData['discount_value'] = $discountValue;
-                $updateData['discount_amount'] = $groupDiscountAmount;
-                $updateData['total_price'] = ($o->subtotal ?? $o->total_price) - $groupDiscountAmount;
-            } else {
-                $updateData['discount_type'] = null;
-                $updateData['discount_value'] = 0;
-                $updateData['discount_amount'] = 0;
-                $updateData['total_price'] = ($o->subtotal ?? $o->total_price);
+            if ($discountType === 'percent') {
+                $groupDiscountAmount = floor(($groupSubtotal * $discountValue) / 100);
+            } elseif ($discountType === 'fixed') {
+                $groupDiscountAmount = $discountValue;
             }
 
-            $o->update($updateData);
-        }
+            $groupDiscountAmount = min($groupSubtotal, $groupDiscountAmount);
 
-        $order->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+            foreach ($relatedOrders as $o) {
+                $isPrimary = $o->id == $orderId;
+
+                $updateData = [
+                    'payment_method' => $data['payment_method'] ?? $o->payment_method,
+                    'cashier_note' => $data['cashier_note'] ?? $o->cashier_note,
+                ];
+
+                if ($isPrimary) {
+                    $updateData['discount_type'] = $discountType;
+                    $updateData['discount_value'] = $discountValue;
+                    $updateData['discount_amount'] = $groupDiscountAmount;
+                    $updateData['total_price'] = ($o->subtotal ?? $o->total_price) - $groupDiscountAmount;
+                } else {
+                    $updateData['discount_type'] = null;
+                    $updateData['discount_value'] = 0;
+                    $updateData['discount_amount'] = 0;
+                    $updateData['total_price'] = ($o->subtotal ?? $o->total_price);
+                }
+
+                $o->update($updateData);
+            }
+
+            return $order;
+        });
+
+        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
 
         try {
-            broadcast(new OrderUpdated($order, 'order_updated'));
+            broadcast(new OrderUpdated($result, 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during payment update: ' . $e->getMessage());
         }
 
-        return $order;
+        return $result;
     }
 
     // [WHY] Returns a list of finalized orders for the cashier history view.

@@ -10,22 +10,24 @@ Route::post('/tables', [TableController::class, 'store']);
 Route::put('/tables/{id}', [TableController::class, 'update']);
 Route::delete('/tables/{id}', [TableController::class, 'destroy']);
 
-Route::get('/tables/{id}/active-order', [OrderController::class, 'activeOrder']);
-Route::get('/orders/history', [OrderController::class, 'history']);
-Route::post('/orders/{id}/reopen', [OrderController::class, 'reopen']);
-Route::patch('/orders/{id}/payment', [OrderController::class, 'updatePayment']);
+Route::middleware('web')->group(function () {
+    Route::get('/tables/{id}/active-order', [OrderController::class, 'activeOrder']);
+    Route::get('/orders/history', [OrderController::class, 'history']);
+    Route::post('/orders/{id}/reopen', [OrderController::class, 'reopen']);
+    Route::patch('/orders/{id}/payment', [OrderController::class, 'updatePayment']);
 
-Route::get('/orders/{id}', [OrderController::class, 'show']);
-Route::post('/orders', [OrderController::class, 'store']);
-Route::post('/orders/{id}/checkout', [OrderController::class, 'checkout']);
-Route::post('/orders/{id}/complete', [OrderController::class, 'complete']);
-Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
-Route::put('/orders/{id}/table', [OrderController::class, 'updateTable']);
-Route::patch('/orders/{id}/note', [OrderController::class, 'updateOrderNote']);
-Route::patch('/orders/{id}/guest-count', [OrderController::class, 'updateGuestCount']);
-Route::post('/orders/{id}/split', [OrderController::class, 'split']);
-Route::post('/orders/{id}/print-drinks', [OrderController::class, 'printDrinkBill']);
-Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::post('/orders/{id}/checkout', [OrderController::class, 'checkout']);
+    Route::post('/orders/{id}/complete', [OrderController::class, 'complete']);
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
+    Route::put('/orders/{id}/table', [OrderController::class, 'updateTable']);
+    Route::patch('/orders/{id}/note', [OrderController::class, 'updateOrderNote']);
+    Route::patch('/orders/{id}/guest-count', [OrderController::class, 'updateGuestCount']);
+    Route::post('/orders/{id}/split', [OrderController::class, 'split']);
+    Route::post('/orders/{id}/print-drinks', [OrderController::class, 'printDrinkBill']);
+    Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
+});
 
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ProductController;

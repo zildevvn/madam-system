@@ -17,7 +17,7 @@ class OrderSplitService
      */
     public function splitItems($sourceOrderId, array $itemsToSplit)
     {
-        return DB::transaction(function () use ($sourceOrderId, $itemsToSplit) {
+        $resultData = DB::transaction(function () use ($sourceOrderId, $itemsToSplit) {
             $sourceOrder = Order::findOrFail($sourceOrderId);
 
             if ($sourceOrder->status === 'completed') {
@@ -77,25 +77,39 @@ class OrderSplitService
                 }
             }
 
-            // [WHY] Recalculate totals for all unique affected orders
-            $uniqueAffectedIds = array_unique($affectedOrderIds);
-            foreach ($uniqueAffectedIds as $id) {
+            // [WHY] Recalculate totals for all unique affected orders inside transaction
+            foreach (array_unique($affectedOrderIds) as $id) {
                 $o = Order::find($id);
                 if ($o) {
                     $this->recalculateOrderTotal($o);
-                    $this->broadcastUpdate($o, 'order_updated');
                 }
             }
 
-            // [WHY] Finalize and broadcast the new order
             $this->recalculateOrderTotal($newOrder);
-            $this->broadcastUpdate($newOrder, 'order_created');
 
             return [
-                'source_order' => Order::find($sourceOrderId)?->fresh(['items.product']),
-                'new_order' => $newOrder->fresh(['items.product'])
+                'newOrder' => $newOrder,
+                'affectedOrderIds' => array_unique($affectedOrderIds)
             ];
         });
+
+        $newOrder = $resultData['newOrder'];
+        $uniqueAffectedIds = $resultData['affectedOrderIds'];
+
+        // [WHY] Broadcast outside of the transaction
+        foreach ($uniqueAffectedIds as $id) {
+            $o = Order::find($id);
+            if ($o) {
+                $this->broadcastUpdate($o, 'order_updated');
+            }
+        }
+
+        $this->broadcastUpdate($newOrder, 'order_created');
+
+        return [
+            'source_order' => Order::find($sourceOrderId)?->fresh(['items.product']),
+            'new_order' => $newOrder->fresh(['items.product'])
+        ];
     }
 
     private function recalculateOrderTotal(Order $order)
