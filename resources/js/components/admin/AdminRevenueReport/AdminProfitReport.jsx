@@ -11,10 +11,10 @@ const AdminProfitReport = ({ stats, loading }) => {
     const revenue = stats?.total_revenue || 0;
     const fixedCosts = stats?.fixed_expenses || 0;
     const variableCosts = stats?.variable_expenses || 0;
-    
+
     // [FORMULA] Profit = Revenue - (Fixed Costs + Variable Costs)
     const profit = revenue - (fixedCosts + variableCosts);
-    
+
     const isPositive = profit >= 0;
 
     if (loading && !stats) return null;
@@ -24,7 +24,7 @@ const AdminProfitReport = ({ stats, loading }) => {
             {/* ─── LỢI NHUẬN RÒNG CARD ─── */}
             <div className="lg:col-span-2 bg-white rounded-[12px] border border-slate-100 shadow-sm p-8 flex flex-col justify-between min-h-[280px]">
                 <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 text-slate-500 rounded-full border border-slate-100 mb-8">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-full border border-slate-100 mb-8">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -32,14 +32,14 @@ const AdminProfitReport = ({ stats, loading }) => {
                     </div>
 
                     <div className="flex items-baseline gap-4 mb-8">
-                        <span className={`text-[64px] lg:text-[72px] font-black tracking-tighter leading-none ${isPositive ? 'text-emerald-500' : 'text-rose-600'}`}>
+                        <span className={`h1 mdt-text-primary tracking-tighter leading-none ${isPositive ? 'text-emerald-500' : 'text-rose-600'}`}>
                             {profit < 0 ? '-' : ''}{formatPrice(Math.abs(profit))}
                         </span>
-                        <span className="text-2xl font-black text-slate-300 uppercase tracking-widest">VND</span>
+                        <span className="h5 text-slate-400 uppercase tracking-widest">VND</span>
                     </div>
                 </div>
 
-                <p className="text-[11px] font-bold text-slate-400 italic">
+                <p className="text-[11px] font-bold text-slate-600 italic">
                     * Công thức: Doanh thu - (Chi phí cố định + Chi phí biến đổi)
                 </p>
             </div>

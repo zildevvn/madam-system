@@ -68,7 +68,7 @@ const AdminContent = () => {
             {/* ─── REVENUE SECTION ─── */}
             <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
-                    <div className="w-1 h-6 bg-blue-600 rounded-full" />
+                    <div className="w-1 h-6 mdt-bg-primary rounded-full" />
                     <h4 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em]">Phân tích doanh thu</h4>
                 </div>
                 <AdminRevenueReport stats={stats} loading={loading} />
@@ -77,7 +77,7 @@ const AdminContent = () => {
             {/* ─── EXPENSES SECTION ─── */}
             <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
-                    <div className="w-1 h-6 bg-rose-600 rounded-full" />
+                    <div className="w-1 h-6 mdt-bg-primary  rounded-full" />
                     <h4 className="tracking-[0.2em]">Chi phí vận hành</h4>
                 </div>
                 <AdminExpenses stats={stats} loading={loading} period={period} />

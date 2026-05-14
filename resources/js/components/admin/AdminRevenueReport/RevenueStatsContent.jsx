@@ -13,10 +13,11 @@ const RevenueStatsContent = ({ stats, loading }) => {
             <div className="flex flex-col items-center mb-16">
                 <h5 className="mb-4 uppercase tracking-[0.4em]">Tổng doanh thu</h5>
                 <div className="flex items-baseline gap-4">
-                    <span className="text-[64px] lg:text-[88px] font-black text-[#1e40af] tracking-tighter leading-none">
+                    <span className="h1 mdt-text-primary tracking-tighter leading-none">
                         {formatPrice(stats?.total_revenue || 0)}
                     </span>
-                    <span className="text-2xl font-black text-slate-300 uppercase tracking-widest">VND</span>
+
+                    <span className="h5 text-slate-400 uppercase tracking-widest">VND</span>
                 </div>
             </div>
 
