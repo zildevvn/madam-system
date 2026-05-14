@@ -8,6 +8,17 @@ import {
 import { selectTables, selectTableIdToGroupKey } from '../store/selectors/tableSelectors';
 
 /**
+ * [WHY] Shared utility to derive merged table IDs from a group key string.
+ * Centralizes the logic to prevent drift and duplication across state computations.
+ */
+const parseGroupKey = (groupKey, excludeTableId) => {
+    if (!groupKey) return [];
+    return groupKey.split('-')
+        .map(id => parseInt(id))
+        .filter(id => id.toString() !== excludeTableId?.toString());
+};
+
+/**
  * useCheckoutState: Centralizes routing, Redux selectors, and UI state 
  * for the checkout process to keep logic hooks clean.
  */
@@ -30,12 +41,7 @@ export const useCheckoutState = () => {
     // [WHY] Initialize mergedTableIds from existing group state (Rule 312: state synchronization)
     const initialMergedIds = useMemo(() => {
         const groupKey = tableIdToGroupKey[tableId?.toString()];
-        if (groupKey) {
-            return groupKey.split('-')
-                .map(id => parseInt(id))
-                .filter(id => id.toString() !== tableId?.toString());
-        }
-        return [];
+        return parseGroupKey(groupKey, tableId);
     }, [tableId, tableIdToGroupKey]);
 
     // Local UI state 
@@ -50,14 +56,9 @@ export const useCheckoutState = () => {
     const isTableChanged = useMemo(() => selectedTableId !== tableId, [selectedTableId, tableId]);
 
     const isMergeChanged = useMemo(() => {
-        const groupKey = tableIdToGroupKey[tableId?.toString()];
-        const currentInitialIds = groupKey ? groupKey.split('-')
-            .map(id => parseInt(id))
-            .filter(id => id.toString() !== tableId?.toString()) : [];
-            
-        if (mergedTableIds.length !== currentInitialIds.length) return true;
-        return !mergedTableIds.every(id => currentInitialIds.includes(id));
-    }, [mergedTableIds, tableId, tableIdToGroupKey]);
+        if (mergedTableIds.length !== initialMergedIds.length) return true;
+        return !mergedTableIds.every(id => initialMergedIds.includes(id));
+    }, [mergedTableIds, initialMergedIds]);
 
     // [WHY] Keep local merge state in sync with backend (selector updates)
     useEffect(() => {

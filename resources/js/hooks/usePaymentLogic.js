@@ -21,6 +21,14 @@ export const usePaymentLogic = ({
     paymentMethod,
     setPaymentMethod
 }) => {
+    // [WHY] Centralized table resolution logic to ensure consistent ID identification across all handlers.
+    const dbTableId = useMemo(() => 
+        selectedTable?.originalTableId || 
+        currentOrder?.tableId || 
+        currentOrder?.table_id || 
+        currentOrder?.table?.id
+    , [selectedTable, currentOrder]);
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [selectedSplitItems, setSelectedSplitItems] = useState([]); // Array of { order_item_id, quantity }
@@ -37,7 +45,6 @@ export const usePaymentLogic = ({
             return Number([...tableIds].sort((a, b) => Number(a) - Number(b))[0]);
         }
         // [FIX] Ensure we use the database table ID (not the order lookup key)
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         return dbTableId || selectedTable?.id;
     });
 
@@ -97,9 +104,8 @@ export const usePaymentLogic = ({
 
                 // 1. Persist changes to DB if draft items changed (Skip for pure group reservations which are read-only)
                 if (!currentOrder.isGroup) {
-                    await orderApi.checkoutOrder(
-                        currentOrder.id,
-                        draftItems.map(i => ({
+                    await orderApi.checkout(currentOrder.id, {
+                        items: draftItems.map(i => ({
                             product_id: i.product_id || i.id,
                             quantity: i.quantity,
                             price: i.price,
@@ -108,20 +114,19 @@ export const usePaymentLogic = ({
                             discount_type: i.discountType || 'fixed', // [NEW] Pass type to backend
                             table_id: i.tableId || currentOrder.tableId
                         })),
-                        currentOrder?.mergedTables || selectedTable.merged_tables || null
-                    );
+                        merged_tables: currentOrder?.mergedTables || selectedTable.merged_tables || null
+                    });
                 }
 
                 // 2. Complete payment for ALL related orders in ONE atomic call
                 const relatedIds = currentOrder.relatedOrderIds || [currentOrder.id];
-                await orderApi.completeOrder(
-                    currentOrder.id,
-                    paymentMethod,
-                    discountType,
-                    discountValue,
-                    cashierNote,
-                    relatedIds
-                );
+                await orderApi.complete(currentOrder.id, {
+                    payment_method: paymentMethod,
+                    discount_type: discountType,
+                    discount_value: discountValue,
+                    cashier_note: cashierNote,
+                    sibling_order_ids: relatedIds
+                });
             }
 
             onPaymentSuccess();
@@ -134,7 +139,6 @@ export const usePaymentLogic = ({
     }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess, isHistoryEdit]);
 
     const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const fallbackTId = dbTableId || selectedTable?.id;
         let newItems;
         if (quantity < 1) {
@@ -149,10 +153,9 @@ export const usePaymentLogic = ({
             );
         }
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
     const handleUpdateNote = useCallback((productId, tableId, note) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
             ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
@@ -160,10 +163,9 @@ export const usePaymentLogic = ({
                 : i
         );
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
     const handleUpdateItemDiscount = useCallback((productId, tableId, updates) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
             ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
@@ -171,10 +173,9 @@ export const usePaymentLogic = ({
                 : i
         );
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
     const handleAddProduct = useCallback((product) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const activeTId = targetTableId || dbTableId || selectedTable?.id;
         const existing = draftItems.find(i =>
             (i.product_id || i.id) === product.id &&
@@ -215,7 +216,7 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            const response = await orderApi.splitOrder(currentOrder.id, selectedSplitItems);
+            const response = await orderApi.split(currentOrder.id, selectedSplitItems);
             setIsSplitMode(false);
             setSelectedSplitItems([]);
             // [WHY] Refresh data after split

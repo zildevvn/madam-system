@@ -7,14 +7,14 @@ import React from 'react';
  */
 const AdminPeriodSelector = ({ periods, currentPeriod, onPeriodChange }) => {
     return (
-        <div className="flex bg-slate-200/50 p-1 rounded-[14px] w-full md:w-auto overflow-x-auto no-scrollbar">
+        <div className="flex bg-[#f1f5f9] p-1 rounded-full w-full lg:w-auto overflow-x-auto no-scrollbar">
             {periods.map((p) => (
                 <button
                     key={p.id}
                     onClick={() => onPeriodChange(p.id)}
-                    className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${currentPeriod === p.id
-                        ? 'bg-white text-orange-600 shadow-sm scale-[1.02]'
-                        : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`flex-1 lg:flex-none px-3 sm:px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap ${currentPeriod === p.id
+                        ? 'bg-white text-[#1e293b] shadow-[0_2px_8px_rgba(0,0,0,0.08)] scale-[1.02]'
+                        : 'text-slate-400 hover:text-slate-600'}`}
                 >
                     {p.label}
                 </button>

@@ -93,7 +93,7 @@ const Cashier = () => {
 
         setIsReopening(orderId);
         try {
-            await orderApi.reopenOrder(orderId);
+            await orderApi.reopen(orderId);
             refreshData();
         } catch (err) {
             console.error(err);
