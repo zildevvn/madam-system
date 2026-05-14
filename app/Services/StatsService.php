@@ -165,19 +165,20 @@ class StatsService
             'total_expenses' => $fixedExpenses + $variableExpenses,
             'fixed_expenses' => $fixedExpenses,
             'variable_expenses' => $variableExpenses,
-            'fixed_items' => $fixedQuery->orderBy('date', 'desc')->get(),
-            'variable_items' => $variableQuery->orderBy('date', 'desc')->get(),
+            // [WHY] Selecting only required fields as per README Rule 21.
+            'fixed_items' => $fixedQuery->select('amount', 'date', 'description', 'category')->orderBy('date', 'desc')->get(),
+            'variable_items' => $variableQuery->select('amount', 'date', 'description', 'category', 'created_at')->orderBy('date', 'desc')->get(),
             'top_items' => $topItems,
             'bottom_items' => $bottomItems,
             'total_items_count' => $totalItemsCount,
-            // [RULE] Keep legacy values for backward compatibility
+            // [RULE] Legacy values kept for backward compatibility with older components if any.
             'fixed_expenses_month' => (float) Expense::where('type', 'fixed')->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('amount'),
             'variable_expenses_day' => (float) Expense::where('type', 'variable')->whereDate('date', now()->toDateString())->sum('amount'),
             'period' => $period
         ];
     }
 
-    public function getItemSalesStats($period = 'day', $date = null, $startDate = null, $endDate = null)
+    public function getItemSalesStats($period = 'day', $date = null, $startDate = null, $endDate = null, $type = 'top')
     {
         $referenceDate = $date ? \Illuminate\Support\Carbon::parse($date) : now();
 
@@ -219,11 +220,15 @@ class StatsService
                 DB::raw('COALESCE(SUM(oi.quantity), 0) as total_quantity'),
                 DB::raw('COALESCE(SUM(oi.price * oi.quantity), 0) as total_sales')
             )
-            ->groupBy('products.id', 'products.name')
-            ->orderByDesc('total_quantity')
-            ->orderBy('products.name');
+            ->groupBy('products.id', 'products.name');
 
-        return $itemQuery->get();
+        if ($type === 'bottom') {
+            $itemQuery->orderBy('total_quantity', 'asc');
+        } else {
+            $itemQuery->orderBy('total_quantity', 'desc');
+        }
+
+        return $itemQuery->orderBy('products.name')->get();
     }
 
     /**

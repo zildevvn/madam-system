@@ -63,7 +63,8 @@ class StatsController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $stats = $this->statsService->getItemSalesStats($period, $date, $startDate, $endDate);
+        $type = $request->query('type', 'top');
+        $stats = $this->statsService->getItemSalesStats($period, $date, $startDate, $endDate, $type);
 
         return response()->json([
             'data' => $stats,

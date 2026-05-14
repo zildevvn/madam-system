@@ -39,9 +39,9 @@ const AdminDateFilters = ({
             {period === 'day' && (
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-10 px-5 rounded-full flex items-center gap-3 bg-white border-slate-200 shadow-[0_2px_4px_rgba(0,0,0,0.02)] hover:border-slate-300 hover:bg-slate-50 transition-all group">
-                            <CalendarIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-500 transition-colors" />
-                            <span className="text-[13px] font-bold text-slate-700">{format(dateObj, 'dd/MM/yyyy')}</span>
+                        <Button variant="outline" className="h-[42px] px-4 rounded-[18px] bg-gray-100/80 border-gray-200/50 shadow-inner flex items-center gap-2 transition-all group hover:bg-white hover:border-orange-200">
+                            <CalendarIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-orange-500">{format(dateObj, 'dd/MM/yyyy')}</span>
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
@@ -53,6 +53,10 @@ const AdminDateFilters = ({
                             weekStartsOn={1}
                             locale={vi}
                             initialFocus
+                            className={cn("rounded-md border shadow")}
+                            classNames={{
+                                outside: "opacity-100 text-slate-900 hover:bg-slate-100 rounded-md aria-selected:bg-orange-600 aria-selected:text-white aria-selected:opacity-100"
+                            }}
                         />
                     </PopoverContent>
                 </Popover>
@@ -61,9 +65,9 @@ const AdminDateFilters = ({
             {period === 'week' && (
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-10 px-5 rounded-full flex items-center gap-3 bg-white border-slate-200 shadow-sm hover:border-slate-300 hover:bg-slate-50 transition-all">
-                            <CalendarIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-[12px] font-bold text-slate-700">
+                        <Button variant="outline" className="h-[42px] px-4 rounded-[18px] bg-gray-100/80 border-gray-200/50 shadow-inner flex items-center gap-2 transition-all group hover:bg-white hover:border-orange-200">
+                            <CalendarIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-orange-500">
                                 {format(parseISO(startDate), 'dd/MM', { locale: vi })} - {format(parseISO(endDate), 'dd/MM/yyyy', { locale: vi })}
                             </span>
                         </Button>
@@ -92,6 +96,10 @@ const AdminDateFilters = ({
                             weekStartsOn={1}
                             locale={vi}
                             initialFocus
+                            className={cn("rounded-md border shadow")}
+                            classNames={{
+                                outside: "opacity-100 text-slate-900 hover:bg-slate-100 rounded-md aria-selected:bg-orange-600 aria-selected:text-white aria-selected:opacity-100"
+                            }}
                         />
                     </PopoverContent>
                 </Popover>
@@ -100,12 +108,12 @@ const AdminDateFilters = ({
             {period === 'month' && (
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-10 px-5 rounded-full flex items-center gap-3 bg-white border-slate-200 shadow-sm hover:border-slate-300 hover:bg-slate-50 transition-all">
-                            <CalendarIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-[12px] font-bold text-slate-700 uppercase">
+                        <Button variant="outline" className="h-[42px] px-4 rounded-[18px] bg-gray-100/80 border-gray-200/50 shadow-inner flex items-center gap-2 transition-all group hover:bg-white hover:border-orange-200">
+                            <CalendarIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-orange-500">
                                 {format(dateObj, 'MMMM yyyy', { locale: vi })}
                             </span>
-                            <ChevronDown className="w-3 h-3 text-slate-400" />
+                            <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-orange-500 transition-colors" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="p-4 w-72" align="end">
@@ -126,7 +134,7 @@ const AdminDateFilters = ({
                                             setSelectedDate(format(newDate, 'yyyy-MM-dd'));
                                         }}
                                         className={cn(
-                                            "px-2 py-3.5 text-[10px] font-bold rounded-xl text-center transition-all border",
+                                            "px-2 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl text-center transition-all border",
                                             isActive
                                                 ? "bg-orange-600 text-white border-orange-600 shadow-md scale-105"
                                                 : "text-slate-600 border-transparent hover:border-slate-100 hover:bg-slate-50",
@@ -147,10 +155,10 @@ const AdminDateFilters = ({
             {period === 'year' && (
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-10 px-5 rounded-full flex items-center gap-3 bg-white border-slate-200 shadow-sm hover:border-slate-300 hover:bg-slate-50 transition-all">
-                            <CalendarIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-[12px] font-bold text-slate-700">Năm {currentYear}</span>
-                            <ChevronDown className="w-3 h-3 text-slate-400" />
+                        <Button variant="outline" className="h-[42px] px-4 rounded-[18px] bg-gray-100/80 border-gray-200/50 shadow-inner flex items-center gap-2 transition-all group hover:bg-white hover:border-orange-200">
+                            <CalendarIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-500 transition-colors" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-orange-500">Năm {currentYear}</span>
+                            <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-orange-500 transition-colors" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="p-4 w-72" align="end">
@@ -163,7 +171,7 @@ const AdminDateFilters = ({
                                     key={year}
                                     onClick={() => setSelectedDate(`${year}-01-01`)}
                                     className={cn(
-                                        "px-2 py-4 text-[11px] font-bold rounded-xl text-center transition-all border",
+                                        "px-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-xl text-center transition-all border",
                                         currentYear === year
                                             ? "bg-orange-600 text-white border-orange-600 shadow-md scale-105"
                                             : "text-slate-600 border-transparent hover:border-slate-100 hover:bg-slate-50"
