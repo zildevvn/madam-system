@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 
@@ -115,6 +115,46 @@ const productSlice = createSlice({
       });
   }
 });
+
+// Selectors
+const selectProductState = (state) => state.product;
+
+export const selectAllProducts = createSelector(
+  [selectProductState],
+  (productState) => productState.products.allIds.map(id => productState.products.byId[id])
+);
+
+export const selectAllCategories = createSelector(
+  [selectProductState],
+  (productState) => productState.categories.allIds.map(id => productState.categories.byId[id])
+);
+
+export const selectSearchQuery = (state) => state.product.searchQuery;
+
+/**
+ * [WHY] Memoized selector to prevent unnecessary filtering on every render.
+ * Returns only products matching the search query.
+ */
+export const selectFilteredProducts = createSelector(
+  [selectAllProducts, selectSearchQuery],
+  (products, searchQuery) => {
+    if (!searchQuery) return products;
+    const query = searchQuery.toLowerCase();
+    return products.filter(p => p.name.toLowerCase().includes(query));
+  }
+);
+
+/**
+ * [WHY] Memoized selector to get categories that have at least one product matching the current filter.
+ */
+export const selectFilteredCategories = createSelector(
+  [selectAllCategories, selectFilteredProducts],
+  (categories, filteredProducts) => {
+    return categories.filter(category =>
+      filteredProducts.some(product => product.category_id === category.id)
+    );
+  }
+);
 
 export const { setSearchQuery } = productSlice.actions;
 

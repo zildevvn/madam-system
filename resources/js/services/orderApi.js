@@ -48,8 +48,8 @@ const orderApi = {
     });
     return response.data;
   },
-  getHistory: async (limit = 20) => {
-    const response = await axios.get(`/api/orders/history?limit=${limit}`);
+  getHistory: async (limit = 20, config = {}) => {
+    const response = await axios.get(`/api/orders/history?limit=${limit}`, config);
     return response.data;
   },
   reopenOrder: async (orderId) => {

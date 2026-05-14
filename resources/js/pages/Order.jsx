@@ -12,6 +12,7 @@ const Order = () => {
         animatingItems,
         scrollContainerRef,
         sidebarRef,
+        setCategoryRef,
         handleCategoryClick,
         handleAddToCart,
     } = useOrderLogic();
@@ -60,7 +61,7 @@ const Order = () => {
                                 return (
                                     <section
                                         key={category.id}
-                                        id={`category-section-${category.id}`}
+                                        ref={setCategoryRef(category.id)}
                                         data-category-id={category.id}
                                         className="product-category-section mb-4 scroll-mt-6"
                                     >

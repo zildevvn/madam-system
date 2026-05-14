@@ -41,6 +41,33 @@ export const useCheckoutLogic = () => {
     const [isSaving, setIsSaving] = useState(false);
     const isProcessing = useRef(false);
 
+    // [RULE] Use AbortController and timer tracking for safe unmounting
+    const cleanupAbortRef = useRef(new AbortController());
+    const timersRef = useRef(new Set());
+
+    useEffect(() => {
+        return () => {
+            cleanupAbortRef.current.abort();
+            timersRef.current.forEach(clearTimeout);
+            timersRef.current.clear();
+        };
+    }, []);
+
+    /**
+     * @param {Function} callback
+     * @param {number} delay
+     */
+    const safeSetTimeout = useCallback((callback, delay) => {
+        const id = setTimeout(() => {
+            timersRef.current.delete(id);
+            if (!cleanupAbortRef.current.signal.aborted) {
+                callback();
+            }
+        }, delay);
+        timersRef.current.add(id);
+        return id;
+    }, []);
+
     // Split Bill State
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [selectedSplitItems, setSelectedSplitItems] = useState([]); // Array of { order_item_id, quantity }
@@ -203,7 +230,7 @@ export const useCheckoutLogic = () => {
 
                 dispatch(fetchTables());
                 setShowSuccessPopup(true);
-                setTimeout(() => {
+                safeSetTimeout(() => {
                     setShowSuccessPopup(false);
                     navigate('/staff-order');
                 }, 1500);
@@ -219,7 +246,7 @@ export const useCheckoutLogic = () => {
                 dispatch(clearCart());
                 dispatch(fetchTables());
                 setShowSuccessPopup(true);
-                setTimeout(() => {
+                safeSetTimeout(() => {
                     setShowSuccessPopup(false);
                     navigate('/staff-order');
                 }, 1500);
@@ -257,7 +284,7 @@ export const useCheckoutLogic = () => {
             
             setSuccessMessage('Đã tách đơn hàng thành công.');
             setShowSuccessPopup(true);
-            setTimeout(() => setShowSuccessPopup(false), 2000);
+            safeSetTimeout(() => setShowSuccessPopup(false), 2000);
         } catch (error) {
             console.error(error);
             setWarningMessage('Tách đơn thất bại. Vui lòng thử lại!');

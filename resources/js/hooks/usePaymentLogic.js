@@ -21,6 +21,14 @@ export const usePaymentLogic = ({
     paymentMethod,
     setPaymentMethod
 }) => {
+    // [WHY] Centralized table resolution logic to ensure consistent ID identification across all handlers.
+    const dbTableId = useMemo(() => 
+        selectedTable?.originalTableId || 
+        currentOrder?.tableId || 
+        currentOrder?.table_id || 
+        currentOrder?.table?.id
+    , [selectedTable, currentOrder]);
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSplitMode, setIsSplitMode] = useState(false);
     const [selectedSplitItems, setSelectedSplitItems] = useState([]); // Array of { order_item_id, quantity }
@@ -37,7 +45,6 @@ export const usePaymentLogic = ({
             return Number([...tableIds].sort((a, b) => Number(a) - Number(b))[0]);
         }
         // [FIX] Ensure we use the database table ID (not the order lookup key)
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         return dbTableId || selectedTable?.id;
     });
 
@@ -134,7 +141,6 @@ export const usePaymentLogic = ({
     }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess, isHistoryEdit]);
 
     const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const fallbackTId = dbTableId || selectedTable?.id;
         let newItems;
         if (quantity < 1) {
@@ -149,10 +155,9 @@ export const usePaymentLogic = ({
             );
         }
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
     const handleUpdateNote = useCallback((productId, tableId, note) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
             ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
@@ -160,10 +165,9 @@ export const usePaymentLogic = ({
                 : i
         );
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
     const handleUpdateItemDiscount = useCallback((productId, tableId, updates) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
             ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
@@ -171,10 +175,9 @@ export const usePaymentLogic = ({
                 : i
         );
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, currentOrder, onUpdateDraftItems]);
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
     const handleAddProduct = useCallback((product) => {
-        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
         const activeTId = targetTableId || dbTableId || selectedTable?.id;
         const existing = draftItems.find(i =>
             (i.product_id || i.id) === product.id &&

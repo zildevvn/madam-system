@@ -58,22 +58,21 @@ export const useAdminLogic = () => {
     const [todayRevenue, setTodayRevenue] = useState(0);
     const usersAbortControllerRef = useRef(null);
     const statsAbortControllerRef = useRef(null);
-    const isMounted = useRef(true);
+    const cleanupAbortControllerRef = useRef(new AbortController());
     const logBufferRef = useRef([]);
     const flushTimerRef = useRef(null);
 
-    // [RULE] Track mounted state to prevent memory leaks and React warnings
+    // [RULE] Use AbortController for clean lifecycle management instead of isMounted anti-pattern
     useEffect(() => {
-        isMounted.current = true;
         return () => {
-            isMounted.current = false;
+            cleanupAbortControllerRef.current.abort();
             if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
         };
     }, []);
 
     // [WHY] Batch log updates to prevent UI lag during heavy websocket traffic
     const flushLogs = useCallback(() => {
-        if (!isMounted.current || logBufferRef.current.length === 0) {
+        if (cleanupAbortControllerRef.current.signal.aborted || logBufferRef.current.length === 0) {
             logBufferRef.current = [];
             return;
         }
@@ -93,14 +92,16 @@ export const useAdminLogic = () => {
      * @param {string} message
      */
     const addLog = useCallback((type, prefix, message) => {
-        if (!isMounted.current) return;
+        if (cleanupAbortControllerRef.current.signal.aborted) return;
 
         const time = new Date().toLocaleTimeString();
         logBufferRef.current.push({ type, prefix, message, time });
 
         if (!flushTimerRef.current) {
             flushTimerRef.current = setTimeout(() => {
-                flushLogs();
+                if (!cleanupAbortControllerRef.current.signal.aborted) {
+                    flushLogs();
+                }
                 flushTimerRef.current = null;
             }, 500); // Batch updates every 500ms
         }
@@ -114,17 +115,18 @@ export const useAdminLogic = () => {
 
         try {
             setLoading(true);
-            const response = await getUsersApi({ signal: usersAbortControllerRef.current.signal });
-            if (isMounted.current) {
+            const response = await getUsersApi({ 
+                signal: usersAbortControllerRef.current.signal 
+            });
+            
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 setUsers(response.data || []);
             }
         } catch (error) {
             if (axios.isCancel(error)) return;
-            if (isMounted.current) {
-                console.error('Failed to fetch users:', error);
-            }
+            console.error('Failed to fetch users:', error);
         } finally {
-            if (isMounted.current && !usersAbortControllerRef.current?.signal.aborted) {
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 setLoading(false);
             }
         }
@@ -140,14 +142,12 @@ export const useAdminLogic = () => {
             const res = await axios.get('/api/stats/today-revenue', {
                 signal: statsAbortControllerRef.current.signal
             });
-            if (isMounted.current) {
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 setTodayRevenue(res.data.data.revenue || 0);
             }
         } catch (error) {
             if (axios.isCancel(error)) return;
-            if (isMounted.current) {
-                console.error('Failed to fetch revenue stats:', error);
-            }
+            console.error('Failed to fetch revenue stats:', error);
         }
     }, []);
 
@@ -172,12 +172,14 @@ export const useAdminLogic = () => {
                 // [WHY] Abort all pending requests on unmount
                 if (usersAbortControllerRef.current) usersAbortControllerRef.current.abort();
                 if (statsAbortControllerRef.current) statsAbortControllerRef.current.abort();
+                cleanupAbortControllerRef.current.abort();
             };
         }
 
         return () => {
             if (usersAbortControllerRef.current) usersAbortControllerRef.current.abort();
             if (statsAbortControllerRef.current) statsAbortControllerRef.current.abort();
+            cleanupAbortControllerRef.current.abort();
         };
     }, [fetchUsers, fetchStats, handleSystemTest]);
 
@@ -185,17 +187,18 @@ export const useAdminLogic = () => {
         setTestingPrinter(true);
         addLog('info', 'Printer', 'Starting connection test...');
         try {
-            const res = await axios.get('/api/debug/printer');
-            if (isMounted.current) {
+            const res = await axios.get('/api/debug/printer', {
+                signal: cleanupAbortControllerRef.current.signal
+            });
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 addLog('success', 'Printer', res.data.message);
             }
         } catch (err) {
-            if (isMounted.current) {
-                const msg = err.response?.data?.message || err.message;
-                addLog('error', 'Printer', msg);
-            }
+            if (axios.isCancel(err)) return;
+            const msg = err.response?.data?.message || err.message;
+            addLog('error', 'Printer', msg);
         } finally {
-            if (isMounted.current) {
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 setTestingPrinter(false);
             }
         }
@@ -205,16 +208,17 @@ export const useAdminLogic = () => {
         setTestingWS(true);
         addLog('info', 'Pusher', 'Dispatching test broadcast...');
         try {
-            const res = await axios.get('/api/debug/broadcast');
-            if (isMounted.current) {
+            const res = await axios.get('/api/debug/broadcast', {
+                signal: cleanupAbortControllerRef.current.signal
+            });
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 addLog('success', 'Pusher', res.data.message);
             }
         } catch (err) {
-            if (isMounted.current) {
-                addLog('error', 'Pusher', err.message);
-            }
+            if (axios.isCancel(err)) return;
+            addLog('error', 'Pusher', err.message);
         } finally {
-            if (isMounted.current) {
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 setTestingWS(false);
             }
         }
@@ -228,16 +232,15 @@ export const useAdminLogic = () => {
         try {
             setUpdating(userId);
             await updateUserRoleApi(userId, newRole);
-            if (isMounted.current) {
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 await fetchUsers(); // Refresh list
             }
         } catch (error) {
-            if (isMounted.current) {
-                console.error('Failed to update role:', error);
-                alert('Failed to update role');
-            }
+            if (axios.isCancel(error)) return;
+            console.error('Failed to update role:', error);
+            alert('Failed to update role');
         } finally {
-            if (isMounted.current) {
+            if (!cleanupAbortControllerRef.current.signal.aborted) {
                 setUpdating(null);
             }
         }
