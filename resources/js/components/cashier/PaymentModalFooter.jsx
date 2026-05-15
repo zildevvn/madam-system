@@ -172,7 +172,7 @@ const PaymentModalFooter = ({
 
             {/* Action Buttons */}
             <div className="px-4 pb-4 pt-1 flex flex-col gap-2">
-                {!isSplitMode && step === 1 && !isHistoryEdit && (
+                {!isSplitMode && step === 1 && !isHistoryEdit && !isGroup && (
                     <button
                         onClick={() => setIsSplitMode(true)}
                         className="w-full bg-white border border-orange-100 text-orange-500 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-50 transition-colors cursor-pointer"

@@ -88,7 +88,7 @@ class OrderPaymentService
         });
 
         $result->load(['items' => function($q) {
-                $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status');
+                $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
             }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
 
         try {
@@ -237,7 +237,7 @@ class OrderPaymentService
     public function getHistory($limit = 20)
     {
         return Order::with(['items' => function($q) {
-                $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status');
+                $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
             }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation'])
             ->where('status', 'completed')
             ->whereDate('updated_at', now()->toDateString())
