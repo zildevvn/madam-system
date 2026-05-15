@@ -166,8 +166,8 @@ class StatsService
             'fixed_expenses' => $fixedExpenses,
             'variable_expenses' => $variableExpenses,
             // [WHY] Selecting only required fields as per README Rule 21.
-            'fixed_items' => $fixedQuery->select('amount', 'date', 'description', 'category')->orderBy('date', 'desc')->get(),
-            'variable_items' => $variableQuery->select('amount', 'date', 'description', 'category', 'created_at')->orderBy('date', 'desc')->get(),
+            'fixed_items' => $fixedQuery->select('id', 'amount', 'date', 'description', 'category')->orderBy('date', 'desc')->get(),
+            'variable_items' => $variableQuery->select('id', 'amount', 'date', 'description', 'category', 'created_at')->orderBy('date', 'desc')->get(),
             'top_items' => $topItems,
             'bottom_items' => $bottomItems,
             'total_items_count' => $totalItemsCount,
