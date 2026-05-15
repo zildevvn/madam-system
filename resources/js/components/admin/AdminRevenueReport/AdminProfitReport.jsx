@@ -32,7 +32,7 @@ const AdminProfitReport = ({ stats, loading }) => {
                     </div>
 
                     <div className="flex flex-wrap items-baseline gap-4 mb-8">
-                        <span className={`text-[42px] md:text-[64px] lg:text-[72px] font-black tracking-tighter leading-none ${isPositive ? 'mdt-text-primary' : 'text-emerald-500'}`}>
+                        <span className={`h1 font-black tracking-tighter leading-none ${isPositive ? 'mdt-text-primary' : '!text-emerald-500'}`}>
                             {profit < 0 ? '-' : ''}{formatPrice(Math.abs(profit))}
                         </span>
                         <span className="h5 text-slate-400 uppercase tracking-widest">VND</span>
@@ -62,16 +62,16 @@ const AdminProfitReport = ({ stats, loading }) => {
                 </div>
 
                 {/* Costs Breakdown Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="item-costs-breakdown bg-white rounded-[12px] border border-slate-100 shadow-sm px-2 py-4 flex flex-row items-center justify-between gap-2">
+                <div className="grid grid-cols-2 gap-2 md:gap-4">
+                    <div className="flex-wrap md:flex-nowrap item-costs-breakdown bg-white rounded-[12px] border border-slate-100 shadow-sm px-2 py-4 flex flex-row items-center justify-between gap-2">
                         <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest whitespace-nowrap">CP Cố định</span>
-                        <div className="text-[16px] font-black text-slate-900 leading-none whitespace-nowrap">
+                        <div className="w-full md:w-auto text-[14px] md:text-[16px] font-black text-slate-900 leading-none whitespace-nowrap">
                             {formatPrice(fixedCosts)}đ
                         </div>
                     </div>
-                    <div className="item-costs-breakdown bg-white rounded-[12px] border border-slate-100 shadow-sm px-2 py-4 flex flex-row items-center justify-between gap-2">
+                    <div className="flex-wrap md:flex-nowrap item-costs-breakdown bg-white rounded-[12px] border border-slate-100 shadow-sm px-2 py-4 flex flex-row items-center justify-between gap-2">
                         <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest whitespace-nowrap">CP Biến đổi</span>
-                        <div className="text-[16px] font-black text-slate-900 leading-none whitespace-nowrap">
+                        <div className="w-full md:w-auto text-[14px] md:text-[16px] font-black text-slate-900 leading-none whitespace-nowrap">
                             {formatPrice(variableCosts)}đ
                         </div>
                     </div>
