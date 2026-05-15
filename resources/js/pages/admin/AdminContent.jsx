@@ -96,7 +96,13 @@ const AdminContent = () => {
 
 
             {/* ─── TOP OVERVIEW: Profit + Quick Stats ─── */}
-            <AdminProfitReport stats={stats} loading={loading} />
+            <div className="space-y-4">
+                <div className="flex items-center gap-3 px-2">
+                    <div className="w-1 h-6 mdt-bg-primary  rounded-full" />
+                    <h4 className="tracking-[0.01em]">Tổng quan lợi nhuận</h4>
+                </div>
+                <AdminProfitReport stats={stats} loading={loading} />
+            </div>
         </div>
     );
 };

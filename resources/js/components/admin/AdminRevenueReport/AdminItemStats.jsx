@@ -42,7 +42,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    <tr className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                         <th className="py-3 px-1 md:py-4 md:px-3">Tên sản phẩm</th>
                                         <th className="py-3 px-1 md:py-4 md:px-3 text-right">Số lượng</th>
                                         <th className="py-3 px-1 md:py-4 md:px-3 text-right">Doanh thu</th>
@@ -53,13 +53,13 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                                         <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-emerald-50/20 transition-colors group/row">
                                             <td className="py-3 px-1 md:py-4 md:px-3">
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-slate-700 text-[13px]">{item.name}</span>
+                                                    <span className="font-black text-slate-700 text-[11px] md:text-[13px]">{item.name}</span>
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Thứ hạng #{idx + 1}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 px-1 md:py-4 md:px-3 text-right font-black text-emerald-600 text-[15px]">{item.total_quantity}</td>
+                                            <td className="py-3 px-1 md:py-4 md:px-3 text-right font-black text-[12px] md:text-[15px]">{item.total_quantity}</td>
                                             <td className="py-3 px-1 md:py-4 md:px-3 text-right">
-                                                <div className="font-bold text-slate-500 text-[12px]">{formatPrice(item.total_sales)}đ</div>
+                                                <div className="font-bold text-slate-500 text-[10px] md:text-[12px]">{formatPrice(item.total_sales)}đ</div>
                                             </td>
                                         </tr>
                                     ))}
@@ -88,7 +88,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                             </div>
                             <div>
                                 <h5 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Bán ít nhất</h5>
-                                <span className="text-[10px] text-rose-600 font-bold uppercase tracking-wider">Top 10 Sản phẩm</span>
+                                <span className="text-[9px] md:text-[10px] text-rose-600 font-bold uppercase tracking-wider">Top 10 Sản phẩm</span>
                             </div>
                         </div>
                         {totalItemsCount > 10 && (
@@ -104,7 +104,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    <tr className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                         <th className="py-3 px-1 md:py-4 md:px-3">Tên sản phẩm</th>
                                         <th className="py-3 px-1 md:py-4 md:px-3 text-right">Số lượng</th>
                                         <th className="py-3 px-1 md:py-4 md:px-3 text-right">Doanh thu</th>
@@ -115,13 +115,13 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                                         <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-rose-50/20 transition-colors group/row">
                                             <td className="py-3 px-1 md:py-4 md:px-3">
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-slate-700 text-[13px]">{item.name}</span>
+                                                    <span className="font-black text-slate-700 text-[11px] md:text-[13px]">{item.name}</span>
                                                     <span className="text-[9px] text-slate-400 uppercase font-bold">Thứ hạng #{totalItemsCount - idx}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3 px-1 md:py-4 md:px-3 text-right font-black text-rose-600 text-[15px]">{item.total_quantity}</td>
+                                            <td className="py-3 px-1 md:py-4 md:px-3 text-right font-black text-[12px] md:text-[15px]">{item.total_quantity}</td>
                                             <td className="py-3 px-1 md:py-4 md:px-3 text-right">
-                                                <div className="font-bold text-slate-500 text-[12px]">{formatPrice(item.total_sales)}đ</div>
+                                                <div className="font-bold text-slate-500 text-[10px] md:text-[12px]">{formatPrice(item.total_sales)}đ</div>
                                             </td>
                                         </tr>
                                     ))}
