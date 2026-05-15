@@ -75,7 +75,7 @@ export const useCashierSegmentation = (orders, allTables) => {
                 // 2. Split Bills: Multiple orders from the SAME table (un-merge into MULTIPLE cards)
                 let splitOrders = [];
                 let mainOrders = [];
-                
+
                 if (order.orders && order.orders.length > 1) {
                     const sortedOrders = [...order.orders].sort((a, b) => a.id - b.id);
                     const seenTableIds = new Set();
@@ -95,17 +95,18 @@ export const useCashierSegmentation = (orders, allTables) => {
 
                 if (splitOrders.length > 0) {
                     // There are split bills! We must un-merge them.
-                    
+
                     // Card 1: Main Orders Combined (Original table + any merged tables)
-                    const mainLookupKey = lookupKey; 
+                    const mainLookupKey = lookupKey;
                     const mainOrderIds = mainOrders.map(o => o.id);
                     const mainReconstructed = {
                         ...order,
                         id: mainOrders[0].id,
                         orders: mainOrders,
+                        relatedOrderIds: mainOrderIds, // [FIX] Isolate to main orders only
                         items: order.items.filter(i => mainOrderIds.includes(i.order_id))
                     };
-                    
+
                     individualOrders[mainLookupKey] = mainReconstructed;
                     individualTablesList.push({
                         id: mainLookupKey,
@@ -119,18 +120,20 @@ export const useCashierSegmentation = (orders, allTables) => {
                     // Card 2+: Split Orders
                     splitOrders.forEach((subOrder, index) => {
                         const subLookupKey = subOrder.id.toString();
+                        const subOrderIds = [subOrder.id];
                         const subReconstructed = {
                             ...order,
                             id: subOrder.id,
                             orders: [subOrder],
+                            relatedOrderIds: subOrderIds, // [FIX] Isolate to this split order only
                             items: order.items.filter(i => i.order_id === subOrder.id)
                         };
-                        
+
                         individualOrders[subLookupKey] = subReconstructed;
-                        
+
                         const baseName = order.tableName || `Bàn ${order.tableId}`;
                         const tableName = `${baseName} (Tách ${index + 1})`;
-                        
+
                         individualTablesList.push({
                             id: subLookupKey,
                             name: tableName,

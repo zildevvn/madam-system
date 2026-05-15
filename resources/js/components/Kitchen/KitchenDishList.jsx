@@ -1,12 +1,12 @@
 import React from 'react';
 
-const KitchenDishList = ({ consolidatedItems }) => {
+const KitchenDishList = ({ consolidatedItems, isBar = false }) => {
     return (
         <div className="col-span-12 md:col-span-8 lg:col-span-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
             <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                <h5 className="tracking-widest m-0"> Danh sách món </h5>
+                <h5 className="tracking-widest m-0"> {isBar ? 'Danh sách thức uống' : 'Danh sách món'} </h5>
                 <span className="text-xs font-bold bg-orange-100 mdt-text-primary px-3 py-1 rounded-full uppercase">
-                    {consolidatedItems.length} loại món
+                    {consolidatedItems.length} {isBar ? 'loại đồ uống' : 'loại món'}
                 </span>
             </div>
             <div className="p-6 overflow-y-auto flex-1 hide-scrollbar">
@@ -35,7 +35,7 @@ const KitchenDishList = ({ consolidatedItems }) => {
                         <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p>Không có món nào đang chờ xử lý</p>
+                        <p>Không có {isBar ? 'đồ uống' : 'món'} nào đang chờ xử lý</p>
                     </div>
                 )}
             </div>

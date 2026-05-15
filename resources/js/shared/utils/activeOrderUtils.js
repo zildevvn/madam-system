@@ -62,7 +62,13 @@ export const useActiveTableOrders = (tables, orders, filterType) => {
             }
 
             const items = order.items
-                .filter(item => !filterType || (item.product?.type === filterType) || (item.type === filterType))
+                .filter(item => {
+                    if (!filterType) return true;
+                    const rawType = item.product?.type || item.type;
+                    const productType = (rawType || '').toString().toLowerCase().trim();
+                    const normalizedFilter = filterType.toString().toLowerCase().trim();
+                    return productType === normalizedFilter;
+                })
                 .map(item => ({ ...item, orderTimeTs: safeParseDate(item.orderTime).getTime() }));
 
             if (items.length === 0) {

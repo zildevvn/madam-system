@@ -62,7 +62,9 @@ const Bar = () => {
             handledOrderIds.add(order.id);
 
             order.items.forEach(item => {
-                if (item.product?.type !== 'drink' && item.type !== 'drink') return;
+                const rawType = item.product?.type || item.type;
+                const productType = (rawType || '').toString().toLowerCase().trim();
+                if (productType !== 'drink') return;
 
                 counts.total += item.quantity;
                 if (item.status === 'ready' || item.status === 'served') {

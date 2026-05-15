@@ -44,6 +44,9 @@ const PaymentItemEditor = ({
         ? groupTableIds
         : (mergedStr ? mergedStr.split('-').map(s => s.trim()).filter(id => id && !isNaN(parseInt(id))).map(Number) : []);
 
+    // [WHY] Centralized table resolution logic to ensure consistent ID identification
+    const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
+
     // [WHY] Map IDs to display names (e.g. 47 -> "44")
     const resolveTableLabel = (tid) => {
         const t = allTables.find(tbl => tbl.id.toString() === tid.toString());
@@ -125,37 +128,30 @@ const PaymentItemEditor = ({
                     <div className="space-y-1">
                         {Object.entries(
                             draftItems.reduce((acc, item) => {
-                                // [RULE] For unified group orders:
-                                // - Items with reservation_item_id = shared pre-order → GROUP bucket
-                                // - Items without reservation_item_id = individual extras → per-table bucket
-                                const isGroupReservation = currentOrder?.reservation && currentOrder?.reservation.type === 'group';
-
                                 let tGroup;
-                                if (isGroupReservation) {
-                                    // Shared pre-order items go to GROUP, individual extras go to their table
+                                if (isUnifiedGroup) {
+                                    // Shared pre-order items go to GROUP, individual extras go to their specific table
                                     tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
                                 } else {
-                                    // Standard staff-merge: group by table
-                                    const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
-                                    tGroup = item.tableId || dbTableId || selectedTable?.id;
+                                    // Standard/Merged/Split: group by table (favor item.tableId if set)
+                                    tGroup = item.tableId || dbTableId || selectedTable?.id || 'GROUP';
                                 }
 
                                 if (!acc[tGroup]) acc[tGroup] = [];
                                 acc[tGroup].push(item);
                                 return acc;
                             }, {})
-                        ).sort(([a], [b]) => a === 'GROUP' ? -1 : a - b).map(([tGroup, tableItems]) => {
-                            const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-                            const isSharedSection = tGroup === 'GROUP';
+                        ).sort(([a], [b]) => a === 'GROUP' ? -1 : (isNaN(a) ? 1 : a - b)).map(([tGroup, tableItems]) => {
+                        const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                        const isSharedSection = tGroup === 'GROUP';
 
-                            // [WHY] Display title for each section
-                            const displayTableTitle = isSharedSection
-                                ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.map(resolveTableLabel).join('-')})` : ''}`
-                                : `Bàn ${resolveTableLabel(tGroup)}`;
+                        // [WHY] Standardized title for each section
+                        const displayTableTitle = isSharedSection
+                            ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.map(resolveTableLabel).join('-')})` : ''}`
+                            : `Bàn ${resolveTableLabel(tGroup)}`;
 
-                            // [WHY] Shared pre-order items are always read-only.
-                            // Individual extras are editable.
-                            const sectionReadOnly = isSharedSection;
+                        // [WHY] Sections are read-only if they are part of a pre-ordered group set
+                        const sectionReadOnly = isSharedSection && isUnifiedGroup;
 
                             return (
                                 <div key={tGroup} className="space-y-1 mb-4 last:mb-0">

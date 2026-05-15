@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const tableService = {
-  getAllTables: async () => {
-    const response = await axios.get('/api/tables');
+  getAllTables: async (type = null) => {
+    const response = await axios.get('/api/tables', { params: { type } });
     return response.data;
   },
   lockTable: async (id) => {

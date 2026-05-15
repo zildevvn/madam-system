@@ -109,7 +109,19 @@ class OrderService
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
-            $existingItems = OrderItem::where('order_id', $orderId)->get();
+            // [WHY] Identify all orders in the merge group to prevent item duplication.
+            // If we only look at the primary order, items belonging to other tables in the merge
+            // would be treated as "new" and cloned into the primary order, while also remaining
+            // in their original orders.
+            $mergedString = $mergedTables ?? $order->merged_tables;
+            $tableIds = $mergedString ? explode('-', $mergedString) : [$order->table_id];
+            
+            $involvedOrderIds = Order::whereIn('table_id', $tableIds)
+                ->whereIn('status', ['draft', 'pending', 'processing'])
+                ->pluck('id')
+                ->toArray();
+
+            $existingItems = OrderItem::whereIn('order_id', $involvedOrderIds)->get();
             $existingItemsById = $existingItems->keyBy('id');
             $existingItemsByProduct = $existingItems->groupBy('product_id');
 
@@ -142,12 +154,12 @@ class OrderService
 
                 if ($orderItem) {
                     $handledItemIds[] = $orderItem->id;
+                    $orderItem->order_id = $orderId;
                     $orderItem->quantity = $itemData['quantity'];
                     $orderItem->table_id = $itemData['table_id'] ?? $order->table_id;
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
-                    $orderItem->save();
                 } else {
                     $product = Product::find($productId);
                     $orderItem = OrderItem::create([
@@ -164,7 +176,24 @@ class OrderService
                     $handledItemIds[] = $orderItem->id;
                 }
 
-                $totalPrice += ($orderItem->price * $orderItem->quantity);
+                $discount = $itemData['discount'] ?? 0;
+                $discountType = $itemData['discount_type'] ?? 'fixed';
+                $itemGross = $orderItem->price * $orderItem->quantity;
+                $itemDiscountAmount = 0;
+
+                if ($discount > 0) {
+                    if ($discountType === 'percent') {
+                        $itemDiscountAmount = ($itemGross * $discount) / 100;
+                    } else {
+                        $itemDiscountAmount = $discount * $orderItem->quantity;
+                    }
+                }
+
+                $orderItem->discount = $discount;
+                $orderItem->discount_type = $discountType;
+                $orderItem->save();
+
+                $totalPrice += ($itemGross - $itemDiscountAmount);
             }
 
             // [WHY] Delete only the items that were NOT handled in the loop above.

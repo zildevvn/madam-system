@@ -18,12 +18,17 @@ class TableService
      * [RULE] Clean up expired drafts before fetching
      * [RULE] Eager load only required product fields
      */
-    public function getAllTables()
+    public function getAllTables($type = null)
     {
         $this->orderService->cleanupDrafts();
         return Table::with([
             'activeOrder.reservation',
             'activeOrders.reservation',
+            'activeOrders.items' => function($query) use ($type) {
+                if ($type) {
+                    $query->where('type', $type);
+                }
+            },
             'activeOrders.items.product' => function($query) {
                 $query->select('id', 'name', 'price', 'type');
             }

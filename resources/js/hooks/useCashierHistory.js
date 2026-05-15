@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { cleanMergedString, generateTableRange } from '../shared/utils/normalizeTableStrings';
+import { calculateTotals } from '../shared/utils/priceCalculations';
 
 /**
  * useCashierHistory
@@ -56,8 +57,23 @@ export const useCashierHistory = (historyOrders = []) => {
         normalizedHistory.forEach(order => {
             const roundedTime = Math.floor(new Date(order.updated_at).getTime() / 2000) * 2000;
             const timeKey = roundedTime.toString();
-            const signalKey = order.reservation_id ? `res-${order.reservation_id}` : `tx-${timeKey}-${order.payment_method}`;
-            const groupKey = signalToGroupId[signalKey];
+            const cleanedMerged = cleanMergedString(order.merged_tables);
+
+            const signals = [
+                order.reservation_id ? `res-${order.reservation_id}` : null,
+                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null,
+                `tx-${timeKey}-${order.payment_method}`
+            ].filter(Boolean);
+
+            let groupKey = null;
+            for (const s of signals) {
+                if (signalToGroupId[s]) {
+                    groupKey = signalToGroupId[s];
+                    break;
+                }
+            }
+
+            if (!groupKey) return; // Should not happen if Step 2 worked
 
             if (!groups[groupKey]) {
                 groups[groupKey] = {
@@ -65,8 +81,7 @@ export const useCashierHistory = (historyOrders = []) => {
                     merged_tables: cleanMergedString(order.merged_tables),
                     mergedTables: cleanMergedString(order.merged_tables),
                     itemsMap: {}, // [WHY] Use map to group items by product + note
-                    total_price: Number(order.total_price),
-                    discount_amount: Number(order.discount_amount),
+                    allOrders: [order],
                     allTableIds: new Set()
                 };
 
@@ -91,8 +106,7 @@ export const useCashierHistory = (historyOrders = []) => {
                 }
             } else {
                 const g = groups[groupKey];
-                g.total_price += Number(order.total_price);
-                g.discount_amount += Number(order.discount_amount);
+                g.allOrders.push(order);
 
                 // [WHY] Merge items into the existing itemsMap
                 (order.items || []).forEach(item => {
@@ -135,13 +149,24 @@ export const useCashierHistory = (historyOrders = []) => {
             }
         });
 
-        // [WHY] Step 4: Final formatting (Ranges and Sorting)
+        // [WHY] Step 4: Final pass to calculate synchronized totals for each group
         return Object.values(groups).map(g => {
-            // [WHY] Convert itemsMap back to array for UI consumption
-            g.items = Object.values(g.itemsMap);
+            const items = Object.values(g.itemsMap);
+            // [WHY] Find the primary order to get global discount settings
+            const primaryOrder = g.allOrders.find(o => o.discount_type) || g.allOrders[0];
+            
+            const totals = calculateTotals(items, {
+                type: primaryOrder.discount_type || 'fixed',
+                value: primaryOrder.discount_value || 0
+            });
 
-            // [WHY] Ensure each item has a tableId for the PaymentItemEditor's grouping logic
-            // If the item doesn't have one, fallback to the group's primary table_id.
+            g.items = items;
+            g.total_price = totals.finalTotal;
+            g.discount_amount = totals.globalDiscountAmount;
+            g.itemDiscountsTotal = totals.itemDiscountsTotal;
+            g.subtotal = totals.grossTotal;
+
+            // [WHY] Ensure each item has a tableId for UI components
             g.items.forEach(item => {
                 if (!item.tableId) item.tableId = g.table_id;
             });
@@ -150,7 +175,7 @@ export const useCashierHistory = (historyOrders = []) => {
                 const range = generateTableRange(g.allTableIds);
                 g.merged_tables = range;
                 g.mergedTables = range;
-                g.tableName = range; // [WHY] Ensure components like Receipt use the full range name
+                g.tableName = range;
             }
             return g;
         }).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));

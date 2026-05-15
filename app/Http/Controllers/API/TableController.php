@@ -16,9 +16,10 @@ class TableController extends Controller
     }
 
     // get all tables
-    public function index()
+    public function index(Request $request)
     {
-        $tables = $this->tableService->getAllTables();
+        $type = $request->query('type');
+        $tables = $this->tableService->getAllTables($type);
         return response()->json([
             'data' => $tables,
             'message' => 'Success'

@@ -17,6 +17,8 @@ class OrderItem extends Model
         'table_id',
         'quantity',
         'price',
+        'discount',
+        'discount_type',
         'note',
         'status',
         'source',

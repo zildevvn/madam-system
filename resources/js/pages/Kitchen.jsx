@@ -6,9 +6,12 @@ import ActiveOrderTableList from '../components/ActiveOrderTableList';
 import DelayWarnings from '../components/delay-warning/DelayWarnings';
 import KitchenDishList from '../components/Kitchen/KitchenDishList';
 
-const Kitchen = () => {
+const Kitchen = ({ mode = 'kitchen' }) => {
+    const isBar = mode === 'bar';
+    const filterType = isBar ? 'drink' : 'food';
     const dispatch = useAppDispatch();
-    // Use consolidated logic hook
+
+    // Use consolidated logic hook with dynamic filter
     const {
         orders,
         orderDict: activeOrders,
@@ -16,7 +19,7 @@ const Kitchen = () => {
         allTables,
         currentTime,
         status: tableStatus
-    } = useConsolidatedOrders('food');
+    } = useConsolidatedOrders(filterType);
 
     const handleItemStatusChange = async (orderId, itemIds) => {
         const ids = Array.isArray(itemIds) ? itemIds : [itemIds];
@@ -58,7 +61,7 @@ const Kitchen = () => {
     }, [orders]);
 
     return (
-        <div className="page-kitchen min-h-screen bg-gray-50 overflow-hidden">
+        <div className={`page-kitchen min-h-screen bg-gray-50 overflow-hidden ${isBar ? 'mdt-bar-page' : ''}`}>
             <div className="md-management-page__content h-[calc(100vh-60px)] p-4 lg:p-6 overflow-hidden">
                 <div className="max-w-[1600px] mx-auto h-full">
                     <div className="grid grid-cols-12 gap-4 lg:gap-6 h-full">
@@ -67,11 +70,15 @@ const Kitchen = () => {
                                 tables={activeTablesToDisplay}
                                 orders={activeOrders}
                                 currentTime={currentTime}
-                                filterType="food"
+                                filterType={filterType}
+                                isBar={isBar}
                             />
                         </div>
 
-                        <KitchenDishList consolidatedItems={consolidatedItems} />
+                        <KitchenDishList 
+                            consolidatedItems={consolidatedItems} 
+                            isBar={isBar}
+                        />
 
                         <div className="col-span-12 lg:col-span-3 h-full flex flex-col overflow-hidden">
                             <DelayWarnings
@@ -79,7 +86,9 @@ const Kitchen = () => {
                                 orders={activeOrders}
                                 currentTime={currentTime}
                                 onItemClick={handleItemStatusChange}
-                                filterType="food"
+                                filterType={filterType}
+                                isBar={isBar}
+                                title={isBar ? 'Thức uống trễ' : 'Món ăn trễ'}
                             />
                         </div>
                     </div>
