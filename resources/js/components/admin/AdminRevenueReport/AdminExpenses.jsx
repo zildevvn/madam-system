@@ -25,6 +25,10 @@ const AdminExpenses = ({ stats, loading, period }) => {
         return 'Trong tháng';
     };
 
+    const ITEMS_PER_PAGE = 10;
+    const [currentPageFixed, setCurrentPageFixed] = React.useState(1);
+    const [currentPageVariable, setCurrentPageVariable] = React.useState(1);
+
     if (loading && !stats) {
         return (
             <div className="rounded-[12px] flex flex-col items-center justify-center py-20 bg-white border border-slate-100">
@@ -33,6 +37,55 @@ const AdminExpenses = ({ stats, loading, period }) => {
             </div>
         );
     }
+
+    // Pagination Logic
+    const paginate = (items, page) => {
+        const start = (page - 1) * ITEMS_PER_PAGE;
+        return (items || []).slice(start, start + ITEMS_PER_PAGE);
+    };
+
+    const fixedItems = paginate(stats?.fixed_items, currentPageFixed);
+    const variableItems = paginate(stats?.variable_items, currentPageVariable);
+
+    const totalPagesFixed = Math.ceil((stats?.fixed_items?.length || 0) / ITEMS_PER_PAGE);
+    const totalPagesVariable = Math.ceil((stats?.variable_items?.length || 0) / ITEMS_PER_PAGE);
+
+    const Pagination = ({ current, total, onChange }) => {
+        if (total <= 1) return null;
+        return (
+            <div className="flex items-center justify-center gap-2 mt-6">
+                <button
+                    onClick={() => onChange(Math.max(1, current - 1))}
+                    disabled={current === 1}
+                    className="p-2 rounded-lg border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <div className="flex items-center gap-1">
+                    {[...Array(total)].map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => onChange(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-[11px] font-black transition-all ${
+                                current === i + 1 
+                                    ? 'mdt-bg-primary text-white shadow-sm' 
+                                    : 'text-slate-400 hover:bg-slate-50'
+                            }`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    onClick={() => onChange(Math.min(total, current + 1))}
+                    disabled={current === total}
+                    className="p-2 rounded-lg border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7-7" /></svg>
+                </button>
+            </div>
+        );
+    };
 
     return (
         <div className="bg-white rounded-[12px] border border-slate-100 shadow-sm p-4 md:p-10 lg:p-14">
@@ -62,9 +115,9 @@ const AdminExpenses = ({ stats, loading, period }) => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            {stats?.fixed_items?.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
+                        <div className="space-y-2 list-items">
+                            {fixedItems.map((item, idx) => (
+                                <div key={item.id || idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
                                     <div className="flex flex-col gap-0.5 min-w-0">
                                         <span className="text-[13px] font-black text-slate-800 truncate">{item.description || item.category}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.date}</span>
@@ -73,6 +126,12 @@ const AdminExpenses = ({ stats, loading, period }) => {
                                 </div>
                             ))}
                         </div>
+
+                        <Pagination 
+                            current={currentPageFixed} 
+                            total={totalPagesFixed} 
+                            onChange={setCurrentPageFixed} 
+                        />
                     </div>
 
                     {/* ─── VARIABLE EXPENSES ─── */}
@@ -88,9 +147,9 @@ const AdminExpenses = ({ stats, loading, period }) => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            {stats?.variable_items?.map((item, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
+                        <div className="space-y-2 list-items">
+                            {variableItems.map((item, idx) => (
+                                <div key={item.id || idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
                                     <div className="flex flex-col gap-0.5 min-w-0">
                                         <span className="text-[13px] font-black text-slate-800 truncate">{item.description || item.category}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -101,6 +160,12 @@ const AdminExpenses = ({ stats, loading, period }) => {
                                 </div>
                             ))}
                         </div>
+
+                        <Pagination 
+                            current={currentPageVariable} 
+                            total={totalPagesVariable} 
+                            onChange={setCurrentPageVariable} 
+                        />
                     </div>
                 </div>
             </div>
