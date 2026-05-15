@@ -37,7 +37,10 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
             const itemsToProcess = order.items.filter(item => {
                 if (item.done || item.status === 'ready' || item.status === 'served') return false;
                 if (!filterType) return true;
-                return (item.product?.type === filterType) || (item.type === filterType);
+                const rawType = item.product?.type || item.type;
+                const productType = (rawType || '').toString().toLowerCase().trim();
+                const normalizedFilter = filterType.toString().toLowerCase().trim();
+                return productType === normalizedFilter;
             });
 
             const orderStartTimeTs = safeParseDate(order.startTime || order.created_at).getTime();

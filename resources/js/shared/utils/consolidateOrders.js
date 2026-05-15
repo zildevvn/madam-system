@@ -81,8 +81,11 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             }
 
             order.items.forEach(item => {
-                const productType = item.product?.type || item.type;
-                if (filterType && productType !== filterType) return;
+                const rawType = item.product?.type || item.type;
+                const productType = (rawType || '').toString().toLowerCase().trim();
+                const normalizedFilter = filterType ? filterType.toString().toLowerCase().trim() : null;
+
+                if (normalizedFilter && productType !== normalizedFilter) return;
 
                 const itemData = {
                     id: item.id,
@@ -193,6 +196,10 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
         }
 
         if (displayedGroups.has(groupKey)) return false;
+
+        // [RULE] If a filterType is active (Bar/Kitchen), hide tables that have 0 matching items
+        if (filterType && group.items.length === 0) return false;
+
         displayedGroups.add(groupKey);
         return true;
     });

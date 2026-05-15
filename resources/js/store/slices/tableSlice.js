@@ -2,8 +2,8 @@ import { createSlice, createAsyncThunk, createSelector, isAnyOf } from '@reduxjs
 import tableService from '../../services/tableService';
 import { updateItemStatusAsync, checkoutOrderAsync, fetchActiveOrderAsync } from './orderSlice';
 
-export const fetchTables = createAsyncThunk('table/fetchTables', async () => {
-  const response = await tableService.getAllTables();
+export const fetchTables = createAsyncThunk('table/fetchTables', async (type = null) => {
+  const response = await tableService.getAllTables(type);
   return response.data; // The backend now wraps the payload in { data: [...], message: ... }
 });
 

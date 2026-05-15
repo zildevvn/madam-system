@@ -21,15 +21,15 @@ export const useConsolidatedOrders = (filterType = null, groupByCompositeKey = f
     // 1. Fetch tables on mount if idle
     useEffect(() => {
         if (tableStatus === 'idle') {
-            dispatch(fetchTables());
+            dispatch(fetchTables(filterType));
         }
-    }, [tableStatus, dispatch]);
+    }, [tableStatus, dispatch, filterType]);
 
     // 2. Real-time subscriptions
     useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
-            const handleUpdate = () => dispatch(fetchTables());
+            const handleUpdate = () => dispatch(fetchTables(filterType));
 
             // [WHY] Listen for all relevant order/item events.
             // [RULE] We use specific event names matching the backend's broadcastAs() values.
