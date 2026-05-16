@@ -66,11 +66,10 @@ const AdminExpenses = ({ stats, loading, period }) => {
                         <button
                             key={i}
                             onClick={() => onChange(i + 1)}
-                            className={`w-8 h-8 rounded-lg text-[11px] font-black transition-all ${
-                                current === i + 1 
-                                    ? 'mdt-bg-primary text-white shadow-sm' 
-                                    : 'text-slate-400 hover:bg-slate-50'
-                            }`}
+                            className={`w-8 h-8 rounded-lg text-[11px] font-black transition-all ${current === i + 1
+                                ? 'mdt-bg-primary text-white shadow-sm'
+                                : 'text-slate-400 hover:bg-slate-50'
+                                }`}
                         >
                             {i + 1}
                         </button>
@@ -119,7 +118,8 @@ const AdminExpenses = ({ stats, loading, period }) => {
                             {fixedItems.map((item, idx) => (
                                 <div key={item.id || idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
                                     <div className="flex flex-col gap-0.5 min-w-0">
-                                        <span className="text-[13px] font-black text-slate-800 truncate">{item.description || item.category}</span>
+                                        <span className="text-[13px] font-black text-slate-800 truncate">{item.category || item.description}</span>
+
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.date}</span>
                                     </div>
                                     <span className="text-[15px] sm:text-[16px] font-black whitespace-nowrap">{formatPrice(item.amount)}</span>
@@ -127,10 +127,10 @@ const AdminExpenses = ({ stats, loading, period }) => {
                             ))}
                         </div>
 
-                        <Pagination 
-                            current={currentPageFixed} 
-                            total={totalPagesFixed} 
-                            onChange={setCurrentPageFixed} 
+                        <Pagination
+                            current={currentPageFixed}
+                            total={totalPagesFixed}
+                            onChange={setCurrentPageFixed}
                         />
                     </div>
 
@@ -151,7 +151,7 @@ const AdminExpenses = ({ stats, loading, period }) => {
                             {variableItems.map((item, idx) => (
                                 <div key={item.id || idx} className="flex justify-between items-center p-3 sm:p-4 bg-[#eff6ff] rounded-[10px] border border-blue-50/50 hover:bg-[#dbeafe] transition-all gap-4">
                                     <div className="flex flex-col gap-0.5 min-w-0">
-                                        <span className="text-[13px] font-black text-slate-800 truncate">{item.description || item.category}</span>
+                                        <span className="text-[13px] font-black text-slate-800 truncate">{item.category || item.description}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                             {item.date} {item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
@@ -161,10 +161,10 @@ const AdminExpenses = ({ stats, loading, period }) => {
                             ))}
                         </div>
 
-                        <Pagination 
-                            current={currentPageVariable} 
-                            total={totalPagesVariable} 
-                            onChange={setCurrentPageVariable} 
+                        <Pagination
+                            current={currentPageVariable}
+                            total={totalPagesVariable}
+                            onChange={setCurrentPageVariable}
                         />
                     </div>
                 </div>
