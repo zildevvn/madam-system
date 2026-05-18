@@ -97,8 +97,7 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
 
                 <div className="receipt-meta">
                     <div className="receipt-meta-row">
-                        <span>Table:</span>
-                        <span style={{ fontWeight: 'bold' }}>{displayTableName}</span>
+                        <span>Table: <span style={{ fontWeight: 'bold' }}>{displayTableName}</span></span>
                     </div>
 
                     {isGroupReservation && (
