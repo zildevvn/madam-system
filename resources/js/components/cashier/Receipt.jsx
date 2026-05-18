@@ -91,27 +91,27 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
         <div id="receipt-print-area" className="receipt-print-only">
             <div className="receipt-container">
                 <div className="receipt-header">
-                    <h2 className="receipt-title">HÓA ĐƠN THANH TOÁN</h2>
-                    <p className="receipt-subtitle">Số {order.id}</p>
+                    <h2 className="receipt-title">PAYMENT RECEIPT</h2>
+                    <p className="receipt-subtitle">No: #{order.id}</p>
                 </div>
 
                 <div className="receipt-meta">
                     <div className="receipt-meta-row">
-                        <span>Tại bàn</span>
-                        <span>{displayTableName}</span>
+                        <span>Table:</span>
+                        <span style={{ fontWeight: 'bold' }}>{displayTableName}</span>
                     </div>
 
                     {isGroupReservation && (
                         <>
                             {(order.reservation.company_name || order.reservation.lead_name) && (
                                 <div className="receipt-meta-row">
-                                    <span>Đoàn / Tour</span>
+                                    <span>Tour / Group:</span>
                                     <span style={{ fontWeight: 'bold' }}>{order.reservation.company_name || order.reservation.lead_name}</span>
                                 </div>
                             )}
                             {order.reservation.tour_guide_name && (
                                 <div className="receipt-meta-row">
-                                    <span>Hướng dẫn</span>
+                                    <span>Guide:</span>
                                     <span>{order.reservation.tour_guide_name}</span>
                                 </div>
                             )}
@@ -119,33 +119,36 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                     )}
 
                     <div className="receipt-meta-row">
-                        <span>Giờ vào</span>
+                        <span>Arrival Time:</span>
                         <span>{formatReceiptDate(order.startTime || order.created_at)}</span>
                     </div>
                     <div className="receipt-meta-row">
-                        <span>Giờ in</span>
+                        <span>Printed Time:</span>
                         <span>{formatReceiptDate(printDate)}</span>
                     </div>
                     <div className="receipt-meta-row">
-                        <span>Thu ngân</span>
-                        <span>{order.cashier?.name || 'Nhân viên'}</span>
+                        <span>Cashier:</span>
+                        <span>{order.cashier?.name || 'Staff'}</span>
                     </div>
-                    <div className="receipt-meta-row">
-                        <span>*Ghi chú</span>
-                        <span className="receipt-note">{order.cashier_note || order.note || '-'}</span>
-                    </div>
+
+                    {(order.cashier_note || order.note) && (
+                        <div className="receipt-note-block">
+                            <span style={{ fontWeight: 'bold' }}>* Note: </span>
+                            <span>{order.cashier_note || order.note}</span>
+                        </div>
+                    )}
                 </div>
 
                 <table className="receipt-table">
                     <thead>
                         <tr>
-                            <th align="left">Mặt hàng</th>
-                            <th align="center">SL</th>
-                            <th align="right">T.Tiền</th>
+                            <th align="left" width="60%" className="align-left receipt-col-name">Item</th>
+                            <th align="center" width="15%" className="align-center receipt-col-qty">Qty</th>
+                            <th align="right" width="25%" className="align-right receipt-col-total">Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {groupedItems.map(([tGroup, tableItems]) => {
+                        {groupedItems.map(([tGroup, tableItems], groupIdx) => {
                             const sectionGross = tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
                             const sectionDiscount = tableItems.reduce((sum, i) => {
                                 const val = Number(i.discount || 0);
@@ -157,21 +160,15 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                             const isSharedSection = tGroup === 'GROUP';
 
                             const displayTableTitle = isSharedSection
-                                ? `Món chung (Bàn ${displayTableName})`
-                                : `Bàn ${resolveTableLabel(tGroup)}`;
+                                ? `Shared Items (Table ${displayTableName})`
+                                : `Table ${resolveTableLabel(tGroup)}`;
 
                             return (
                                 <React.Fragment key={tGroup}>
                                     {showTableHeaders && (
                                         <tr className="receipt-table-header-row">
-                                            <td colSpan="3" align="left" style={{
-                                                fontWeight: 'bold',
-                                                backgroundColor: isSharedSection ? '#fff5f0' : '#f9f9f9',
-                                                padding: '4px 8px',
-                                                fontSize: '10px',
-                                                borderBottom: '1px solid #eee',
-                                                color: isSharedSection ? '#ff4d00' : 'inherit',
-                                                textTransform: 'uppercase'
+                                            <td colSpan="3" align="left" className="align-left" style={{
+                                                borderTop: groupIdx > 0 ? '1px dashed #000' : 'none'
                                             }}>
                                                 {displayTableTitle}
                                             </td>
@@ -190,24 +187,24 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                         const itemTotal = (item.price * item.quantity) - (itemDiscount * item.quantity);
                                         return (
                                             <tr key={idx}>
-                                                <td align="left">
-                                                    <div className="receipt-item-name">{item.name || item.product?.name || 'Sản phẩm'}</div>
+                                                <td align="left" width="60%" className="align-left receipt-col-name">
+                                                    <div className="receipt-item-name">{item.name || item.product?.name || 'Product'}</div>
                                                     <div className="receipt-item-price">
                                                         {formatPrice(item.price || 0)}
-                                                        {val > 0 && <span style={{ color: '#666', fontSize: '8px' }}> (-{type === 'percent' ? `${val}%` : formatPrice(val)})</span>}
+                                                        {val > 0 && <span style={{ fontWeight: 'bold' }}> (-{type === 'percent' ? `${val}%` : formatPrice(val)})</span>}
                                                     </div>
                                                 </td>
-                                                <td align="center">{item.quantity}</td>
-                                                <td align="right">{formatPrice(itemTotal)}</td>
+                                                <td align="center" width="15%" className="align-center receipt-col-qty">{item.quantity}</td>
+                                                <td align="right" width="25%" className="align-right receipt-col-total">{formatPrice(itemTotal)}</td>
                                             </tr>
                                         );
                                     })}
                                     {showTableHeaders && (
-                                        <tr className="receipt-subtotal-row" style={{ marginBottom: '8px' }}>
-                                            <td colSpan="2" align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontStyle: 'italic', color: '#666' }}>
-                                                Cộng {isSharedSection ? 'phần chung' : `bàn ${tGroup}`}:
+                                        <tr className="receipt-subtotal-row">
+                                            <td colSpan="2" align="right" className="align-right">
+                                                Subtotal {isSharedSection ? 'shared items' : `Table ${resolveTableLabel(tGroup)}`}:
                                             </td>
-                                            <td align="right" style={{ borderTop: '1px dashed #eee', padding: '6px 0', fontSize: '9px', fontWeight: 'bold' }}>
+                                            <td align="right" className="align-right">
                                                 {formatPrice(sectionGross - sectionDiscount)}
                                             </td>
                                         </tr>
@@ -216,34 +213,34 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                             );
                         })}
 
-                        <tr className="receipt-total-row" style={{ borderTop: '1px solid #333' }}>
-                            <td align="left">Tiền hàng ({totalQuantity})</td>
-                            <td colSpan="2" align="right">{formatPrice(grossTotal)}</td>
+                        <tr className="receipt-total-row receipt-total-first">
+                            <td align="left" width="60%" className="align-left">Gross Total ({totalQuantity})</td>
+                            <td colSpan="2" align="right" width="40%" className="align-right">{formatPrice(grossTotal)}</td>
                         </tr>
 
                         {itemDiscountsTotal > 0 && (
                             <tr className="receipt-total-row">
-                                <td align="left">Giảm giá món</td>
-                                <td colSpan="2" align="right">-{formatPrice(itemDiscountsTotal)}</td>
+                                <td align="left" width="60%" className="align-left">Item Discount</td>
+                                <td colSpan="2" align="right" width="40%" className="align-right">-{formatPrice(itemDiscountsTotal)}</td>
                             </tr>
                         )}
 
                         {globalDiscountAmount > 0 && (
                             <tr className="receipt-total-row">
-                                <td align="left">Giảm giá tổng {discountType === 'percent' ? `(${discountValue}%)` : ''}</td>
-                                <td colSpan="2" align="right">-{formatPrice(globalDiscountAmount)}</td>
+                                <td align="left" width="60%" className="align-left">Global Discount {discountType === 'percent' ? `(${discountValue}%)` : ''}</td>
+                                <td colSpan="2" align="right" width="40%" className="align-right">-{formatPrice(globalDiscountAmount)}</td>
                             </tr>
                         )}
                     </tbody>
                 </table>
 
                 <div className="receipt-final">
-                    <span>THANH TOÁN</span>
-                    <span className="receipt-final-amount">{formatPrice(finalTotal)} đ</span>
+                    <span>TOTAL DUE</span>
+                    <span className="receipt-final-amount">{formatPrice(finalTotal)} VND</span>
                 </div>
 
                 <div className="receipt-footer">
-                    <p>Cảm ơn Quý khách - Hẹn gặp lại!</p>
+                    <p>Thank you - See you again!</p>
                 </div>
             </div>
         </div>
