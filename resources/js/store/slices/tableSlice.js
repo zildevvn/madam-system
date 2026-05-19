@@ -61,6 +61,26 @@ const tableSlice = createSlice({
         }
       });
     },
+    markOrderAsPrinted: (state, action) => {
+      const { orderId, siblingOrderIds = [] } = action.payload;
+      const allTargetIds = [orderId, ...siblingOrderIds].map(id => Number(id));
+
+      state.allIds.forEach(id => {
+        const table = state.byId[id];
+        if (table?.active_order && allTargetIds.includes(table.active_order.id)) {
+          table.active_order.is_printed = true;
+          table.active_order.print_count = (Number(table.active_order.print_count) || 0) + 1;
+        }
+        if (table?.active_orders) {
+          table.active_orders.forEach(o => {
+            if (allTargetIds.includes(o.id)) {
+              o.is_printed = true;
+              o.print_count = (Number(o.print_count) || 0) + 1;
+            }
+          });
+        }
+      });
+    },
     updateTableFromSocket: (state, action) => {
       const { id, status, active_order, active_orders } = action.payload;
       if (state.byId[id]) {
@@ -151,7 +171,7 @@ const tableSlice = createSlice({
   },
 });
 
-export const { setActiveTab, patchItemsStatus, optimisticallyCompleteOrder, updateTableFromSocket } = tableSlice.actions;
+export const { setActiveTab, patchItemsStatus, optimisticallyCompleteOrder, updateTableFromSocket, markOrderAsPrinted } = tableSlice.actions;
 
 // Selectors
 const selectTablesState = state => state.table;

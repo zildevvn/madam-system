@@ -204,4 +204,17 @@ class OrderController extends Controller
 
         return $this->success($result, 'Order split successfully');
     }
+
+    public function markPrinted(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'sibling_order_ids' => 'nullable|array',
+            'sibling_order_ids.*' => 'integer'
+        ]);
+
+        $siblingOrderIds = $validated['sibling_order_ids'] ?? [];
+        $order = $this->orderService->markAsPrinted($id, $siblingOrderIds);
+
+        return $this->success($order, 'Order marked as printed successfully');
+    }
 }

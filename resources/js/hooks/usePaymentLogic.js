@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import productService from '../services/productService';
 import orderApi from '../services/orderApi';
 import { calculateTotals } from '../shared/utils/priceCalculations';
+import { useAppDispatch } from '../store/hooks';
+import { markOrderAsPrinted } from '../store/slices/tableSlice';
 
 /**
  * usePaymentLogic: Encapsulates all payment-related state and handlers for the Cashier modal.
@@ -22,6 +24,7 @@ export const usePaymentLogic = ({
     paymentMethod,
     setPaymentMethod
 }) => {
+    const dispatch = useAppDispatch();
     // [WHY] Centralized table resolution logic to ensure consistent ID identification across all handlers.
     const dbTableId = useMemo(() => 
         selectedTable?.originalTableId || 
@@ -250,18 +253,27 @@ export const usePaymentLogic = ({
     }, []);
 
     const handlePrintInvoice = useCallback(async () => {
-        window.print();
-        
-        // [WHY] Mark the order as printed in the backend so it syncs across clients
         if (currentOrder && currentOrder.id) {
-            try {
-                // For group orders, or single orders, we mark the main currentOrder.id and siblings
-                await orderApi.markPrinted(currentOrder.id, currentOrder.relatedOrderIds || []);
-            } catch (err) {
-                console.error('Failed to mark order as printed:', err);
-            }
+            const siblingOrderIds = currentOrder.relatedOrderIds || [];
+            
+            // [WHY] Optimistically update local store immediately for instant UI feedback
+            dispatch(markOrderAsPrinted({ orderId: currentOrder.id, siblingOrderIds }));
+            
+            // [WHY] A tiny delay ensures React has re-rendered the Receipt with the updated print_count before printing
+            setTimeout(async () => {
+                window.print();
+                
+                try {
+                    // For group orders, or single orders, we mark the main currentOrder.id and siblings
+                    await orderApi.markPrinted(currentOrder.id, siblingOrderIds);
+                } catch (err) {
+                    console.error('Failed to mark order as printed:', err);
+                }
+            }, 250);
+        } else {
+            window.print();
         }
-    }, [currentOrder]);
+    }, [currentOrder, dispatch]);
 
     return {
         paymentMethod,

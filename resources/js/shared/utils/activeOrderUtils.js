@@ -1,10 +1,10 @@
 import React from 'react';
 import { safeParseDate } from './dateUtils';
 
-import { 
-    THRESHOLD_BAR_CRITICAL, 
-    THRESHOLD_KITCHEN_CRITICAL, 
-    THRESHOLD_KITCHEN_WARNING, 
+import {
+    THRESHOLD_BAR_CRITICAL,
+    THRESHOLD_KITCHEN_CRITICAL,
+    THRESHOLD_KITCHEN_WARNING,
     THRESHOLD_KITCHEN_ALERT,
     ADDITIONAL_ITEM_THRESHOLD_MS,
     NEW_ORDER_PULSING_TIMEOUT_S
@@ -17,6 +17,12 @@ export const calculateTableStatus = (order, currentTimeTs, options = {}) => {
     const { isBar, showSimpleView, showNewOrderHighlight } = options;
 
     if (!order) return { statusClass: "", duration: "BÀN TRỐNG", isNewOrder: false };
+
+    // [WHY] Printed state has highest priority for color styling
+    if (order.is_printed || order.isPrinted) {
+        return { statusClass: "mdt-bg-red !text-white", duration: showSimpleView ? "Đã in" : "ĐÃ IN BILL", isNewOrder: false };
+    }
+
     if (showSimpleView) return { statusClass: "is-busy", duration: "", isNewOrder: false };
     if (order.isServed) return { statusClass: "mdt-bg-green !text-white", duration: "HOÀN TẤT", isNewOrder: false };
 

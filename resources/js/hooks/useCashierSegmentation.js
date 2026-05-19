@@ -65,6 +65,8 @@ export const useCashierSegmentation = (orders, allTables) => {
                     if (order.items && order.items.length > 0) {
                         parentGroup.items.push(...order.items);
                     }
+                    parentGroup.is_printed = parentGroup.is_printed || order.is_printed || order.is_printed === 1 || order.is_printed === '1';
+                    parentGroup.print_count = Math.max(parentGroup.print_count || 0, Number(order.print_count || 0));
                     // Return early so this order doesn't show up in Individual Lane
                     return;
                 }
@@ -104,7 +106,9 @@ export const useCashierSegmentation = (orders, allTables) => {
                         id: mainOrders[0].id,
                         orders: mainOrders,
                         relatedOrderIds: mainOrderIds, // [FIX] Isolate to main orders only
-                        items: order.items.filter(i => mainOrderIds.includes(i.order_id))
+                        items: order.items.filter(i => mainOrderIds.includes(i.order_id)),
+                        is_printed: mainOrders.some(o => o.is_printed || o.is_printed === 1 || o.is_printed === '1'),
+                        print_count: Math.max(0, ...mainOrders.map(o => Number(o.print_count || 0)))
                     };
 
                     individualOrders[mainLookupKey] = mainReconstructed;
@@ -126,7 +130,9 @@ export const useCashierSegmentation = (orders, allTables) => {
                             id: subOrder.id,
                             orders: [subOrder],
                             relatedOrderIds: subOrderIds, // [FIX] Isolate to this split order only
-                            items: order.items.filter(i => i.order_id === subOrder.id)
+                            items: order.items.filter(i => i.order_id === subOrder.id),
+                            is_printed: subOrder.is_printed || subOrder.is_printed === 1 || subOrder.is_printed === '1',
+                            print_count: Number(subOrder.print_count || 0)
                         };
 
                         individualOrders[subLookupKey] = subReconstructed;

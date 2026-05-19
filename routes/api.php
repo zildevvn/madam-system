@@ -26,6 +26,7 @@ Route::middleware('web')->group(function () {
     Route::patch('/orders/{id}/guest-count', [OrderController::class, 'updateGuestCount']);
     Route::post('/orders/{id}/split', [OrderController::class, 'split']);
     Route::post('/orders/{id}/print-drinks', [OrderController::class, 'printDrinkBill']);
+    Route::post('/orders/{id}/mark-printed', [OrderController::class, 'markPrinted']);
     Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
 });
 

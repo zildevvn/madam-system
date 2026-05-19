@@ -17,6 +17,8 @@ class Order extends Model
         'merged_tables',
         'order_type',
         'status',
+        'is_printed',
+        'print_count',
         'subtotal',
         'total_price',
         'discount_type',

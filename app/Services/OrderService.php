@@ -386,4 +386,30 @@ class OrderService
     {
         return $this->splitService->splitItems($orderId, $items);
     }
+
+    public function markAsPrinted($orderId, array $siblingOrderIds = [])
+    {
+        $orderIds = array_merge([$orderId], $siblingOrderIds);
+
+        DB::transaction(function () use ($orderIds) {
+            Order::whereIn('id', $orderIds)->update(['is_printed' => true]);
+            Order::whereIn('id', $orderIds)->increment('print_count');
+        });
+
+        $order = Order::findOrFail($orderId);
+        $order->load([
+            'items.product:id,name,price,type',
+            'table:id,name',
+            'server:id,name',
+            'cashier:id,name'
+        ]);
+
+        try {
+            broadcast(new OrderUpdated($order, 'order_updated'));
+        } catch (\Exception $e) {
+            Log::error('Broadcast failed during mark as printed: ' . $e->getMessage());
+        }
+
+        return $order;
+    }
 }

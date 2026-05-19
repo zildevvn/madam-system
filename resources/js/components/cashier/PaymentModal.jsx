@@ -185,6 +185,7 @@ const PaymentModal = ({
                     setIsSplitMode={setIsSplitMode}
                     selectedSplitItemsCount={selectedSplitItems.length}
                     handleSplitOrder={handleSplitOrder}
+                    handlePrintInvoice={handlePrintInvoice}
                 />
             </div>
         </div>

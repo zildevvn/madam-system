@@ -25,7 +25,7 @@ const TableFormModal = ({ isOpen, onClose, onSubmit, table = null, processing = 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
             <div className="bg-white rounded-xl w-full max-w-md shadow-xl overflow-hidden animate-in zoom-in-95 duration-300">
                 <div className="px-3 py-4 border-b border-gray-50 flex items-center justify-between">
                     <h4 className="mb-0">

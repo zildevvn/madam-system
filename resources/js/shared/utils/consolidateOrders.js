@@ -60,7 +60,9 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     itemsMap: {},
                     orders: [], // [NEW] Track individual orders for split payment support
                     reservation: order.reservation,
-                    groupKey: groupKey
+                    groupKey: groupKey,
+                    is_printed: order.is_printed || order.is_printed === 1 || order.is_printed === '1',
+                    print_count: Number(order.print_count || 0)
                 };
             }
 
@@ -189,6 +191,8 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             }
 
             group.relatedOrderIds = group.orders.map(o => o.id);
+            group.is_printed = group.orders.some(o => o.is_printed || o.is_printed === 1 || o.is_printed === '1');
+            group.print_count = Math.max(0, ...group.orders.map(o => Number(o.print_count || 0)));
 
             // [WHY] Group is considered served if all items are either 'ready' (cooked) or 'served' (at table).
             // This matches the logic in ActiveOrderTableList.jsx for showing "HOÀN TẤT".

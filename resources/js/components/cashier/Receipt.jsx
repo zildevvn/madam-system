@@ -93,6 +93,11 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                 <div className="receipt-header">
                     <h2 className="receipt-title">PAYMENT RECEIPT</h2>
                     <p className="receipt-subtitle">No: #{order.id}</p>
+                    {Number(order.print_count || 0) > 1 && (
+                        <p className="receipt-subtitle" style={{ fontWeight: 'bold', textTransform: 'uppercase', marginTop: '2px' }}>
+                            Reprint #{order.print_count}
+                        </p>
+                    )}
                 </div>
 
                 <div className="receipt-meta">
