@@ -6,8 +6,11 @@ const AdminTelemetry = ({ testPrinter, testingPrinter, testWebsocket, testingWS,
             {/* Glow Effect */}
             <div className="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
+
+
+
             <div className="p-8 sm:p-10 border-b border-white/5 bg-white/[0.02]">
-                <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-4 tracking-tight">
+                <h2 className=" ss text-lg sm:text-xl font-black text-white flex items-center gap-4 tracking-tight">
                     <span className="relative flex h-3 w-3">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500/50 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]"></span>
