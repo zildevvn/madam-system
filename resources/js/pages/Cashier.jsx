@@ -35,12 +35,20 @@ const Cashier = () => {
     const [isReopening, setIsReopening] = useState(null);
     const [editingHistoryOrder, setEditingHistoryOrder] = useState(null);
 
+    // [WHY] Centralized date state for history filtering
+    const getTodayStr = () => {
+        const d = new Date();
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().split('T')[0];
+    };
+    const [selectedDate, setSelectedDate] = useState(getTodayStr());
+
     const {
         reservations,
         historyOrders,
         isLoadingRes,
         refreshData
-    } = useCashierData(status);
+    } = useCashierData(status, selectedDate);
 
     // [WHY] Segment orders into Group Reservations vs Individual Tables
     const { groupOrders, individualOrders, individualTables, groupTables, tableDict } = useCashierSegmentation(orders, allTables);
@@ -180,6 +188,8 @@ const Cashier = () => {
                             onEditOrder={handleEditHistoryOrder}
                             onReopenOrder={handleReopenOrder}
                             isReopening={isReopening}
+                            selectedDate={selectedDate}
+                            onDateChange={setSelectedDate}
                         />
                     </div>
                 </div>

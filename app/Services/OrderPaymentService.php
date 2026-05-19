@@ -234,14 +234,20 @@ class OrderPaymentService
     }
 
     // [WHY] Returns a list of finalized orders for the cashier history view.
-    public function getHistory($limit = 20)
+    public function getHistory($limit = 20, $date = null)
     {
-        return Order::with(['items' => function($q) {
+        $query = Order::with(['items' => function($q) {
                 $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
             }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation'])
-            ->where('status', 'completed')
-            ->whereDate('updated_at', now()->toDateString())
-            ->orderBy('updated_at', 'desc')
+            ->where('status', 'completed');
+
+        if ($date) {
+            $query->whereDate('updated_at', $date);
+        } else {
+            $query->whereDate('updated_at', now()->toDateString());
+        }
+
+        return $query->orderBy('updated_at', 'desc')
             ->orderBy('id', 'desc')
             ->limit($limit)
             ->get();

@@ -8,7 +8,7 @@ import orderApi from '../services/orderApi';
  * [WHY] Handles data fetching and real-time synchronization for the Cashier dashboard.
  * [RULE] Tách logic fetching ra khỏi UI component — README.md Component Rule.
  */
-export const useCashierData = (status) => {
+export const useCashierData = (status, selectedDate) => {
     const [reservations, setReservations] = useState([]);
     const [historyOrders, setHistoryOrders] = useState([]);
     const [isLoadingRes, setIsLoadingRes] = useState(false);
@@ -51,8 +51,9 @@ export const useCashierData = (status) => {
         historyAbortRef.current = controller;
 
         try {
-            const res = await orderApi.fetchHistory(15, {
-                signal: controller.signal
+            const res = await orderApi.fetchHistory(100, {
+                signal: controller.signal,
+                params: { date: selectedDate }
             });
 
             if (!controller.signal.aborted) {
@@ -62,7 +63,7 @@ export const useCashierData = (status) => {
             if (axios.isCancel(err)) return;
             console.error("Failed to fetch history:", err);
         }
-    }, []);
+    }, [selectedDate]);
     // [WHY] Shared refresh function for consistency and maintainability
     const refreshAllData = useCallback(() => {
         loadReservations();
