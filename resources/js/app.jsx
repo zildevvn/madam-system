@@ -20,6 +20,8 @@ import Kitchen from "./pages/Kitchen";
 import Admin from "./pages/Admin";
 import AdminContent from "./pages/admin/AdminContent";
 import PersonnelPage from "./pages/admin/PersonnelPage";
+import PersonnelCreatePage from "./pages/admin/PersonnelCreatePage";
+import PersonnelDetailPage from "./pages/admin/PersonnelDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import Order from "./pages/Order";
@@ -214,6 +216,9 @@ function App() {
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
                         <Route index element={<AdminContent />} />
                         <Route path="personnel" element={<PersonnelPage />} />
+                        <Route path="personnel/create" element={<PersonnelCreatePage />} />
+                        <Route path="personnel/edit/:id" element={<PersonnelCreatePage />} />
+                        <Route path="personnel/:id" element={<PersonnelDetailPage />} />
                         <Route path="tables" element={<TableManagement />} />
                         <Route path="products" element={<ProductManagement />} />
                     </Route>

@@ -24,6 +24,14 @@ class User extends Authenticatable
         'password',
         'plain_password',
         'role',
+        'join_date',
+        'date_of_birth',
+        'work_shift',
+        'salary',
+        'bonus',
+        'address',
+        'id_card_image',
+        'contract_image',
     ];
 
     /**
@@ -52,5 +60,13 @@ class User extends Authenticatable
     public function readSystemMessages()
     {
         return $this->belongsToMany(SystemMessage::class, 'system_message_user')->withPivot('read_at')->withTimestamps();
+    }
+
+    /**
+     * Relationship with DayOff model.
+     */
+    public function dayOffs()
+    {
+        return $this->hasMany(DayOff::class)->orderBy('off_date', 'asc');
     }
 }

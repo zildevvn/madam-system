@@ -68,8 +68,8 @@ export const useUserManagement = () => {
         }
     };
 
-    const deleteUser = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa nhân sự này?')) return;
+    const deleteUser = async (id, skipConfirm = false) => {
+        if (!skipConfirm && !window.confirm('Bạn có chắc chắn muốn xóa nhân sự này?')) return;
 
         try {
             setProcessing(true);

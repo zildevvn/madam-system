@@ -41,6 +41,9 @@ Route::get('/users/{id}', [UserController::class, 'show']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
+Route::get('/users/{id}/day-offs', [UserController::class, 'getDayOffs']);
+Route::post('/users/{id}/day-offs', [UserController::class, 'storeDayOff']);
+Route::delete('/day-offs/{id}', [UserController::class, 'destroyDayOff']);
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::post('/products', [ProductController::class, 'store']);
