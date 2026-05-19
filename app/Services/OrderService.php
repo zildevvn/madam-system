@@ -213,9 +213,15 @@ class OrderService
 
             if ($mergedTables) {
                 $ids = explode('-', $mergedTables);
+                // [WHY] Set total_price = 0 for secondary orders to prevent duplicated revenue when StatsService aggregates them.
+                // The primary order ($orderId) contains the full consolidated total_price.
                 Order::whereIn('table_id', $ids)
+                    ->where('id', '!=', $orderId)
                     ->whereIn('status', ['draft', 'pending', 'processing'])
-                    ->update(['merged_tables' => $mergedTables]);
+                    ->update(['merged_tables' => $mergedTables, 'total_price' => 0]);
+                
+                // Ensure primary order also gets the merged_tables string explicitly updated if missing
+                Order::where('id', $orderId)->update(['merged_tables' => $mergedTables]);
 
                 Table::whereIn('id', $ids)->update(['status' => 'busy']);
             } else if ($order->table_id) {

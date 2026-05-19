@@ -45,9 +45,21 @@ class StatsService
         $stats = $query->leftJoin('reservations', 'orders.reservation_id', '=', 'reservations.id')
             ->selectRaw("
                 COALESCE(SUM(orders.total_price), 0) as total_revenue,
-                COUNT(orders.id) as total_orders,
-                COUNT(CASE WHEN orders.reservation_id IS NULL OR reservations.type = 'individual' THEN 1 END) as individual_orders,
-                COUNT(CASE WHEN reservations.type = 'group' THEN 1 END) as group_orders,
+                
+                COUNT(DISTINCT CASE 
+                    WHEN reservations.type = 'group' THEN CONCAT('res_', orders.reservation_id)
+                    WHEN orders.merged_tables IS NOT NULL THEN CONCAT('merge_', orders.merged_tables, '_', UNIX_TIMESTAMP(orders.updated_at))
+                    ELSE orders.id 
+                END) as total_orders,
+                
+                COUNT(DISTINCT CASE 
+                    WHEN orders.reservation_id IS NULL OR reservations.type = 'individual' THEN 
+                        CASE WHEN orders.merged_tables IS NOT NULL THEN CONCAT('merge_', orders.merged_tables, '_', UNIX_TIMESTAMP(orders.updated_at))
+                        ELSE orders.id END
+                END) as individual_orders,
+                
+                COUNT(DISTINCT CASE WHEN reservations.type = 'group' THEN orders.reservation_id END) as group_orders,
+                
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.total_price ELSE 0 END), 0) as cash_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'bank' THEN orders.total_price ELSE 0 END), 0) as bank_revenue,
                 COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.total_price ELSE 0 END), 0) as card_revenue,
