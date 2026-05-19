@@ -204,14 +204,14 @@ export const useCheckoutLogic = () => {
             const hasChangedTable = selectedTableId.toString() !== tableId.toString();
 
             if (isModified || isMergeChanged || !wasConfirmed) {
-                const allDrinks = selectedItems.filter(item => item.type === 'drink');
+                const allDrinks = selectedItems.filter(item => item.type === 'drink' && !item.isSplit);
                 const hasDrinkChanges = checkForDrinkChanges(allDrinks);
                 const isTableMove = wasConfirmed && hasChangedTable;
                 const drinkPrintTitle = buildDrinkTitle(hasDrinkChanges, isTableMove, wasConfirmed);
 
                 await dispatch(checkoutOrderAsync({
                     orderId: currentOrderId,
-                    items: selectedItems.map(i => ({
+                    items: selectedItems.filter(i => !i.isSplit).map(i => ({
                         product_id: i.product_id || i.id,
                         order_item_id: i.order_item_id || null, // [NEW] Pass row ID for granular backend updates
                         quantity: i.quantity,
@@ -236,7 +236,7 @@ export const useCheckoutLogic = () => {
                 }, 1500);
 
             } else if (hasChangedTable) {
-                const allDrinks = selectedItems.filter(item => item.type === 'drink');
+                const allDrinks = selectedItems.filter(item => item.type === 'drink' && !item.isSplit);
                 const drinkPrintTitle = buildDrinkTitle(false, true, wasConfirmed);
 
                 if (drinkPrintTitle && allDrinks.length > 0) {

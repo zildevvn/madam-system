@@ -66,11 +66,11 @@ export const useCheckoutState = () => {
     }, [initialMergedIds]);
 
     const total = useMemo(() =>
-        selectedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+        selectedItems.filter(item => !item.isSplit).reduce((acc, item) => acc + (item.price * item.quantity), 0)
         , [selectedItems]);
 
     const totalQuantity = useMemo(() =>
-        selectedItems.reduce((acc, item) => acc + item.quantity, 0)
+        selectedItems.filter(item => !item.isSplit).reduce((acc, item) => acc + item.quantity, 0)
         , [selectedItems]);
 
     return {

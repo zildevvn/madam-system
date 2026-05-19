@@ -26,6 +26,7 @@ class Order extends Model
         'cashier_note',
         'order_note',
         'guest_count',
+        'parent_order_id',
     ];
 
     public function server()
@@ -51,5 +52,15 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function parentOrder()
+    {
+        return $this->belongsTo(Order::class, 'parent_order_id');
+    }
+
+    public function childOrders()
+    {
+        return $this->hasMany(Order::class, 'parent_order_id');
     }
 }

@@ -102,7 +102,9 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     note: item.note || '',
                     tableId: item.table_id || t.id,
                     order_id: item.order_id, // [NEW] Keep track of which order this item belongs to
-                    reservation_item_id: item.reservation_item_id
+                    reservation_item_id: item.reservation_item_id,
+                    parent_order_id: order.parent_order_id || null,
+                    isSplitItem: !!order.parent_order_id
                 };
 
                 if (groupByCompositeKey) {

@@ -28,8 +28,9 @@ class OrderService
     // [RULE] Eager load only required fields for performance
     public function getActiveOrder($tableId)
     {
-        return Order::where('table_id', $tableId)
+        $order = Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
+            ->whereNull('parent_order_id')
             ->where(function ($query) {
                 $query->whereDoesntHave('reservation')
                     ->orWhereHas('reservation', function ($q) {
@@ -40,12 +41,41 @@ class OrderService
                 'items.product' => function ($query) {
                     $query->select('id', 'name', 'price', 'type');
                 },
+                'childOrders.items.product' => function ($query) {
+                    $query->select('id', 'name', 'price', 'type');
+                },
                 'table:id,name',
                 'server:id,name',
                 'cashier:id,name'
             ])
-            ->latest()
             ->first();
+
+        if (!$order) {
+            // Fallback: If no active parent order exists, fetch the oldest active order on this table
+            $order = Order::where('table_id', $tableId)
+                ->whereIn('status', ['draft', 'pending', 'processing'])
+                ->where(function ($query) {
+                    $query->whereDoesntHave('reservation')
+                        ->orWhereHas('reservation', function ($q) {
+                            $q->where('type', '!=', 'group');
+                        });
+                })
+                ->with([
+                    'items.product' => function ($query) {
+                        $query->select('id', 'name', 'price', 'type');
+                    },
+                    'childOrders.items.product' => function ($query) {
+                        $query->select('id', 'name', 'price', 'type');
+                    },
+                    'table:id,name',
+                    'server:id,name',
+                    'cashier:id,name'
+                ])
+                ->oldest()
+                ->first();
+        }
+
+        return $order;
     }
 
     // [WHY] Fetch full details for a specific order
@@ -53,6 +83,12 @@ class OrderService
     {
         return Order::with([
             'items.product' => function ($query) {
+                $query->select('id', 'name', 'price', 'type');
+            },
+            'childOrders.items.product' => function ($query) {
+                $query->select('id', 'name', 'price', 'type');
+            },
+            'parentOrder.items.product' => function ($query) {
                 $query->select('id', 'name', 'price', 'type');
             },
             'table:id,name',

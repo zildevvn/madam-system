@@ -21,6 +21,8 @@ export default function ProductItem({
         setNoteValue(item.note || '');
     }, [item.note]);
 
+    const effectiveIsReadOnly = isReadOnly || item.isSplit;
+
     // Per-item discount state
     const [discountValue, setDiscountValue] = useState(item.discount || 0);
     const [discountType, setDiscountType] = useState(item.discountType || 'fixed');
@@ -42,7 +44,14 @@ export default function ProductItem({
         <div className="product-item bg-surface-container-lowest py-3 border-b border-gray-100 last:border-0 flex flex-col gap-2">
             <div className="flex justify-between items-start gap-2">
                 <div className="space-y-1">
-                    <h3 className="font-medium">{item.name}</h3>
+                    <div className="flex items-center flex-wrap gap-2">
+                        <h3 className="font-medium">{item.name}</h3>
+                        {item.isSplit && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200 animate-in fade-in zoom-in-50 duration-200">
+                                Đã tách ({item.splitOrderName})
+                            </span>
+                        )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <p className="text-[13px] opacity-60 m-0">
                             Đơn giá: {formatPrice(item.price)}đ
@@ -63,7 +72,7 @@ export default function ProductItem({
                     <span className={`font-bold text-[14px] ${hasDiscount ? 'text-red-600' : 'text-on-surface'}`}>
                         {formatPrice(itemTotal)}đ
                     </span>
-                    {isReadOnly && (
+                    {effectiveIsReadOnly && (
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
                             x{item.quantity} món
                         </span>
@@ -72,7 +81,7 @@ export default function ProductItem({
             </div>
 
             <div className={`product-item__actions flex items-center gap-2 mt-1 ${showNoteButton ? 'justify-between' : 'justify-end'}`}>
-                {showNoteButton && !isReadOnly && (
+                {showNoteButton && !effectiveIsReadOnly && (
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => setShowNote(!showNote)}
@@ -94,7 +103,7 @@ export default function ProductItem({
                     </div>
                 )}
 
-                {!isReadOnly && (
+                {!effectiveIsReadOnly && (
                     <div className="product-item__quantity flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm ml-auto">
                         <button
                             onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}

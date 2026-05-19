@@ -24,6 +24,8 @@ class OrderSplitService
                 throw new \Exception("Cannot split a completed order.");
             }
 
+            $parentOrderId = $sourceOrder->parent_order_id ?: $sourceOrder->id;
+
             // [WHY] Create a new sibling order inheriting the same metadata
             $newOrder = Order::create([
                 'table_id' => $sourceOrder->table_id,
@@ -34,6 +36,7 @@ class OrderSplitService
                 'status' => $sourceOrder->status,
                 'guest_count' => 1, // Default to 1 for the split-off portion
                 'total_price' => 0,
+                'parent_order_id' => $parentOrderId,
             ]);
 
             $affectedOrderIds = [$sourceOrderId];
@@ -107,7 +110,7 @@ class OrderSplitService
         $this->broadcastUpdate($newOrder, 'order_created');
 
         return [
-            'source_order' => Order::find($sourceOrderId)?->fresh(['items.product']),
+            'source_order' => Order::find($sourceOrderId)?->fresh(['items.product', 'childOrders.items.product']),
             'new_order' => $newOrder->fresh(['items.product'])
         ];
     }

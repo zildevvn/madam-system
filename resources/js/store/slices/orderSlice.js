@@ -51,6 +51,39 @@ export const splitOrderAsync = createAsyncThunk('order/split', async ({ orderId,
   return data.data;
 });
 
+const processChildOrders = (state, order) => {
+  const childOrders = order.child_orders || order.childOrders;
+  if (childOrders) {
+    childOrders.forEach(childOrder => {
+      const childItems = childOrder.items;
+      if (childItems) {
+        childItems.forEach(orderItem => {
+          const product = orderItem.product;
+          if (product) {
+            const uniqueKey = `split-${orderItem.id}`;
+            const itemData = { 
+              ...product, 
+              id: uniqueKey,
+              product_id: product.id,
+              order_item_id: orderItem.id,
+              quantity: Number(orderItem.quantity), 
+              note: orderItem.note || '',
+              discount: orderItem.discount || 0,
+              discountType: orderItem.discount_type || 'fixed',
+              isSplit: true,
+              splitOrderName: `Đơn #${childOrder.id}`
+            };
+            state.items.byId[uniqueKey] = itemData;
+            if (!state.items.allIds.includes(uniqueKey)) {
+              state.items.allIds.push(uniqueKey);
+            }
+          }
+        });
+      }
+    });
+  }
+};
+
 const initialState = {
   items: {
     byId: {},
@@ -178,6 +211,8 @@ const orderSlice = createSlice({
             }
           });
         }
+
+        processChildOrders(state, order);
       }
     },
   },
@@ -228,6 +263,8 @@ const orderSlice = createSlice({
               }
             });
           }
+
+          processChildOrders(state, order);
 
         } else {
           // No active order found for table
@@ -303,6 +340,8 @@ const orderSlice = createSlice({
               }
             });
           }
+
+          processChildOrders(state, order);
         }
       })
       .addCase(splitOrderAsync.fulfilled, (state, action) => {
@@ -342,6 +381,8 @@ const orderSlice = createSlice({
               }
             });
           }
+
+          processChildOrders(state, source_order);
         }
       });
   },
