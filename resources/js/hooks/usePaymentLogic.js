@@ -228,6 +228,21 @@ export const usePaymentLogic = ({
         );
     }, []);
 
+    const handlePrintInvoice = useCallback(async () => {
+        // [WHY] Print using browser
+        window.print();
+        
+        // [WHY] Mark the order as printed in the backend so it syncs across clients
+        if (currentOrder && currentOrder.id) {
+            try {
+                // For group orders, or single orders, we mark the main currentOrder.id and siblings
+                await orderApi.markPrinted(currentOrder.id, currentOrder.relatedOrderIds || []);
+            } catch (err) {
+                console.error('Failed to mark order as printed:', err);
+            }
+        }
+    }, [currentOrder]);
+
     return {
         paymentMethod,
         setPaymentMethod,
@@ -238,6 +253,7 @@ export const usePaymentLogic = ({
         handleSplitOrder,
         toggleSplitItem,
         handleUpdateSplitQuantity,
+        handlePrintInvoice,
         allProducts,
         searchQuery,
         setSearchQuery,

@@ -55,7 +55,8 @@ const PaymentModal = ({
         selectedSplitItems,
         handleSplitOrder,
         toggleSplitItem,
-        handleUpdateSplitQuantity
+        handleUpdateSplitQuantity,
+        handlePrintInvoice
     } = usePaymentLogic({
         selectedTable,
         currentOrder,
@@ -171,6 +172,7 @@ const PaymentModal = ({
                     setIsSplitMode={setIsSplitMode}
                     selectedSplitItemsCount={selectedSplitItems.length}
                     handleSplitOrder={handleSplitOrder}
+                    handlePrint={handlePrintInvoice}
                 />
             </div>
         </div>

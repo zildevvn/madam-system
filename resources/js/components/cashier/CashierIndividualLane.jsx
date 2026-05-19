@@ -16,7 +16,7 @@ const CashierIndividualLane = ({
 }) => {
     // [WHY] Sort tables strictly on the Cashier page to ensure 1 -> 2 -> 3 natural order
     const sortedIndividualTables = React.useMemo(() => {
-        return [...individualTables].sort((a, b) => 
+        return [...individualTables].sort((a, b) =>
             String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' })
         );
     }, [individualTables]);

@@ -32,7 +32,8 @@ const PaymentModalFooter = ({
     isSplitMode = false,
     setIsSplitMode,
     selectedSplitItemsCount = 0,
-    handleSplitOrder
+    handleSplitOrder,
+    handlePrint
 }) => {
     const hasAnyDiscount = discountAmount > 0 || itemDiscountsTotal > 0;
 
@@ -201,7 +202,7 @@ const PaymentModalFooter = ({
                         </>
                     ) : (
                         <>
-                            <button onClick={() => window.print()} className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer border-none text-sm py-2.5">
+                            <button onClick={handlePrint} className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer border-none text-sm py-2.5">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2m8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                 In hóa đơn
                             </button>

@@ -17,6 +17,10 @@ export const calculateTableStatus = (order, currentTimeTs, options = {}) => {
     const { isBar, showSimpleView, showNewOrderHighlight } = options;
 
     if (!order) return { statusClass: "", duration: "BÀN TRỐNG", isNewOrder: false };
+    
+    // [WHY] Highest priority: Printed invoices override all other views (including simple view)
+    if (order.is_printed) return { statusClass: "mdt-bg-red !text-white", duration: "ĐÃ IN BILL", isNewOrder: false };
+
     if (showSimpleView) return { statusClass: "is-busy", duration: "", isNewOrder: false };
     if (order.isServed) return { statusClass: "mdt-bg-green !text-white", duration: "HOÀN TẤT", isNewOrder: false };
 

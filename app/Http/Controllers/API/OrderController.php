@@ -139,6 +139,28 @@ class OrderController extends Controller
         }
     }
 
+    public function markPrinted(Request $request, $id)
+    {
+        $order = \App\Models\Order::findOrFail($id);
+        $order->is_printed = true;
+        $order->save();
+        broadcast(new \App\Events\OrderUpdated($order))->toOthers();
+
+        $siblingIds = $request->input('sibling_order_ids', []);
+        foreach ($siblingIds as $siblingId) {
+            if ($siblingId != $id) {
+                $sibling = \App\Models\Order::find($siblingId);
+                if ($sibling) {
+                    $sibling->is_printed = true;
+                    $sibling->save();
+                    broadcast(new \App\Events\OrderUpdated($sibling))->toOthers();
+                }
+            }
+        }
+
+        return $this->success($order, 'Order marked as printed');
+    }
+
     /**
      * updatePayment
      * [WHY] Permite correcting payment details for historical bills without reopening the order.

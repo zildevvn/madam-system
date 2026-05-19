@@ -72,6 +72,11 @@ const orderApi = {
     print: async (orderId, title) => {
         const response = await axios.post(`/api/orders/${orderId}/print-drinks`, { title });
         return response.data;
+    },
+
+    markPrinted: async (orderId, siblingOrderIds = []) => {
+        const response = await axios.post(`/api/orders/${orderId}/print`, { sibling_order_ids: siblingOrderIds });
+        return response.data;
     }
 };
 
