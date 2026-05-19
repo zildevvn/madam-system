@@ -28,14 +28,18 @@ const Bar = () => {
         }
     };
 
-    const handleToggleItemStatus = async (item, nextStatus) => {
+    const handleToggleItemStatus = async (item, nextStatus, tableIdOverride = null) => {
         const ids = item.allIds || [item.id];
 
         // [WHY] For group reservations or merged tables, the items actually belong to the 'owner' table 
         // in the Redux store. We must use the consolidated group's tableId for the optimistic update 
         // to find and patch the items correctly.
-        const consolidatedGroup = activeOrders[selectedTable.id.toString()];
-        const tableId = consolidatedGroup?.tableId || selectedTable.id;
+        const tableId = tableIdOverride || (activeOrders[selectedTable?.id?.toString()]?.tableId || selectedTable?.id);
+
+        if (!tableId) {
+            console.error('No tableId resolved for item status update');
+            return;
+        }
 
         // Optimistic Redux update
         dispatch(patchItemsStatus({ tableId, itemIds: ids, status: nextStatus }));
@@ -103,6 +107,7 @@ const Bar = () => {
                 allTables={allTables}
                 error={error}
                 isBar={true}
+                onToggleStatus={handleToggleItemStatus}
             />
 
             {selectedTable && activeOrders[selectedTable.id.toString()] && (

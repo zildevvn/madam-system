@@ -38,7 +38,7 @@ const CheckoutItemList = ({
 
                             return (
                                 <div key={itemKey || index} className="flex items-start gap-3">
-                                    {isSplitMode && (
+                                    {isSplitMode && !item.isSplit && (
                                         <div className="flex flex-col items-center gap-2 pt-4">
                                             <input
                                                 type="checkbox"

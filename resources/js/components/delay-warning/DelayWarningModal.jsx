@@ -1,49 +1,130 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { safeParseDate } from '../../shared/utils/dateUtils';
 
 /**
- * Modal to display detailed notes for a dish, categorized by table.
+ * Modal to display detailed notes for a dish, categorized by table,
+ * and allow marking them as complete (served).
  */
 const DelayWarningModal = ({
     item,
-    onClose
+    onClose,
+    onToggleStatus,
+    currentTime
 }) => {
     if (!item) return null;
 
+    const currentTimeTs = React.useMemo(() => {
+        return currentTime ? safeParseDate(currentTime).getTime() : new Date().getTime();
+    }, [currentTime]);
+
+    // Transactional state: track internal changes before confirming
+    const [localChanges, setLocalChanges] = useState({}); // key -> status
+
+    const getTableKey = (t) => `${t.tableId}-${t.note || ''}-${t.status}`;
+
+    const handleLocalToggle = (t) => {
+        if (t.status === 'served') return;
+        const key = getTableKey(t);
+        setLocalChanges(prev => ({
+            ...prev,
+            [key]: prev[key] === 'served' ? 'pending' : 'served'
+        }));
+    };
+
+    const handleConfirm = () => {
+        if (onToggleStatus) {
+            item.tables.forEach(t => {
+                const key = getTableKey(t);
+                const currentStatus = localChanges[key];
+                // Only call update if specifically changed to 'served' in this modal session
+                if (currentStatus === 'served' && t.status !== 'served') {
+                    onToggleStatus({ allIds: t.allIds, id: t.id }, 'served', t.tableId);
+                }
+            });
+        }
+        onClose();
+    };
+
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-[16px] w-full max-w-sm overflow-hidden shadow-xl animate-in zoom-in-95 duration-200 border border-white/20">
-                <div className="p-4">
-                    <div className="space-y-3">
-                        <div className="p-4 bg-orange-50 rounded-[12px] border border-orange-100 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                            </div>
-                            {item.tableNotes && item.tableNotes.length > 0 ? (
-                                <ul className="space-y-3 relative z-10">
-                                    {item.tableNotes.map((tn, nIdx) => (
-                                        <li key={nIdx} className="flex gap-2 text-[15px]">
-                                            <span className="text-gray-400 font-bold shrink-0">{tn.tableName.toString().replace(/^Bàn\s+/i, 'Bàn ')}:</span>
-                                            <span className="text-orange-950 font-black italic">"{tn.note}"</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="py-4 text-center">
-                                    <p className="text-gray-400 font-bold italic text-sm">Không có ghi chú cho món này</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+                <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h5 className="label-table">{item.name}</h5>
+                        <p className="text-[12px] font-bold text-gray-500 mt-1">
+                            Tổng cộng: {item.totalQuantity} phần đang chờ
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="btn-close p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
+                    <div className="space-y-4">
+                        {item.tables.map((t, idx) => {
+                            const key = getTableKey(t);
+                            const isCurrentlyDone = (localChanges[key] || t.status) === 'served';
+                            const itemDiff = Math.max(1, Math.floor((currentTimeTs - t.orderTimeTs) / 60000));
+
+                            return (
+                                <div key={idx}
+                                    className={`flex justify-between items-start p-2 rounded-lg border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group cursor-pointer'}`}
+                                    onClick={() => handleLocalToggle(t)}
+                                >
+                                    <div className="flex items-center gap-4 flex-1">
+                                        <div className={`w-4 h-4 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isCurrentlyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}>
+                                            {isCurrentlyDone && (
+                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[14px] font-bold transition-all duration-300 ${isCurrentlyDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                                    Bàn {t.name.toString().replace(/^Bàn\s+/i, '')}
+                                                </span>
+                                                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
+                                                    x{t.quantity}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                                    {itemDiff} phút trước
+                                                </span>
+                                                {itemDiff >= 10 && !isCurrentlyDone && (
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 ${itemDiff >= 20 ? 'bg-red-50 text-red-500' : 'bg-yellow-50 text-yellow-600'}`}>
+                                                        <span className={`w-1 h-1 rounded-full animate-pulse ${itemDiff >= 20 ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
+                                                        TRỄ
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {t.note && (
+                                                <div className="mt-2 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                                                    <svg className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" /></svg>
+                                                    <p className="m-0 text-[11px] font-bold text-gray-800 leading-tight">
+                                                        {t.note}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
+                <div className="py-4 px-2 md:p-6 pt-0">
                     <button
-                        onClick={onClose}
-                        className="flex-1 py-4 bg-white text-gray-400 rounded-2xl font-black border border-gray-200 hover:text-gray-900 hover:border-gray-900 transition-all active:scale-[0.98] uppercase tracking-wider text-sm"
+                        onClick={handleConfirm}
+                        className="w-full mdt-btn btn-confirm"
                     >
-                        Đóng
+                        Xong
                     </button>
                 </div>
             </div>
