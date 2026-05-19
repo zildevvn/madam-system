@@ -42,6 +42,15 @@ const Kitchen = ({ mode = 'kitchen' }) => {
         }
     };
 
+    const handleToggleItemStatus = async (item, nextStatus, tableId) => {
+        const ids = item.allIds || [item.id];
+        try {
+            await Promise.all(ids.map(id => dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, tableId })).unwrap()));
+        } catch (error) {
+            console.error('Failed to update item status in kitchen delay warning:', error);
+        }
+    };
+
     const consolidatedItems = useMemo(() => {
         const itemMap = {};
         orders.forEach(order => {
@@ -89,6 +98,7 @@ const Kitchen = ({ mode = 'kitchen' }) => {
                                 filterType={filterType}
                                 isBar={isBar}
                                 title={isBar ? 'Thức uống trễ' : 'Món ăn trễ'}
+                                onToggleStatus={handleToggleItemStatus}
                             />
                         </div>
                     </div>

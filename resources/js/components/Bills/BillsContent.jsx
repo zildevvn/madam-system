@@ -9,7 +9,8 @@ const BillsContent = ({
     handleTableClick,
     allTables,
     error,
-    isBar = false
+    isBar = false,
+    onToggleStatus
 }) => {
     const sortedTables = [...(activeTablesToDisplay || [])].sort((a, b) => {
         const orderA = activeOrders?.[a.id.toString()];
@@ -61,6 +62,7 @@ const BillsContent = ({
                             title={isBar ? 'Danh sách đồ uống' : 'Danh sách món'}
                             filterType={isBar ? 'drink' : 'food'}
                             isBar={isBar}
+                            onToggleStatus={onToggleStatus}
                         />
                     </div>
                 </div>

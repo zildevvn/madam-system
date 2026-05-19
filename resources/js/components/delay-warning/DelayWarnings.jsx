@@ -17,7 +17,8 @@ const DelayWarnings = ({
     orders,
     currentTime,
     filterType = null,
-    isBar = false
+    isBar = false,
+    onToggleStatus
 }) => {
     const [selectedItem, setSelectedItem] = useState(null);
 
@@ -73,6 +74,8 @@ const DelayWarnings = ({
             <DelayWarningModal
                 item={selectedItem}
                 onClose={() => setSelectedItem(null)}
+                onToggleStatus={onToggleStatus}
+                currentTime={currentTime}
             />
         </div>
     );

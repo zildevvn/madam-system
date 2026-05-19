@@ -69,7 +69,12 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                     name: tableName, 
                     orderTimeTs, 
                     status: item.status, 
-                    orderStartTimeTs 
+                    orderStartTimeTs,
+                    tableId: tableId,
+                    quantity: item.quantity,
+                    note: item.note || '',
+                    allIds: [...(item.allIds || [item.id])],
+                    id: item.id
                 };
 
                 if (!bucket[itemName]) {
@@ -78,7 +83,7 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                         totalQuantity: item.quantity,
                         tables: [tableInfo],
                         maxDiff: diff,
-                        itemIds: [item.id],
+                        itemIds: [...(item.allIds || [item.id])],
                         orderId: order.id,
                         tableNotes: itemNote ? [{ tableName, note: itemNote }] : []
                     };
@@ -87,16 +92,15 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                     if (itemNote) {
                         bucket[itemName].tableNotes.push({ tableName, note: itemNote });
                     }
-                    const existingTable = bucket[itemName].tables.find(t => t.name === tableName);
+                    const existingTable = bucket[itemName].tables.find(t => t.name === tableName && t.note === (item.note || '') && t.status === item.status);
                     if (!existingTable) {
                         bucket[itemName].tables.push(tableInfo);
                     } else {
                         if (orderTimeTs < existingTable.orderTimeTs) {
                             existingTable.orderTimeTs = orderTimeTs;
                         }
-                        if (!item.status || item.status === 'pending') {
-                            existingTable.status = 'pending';
-                        }
+                        existingTable.quantity += item.quantity;
+                        existingTable.allIds = [...existingTable.allIds, ...(item.allIds || [item.id])];
                     }
                     bucket[itemName].maxDiff = Math.max(bucket[itemName].maxDiff, diff);
                     bucket[itemName].itemIds.push(item.id);

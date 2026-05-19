@@ -100,6 +100,7 @@ const TableDetailModal = ({
                             const isCurrentlyDone = (localChanges[key] || item.status) === 'served';
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
 
+
                             return (
                                 <div key={idx}
                                     className={`flex justify-between items-start p-2 rounded-lg border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group cursor-pointer'}`}
