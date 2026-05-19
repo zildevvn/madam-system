@@ -42,6 +42,21 @@ const ActiveOrderTableCard = React.memo(({
         return (table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
     };
 
+    const itemCounts = React.useMemo(() => {
+        if (!options.showItemCounts || !order?.items) return null;
+
+        const counts = order.items.reduce((acc, item) => {
+            if (['pending', 'processing'].includes(item.status)) {
+                acc.notCompleted += item.quantity;
+            } else if (item.status === 'completed') {
+                acc.notServed += item.quantity;
+            }
+            return acc;
+        }, { notCompleted: 0, notServed: 0 });
+
+        return counts;
+    }, [order?.items, options.showItemCounts]);
+
     return (
         <div
             onClick={() => onTableClick && onTableClick(table)}
@@ -57,19 +72,39 @@ const ActiveOrderTableCard = React.memo(({
             </span>
 
             <div className="flex items-center gap-2">
-                {order?.guestCount > 0 && (
-                    <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
-                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        {order.guestCount}
-                    </span>
-                )}
 
-                {(order?.orderNote || order?.items?.some(i => i.note)) && (
-                    <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
-                        <NoteIcon />
-                    </span>
+                <div className="flex items-center gap-2">
+                    {order?.guestCount > 0 && (
+                        <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
+                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            {order.guestCount}
+                        </span>
+                    )}
+
+                    {(order?.orderNote || order?.items?.some(i => i.note)) && (
+                        <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
+                            <NoteIcon />
+                        </span>
+                    )}
+                </div>
+
+                {options.showItemCounts && itemCounts && (itemCounts.notCompleted > 0 || itemCounts.notServed > 0) && (
+                    <div className="not-completed-count flex items-center gap-2">
+                        {itemCounts.notCompleted > 0 && (
+                            <span className={`text-[10px] font-bold flex items-center gap-0.5 ${!statusClass ? 'text-red-500' : ''}`} title="Chưa làm xong">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                {itemCounts.notCompleted}
+                            </span>
+                        )}
+                        {itemCounts.notServed > 0 && (
+                            <span className={`text-[10px] font-bold flex items-center gap-0.5 ${!statusClass ? 'text-orange-500' : ''}`} title="Chờ phục vụ (Chưa bưng)">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                {itemCounts.notServed}
+                            </span>
+                        )}
+                    </div>
                 )}
             </div>
 

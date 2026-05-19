@@ -46,6 +46,7 @@ const BillsContent = ({
                             filterType={isBar ? 'drink' : 'food'}
                             isBar={isBar}
                             showNewOrderHighlight={true}
+                            showItemCounts={true}
                         />
 
 

@@ -14,7 +14,8 @@ const ActiveOrderTableList = ({
     filterType = null, // 'food' or 'drink'
     showNewOrderHighlight = false,
     showSimpleView = false,
-    isBar = false
+    isBar = false,
+    showItemCounts = false
 }) => {
     // 1. Data Consolidation and Memoization
     const tableOrderMap = useActiveTableOrders(tables, orders, filterType);
@@ -31,8 +32,9 @@ const ActiveOrderTableList = ({
     const cardOptions = React.useMemo(() => ({ 
         isBar, 
         showSimpleView, 
-        showNewOrderHighlight 
-    }), [isBar, showSimpleView, showNewOrderHighlight]);
+        showNewOrderHighlight,
+        showItemCounts
+    }), [isBar, showSimpleView, showNewOrderHighlight, showItemCounts]);
 
     return (
         <div className={`flex flex-col lg:overflow-hidden lg:h-full ${className}`}>
