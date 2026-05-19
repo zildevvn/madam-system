@@ -322,9 +322,9 @@ class OrderService
         return $this->paymentService->updatePayment($orderId, $data);
     }
 
-    public function getHistory($limit = 20)
+    public function getHistory($limit = 20, $date = null)
     {
-        return $this->paymentService->getHistory($limit);
+        return $this->paymentService->getHistory($limit, $date);
     }
 
     public function updateTable($orderId, $newTableId)

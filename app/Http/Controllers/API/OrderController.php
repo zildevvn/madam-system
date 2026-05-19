@@ -118,7 +118,8 @@ class OrderController extends Controller
     public function history(Request $request)
     {
         $limit = $request->input('limit', 20);
-        $orders = $this->orderService->getHistory($limit);
+        $date = $request->input('date', null);
+        $orders = $this->orderService->getHistory($limit, $date);
         return $this->success($orders);
     }
 
