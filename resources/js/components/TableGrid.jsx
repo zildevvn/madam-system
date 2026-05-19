@@ -30,7 +30,7 @@ const TableGrid = ({
                 // Default StaffOrder-style card implementation
                 // Use unified group identification logic
                 const groupKey = tableIdToGroupKey[table.id.toString()];
-                
+
                 // [RULE] A table is busy if it has an direct order OR is part of a merge/group group.
                 const isBusy = !!table.active_order || !!groupKey;
 
@@ -52,7 +52,7 @@ const TableGrid = ({
                         onClick={() => onTableClick && onTableClick(table.id)}
                         className={`bg-white p-2 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer ${isBusy ? 'is-busy' : 'border border-gray-100'}`}
                     >
-                        <span className="text-lg font-bold">{table.name?.replace(/[^0-9]/g, '') || table.id}</span>
+                        <span className="text-lg font-bold">{table.name?.replace(/[^0-9]/g, '') || table.name} </span>
                         <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
                         <span className={`mt-1 text-[10px] uppercase tracking-wider font-semibold ${isBusy ? 'text-white' : 'text-gray-400'}`}>
                             {statusText}
