@@ -55,7 +55,9 @@ const PaymentModal = ({
         selectedSplitItems,
         handleSplitOrder,
         toggleSplitItem,
-        handleUpdateSplitQuantity
+        handleUpdateSplitQuantity,
+        handleCancelTable,
+        handlePrintInvoice
     } = usePaymentLogic({
         selectedTable,
         currentOrder,
@@ -105,9 +107,21 @@ const PaymentModal = ({
                             </h4>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {currentOrder && !isHistoryEdit && (
+                            <button
+                                onClick={handleCancelTable}
+                                disabled={isProcessing}
+                                className="px-3 h-8 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors border-none cursor-pointer text-[10px] font-bold uppercase tracking-widest disabled:opacity-50"
+                                title="Hủy bàn"
+                            >
+                                Hủy Bàn
+                            </button>
+                        )}
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        </button>
+                    </div>
                 </div>
 
                 {/* ─── ITEM LIST: Scrollable ─── */}

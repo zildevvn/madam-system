@@ -117,6 +117,27 @@ export const usePaymentLogic = ({
         }
     }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess, isHistoryEdit]);
 
+    const handleCancelTable = useCallback(async () => {
+        if (!currentOrder || isProcessing) return;
+
+        if (!window.confirm('Bạn có chắc chắn muốn hủy bàn này? Mọi dữ liệu món và đơn hàng sẽ bị xóa hoàn toàn.')) {
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            await orderApi.cancel(currentOrder.id, {
+                sibling_order_ids: currentOrder.relatedOrderIds || []
+            });
+            onPaymentSuccess(); // Reuse this callback to close modal and refresh tables
+        } catch (err) {
+            console.error('Failed to cancel table:', err);
+            alert('Không thể hủy bàn. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [currentOrder, isProcessing, onPaymentSuccess]);
+
     const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
         const fallbackTId = dbTableId || selectedTable?.id;
         let newItems;
@@ -228,6 +249,20 @@ export const usePaymentLogic = ({
         );
     }, []);
 
+    const handlePrintInvoice = useCallback(async () => {
+        window.print();
+        
+        // [WHY] Mark the order as printed in the backend so it syncs across clients
+        if (currentOrder && currentOrder.id) {
+            try {
+                // For group orders, or single orders, we mark the main currentOrder.id and siblings
+                await orderApi.markPrinted(currentOrder.id, currentOrder.relatedOrderIds || []);
+            } catch (err) {
+                console.error('Failed to mark order as printed:', err);
+            }
+        }
+    }, [currentOrder]);
+
     return {
         paymentMethod,
         setPaymentMethod,
@@ -238,6 +273,8 @@ export const usePaymentLogic = ({
         handleSplitOrder,
         toggleSplitItem,
         handleUpdateSplitQuantity,
+        handleCancelTable,
+        handlePrintInvoice,
         allProducts,
         searchQuery,
         setSearchQuery,

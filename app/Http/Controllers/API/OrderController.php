@@ -97,11 +97,11 @@ class OrderController extends Controller
         return $this->success($order, 'Table updated successfully');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         // \Illuminate\Support\Facades\Gate::authorize('cancel', Order::findOrFail($id));
 
-        $deleted = $this->orderService->cancelOrder($id);
+        $deleted = $this->orderService->cancelOrder($id, $request->all());
 
         if ($deleted) {
             return $this->success(null, 'Order cancelled seamlessly');

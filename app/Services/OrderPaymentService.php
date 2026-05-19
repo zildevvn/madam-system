@@ -256,7 +256,7 @@ class OrderPaymentService
     /**
      * Identify all involved table IDs in the merge group or reservation
      */
-    private function getInvolvedTableIds(Order $order): array
+    public function getInvolvedTableIds(Order $order): array
     {
         $involvedTableIds = [$order->table_id];
 
@@ -277,7 +277,7 @@ class OrderPaymentService
      * [RULE] Explicit sibling IDs from the frontend MUST override implicit merge/reservation logic
      * to support independent split-bill payments.
      */
-    private function getRelatedOrders(Order $order, array $involvedTableIds, array $statuses, array $data = [])
+    public function getRelatedOrders(Order $order, array $involvedTableIds, array $statuses, array $data = [])
     {
         return Order::whereIn('status', $statuses)
             ->where(function ($query) use ($order, $involvedTableIds, $data) {

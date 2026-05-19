@@ -21,8 +21,8 @@ const orderApi = {
         const response = await axios.post('/api/orders', data);
         return response.data;
     },
-    cancel: async (orderId) => {
-        const response = await axios.delete(`/api/orders/${orderId}`);
+    cancel: async (orderId, data = {}) => {
+        const response = await axios.delete(`/api/orders/${orderId}`, { data });
         return response.data;
     },
 

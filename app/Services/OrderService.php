@@ -61,14 +61,58 @@ class OrderService
         ])->findOrFail($id);
     }
 
-    // [WHY] Delete orders that were never finalized
-    public function cancelOrder($id)
+    // [WHY] Delete draft orders or cancel pending/processing orders
+    public function cancelOrder($id, array $data = [])
     {
-        $order = Order::find($id);
-        if ($order && $order->status === 'draft') {
+        $order = Order::with('reservation')->find($id);
+        if (!$order) return false;
+
+        if ($order->status === 'draft') {
             $order->delete();
             return true;
         }
+
+        if (in_array($order->status, ['pending', 'processing'])) {
+            $result = DB::transaction(function() use ($order, $data) {
+                // Find all related orders (merged or grouped)
+                $involvedTableIds = $this->paymentService->getInvolvedTableIds($order);
+                $relatedOrders = $this->paymentService->getRelatedOrders($order, $involvedTableIds, ['pending', 'processing', 'draft'], $data);
+
+                foreach ($relatedOrders as $o) {
+                    $o->status = 'cancelled';
+                    $o->save();
+                }
+
+                // Free up the tables
+                foreach ($involvedTableIds as $tId) {
+                    $stillBusy = Order::where('table_id', $tId)
+                        ->whereIn('status', ['draft', 'pending', 'processing'])
+                        ->exists();
+
+                    if (!$stillBusy) {
+                        Table::where('id', $tId)->update(['status' => 'available']);
+                    }
+                }
+
+                if ($order->reservation_id) {
+                    $reservation = \App\Models\Reservation::find($order->reservation_id);
+                    if ($reservation && $reservation->status === 'seated') {
+                        $reservation->update(['status' => 'confirmed']);
+                    }
+                }
+
+                return $order;
+            });
+
+            try {
+                broadcast(new OrderUpdated($result, 'order_updated'));
+            } catch (\Exception $e) {
+                Log::error('Broadcast failed during order cancellation: ' . $e->getMessage());
+            }
+
+            return true;
+        }
+
         return false;
     }
 
