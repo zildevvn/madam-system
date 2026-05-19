@@ -1,28 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatPrice } from '../shared/utils/formatCurrency';
 
 /**
  * ProductItem: Renders individual product details (name, price, qty).
  * Supports optional note and per-item discount editing (Fixed or Percent).
  */
-export default function ProductItem({ 
-    item, 
-    onUpdateQuantity, 
-    onUpdateNote, 
+export default function ProductItem({
+    item,
+    onUpdateQuantity,
+    onUpdateNote,
     onUpdateDiscount,
-    showNoteButton = false, 
-    isReadOnly = false 
+    showNoteButton = false,
+    isReadOnly = false
 }) {
     const [showNote, setShowNote] = useState(false);
     const [showDiscount, setShowDiscount] = useState(false);
     const [noteValue, setNoteValue] = useState(item.note || '');
-    
+
+    useEffect(() => {
+        setNoteValue(item.note || '');
+    }, [item.note]);
+
     // Per-item discount state
     const [discountValue, setDiscountValue] = useState(item.discount || 0);
     const [discountType, setDiscountType] = useState(item.discountType || 'fixed');
 
     const hasDiscount = Number(item.discount) > 0;
-    
+
     const calculatedItemDiscount = (() => {
         const val = Number(item.discount || 0);
         const itemGross = item.price * item.quantity;
@@ -77,7 +81,7 @@ export default function ProductItem({
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                             Ghi chú
                         </button>
-                        
+
                         {onUpdateDiscount && (
                             <button
                                 onClick={() => setShowDiscount(!showDiscount)}
@@ -89,7 +93,7 @@ export default function ProductItem({
                         )}
                     </div>
                 )}
-                
+
                 {!isReadOnly && (
                     <div className="product-item__quantity flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm ml-auto">
                         <button
@@ -117,25 +121,23 @@ export default function ProductItem({
                             type="text"
                             placeholder="Ghi chú món..."
                             value={noteValue}
-                            onChange={(e) => setNoteValue(e.target.value)}
+                            onChange={(e) => {
+                                const newValue = e.target.value;
+                                setNoteValue(newValue);
+                                if (onUpdateNote) onUpdateNote(item.id, newValue);
+                            }}
+                            onBlur={() => {
+                                if (onUpdateNote) onUpdateNote(item.id, noteValue);
+                            }}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' && noteValue !== (item.note || '')) {
+                                if (e.key === 'Enter') {
                                     if (onUpdateNote) onUpdateNote(item.id, noteValue);
                                     setShowNote(false);
                                 }
                             }}
-                            className="w-full text-sm pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
+                            className="w-full text-sm px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
                             autoFocus
                         />
-                        <button
-                            onClick={() => {
-                                if (onUpdateNote) onUpdateNote(item.id, noteValue);
-                                setShowNote(false);
-                            }}
-                            className="absolute right-1 w-8 h-8 flex items-center justify-center text-orange-500 hover:bg-orange-50 rounded-md transition-colors border-none bg-transparent cursor-pointer"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                        </button>
                     </div>
                 </div>
             )}
@@ -158,7 +160,7 @@ export default function ProductItem({
                                 %
                             </button>
                         </div>
-                        
+
                         <div className="relative flex-1">
                             <input
                                 type={discountType === 'percent' ? 'number' : 'text'}
@@ -175,9 +177,9 @@ export default function ProductItem({
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                        if (onUpdateDiscount) onUpdateDiscount(item.id, { 
-                                            discount: Number(discountValue), 
-                                            discountType 
+                                        if (onUpdateDiscount) onUpdateDiscount(item.id, {
+                                            discount: Number(discountValue),
+                                            discountType
                                         });
                                         setShowDiscount(false);
                                     }
@@ -187,9 +189,9 @@ export default function ProductItem({
                             />
                             <button
                                 onClick={() => {
-                                    if (onUpdateDiscount) onUpdateDiscount(item.id, { 
-                                        discount: Number(discountValue), 
-                                        discountType 
+                                    if (onUpdateDiscount) onUpdateDiscount(item.id, {
+                                        discount: Number(discountValue),
+                                        discountType
                                     });
                                     setShowDiscount(false);
                                 }}
