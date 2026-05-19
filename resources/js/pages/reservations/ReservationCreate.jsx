@@ -86,7 +86,7 @@ const ReservationCreate = () => {
                 {activeTab === 'group' && (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
-                            <div><label className={labelClasses}>Tour Guide</label><input {...register('tour_guide_name', { required: 'Required' })} className={inputClasses} /></div>
+                            <div><label className={labelClasses}>Tour Guide</label><input {...register('tour_guide_name')} className={inputClasses} /></div>
                             <div><label className={labelClasses}>Company</label><input {...register('company_name', { required: 'Required' })} className={inputClasses} /></div>
                         </div>
 
