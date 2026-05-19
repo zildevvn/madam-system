@@ -70,8 +70,8 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[16px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm max-h-screen">
+            <div className="bg-white rounded-[16px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="px-3 py-2 lg:px-6 lg:py-4 border-b border-gray-50 flex items-center justify-between flex-shrink-0">
                     <h4 className="text-gray-900 mb-0 font-black text-sm lg:text-base">
                         {product ? 'Chỉnh sửa món' : 'Thêm món mới'}
