@@ -14,6 +14,13 @@ const CashierIndividualLane = ({
     onTableClick,
     onToggleCollapse
 }) => {
+    // [WHY] Sort tables strictly on the Cashier page to ensure 1 -> 2 -> 3 natural order
+    const sortedIndividualTables = React.useMemo(() => {
+        return [...individualTables].sort((a, b) => 
+            String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' })
+        );
+    }, [individualTables]);
+
     return (
         <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] ${containerClassName}`}>
             <div className={`py-4 ${!isCollapsed ? 'px-2' : 'px-1'} flex flex-col gap-6 bg-white rounded-[16px] shadow-sm border border-gray-100 overflow-hidden min-h-[500px] min-w-full ${!isCollapsed ? 'lg:min-w-[400px]' : 'lg:min-w-[150px]'}`}>
@@ -37,20 +44,20 @@ const CashierIndividualLane = ({
                             )}
                         </button>
                         <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                            {individualTables.length} {!isCollapsed ? 'Bàn' : ''}
+                            {sortedIndividualTables.length} {!isCollapsed ? 'Bàn' : ''}
                         </span>
                     </div>
                 </div>
 
                 <div className="cashier-page__list-tables bg-white rounded-[32px] shadow-sm border border-gray-100 flex flex-col overflow-hidden min-h-[400px]">
                     <ActiveOrderTableList
-                        tables={individualTables}
+                        tables={sortedIndividualTables}
                         orders={individualOrders}
                         currentTime={currentTime}
                         onTableClick={onTableClick}
                         showSimpleView={true}
                     />
-                    {individualTables.length === 0 && (
+                    {sortedIndividualTables.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-24 opacity-30">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3zM9 9h6v6H9z" /></svg>
                             <p className="text-[11px] font-bold mt-4 uppercase tracking-widest">Không có khách lẻ</p>
