@@ -8,6 +8,8 @@ const ExpenseListDesktop = ({ filteredExpenses, allCategories, handleEditExpense
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
+
+
                         <tr className="bg-slate-50/50">
                             <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời gian / Loại</th>
                             <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Danh mục</th>

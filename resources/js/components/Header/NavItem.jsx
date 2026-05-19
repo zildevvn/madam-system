@@ -14,6 +14,7 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
     React.useEffect(() => {
         if (isAnyChildActive) {
             setExpanded(true);
+            console.log(":Ádsd")
         }
     }, [isAnyChildActive]);
 
