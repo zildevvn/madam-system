@@ -220,7 +220,7 @@ function App() {
 
                     {/* Kitchen and Bar: Access by admin, kitchen, bar */}
                     <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout><Kitchen mode="bar" /></DefaultLayout></RoleProtectedRoute>} />
+                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

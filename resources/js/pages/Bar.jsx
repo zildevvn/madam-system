@@ -41,17 +41,17 @@ const Bar = () => {
             return;
         }
 
-        // Optimistic Redux update
+        // 1. Optimistic Redux update — instant UI response, no waiting for API.
         dispatch(patchItemsStatus({ tableId, itemIds: ids, status: nextStatus }));
 
         try {
-            // Confirm via API
+            // 2. Confirm via API.
             await Promise.all(ids.map(id =>
                 dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, tableId })).unwrap()
             ));
         } catch (error) {
-            // Revert optimistic patch on failure
-            const revertStatus = nextStatus === 'served' ? 'ready' : (nextStatus === 'ready' ? 'cooking' : 'pending');
+            // 3. Revert optimistic patch on failure.
+            const revertStatus = nextStatus === 'served' ? 'ready' : 'served';
             dispatch(patchItemsStatus({ tableId, itemIds: ids, status: revertStatus }));
             console.error('Failed to sync item status:', error);
         }
@@ -66,21 +66,13 @@ const Bar = () => {
             handledOrderIds.add(order.id);
 
             order.items.forEach(item => {
-                const rawType = item.product?.type || item.type;
-                const productType = (rawType || '').toString().toLowerCase().trim();
-                if (productType !== 'drink') return;
-
                 counts.total += item.quantity;
                 if (item.status === 'ready' || item.status === 'served') {
                     counts.served += item.quantity;
                 } else {
                     const diffMinutes = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
-                    // Bar logic: >= 5 mins is critical
-                    console.log(diffMinutes)
-                    console.log("â")
                     if (diffMinutes >= 10) counts.critical++;
                     else counts.active++;
-
                 }
             });
         });
@@ -96,7 +88,7 @@ const Bar = () => {
     }
 
     return (
-        <div className="md-management-page mdt-bar-page pb-20 bg-gray-50">
+        <div className="page-bill md-management-page pb-20 bg-gray-50 mdt-bar-page">
             <BillsStatusBar statusCounts={statusCounts} isBar={true} />
 
             <BillsContent
@@ -117,6 +109,7 @@ const Bar = () => {
                     tableIndex={allTables.findIndex(t => t.id === selectedTable.id)}
                     mergedTables={activeOrders[selectedTable.id.toString()].mergedTables}
                     orderItems={activeOrders[selectedTable.id.toString()].items}
+                    orderNote={activeOrders[selectedTable.id.toString()].orderNote || ''}
                     guestCount={activeOrders[selectedTable.id.toString()].guestCount}
                     staffName={activeOrders[selectedTable.id.toString()].staffName}
                     currentTime={currentTime}
