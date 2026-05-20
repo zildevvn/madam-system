@@ -48,6 +48,7 @@ const CashierGroupLane = ({
                         currentTime={currentTime}
                         onTableClick={onTableClick}
                         showSimpleView={true}
+                        showPrintedState={true}
                         className="mdt-list-tables__bg-primary"
                     />
                 </div>

@@ -15,7 +15,8 @@ const ActiveOrderTableList = ({
     showNewOrderHighlight = false,
     showSimpleView = false,
     isBar = false,
-    showItemCounts = false
+    showItemCounts = false,
+    showPrintedState = false  // [RULE] Only true on the Cashier page
 }) => {
     // 1. Data Consolidation and Memoization
     const tableOrderMap = useActiveTableOrders(tables, orders, filterType);
@@ -33,8 +34,9 @@ const ActiveOrderTableList = ({
         isBar, 
         showSimpleView, 
         showNewOrderHighlight,
-        showItemCounts
-    }), [isBar, showSimpleView, showNewOrderHighlight, showItemCounts]);
+        showItemCounts,
+        showPrintedState
+    }), [isBar, showSimpleView, showNewOrderHighlight, showItemCounts, showPrintedState]);
 
     return (
         <div className={`flex flex-col lg:overflow-hidden lg:h-full ${className}`}>

@@ -16,7 +16,7 @@ const CashierIndividualLane = ({
 }) => {
     // [WHY] Sort tables strictly on the Cashier page to ensure 1 -> 2 -> 3 natural order
     const sortedIndividualTables = React.useMemo(() => {
-        return [...individualTables].sort((a, b) => 
+        return [...individualTables].sort((a, b) =>
             String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' })
         );
     }, [individualTables]);
@@ -31,6 +31,7 @@ const CashierIndividualLane = ({
                         </h5>
                         {!isCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Individual Tables</span>}
                     </div>
+
                     <div className="flex items-center gap-3">
                         <button
                             onClick={onToggleCollapse}
@@ -56,6 +57,7 @@ const CashierIndividualLane = ({
                         currentTime={currentTime}
                         onTableClick={onTableClick}
                         showSimpleView={true}
+                        showPrintedState={true}
                     />
                     {sortedIndividualTables.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-24 opacity-30">

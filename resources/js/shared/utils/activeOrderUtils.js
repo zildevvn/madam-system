@@ -14,12 +14,13 @@ import {
  * Calculates the visual status of a table based on its order age and type.
  */
 export const calculateTableStatus = (order, currentTimeTs, options = {}) => {
-    const { isBar, showSimpleView, showNewOrderHighlight } = options;
+    const { isBar, showSimpleView, showNewOrderHighlight, showPrintedState } = options;
 
     if (!order) return { statusClass: "", duration: "BÀN TRỐNG", isNewOrder: false };
 
-    // [WHY] Printed state has highest priority for color styling
-    if (order.is_printed || order.isPrinted) {
+    // [WHY] Printed state is only meaningful on the Cashier page.
+    // [RULE] showPrintedState must be explicitly true — never apply globally.
+    if (showPrintedState && (order.is_printed || order.isPrinted)) {
         return { statusClass: "mdt-bg-red !text-white", duration: showSimpleView ? "Đã in" : "ĐÃ IN BILL", isNewOrder: false };
     }
 
