@@ -213,8 +213,10 @@ export const useCheckoutLogic = () => {
                 await dispatch(checkoutOrderAsync({
                     orderId: currentOrderId,
                     items: selectedItems.filter(i => !i.isSplit).map(i => ({
-                        product_id: i.product_id || i.id,
-                        order_item_id: i.order_item_id || null, // [NEW] Pass row ID for granular backend updates
+                        product_id: (i.isCustom || i.product_id === null) ? null : (i.product_id || i.id),
+                        order_item_id: i.order_item_id || null,
+                        name: (i.isCustom || i.product_id === null) ? i.name : undefined,
+                        type: (i.isCustom || i.product_id === null) ? i.type : undefined,
                         quantity: i.quantity,
                         price: i.price,
                         note: i.note,

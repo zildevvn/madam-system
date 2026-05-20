@@ -17,8 +17,10 @@ class CheckoutOrderRequest extends FormRequest
     {
         return [
             'items' => 'required|array',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
             'items.*.order_item_id' => 'nullable|exists:order_items,id',
+            'items.*.name' => 'nullable|string|max:255',
+            'items.*.type' => 'nullable|string|in:food,drink',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price' => 'required|numeric|min:0',
             'items.*.note' => 'nullable|string|max:255',

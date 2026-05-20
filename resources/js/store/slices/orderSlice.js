@@ -60,24 +60,38 @@ const processChildOrders = (state, order) => {
       if (childItems) {
         childItems.forEach(orderItem => {
           const product = orderItem.product;
-          if (product) {
-            const uniqueKey = `split-${orderItem.id}`;
-            const itemData = { 
-              ...product, 
-              id: uniqueKey,
-              product_id: product.id,
-              order_item_id: orderItem.id,
-              quantity: Number(orderItem.quantity), 
-              note: orderItem.note || '',
-              discount: orderItem.discount || 0,
-              discountType: orderItem.discount_type || 'fixed',
-              isSplit: true,
-              splitOrderName: `Đơn #${childOrder.id}`
-            };
-            state.items.byId[uniqueKey] = itemData;
-            if (!state.items.allIds.includes(uniqueKey)) {
-              state.items.allIds.push(uniqueKey);
-            }
+          const uniqueKey = `split-${orderItem.id}`;
+          const itemData = product
+            ? { 
+                ...product, 
+                id: uniqueKey,
+                product_id: product.id,
+                order_item_id: orderItem.id,
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '',
+                discount: orderItem.discount || 0,
+                discountType: orderItem.discount_type || 'fixed',
+                isSplit: true,
+                splitOrderName: `Đơn #${childOrder.id}`
+              }
+            : {
+                id: uniqueKey,
+                product_id: null,
+                order_item_id: orderItem.id,
+                name: orderItem.name || 'Custom Item',
+                price: Number(orderItem.price),
+                type: orderItem.type || 'food',
+                quantity: Number(orderItem.quantity),
+                note: orderItem.note || '',
+                discount: orderItem.discount || 0,
+                discountType: orderItem.discount_type || 'fixed',
+                isCustom: true,
+                isSplit: true,
+                splitOrderName: `Đơn #${childOrder.id}`
+              };
+          state.items.byId[uniqueKey] = itemData;
+          if (!state.items.allIds.includes(uniqueKey)) {
+            state.items.allIds.push(uniqueKey);
           }
         });
       }
@@ -114,6 +128,12 @@ const orderSlice = createSlice({
         state.items.byId[item.id] = { ...item, quantity: 1 };
         state.items.allIds.push(item.id);
       }
+      state.isModified = true;
+    },
+    addCustomToCart: (state, action) => {
+      const item = action.payload;
+      state.items.byId[item.id] = item;
+      state.items.allIds.push(item.id);
       state.isModified = true;
     },
     removeFromCart: (state, action) => {
@@ -190,24 +210,38 @@ const orderSlice = createSlice({
         if (order.items) {
           order.items.forEach(orderItem => {
             const product = orderItem.product;
-            if (product) {
-              const uniqueKey = `item-${orderItem.id}`;
-              const itemData = { 
-                ...product, 
-                id: uniqueKey,
-                product_id: product.id,
-                order_item_id: orderItem.id,
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '',
-                discount: orderItem.discount || 0,
-                discountType: orderItem.discount_type || 'fixed'
-              };
-              state.items.byId[uniqueKey] = itemData;
-              state.originalItems[uniqueKey] = { 
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '', 
-                type: product.type 
-              };
+            const uniqueKey = `item-${orderItem.id}`;
+            const itemData = product
+              ? { 
+                  ...product, 
+                  id: uniqueKey,
+                  product_id: product.id,
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity), 
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
+                }
+              : {
+                  id: uniqueKey,
+                  product_id: null,
+                  order_item_id: orderItem.id,
+                  name: orderItem.name || 'Custom Item',
+                  price: Number(orderItem.price),
+                  type: orderItem.type || 'food',
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed',
+                  isCustom: true
+                };
+            state.items.byId[uniqueKey] = itemData;
+            state.originalItems[uniqueKey] = { 
+              quantity: Number(orderItem.quantity), 
+              note: orderItem.note || '', 
+              type: product ? product.type : (orderItem.type || 'food')
+            };
+            if (!state.items.allIds.includes(uniqueKey)) {
               state.items.allIds.push(uniqueKey);
             }
           });
@@ -237,30 +271,40 @@ const orderSlice = createSlice({
           if (order.items) {
             order.items.forEach(orderItem => {
               const product = orderItem.product;
-              if (product) {
-                // [WHY] Use order_item_id with a prefix as the unique key in Redux.
-                // This prevents product ID collisions and allows multiple rows of the same product.
-                const uniqueKey = `item-${orderItem.id}`;
-                const itemData = { 
-                  ...product, 
-                  id: uniqueKey, // Use unique key for UI callbacks (ProductItem)
-                  product_id: product.id, // Store actual product ID for API calls
-                  order_item_id: orderItem.id,
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '',
-                  discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
-                };
-                
-                state.items.byId[uniqueKey] = itemData;
-                state.originalItems[uniqueKey] = { 
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '', 
-                  type: product.type 
-                };
-                if (!state.items.allIds.includes(uniqueKey)) {
-                  state.items.allIds.push(uniqueKey);
-                }
+              const uniqueKey = `item-${orderItem.id}`;
+              const itemData = product
+                ? { 
+                    ...product, 
+                    id: uniqueKey,
+                    product_id: product.id,
+                    order_item_id: orderItem.id,
+                    quantity: Number(orderItem.quantity), 
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed'
+                  }
+                : {
+                    id: uniqueKey,
+                    product_id: null,
+                    order_item_id: orderItem.id,
+                    name: orderItem.name || 'Custom Item',
+                    price: Number(orderItem.price),
+                    type: orderItem.type || 'food',
+                    quantity: Number(orderItem.quantity),
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed',
+                    isCustom: true
+                  };
+              
+              state.items.byId[uniqueKey] = itemData;
+              state.originalItems[uniqueKey] = { 
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '', 
+                type: product ? product.type : (orderItem.type || 'food')
+              };
+              if (!state.items.allIds.includes(uniqueKey)) {
+                state.items.allIds.push(uniqueKey);
               }
             });
           }
@@ -317,27 +361,39 @@ const orderSlice = createSlice({
           if (order.items) {
             order.items.forEach(orderItem => {
               const product = orderItem.product;
-              if (product) {
-                const uniqueKey = `item-${orderItem.id}`;
-                const itemData = { 
-                  ...product, 
-                  id: uniqueKey,
-                  product_id: product.id,
-                  order_item_id: orderItem.id,
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '',
-                  discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
-                };
-                state.items.byId[uniqueKey] = itemData;
-                state.originalItems[uniqueKey] = { 
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '', 
-                  type: product.type 
-                };
-                if (!state.items.allIds.includes(uniqueKey)) {
-                  state.items.allIds.push(uniqueKey);
-                }
+              const uniqueKey = `item-${orderItem.id}`;
+              const itemData = product
+                ? { 
+                    ...product, 
+                    id: uniqueKey,
+                    product_id: product.id,
+                    order_item_id: orderItem.id,
+                    quantity: Number(orderItem.quantity), 
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed'
+                  }
+                : {
+                    id: uniqueKey,
+                    product_id: null,
+                    order_item_id: orderItem.id,
+                    name: orderItem.name || 'Custom Item',
+                    price: Number(orderItem.price),
+                    type: orderItem.type || 'food',
+                    quantity: Number(orderItem.quantity),
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed',
+                    isCustom: true
+                  };
+              state.items.byId[uniqueKey] = itemData;
+              state.originalItems[uniqueKey] = { 
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '', 
+                type: product ? product.type : (orderItem.type || 'food')
+              };
+              if (!state.items.allIds.includes(uniqueKey)) {
+                state.items.allIds.push(uniqueKey);
               }
             });
           }
@@ -358,27 +414,39 @@ const orderSlice = createSlice({
           if (source_order.items) {
             source_order.items.forEach(orderItem => {
               const product = orderItem.product;
-              if (product) {
-                const uniqueKey = `item-${orderItem.id}`;
-                const itemData = { 
-                  ...product, 
-                  id: uniqueKey,
-                  product_id: product.id,
-                  order_item_id: orderItem.id,
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '',
-                  discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
-                };
-                state.items.byId[uniqueKey] = itemData;
-                state.originalItems[uniqueKey] = { 
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '', 
-                  type: product.type 
-                };
-                if (!state.items.allIds.includes(uniqueKey)) {
-                  state.items.allIds.push(uniqueKey);
-                }
+              const uniqueKey = `item-${orderItem.id}`;
+              const itemData = product
+                ? { 
+                    ...product, 
+                    id: uniqueKey,
+                    product_id: product.id,
+                    order_item_id: orderItem.id,
+                    quantity: Number(orderItem.quantity), 
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed'
+                  }
+                : {
+                    id: uniqueKey,
+                    product_id: null,
+                    order_item_id: orderItem.id,
+                    name: orderItem.name || 'Custom Item',
+                    price: Number(orderItem.price),
+                    type: orderItem.type || 'food',
+                    quantity: Number(orderItem.quantity),
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed',
+                    isCustom: true
+                  };
+              state.items.byId[uniqueKey] = itemData;
+              state.originalItems[uniqueKey] = { 
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '', 
+                type: product ? product.type : (orderItem.type || 'food')
+              };
+              if (!state.items.allIds.includes(uniqueKey)) {
+                state.items.allIds.push(uniqueKey);
               }
             });
           }
@@ -391,6 +459,7 @@ const orderSlice = createSlice({
 
 export const {
   addToCart,
+  addCustomToCart,
   removeFromCart,
   updateQuantity,
   updateItemNote,
