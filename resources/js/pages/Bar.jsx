@@ -89,7 +89,7 @@ const Bar = () => {
 
     return (
         <div className="page-bill md-management-page pb-20 bg-gray-50 mdt-bar-page">
-            <BillsStatusBar statusCounts={statusCounts} isBar={true} />
+            <BillsStatusBar statusCounts={statusCounts} />
 
             <BillsContent
                 activeTablesToDisplay={activeTablesToDisplay}

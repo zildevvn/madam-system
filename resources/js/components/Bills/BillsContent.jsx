@@ -45,7 +45,7 @@ const BillsContent = ({
                             currentTime={currentTime}
                             onTableClick={handleTableClick}
                             filterType={isBar ? 'drink' : 'food'}
-                            isBar={isBar}
+                            // isBar={isBar}
                             showNewOrderHighlight={true}
                             showItemCounts={true}
                         />

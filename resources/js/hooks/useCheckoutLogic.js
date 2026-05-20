@@ -102,7 +102,7 @@ export const useCheckoutLogic = () => {
     const handleUpdateGuestCount = useCallback((count) => {
         // [WHY] Allow empty string so user can clear and re-type multi-digit numbers
         dispatch(setGuestCount(count));
-        
+
         const guestCountNum = Number(count);
         if (!isNaN(guestCountNum) && guestCountNum >= 1 && activeOrderId) {
             dispatch(updateGuestCountAsync({ orderId: activeOrderId, count: guestCountNum }));
@@ -115,8 +115,8 @@ export const useCheckoutLogic = () => {
             await orderApi.print(orderId, title);
         } catch (err) {
             console.error("Printing failed:", err);
-            setWarningMessage('Lỗi kết nối máy in Bar. Vui lòng báo Bar thủ công!');
-            setShowWarningPopup(true);
+            // setWarningMessage('Lỗi kết nối máy in Bar. Vui lòng báo Bar thủ công!');
+            // setShowWarningPopup(true);
         }
     }, [setWarningMessage, setShowWarningPopup]);
 
@@ -149,7 +149,7 @@ export const useCheckoutLogic = () => {
                 orderId: currentOrderId,
                 tableId: finalTableId
             })).unwrap();
-            
+
             const currentTable = allTables.find(t => t.id.toString() === finalTableId);
             const tableName = currentTable?.name || `Bàn số ${finalTableId}`;
             setSuccessMessage(`Đã chuyển sang ${tableName}`);
@@ -194,7 +194,7 @@ export const useCheckoutLogic = () => {
     const handleCheckout = useCallback(async () => {
         // [WHY] useRef (isProcessing) provides a synchronous guard against race conditions,
         // which useState (isSaving) cannot guarantee because state updates are asynchronous.
-        if (isProcessing.current) return; 
+        if (isProcessing.current) return;
         isProcessing.current = true;
         setIsSaving(true);
 
@@ -263,9 +263,9 @@ export const useCheckoutLogic = () => {
             setIsSaving(false);
         }
     }, [
-        prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, 
-        isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId, 
-        tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, 
+        prepareMergedTables, ensureOrderSynced, isConfirmed, isModified,
+        isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId,
+        tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate,
         setShowSuccessPopup, orderNote, guestCount, currentUser
     ]);
 
@@ -283,9 +283,9 @@ export const useCheckoutLogic = () => {
                 orderId: activeOrderId,
                 items: itemsToSplit
             })).unwrap();
-            
+
             dispatch(fetchTables()); // [NEW] Refresh global table state to reflect the new split order
-            
+
             setSuccessMessage('Đã tách đơn hàng thành công.');
             setShowSuccessPopup(true);
             safeSetTimeout(() => setShowSuccessPopup(false), 2000);
