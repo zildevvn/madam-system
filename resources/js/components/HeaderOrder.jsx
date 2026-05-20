@@ -9,7 +9,7 @@ export default function HeaderOrder() {
     const navigate = useNavigate();
     const { tableId } = useParams();
     const dispatch = useAppDispatch();
-    const { activeOrderId, items } = useAppSelector(state => state.order);
+    const { activeOrderId, orderStatus, items } = useAppSelector(state => state.order);
     const searchQuery = useAppSelector(state => state.product.searchQuery);
     const [showModal, setShowModal] = useState(false);
     const [isSearchActive, setIsSearchActive] = useState(false);
@@ -27,16 +27,30 @@ export default function HeaderOrder() {
     }, [isSearchActive]);
 
     const handleBackClick = () => {
-        if (items && items.allIds && items.allIds.length > 0) {
+        const hasCartItems = items && items.allIds && items.allIds.length > 0;
+        const isExistingOrder = activeOrderId && orderStatus !== 'draft';
+
+        if (hasCartItems) {
+            // Has new items in cart — ask for confirmation before discarding
             setShowModal(true);
+        } else if (isExistingOrder) {
+            // [WHY] Existing confirmed order (pending/processing) — just navigate back.
+            // The order was not modified (empty cart = no new items added), so nothing to cancel.
+            dispatch(setSearchQuery(''));
+            navigate('/staff-order');
         } else {
+            // Truly new/empty draft — safe to cancel and clean up
             handleCancelOrder();
         }
     };
 
     const handleCancelOrder = async () => {
-        if (activeOrderId) {
+        // [WHY] Only cancel draft orders via the back button. Never cancel a confirmed
+        // pending/processing order when the user simply exits the add-items screen.
+        if (activeOrderId && orderStatus === 'draft') {
             await dispatch(cancelOrderAsync(activeOrderId));
+        } else if (!activeOrderId) {
+            // No order created yet (pure new empty session), nothing to cancel
         }
         setShowModal(false);
         dispatch(setSearchQuery(''));
