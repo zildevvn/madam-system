@@ -87,7 +87,7 @@ const Order = () => {
                             <div className="category-icon mb-1 md:mb-2 text-orange-500 bg-orange-100 p-2 rounded-xl group-hover:scale-110 group-hover:bg-orange-200 transition-all duration-300">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </div>
-                            <span className="category-name text-[10px] md:text-[11px] font-black uppercase tracking-wider text-orange-600">Món Ngoài</span>
+                            <span className="category-name text-[10px] md:text-[11px] font-black uppercase tracking-wider text-orange-600">Món Thêm</span>
                         </button>
 
                         {categories.map((category) => (
