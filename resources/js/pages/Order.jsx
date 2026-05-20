@@ -300,7 +300,7 @@ const Order = () => {
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Ghi Chú</label>
                                 <textarea
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-md px-3.5 py-2 text-sm focus:outline-none focus:bg-white transition-all text-gray-800 placeholder-gray-400 resize-none h-16"
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-md px-3.5 py-2 text-[16px] focus:outline-none focus:bg-white transition-all text-gray-800 placeholder-gray-400 resize-none h-16"
                                     placeholder="Ví dụ: Ít cay, không đá..."
                                     value={customNote}
                                     onChange={(e) => setCustomNote(e.target.value)}
