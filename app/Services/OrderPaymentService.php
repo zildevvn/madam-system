@@ -196,7 +196,6 @@ class OrderPaymentService
 
             // [WHY] Update ALL related orders by distributing the group discount
             $remainingDiscount = $groupDiscountAmount;
-            $now = now();
             
             foreach ($relatedOrders as $o) {
                 $isPrimary = $o->id == $orderId;
@@ -213,10 +212,15 @@ class OrderPaymentService
                     'discount_value' => $isPrimary ? $discountValue : 0,
                     'discount_amount' => $isPrimary ? $groupDiscountAmount : 0,
                     'total_price' => $sourcePrice - $orderDiscount,
-                    'updated_at' => $now,
                 ];
 
+                // [FIX] Disable automatic timestamp updates so that editing a historical bill
+                // does NOT change its updated_at. The history view filters by updated_at date,
+                // so mutating it would incorrectly re-date the bill to today and make it
+                // disappear from the original date in the Recently Paid Bills history.
+                $o->timestamps = false;
                 $o->update($updateData);
+                $o->timestamps = true; // Restore for safety
             }
 
             return $order;
