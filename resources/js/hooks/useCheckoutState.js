@@ -37,6 +37,7 @@ export const useCheckoutState = () => {
     const allTables = useAppSelector(selectTables);
     const tableIdToGroupKey = useAppSelector(selectTableIdToGroupKey);
     const originalItems = useAppSelector(selectOriginalItems);
+    const currentUser = useAppSelector(state => state.auth.user);
 
     // [WHY] Initialize mergedTableIds from existing group state (Rule 312: state synchronization)
     const initialMergedIds = useMemo(() => {
@@ -85,6 +86,7 @@ export const useCheckoutState = () => {
         allTables,
         tableIdToGroupKey,
         originalItems,
+        currentUser,
         selectedTableId,
         setSelectedTableId,
         mergedTableIds,

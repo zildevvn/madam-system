@@ -37,7 +37,10 @@ class OrderController extends Controller
     public function store(\App\Http\Requests\StoreOrderRequest $request)
     {
         $validated = $request->validated();
-        $data = array_merge($validated, ['user_id' => $request->user()?->id]);
+        // [WHY] Auth session is stateless for this app (no Auth::login on the login endpoint).
+        // The frontend sends the logged-in user's ID explicitly in the request body.
+        $userId = $request->user()?->id ?: ($validated['user_id'] ?? null);
+        $data = array_merge($validated, ['user_id' => $userId]);
         $order = $this->orderService->createOrder($data);
 
         return $this->success($order, 'Order created successfully', 201);
@@ -60,12 +63,16 @@ class OrderController extends Controller
     public function checkout(\App\Http\Requests\CheckoutOrderRequest $request, $id)
     {
         $validated = $request->validated();
+        // [WHY] Auth session is stateless for this app (no Auth::login on the login endpoint).
+        // The frontend sends the logged-in user's ID explicitly in the request body.
+        $userId = $request->user()?->id ?: ($validated['user_id'] ?? null);
         $order = $this->orderService->checkoutOrder(
             $id,
             $validated['items'],
             $validated['merged_tables'] ?? null,
             $validated['order_note'] ?? null,
-            $validated['guest_count'] ?? null
+            $validated['guest_count'] ?? null,
+            $userId
         );
 
         return $this->success($order, 'Order checkout successful');

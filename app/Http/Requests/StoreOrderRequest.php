@@ -19,7 +19,8 @@ class StoreOrderRequest extends FormRequest
             'table_id' => 'nullable|exists:tables,id',
             'merged_tables' => 'nullable|string|max:255',
             'order_type' => 'string|in:dine-in,takeout',
-            'guest_count' => 'nullable|integer|min:1'
+            'guest_count' => 'nullable|integer|min:1',
+            'user_id' => 'nullable|integer|exists:users,id'
         ];
     }
 }

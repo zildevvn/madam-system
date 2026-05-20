@@ -196,6 +196,12 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             group.is_printed = group.orders.some(o => o.is_printed || o.is_printed === 1 || o.is_printed === '1');
             group.print_count = Math.max(0, ...group.orders.map(o => Number(o.print_count || 0)));
 
+            // [WHY] Only use the real `server` relationship from the database.
+            // [RULE] Never fall back to localStorage user — that identity belongs to the current
+            // viewer (e.g. admin on the Bills page), NOT the staff who created/handled the order.
+            const staffList = [...new Set(group.orders.map(o => o.server?.name).filter(Boolean))];
+            group.staffName = staffList.length > 0 ? staffList.join(', ') : null;
+
             // [WHY] Group is considered served if all items are either 'ready' (cooked) or 'served' (at table).
             // This matches the logic in ActiveOrderTableList.jsx for showing "HOÀN TẤT".
             group.served = group.items.length > 0 && group.items.every(i => i.status === 'ready' || i.status === 'served');

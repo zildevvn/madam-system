@@ -117,6 +117,8 @@ const Bar = () => {
                     tableIndex={allTables.findIndex(t => t.id === selectedTable.id)}
                     mergedTables={activeOrders[selectedTable.id.toString()].mergedTables}
                     orderItems={activeOrders[selectedTable.id.toString()].items}
+                    guestCount={activeOrders[selectedTable.id.toString()].guestCount}
+                    staffName={activeOrders[selectedTable.id.toString()].staffName}
                     currentTime={currentTime}
                     onClose={() => setSelectedTable(null)}
                     onToggleStatus={handleToggleItemStatus}

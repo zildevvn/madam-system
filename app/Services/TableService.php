@@ -23,7 +23,9 @@ class TableService
         $this->orderService->cleanupDrafts();
         return Table::with([
             'activeOrder.reservation',
+            'activeOrder.server:id,name',
             'activeOrders.reservation',
+            'activeOrders.server:id,name',
             'activeOrders.items' => function($query) use ($type) {
                 if ($type) {
                     $query->where('type', $type);

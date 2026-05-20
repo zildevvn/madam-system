@@ -28,6 +28,7 @@ class CheckoutOrderRequest extends FormRequest
             'merged_tables' => 'nullable|string|max:255',
             'order_note' => 'nullable|string|max:500',
             'guest_count' => 'nullable|integer|min:1',
+            'user_id' => 'nullable|integer|exists:users,id',
         ];
     }
 }

@@ -11,12 +11,13 @@ export const createOrderAsync = createAsyncThunk('order/createOrder', async (cre
   return response.data;
 });
 
-export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null, orderNote = null, guestCount = null }) => {
+export const checkoutOrderAsync = createAsyncThunk('order/checkout', async ({ orderId, items, mergedTables = null, orderNote = null, guestCount = null, userId = null }) => {
   const data = await orderApi.checkout(orderId, {
     items,
     merged_tables: mergedTables,
     order_note: orderNote,
-    guest_count: guestCount
+    guest_count: guestCount,
+    user_id: userId
   });
   return data.data;
 });

@@ -35,7 +35,7 @@ export const useCheckoutLogic = () => {
         guestCount,
         orderNote,
         setWarningMessage, setSuccessMessage, setShowSuccessPopup,
-        allTables
+        allTables, currentUser
     } = state;
 
     const [isSaving, setIsSaving] = useState(false);
@@ -139,7 +139,8 @@ export const useCheckoutLogic = () => {
             const newOrder = await dispatch(createOrderAsync({
                 table_id: finalTableId,
                 order_type: 'dine-in',
-                merged_tables: mergedTablesString
+                merged_tables: mergedTablesString,
+                user_id: currentUser?.id
             })).unwrap();
             currentOrderId = newOrder.id;
             setSuccessMessage('Đơn hàng đã được lưu thành công.');
@@ -156,7 +157,7 @@ export const useCheckoutLogic = () => {
             setSuccessMessage('Đơn hàng đã được lưu thành công.');
         }
         return currentOrderId;
-    }, [selectedTableId, tableId, activeOrderId, dispatch, setSuccessMessage, allTables]);
+    }, [selectedTableId, tableId, activeOrderId, dispatch, setSuccessMessage, allTables, currentUser]);
 
     const checkForDrinkChanges = useCallback((allDrinks) => {
         const hasModifiedDrinks = allDrinks.some(item => {
@@ -221,7 +222,8 @@ export const useCheckoutLogic = () => {
                     })),
                     mergedTables: mergedTablesString,
                     orderNote: orderNote,
-                    guestCount: Number(guestCount) || 1
+                    guestCount: Number(guestCount) || 1,
+                    userId: currentUser?.id
                 })).unwrap();
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
@@ -262,7 +264,7 @@ export const useCheckoutLogic = () => {
         prepareMergedTables, ensureOrderSynced, isConfirmed, isModified, 
         isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId, 
         tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate, 
-        setShowSuccessPopup, orderNote, guestCount
+        setShowSuccessPopup, orderNote, guestCount, currentUser
     ]);
 
     const handleCancelOrder = useCallback(async () => {

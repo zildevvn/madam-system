@@ -183,9 +183,9 @@ class OrderService
     }
 
     // [WHY] Submit kitchen order and sync items
-    public function checkoutOrder($orderId, array $items, $mergedTables = null, $orderNote = null, $guestCount = null)
+    public function checkoutOrder($orderId, array $items, $mergedTables = null, $orderNote = null, $guestCount = null, $userId = null)
     {
-        $result = DB::transaction(function () use ($orderId, $items, $mergedTables, $orderNote, $guestCount) {
+        $result = DB::transaction(function () use ($orderId, $items, $mergedTables, $orderNote, $guestCount, $userId) {
             $order = Order::findOrFail($orderId);
             $totalPrice = 0;
 
@@ -283,13 +283,17 @@ class OrderService
                 ->delete();
 
             $wasDraft = $order->status === 'draft';
-            $order->update([
+            $updateData = [
                 'total_price' => $totalPrice,
                 'status' => 'pending',
                 'merged_tables' => $mergedTables ?? $order->merged_tables,
                 'order_note' => $orderNote ?? $order->order_note,
                 'guest_count' => $guestCount ?? $order->guest_count
-            ]);
+            ];
+            if (!$order->user_id && $userId) {
+                $updateData['user_id'] = $userId;
+            }
+            $order->update($updateData);
 
             if ($mergedTables) {
                 $ids = explode('-', $mergedTables);

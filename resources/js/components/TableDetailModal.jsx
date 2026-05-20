@@ -7,6 +7,7 @@ const TableDetailModal = ({
     orderItems,
     orderNote = '',
     guestCount = 1,
+    staffName = null,
     currentTime,
     onClose,
     onToggleStatus
@@ -71,11 +72,20 @@ const TableDetailModal = ({
                 <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
                         <h5 className='label-table'>Chi tiết bàn {(tableName || mergedTables || tableId.toString()).replace(/^Bàn\s+/i, '')}</h5>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {guestCount > 0 && (
                                 <span className="text-[12px] font-bold text-gray-500 flex items-center gap-1">
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                                     {guestCount} khách
+                                </span>
+                            )}
+                            {staffName && (
+                                <span className="text-[12px] font-bold text-gray-500 flex items-center gap-1">
+                                    <span className="text-gray-300">•</span>
+                                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    {staffName}
                                 </span>
                             )}
                             {orderNote && (
