@@ -88,12 +88,15 @@ export const usePaymentLogic = ({
                 if (!currentOrder.isGroup) {
                     await orderApi.checkout(currentOrder.id, {
                         items: draftItems.map(i => ({
-                            product_id: i.product_id || i.id,
+                            product_id: (i.isCustom || i.product_id === null) ? null : (i.product_id || i.id),
+                            order_item_id: i.order_item_id || null,
+                            name: (i.isCustom || i.product_id === null) ? i.name : undefined,
+                            type: (i.isCustom || i.product_id === null) ? i.type : undefined,
                             quantity: i.quantity,
                             price: i.price,
                             note: i.note,
                             discount: i.discount || 0,
-                            discount_type: i.discountType || 'fixed', // [NEW] Pass type to backend
+                            discount_type: i.discountType || 'fixed',
                             table_id: i.tableId || currentOrder.tableId
                         })),
                         merged_tables: currentOrder?.mergedTables || selectedTable.merged_tables || null

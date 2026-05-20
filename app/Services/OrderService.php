@@ -205,7 +205,7 @@ class OrderService
             $existingItemsById = $existingItems->keyBy('id');
             $existingItemsByProduct = $existingItems->groupBy('product_id');
 
-            $productIds = collect($items)->pluck('product_id')->toArray();
+            $productIds = collect($items)->pluck('product_id')->filter()->toArray();
             $productTypes = Product::whereIn('id', $productIds)->pluck('type', 'id');
 
             $handledItemIds = [];
@@ -220,16 +220,20 @@ class OrderService
 
                 if (!$orderItem && !$orderItemId) {
                     // Legacy/Draft fallback: find first available item for this product that hasn't been handled
-                    $potentialMatches = $existingItemsByProduct->get($productId);
-                    if ($potentialMatches) {
-                        $orderItem = $potentialMatches->first(fn($item) => !in_array($item->id, $handledItemIds));
+                    if (!is_null($productId)) {
+                        $potentialMatches = $existingItemsByProduct->get($productId);
+                        if ($potentialMatches) {
+                            $orderItem = $potentialMatches->first(fn($item) => !in_array($item->id, $handledItemIds));
+                        }
                     }
                 }
 
-                $productType = $productTypes->get($productId);
+                $productType = null;
+                if (!is_null($productId)) {
+                    $productType = $productTypes->get($productId);
+                }
                 if (!$productType) {
-                    Log::warning("Order item checkout: Product ID {$productId} has no type defined. Defaulting to 'food'.");
-                    $productType = 'food';
+                    $productType = $itemData['type'] ?? 'food';
                 }
 
                 if ($orderItem) {
@@ -240,12 +244,16 @@ class OrderService
                     if (array_key_exists('note', $itemData)) {
                         $orderItem->note = $itemData['note'];
                     }
+                    if (is_null($orderItem->product_id)) {
+                        $orderItem->name = $itemData['name'] ?? $orderItem->name ?? 'Custom Item';
+                        $orderItem->type = $productType;
+                    }
                 } else {
-                    $product = Product::find($productId);
+                    $product = $productId ? Product::find($productId) : null;
                     $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $productId,
-                        'name' => $product?->name ?? 'Unknown Product',
+                        'name' => $productId ? ($product?->name ?? 'Unknown Product') : ($itemData['name'] ?? 'Custom Item'),
                         'type' => $productType,
                         'table_id' => $itemData['table_id'] ?? $order->table_id,
                         'quantity' => $itemData['quantity'],

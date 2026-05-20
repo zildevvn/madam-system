@@ -40,10 +40,12 @@ class PrintService
             // Items Table
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             foreach ($order->items as $item) {
-                if ($item->product->type !== 'drink') continue;
+                $itemType = $item->product ? $item->product->type : ($item->type ?? 'food');
+                if ($itemType !== 'drink') continue;
 
                 $printer->setEmphasis(true);
-                $printer->text($this->normalizeText($item->product->name) . "\n");
+                $itemName = $item->product ? $item->product->name : ($item->name ?? 'Custom Item');
+                $printer->text($this->normalizeText($itemName) . "\n");
                 $printer->setEmphasis(false);
                 
                 // Quantity and layout

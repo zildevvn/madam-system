@@ -40,7 +40,7 @@ class ReservationBillService
 
             foreach ($order->items as $item) {
                 // Determine item name securely
-                $itemName = $item->product ? $item->product->name : 'Unknown Product';
+                $itemName = $item->product ? $item->product->name : ($item->name ?? 'Unknown Product');
                 $itemTotal = $item->price * $item->quantity;
 
                 // Add to the global reservation grand total

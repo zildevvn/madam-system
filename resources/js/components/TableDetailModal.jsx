@@ -132,11 +132,7 @@ const TableDetailModal = ({
                                                 <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
                                                     x{item.quantity}
                                                 </span>
-                                                {item.isSplitItem && (
-                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[9px] font-black uppercase tracking-wider border border-orange-200">
-                                                        Tách đơn #{item.order_id}
-                                                    </span>
-                                                )}
+
                                             </div>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
