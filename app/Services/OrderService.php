@@ -440,8 +440,12 @@ class OrderService
         $orderIds = array_merge([$orderId], $siblingOrderIds);
 
         DB::transaction(function () use ($orderIds) {
-            Order::whereIn('id', $orderIds)->update(['is_printed' => true]);
-            Order::whereIn('id', $orderIds)->increment('print_count');
+            // [FIX] Use raw DB::table() queries instead of Eloquent to prevent auto-touching
+            // updated_at. The history view filters by whereDate('updated_at', $date), so any
+            // Eloquent update/increment would re-date historical bills to today, causing them
+            // to disappear from their original date when printing an old invoice.
+            DB::table('orders')->whereIn('id', $orderIds)->update(['is_printed' => true]);
+            DB::table('orders')->whereIn('id', $orderIds)->increment('print_count');
         });
 
         $order = Order::findOrFail($orderId);
