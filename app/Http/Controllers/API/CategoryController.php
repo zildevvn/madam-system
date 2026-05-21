@@ -38,7 +38,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:food,drink',
+            'type' => 'required|in:food,drink,packaged_drink',
             'icon' => 'nullable|string',
         ]);
 
@@ -65,7 +65,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:food,drink',
+            'type' => 'required|in:food,drink,packaged_drink',
             'icon' => 'nullable|string',
         ]);
 

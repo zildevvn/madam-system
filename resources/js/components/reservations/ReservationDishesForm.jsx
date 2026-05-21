@@ -34,6 +34,7 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                                 >
                                     <option value="food">Food</option>
                                     <option value="drink">Drink</option>
+                                    <option value="packaged_drink">Packaged Drink</option>
                                 </select>
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-orange-400 group-hover:text-orange-600 transition-colors">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>

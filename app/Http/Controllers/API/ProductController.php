@@ -32,7 +32,7 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
-            'type' => 'required|in:food,drink',
+            'type' => 'required|in:food,drink,packaged_drink',
             'image' => 'nullable|image|max:1024'
         ]);
 
@@ -51,7 +51,7 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
-            'type' => 'required|in:food,drink',
+            'type' => 'required|in:food,drink,packaged_drink',
             'image' => 'nullable|image|max:1024'
         ]);
 

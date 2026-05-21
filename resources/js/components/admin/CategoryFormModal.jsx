@@ -64,8 +64,9 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, category = null, process
                                     {...register('type', { required: true })}
                                     className="text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal appearance-none focus:ring-4 focus:ring-orange-500/10 transition-all cursor-pointer"
                                 >
-                                    <option value="food">Thức ăn</option>
-                                    <option value="drink">Đồ uống</option>
+                                    <option value="food">Food</option>
+                                    <option value="drink">Drink</option>
+                                    <option value="packaged_drink">Packaged Drinks</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
