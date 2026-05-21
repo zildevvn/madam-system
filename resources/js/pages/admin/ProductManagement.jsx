@@ -129,7 +129,7 @@ const ProductManagement = () => {
 
                     {activeTab === 'products' && (
                         <div className="max-w-fit mx-auto md:mx-0 flex bg-white p-1 rounded-xl shadow-sm border border-slate-100 flex-shrink-0">
-                            {['all', 'food', 'drink'].map(type => (
+                            {['all', 'food', 'drink', 'packaged_drink'].map(type => (
                                 <button
                                     key={type}
                                     onClick={() => setFilterType(type)}
@@ -138,7 +138,7 @@ const ProductManagement = () => {
                                         : 'text-slate-400 hover:text-slate-600'
                                         }`}
                                 >
-                                    {type === 'all' ? 'Tất cả' : type === 'food' ? 'Food' : 'Drink'}
+                                    {type === 'all' ? 'Tất cả' : type === 'food' ? 'Food' : type === 'drink' ? 'Drink' : 'Packaged'}
                                 </button>
                             ))}
                         </div>

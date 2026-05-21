@@ -216,20 +216,27 @@ const Order = () => {
                             {/* Product Type Toggle */}
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black uppercase tracking-widest">Loại Món</label>
-                                <div className="grid grid-cols-2 gap-1.5 bg-gray-50 p-1.5 rounded-xl border border-gray-100/80">
+                                <div className="grid grid-cols-3 gap-1.5 bg-gray-50 p-1.5 rounded-xl border border-gray-100/80">
                                     <button
                                         type="button"
                                         onClick={() => setCustomType('food')}
                                         className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider border-none transition-all cursor-pointer ${customType === 'food' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/15' : 'bg-transparent text-gray-500 hover:text-gray-700'}`}
                                     >
-                                        🍔 Đồ Ăn (Bếp)
+                                        🍔 Food
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setCustomType('drink')}
                                         className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider border-none transition-all cursor-pointer ${customType === 'drink' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/15' : 'bg-transparent text-gray-500 hover:text-gray-700'}`}
                                     >
-                                        🍹 Nước Uống (Bar)
+                                        Drink
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCustomType('packaged_drink')}
+                                        className={`py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider border-none transition-all cursor-pointer ${customType === 'packaged_drink' ? 'bg-orange-500 text-white shadow-md shadow-orange-500/15' : 'bg-transparent text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Packaged Drink
                                     </button>
                                 </div>
                             </div>

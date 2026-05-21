@@ -41,7 +41,7 @@ class PrintService
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             foreach ($order->items as $item) {
                 $itemType = $item->product ? $item->product->type : ($item->type ?? 'food');
-                if ($itemType !== 'drink') continue;
+                if ($itemType !== 'drink' && $itemType !== 'packaged_drink') continue;
 
                 $printer->setEmphasis(true);
                 $itemName = $item->product ? $item->product->name : ($item->name ?? 'Custom Item');
