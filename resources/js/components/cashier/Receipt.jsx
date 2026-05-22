@@ -178,7 +178,18 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                             </td>
                                         </tr>
                                     )}
-                                    {tableItems.map((item, idx) => {
+                                    {Object.values(tableItems.reduce((grp, item) => {
+                                        const k = item.product_id 
+                                            ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}` 
+                                            : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`;
+                                        if (!grp[k]) {
+                                            grp[k] = { ...item, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
+                                        } else {
+                                            grp[k].originalIds.push(item.id || item.order_item_id);
+                                            grp[k].quantity += item.quantity;
+                                        }
+                                        return grp;
+                                    }, {})).map((item, idx) => {
                                         const val = Number(item.discount || 0);
                                         const type = item.discountType || 'fixed';
                                         let itemDiscount;
