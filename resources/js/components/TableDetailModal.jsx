@@ -12,25 +12,32 @@ const TableDetailModal = ({
     onClose,
     onToggleStatus
 }) => {
-    // 1. Consolidate items: merge if same product + same note + same status
+    // 1. Consolidate items: merge if same product + same note (ignore status)
     const consolidatedItems = React.useMemo(() => {
         const groups = {};
 
         orderItems.forEach(item => {
-            // Using a composite key to identify identical items
-            const key = `${item.product_id || item.name}-${item.note || ''}-${item.status}`;
+            const key = `${item.product_id || item.name}-${item.note || ''}`;
 
             if (groups[key]) {
-                groups[key].quantity += item.quantity;
-                groups[key].allIds = [...(groups[key].allIds || []), ...(item.allIds || [item.id])];
-                // Keep the oldest orderTime for the "elapsed time" display
+                groups[key].totalQuantity += item.quantity;
+                if (item.status === 'served') {
+                    groups[key].servedQuantity += item.quantity;
+                } else {
+                    groups[key].pendingQuantity += item.quantity;
+                    groups[key].rawPendingItems.push(...(item.rawItems || [{ id: item.id, quantity: item.quantity }]));
+                }
                 if (item.orderTime < groups[key].orderTime) {
                     groups[key].orderTime = item.orderTime;
                 }
             } else {
                 groups[key] = {
                     ...item,
-                    allIds: item.allIds || [item.id]
+                    groupKey: key,
+                    totalQuantity: item.quantity,
+                    servedQuantity: item.status === 'served' ? item.quantity : 0,
+                    pendingQuantity: item.status === 'served' ? 0 : item.quantity,
+                    rawPendingItems: item.status === 'served' ? [] : (item.rawItems || [{ id: item.id, quantity: item.quantity }])
                 };
             }
         });
@@ -39,28 +46,26 @@ const TableDetailModal = ({
     }, [orderItems]);
 
     // 2. Transactional state: track internal changes before confirming
-    const [localChanges, setLocalChanges] = useState({}); // key -> status
+    // localChanges tracks how many ADDITIONAL items the user wants to serve
+    const [localChanges, setLocalChanges] = useState({}); // groupKey -> additional served quantity
 
-    const getItemKey = (item) => `${item.product_id || item.name}-${item.note || ''}-${item.status}`;
-
-    const handleLocalToggle = (item) => {
-        if (item.status === 'served') return;
-        const key = getItemKey(item);
-        setLocalChanges(prev => ({
-            ...prev,
-            [key]: prev[key] === 'served' ? 'pending' : 'served'
-        }));
+    const handleLocalIncrement = (item, amount) => {
+        setLocalChanges(prev => {
+            const currentAdded = prev[item.groupKey] || 0;
+            const newAdded = Math.max(0, Math.min(item.pendingQuantity, currentAdded + amount));
+            return {
+                ...prev,
+                [item.groupKey]: newAdded
+            };
+        });
     };
 
     const handleConfirm = () => {
         // Apply all local changes to the parent
         consolidatedItems.forEach(item => {
-            const key = getItemKey(item);
-            const currentStatus = localChanges[key];
-
-            // Only call update if specifically changed to 'served' in this modal session
-            if (currentStatus === 'served' && item.status !== 'served') {
-                onToggleStatus(item, 'served');
+            const addedQty = localChanges[item.groupKey] || 0;
+            if (addedQty > 0) {
+                onToggleStatus(item, 'served', addedQty);
             }
         });
         onClose();
@@ -107,39 +112,86 @@ const TableDetailModal = ({
                     <div className="space-y-4">
 
                         {consolidatedItems.map((item, idx) => {
-                            const key = getItemKey(item);
-                            const isCurrentlyDone = (localChanges[key] || item.status) === 'served';
+                            const addedQty = localChanges[item.groupKey] || 0;
+                            const totalServed = item.servedQuantity + addedQty;
+                            const isFullyDone = totalServed >= item.totalQuantity;
+                            const isOriginalDone = item.servedQuantity >= item.totalQuantity;
                             const itemDiff = Math.max(1, Math.floor((currentTime - item.orderTime) / 60000));
-
 
                             return (
                                 <div key={idx}
-                                    className={`flex justify-between items-start p-2 rounded-lg border transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group cursor-pointer'}`}
-                                    onClick={() => handleLocalToggle(item)}
+                                    className={`flex justify-between items-start p-2 rounded-lg border transition-all duration-300 ${isOriginalDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}
                                 >
                                     <div className="flex items-center gap-4 flex-1">
-                                        <div className={`w-4 h-4 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isCurrentlyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}>
-                                            {isCurrentlyDone && (
-                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div 
+                                            onClick={() => {
+                                                if (isOriginalDone) return;
+                                                // Toggle full remaining quantity
+                                                handleLocalIncrement(item, addedQty > 0 ? -addedQty : item.pendingQuantity);
+                                            }}
+                                            className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isFullyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : (addedQty > 0 ? 'bg-orange-400 border-orange-400 shadow-lg shadow-orange-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110')}`}
+                                        >
+                                            {(isFullyDone || addedQty > 0) && (
+                                                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                                                 </svg>
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <div className="flex items-center flex-wrap gap-2">
-                                                <span className={`text-[14px] font-bold transition-all duration-300 ${isCurrentlyDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                                    {item.name}
-                                                </span>
-                                                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
-                                                    x{item.quantity}
-                                                </span>
+                                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[14px] font-bold transition-all duration-300 ${isFullyDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                                        {item.name}
+                                                    </span>
+                                                    {item.totalQuantity > 1 && (
+                                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isFullyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
+                                                            Tổng: {item.totalQuantity}
+                                                        </span>
+                                                    )}
+                                                    {item.totalQuantity > 1 && item.servedQuantity > 0 && (
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-green-50 text-green-600 border border-green-100">
+                                                            Đã ra: {item.servedQuantity}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                
+                                                {!isOriginalDone && item.totalQuantity > 1 && (
+                                                    <div className="flex items-center bg-gray-50 rounded-full p-0.5 border border-gray-200 shadow-sm">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                // Clicking '-' means serving 1 item, so remaining decreases
+                                                                handleLocalIncrement(item, 1);
+                                                            }}
+                                                            disabled={addedQty >= item.pendingQuantity}
+                                                            className={`w-7 h-7 flex items-center justify-center rounded-full border-none transition-all ${addedQty >= item.pendingQuantity ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
+                                                        >
+                                                            <svg width="14" height="14" strokeWidth="3" viewBox="0 0 24 24" fill="none"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                        </button>
 
+                                                        <span className={`px-2 font-black text-[14px] min-w-[28px] text-center ${addedQty > 0 ? 'text-orange-600' : 'text-gray-800'}`}>
+                                                            {item.pendingQuantity - addedQty}
+                                                        </span>
+
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                // Clicking '+' means reverting 1 served item, so remaining increases
+                                                                handleLocalIncrement(item, -1);
+                                                            }}
+                                                            disabled={addedQty <= 0}
+                                                            className={`w-7 h-7 flex items-center justify-center rounded-full border-none transition-all ${addedQty <= 0 ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
+                                                        >
+                                                            <svg width="14" height="14" strokeWidth="3" viewBox="0 0 24 24" fill="none"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                                     {itemDiff} phút trước
                                                 </span>
-                                                {itemDiff >= 10 && !isCurrentlyDone && (
+                                                {itemDiff >= 10 && !isOriginalDone && (
                                                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 ${itemDiff >= 20 ? 'bg-red-50 text-red-500' : 'bg-yellow-50 text-yellow-600'}`}>
                                                         <span className={`w-1 h-1 rounded-full animate-pulse ${itemDiff >= 20 ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
                                                         TRỄ

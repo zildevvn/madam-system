@@ -24,9 +24,11 @@ const KitchenDishList = ({ consolidatedItems, isBar = false }) => {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-center text-sm font-black mdt-text-primary bg-orange-50 w-10 h-10 rounded-xl shadow-sm border border-orange-100">
-                                    X{item.quantity}
-                                </div>
+                                {item.quantity > 1 && (
+                                    <div className="flex items-center justify-center text-sm font-black mdt-text-primary bg-orange-50 w-10 h-10 rounded-xl shadow-sm border border-orange-100">
+                                        X{item.quantity}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

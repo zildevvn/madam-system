@@ -96,6 +96,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                 const itemData = {
                     id: item.id,
                     allIds: [item.id],
+                    rawItems: [{ id: item.id, quantity: item.quantity }],
                     name: item.product?.name || item.name || 'Unknown',
                     quantity: item.quantity,
                     price: item.price || item.product?.price || 0,
@@ -107,7 +108,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     type: productType || filterType,
                     note: item.note || '',
                     tableId: item.table_id || t.id,
-                    order_id: item.order_id, // [NEW] Keep track of which order this item belongs to
+                    order_id: item.order_id, 
                     reservation_item_id: item.reservation_item_id,
                     parent_order_id: order.parent_order_id || null,
                     isSplitItem: !!order.parent_order_id
@@ -122,6 +123,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     if (group.itemsMap[compositeKey]) {
                         group.itemsMap[compositeKey].quantity += itemData.quantity;
                         group.itemsMap[compositeKey].allIds.push(item.id);
+                        group.itemsMap[compositeKey].rawItems.push({ id: item.id, quantity: itemData.quantity });
                         if (itemData.orderTime < group.itemsMap[compositeKey].orderTime) {
                             group.itemsMap[compositeKey].orderTime = itemData.orderTime;
                         }

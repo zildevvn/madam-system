@@ -63,8 +63,8 @@ const orderApi = {
     },
 
     // --- SUB-RESOURCES ---
-    updateItemStatus: async (itemId, status) => {
-        const response = await axios.put(`/api/order-items/${itemId}/status`, { status });
+    updateItemStatus: async (itemId, status, quantity = null) => {
+        const response = await axios.put(`/api/order-items/${itemId}/status`, { status, quantity });
         return response.data;
     },
 

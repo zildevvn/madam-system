@@ -131,7 +131,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                         <div key={i} className="px-4 py-3 flex justify-between items-center hover:bg-gray-50/30 transition-colors">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-800">{dish.name}</span>
-                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity}x {formatPrice(dish.price || 0)}đ</span>
+                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity > 1 ? `${dish.quantity}x ` : ''}{formatPrice(dish.price || 0)}đ</span>
                                             </div>
                                             <span className="text-sm font-black text-orange-600">
                                                 {formatPrice((dish.price || 0) * (dish.quantity || 1))}đ
@@ -152,8 +152,12 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                            <span>Qty: {dish.quantity}</span>
-                                            <span>•</span>
+                                            {dish.quantity > 1 && (
+                                                <>
+                                                    <span>Qty: {dish.quantity}</span>
+                                                    <span>•</span>
+                                                </>
+                                            )}
                                             <span>{formatPrice(dish.price || 0)}đ</span>
                                         </div>
                                     </div>

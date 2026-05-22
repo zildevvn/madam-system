@@ -38,7 +38,7 @@ const DelayWarningModal = ({
                 const currentStatus = localChanges[key];
                 // Only call update if specifically changed to 'served' in this modal session
                 if (currentStatus === 'served' && t.status !== 'served') {
-                    onToggleStatus({ allIds: t.allIds, id: t.id }, 'served', t.tableId);
+                    onToggleStatus({ allIds: t.allIds, id: t.id }, 'served', null, t.tableId);
                 }
             });
         }
@@ -88,9 +88,11 @@ const DelayWarningModal = ({
                                                 <span className={`text-[14px] font-bold transition-all duration-300 ${isCurrentlyDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
                                                     Bàn {t.name.toString().replace(/^Bàn\s+/i, '')}
                                                 </span>
-                                                <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
-                                                    x{t.quantity}
-                                                </span>
+                                                {t.quantity > 1 && (
+                                                    <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isCurrentlyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
+                                                        x{t.quantity}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">

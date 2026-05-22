@@ -75,7 +75,7 @@ export default function ProductItem({
                     <span className={`font-bold text-[14px] ${hasDiscount ? 'text-red-600' : 'text-on-surface'}`}>
                         {formatPrice(itemTotal)}đ
                     </span>
-                    {effectiveIsReadOnly && (
+                    {effectiveIsReadOnly && item.quantity > 1 && (
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
                             x{item.quantity} món
                         </span>
