@@ -144,37 +144,63 @@ export const usePaymentLogic = ({
         }
     }, [currentOrder, isProcessing, onPaymentSuccess]);
 
-    const handleUpdateQuantity = useCallback((productId, tableId, quantity) => {
+    const handleUpdateQuantity = useCallback((productId, tableId, quantity, originalNote = '') => {
         const fallbackTId = dbTableId || selectedTable?.id;
-        let newItems;
+        
+        let newItems = [...draftItems];
+        const matchingIndices = [];
+        let currentTotal = 0;
+        
+        draftItems.forEach((i, idx) => {
+            if (((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId && (i.note || '') === originalNote)) {
+                matchingIndices.push(idx);
+                currentTotal += i.quantity;
+            }
+        });
+        
+        if (matchingIndices.length === 0) return;
+        
+        const diff = quantity - currentTotal;
+        if (diff === 0) return;
+        
         if (quantity < 1) {
-            newItems = draftItems.filter(i =>
-                !((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
-            );
+            newItems = draftItems.filter((_, idx) => !matchingIndices.includes(idx));
+        } else if (diff > 0) {
+            const firstIdx = matchingIndices[0];
+            newItems[firstIdx] = { ...newItems[firstIdx], quantity: newItems[firstIdx].quantity + diff };
         } else {
-            newItems = draftItems.map(i =>
-                ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
-                    ? { ...i, quantity }
-                    : i
-            );
+            let remainingDiff = -diff;
+            for (let i = matchingIndices.length - 1; i >= 0; i--) {
+                const idx = matchingIndices[i];
+                if (newItems[idx].quantity > remainingDiff) {
+                    newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - remainingDiff };
+                    break;
+                } else {
+                    remainingDiff -= newItems[idx].quantity;
+                    newItems[idx] = null; // Mark for removal
+                    if (remainingDiff === 0) break;
+                }
+            }
+            newItems = newItems.filter(Boolean);
         }
+        
         onUpdateDraftItems(newItems);
     }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
-    const handleUpdateNote = useCallback((productId, tableId, note) => {
+    const handleUpdateNote = useCallback((productId, tableId, note, originalNote = '') => {
         const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
-            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
+            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId && (i.note || '') === originalNote)
                 ? { ...i, note }
                 : i
         );
         onUpdateDraftItems(newItems);
     }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
-    const handleUpdateItemDiscount = useCallback((productId, tableId, updates) => {
+    const handleUpdateItemDiscount = useCallback((productId, tableId, updates, originalNote = '') => {
         const fallbackTId = dbTableId || selectedTable?.id;
         const newItems = draftItems.map(i =>
-            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId)
+            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId && (i.note || '') === originalNote)
                 ? { ...i, ...updates }
                 : i
         );

@@ -83,10 +83,11 @@ class OrderController extends Controller
         // \Illuminate\Support\Facades\Gate::authorize('updateItemStatus', Order::class);
 
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,cooking,ready,served'
+            'status' => 'required|string|in:pending,cooking,ready,served',
+            'quantity' => 'nullable|integer|min:1'
         ]);
 
-        $item = $this->orderService->updateItemStatus($itemId, $validated['status']);
+        $item = $this->orderService->updateItemStatus($itemId, $validated['status'], $validated['quantity'] ?? null);
 
         return $this->success($item, 'Item status updated successfully');
     }

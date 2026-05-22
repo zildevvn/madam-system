@@ -29,12 +29,7 @@ const Bills = () => {
         }
     };
 
-    const handleToggleItemStatus = async (item, nextStatus, tableIdOverride = null) => {
-        const ids = item.allIds || [item.id];
-        
-        // [WHY] For group reservations or merged tables, the items actually belong to the 'owner' table 
-        // in the Redux store. We must use the consolidated group's tableId for the optimistic update 
-        // to find and patch the items correctly.
+    const handleToggleItemStatus = async (item, nextStatus, quantityToServe = null, tableIdOverride = null) => {
         const tableId = tableIdOverride || (activeOrders[selectedTable?.id?.toString()]?.tableId || selectedTable?.id);
 
         if (!tableId) {
@@ -42,16 +37,49 @@ const Bills = () => {
             return;
         }
 
-        // 1. Optimistic Redux update — instant UI response, no waiting for API.
+        // If we are doing partial completion from TableDetailModal
+        if (quantityToServe !== null && item.rawPendingItems) {
+            let remaining = quantityToServe;
+            const promises = [];
+            const optimisticIds = [];
+
+            for (const raw of item.rawPendingItems) {
+                if (remaining <= 0) break;
+                const qtyToServe = Math.min(raw.quantity, remaining);
+                promises.push(dispatch(updateItemStatusAsync({ itemId: raw.id, status: nextStatus, quantity: qtyToServe })).unwrap());
+                
+                // If we served the whole raw item, we can optimistically update its status
+                if (qtyToServe === raw.quantity) {
+                    optimisticIds.push(raw.id);
+                }
+                remaining -= qtyToServe;
+            }
+
+            if (optimisticIds.length > 0) {
+                dispatch(patchItemsStatus({ tableId, itemIds: optimisticIds, status: nextStatus }));
+            }
+
+            try {
+                await Promise.all(promises);
+            } catch (error) {
+                if (optimisticIds.length > 0) {
+                    const revertStatus = nextStatus === 'served' ? 'ready' : 'served';
+                    dispatch(patchItemsStatus({ tableId, itemIds: optimisticIds, status: revertStatus }));
+                }
+                console.error('Failed to sync partial item status:', error);
+            }
+            return;
+        }
+
+        // Normal full toggle
+        const ids = item.allIds || [item.id];
         dispatch(patchItemsStatus({ tableId, itemIds: ids, status: nextStatus }));
 
         try {
-            // 2. Confirm via API.
             await Promise.all(ids.map(id =>
-                dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, tableId })).unwrap()
+                dispatch(updateItemStatusAsync({ itemId: id, status: nextStatus, quantity: null })).unwrap()
             ));
         } catch (error) {
-            // 3. Revert optimistic patch on failure.
             const revertStatus = nextStatus === 'served' ? 'ready' : 'served';
             dispatch(patchItemsStatus({ tableId, itemIds: ids, status: revertStatus }));
             console.error('Failed to sync item status:', error);

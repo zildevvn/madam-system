@@ -42,8 +42,8 @@ export const updateGuestCountAsync = createAsyncThunk('order/updateGuestCount', 
   return data.data;
 });
 
-export const updateItemStatusAsync = createAsyncThunk('order/updateItemStatus', async ({ itemId, status }) => {
-  const data = await orderApi.updateItemStatus(itemId, status);
+export const updateItemStatusAsync = createAsyncThunk('order/updateItemStatus', async ({ itemId, status, quantity = null }) => {
+  const data = await orderApi.updateItemStatus(itemId, status, quantity);
   return data.data;
 });
 

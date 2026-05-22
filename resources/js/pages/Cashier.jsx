@@ -28,7 +28,7 @@ const Cashier = () => {
         allTables,
         status,
         error
-    } = useConsolidatedOrders(null, true);
+    } = useConsolidatedOrders(null, false);
 
     const [selectedTableId, setSelectedTableId] = useState(null);
     const [collapsedSection, setCollapsedSection] = useState(null); // Expand all by default

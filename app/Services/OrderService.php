@@ -381,11 +381,32 @@ class OrderService
     }
 
     // [WHY] Update progress of a specific item
-    public function updateItemStatus($itemId, $status)
+    public function updateItemStatus($itemId, $status, $quantity = null)
     {
         $item = OrderItem::findOrFail($itemId);
-        $item->status = $status;
-        $item->save();
+        
+        if ($quantity && $quantity < $item->quantity) {
+            // Replicate for the newly served portion
+            $servedItem = $item->replicate();
+            $servedItem->quantity = $quantity;
+            $servedItem->status = $status;
+            $servedItem->save();
+
+            // Explicitly preserve original timestamps for the new row
+            // to prevent the frontend from treating it as a newly added order.
+            OrderItem::where('id', $servedItem->id)->update([
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at
+            ]);
+            
+            // Keep original item for the remaining portion
+            $item->quantity = $item->quantity - $quantity;
+            // $item->status stays the same
+            $item->save();
+        } else {
+            $item->status = $status;
+            $item->save();
+        }
 
         $order = $item->order;
         $order->load([

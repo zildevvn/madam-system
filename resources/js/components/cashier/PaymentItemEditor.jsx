@@ -167,7 +167,16 @@ const PaymentItemEditor = ({
                                             </span>
                                         </div>
                                     )}
-                                    {tableItems.map((item, idx) => {
+                                    {Object.values(tableItems.reduce((grp, item) => {
+                                        const k = item.product_id ? `prod-${item.product_id}-${item.note || ''}` : `custom-${item.name}-${item.note || ''}`;
+                                        if (!grp[k]) {
+                                            grp[k] = { ...item, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
+                                        } else {
+                                            grp[k].originalIds.push(item.id || item.order_item_id);
+                                            grp[k].quantity += item.quantity;
+                                        }
+                                        return grp;
+                                    }, {})).map((item, idx) => {
                                         const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
                                         const actualTableId = item.tableId || dbTableId || selectedTable?.id;
                                         // [WHY] Per-item read-only: shared dishes (reservation_item_id) are locked
@@ -214,9 +223,9 @@ const PaymentItemEditor = ({
                                                 <div className="flex-1 min-w-0">
                                                     <ProductItem
                                                         item={item}
-                                                        onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q)}
-                                                        onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n)}
-                                                        onUpdateDiscount={(id, d) => handleUpdateItemDiscount(item.product_id || item.id, parseInt(actualTableId), d)}
+                                                        onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q, item.note || '')}
+                                                        onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n, item.note || '')}
+                                                        onUpdateDiscount={(id, d) => handleUpdateItemDiscount(item.product_id || item.id, parseInt(actualTableId), d, item.note || '')}
                                                         showNoteButton={!productItemReadOnly}
                                                         isReadOnly={productItemReadOnly}
                                                     />
