@@ -13,7 +13,9 @@ import {
     updateOrderNoteAsync,
     setGuestCount,
     updateGuestCountAsync,
-    splitOrderAsync
+    splitOrderAsync,
+    addToCart,
+    addCustomToCart
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';

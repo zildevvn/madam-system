@@ -239,11 +239,57 @@ class OrderService
                 if ($orderItem) {
                     $handledItemIds[] = $orderItem->id;
                     $orderItem->order_id = $orderId;
-                    $orderItem->quantity = $itemData['quantity'];
-                    $orderItem->table_id = $itemData['table_id'] ?? $order->table_id;
-                    if (array_key_exists('note', $itemData)) {
-                        $orderItem->note = $itemData['note'];
+                    
+                    $quantityDiff = $itemData['quantity'] - $orderItem->quantity;
+                    
+                    if ($quantityDiff > 0) {
+                        // [WHY] If the user increased the quantity of an ALREADY ORDERED item,
+                        // we MUST NOT just update the quantity. Because the item might already be 
+                        // 'processing' or 'completed' and just updating quantity won't trigger 
+                        // the kitchen to make the new items!
+                        // Instead, we split the added quantity into a NEW 'pending' order item.
+                        $newOrderItem = $orderItem->replicate();
+                        $newOrderItem->quantity = $quantityDiff;
+                        $newOrderItem->status = 'pending';
+                        if (array_key_exists('note', $itemData)) {
+                            $newOrderItem->note = $itemData['note'];
+                        }
+                        
+                        // Recalculate discount for the new order item
+                        $discount = $itemData['discount'] ?? 0;
+                        $discountType = $itemData['discount_type'] ?? 'fixed';
+                        $newItemGross = $newOrderItem->price * $newOrderItem->quantity;
+                        $newItemDiscountAmount = 0;
+                        if ($discount > 0) {
+                            if ($discountType === 'percent') {
+                                $newItemDiscountAmount = ($newItemGross * $discount) / 100;
+                            } else {
+                                $newItemDiscountAmount = $discount * $newOrderItem->quantity;
+                            }
+                        }
+                        $newOrderItem->discount = $discount;
+                        $newOrderItem->discount_type = $discountType;
+                        $newOrderItem->save();
+                        
+                        $handledItemIds[] = $newOrderItem->id;
+                        // Subtract the new item's price from total (since the old item loop recalculates its own)
+                        // Wait, the main loop recalculates the ORIGINAL item using $itemData['quantity']
+                        // which is the SUM of old + new. So we MUST update the original item's quantity back to old!
+                        // No, the original item stays at its OLD quantity.
+                        $itemData['quantity'] = $orderItem->quantity; 
+                        
+                        if (array_key_exists('note', $itemData)) {
+                            $orderItem->note = $itemData['note'];
+                        }
+                    } else {
+                        // Quantity decreased or stayed the same, just update
+                        $orderItem->quantity = $itemData['quantity'];
+                        if (array_key_exists('note', $itemData)) {
+                            $orderItem->note = $itemData['note'];
+                        }
                     }
+
+                    $orderItem->table_id = $itemData['table_id'] ?? $order->table_id;
                     if (is_null($orderItem->product_id)) {
                         $orderItem->name = $itemData['name'] ?? $orderItem->name ?? 'Custom Item';
                         $orderItem->type = $productType;

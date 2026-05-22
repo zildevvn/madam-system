@@ -7,6 +7,7 @@ import { formatPrice } from '../shared/utils/formatCurrency';
  */
 export default function ProductItem({
     item,
+    originalQuantity = 0,
     onUpdateQuantity,
     onUpdateNote,
     onUpdateDiscount,
@@ -39,6 +40,8 @@ export default function ProductItem({
     })();
 
     const itemTotal = (item.price * item.quantity) - calculatedItemDiscount;
+    
+    const addedQuantity = Math.max(0, item.quantity - originalQuantity);
 
     return (
         <div className="product-item bg-surface-container-lowest py-3 border-b border-gray-100 last:border-0 flex flex-col gap-2">
@@ -111,7 +114,14 @@ export default function ProductItem({
                         >
                             <svg width="14" height="14" strokeWidth="2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                         </button>
-                        <span className="px-4 font-black text-on-surface text-xs min-w-[24px] text-center">{item.quantity}</span>
+                        <span className="px-4 font-black text-on-surface text-xs min-w-[24px] flex items-center justify-center gap-1 text-center">
+                            {item.quantity}
+                            {addedQuantity > 0 && originalQuantity > 0 && (
+                                <span className="text-[10px] text-orange-600 bg-orange-50 px-1 rounded-sm">
+                                    (+{addedQuantity})
+                                </span>
+                            )}
+                        </span>
                         <button
                             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                             className="btn-plus w-6 h-6 flex items-center justify-center rounded-full text-white shadow-md active:scale-90 transition-all hover:brightness-110 cursor-pointer bg-orange-500"
