@@ -144,7 +144,7 @@ export const usePaymentLogic = ({
         }
     }, [currentOrder, isProcessing, onPaymentSuccess]);
 
-    const handleUpdateQuantity = useCallback((productId, tableId, quantity, originalNote = '') => {
+    const handleUpdateQuantity = useCallback((productId, tableId, quantity, originalNote = '', price = 0, discount = 0, discountType = 'fixed') => {
         const fallbackTId = dbTableId || selectedTable?.id;
         
         let newItems = [...draftItems];
@@ -152,7 +152,14 @@ export const usePaymentLogic = ({
         let currentTotal = 0;
         
         draftItems.forEach((i, idx) => {
-            if (((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId && (i.note || '') === originalNote)) {
+            const isMatch = ((i.product_id || i.id) === productId) && 
+                            ((i.tableId || fallbackTId) === tableId) && 
+                            ((i.note || '') === originalNote) &&
+                            (Number(i.price || 0) === Number(price)) &&
+                            (Number(i.discount || 0) === Number(discount)) &&
+                            ((i.discountType || 'fixed') === discountType);
+            
+            if (isMatch) {
                 matchingIndices.push(idx);
                 currentTotal += i.quantity;
             }
@@ -187,23 +194,31 @@ export const usePaymentLogic = ({
         onUpdateDraftItems(newItems);
     }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
-    const handleUpdateNote = useCallback((productId, tableId, note, originalNote = '') => {
+    const handleUpdateNote = useCallback((productId, tableId, note, originalNote = '', price = 0, discount = 0, discountType = 'fixed') => {
         const fallbackTId = dbTableId || selectedTable?.id;
-        const newItems = draftItems.map(i =>
-            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId && (i.note || '') === originalNote)
-                ? { ...i, note }
-                : i
-        );
+        const newItems = draftItems.map(i => {
+            const isMatch = ((i.product_id || i.id) === productId) && 
+                            ((i.tableId || fallbackTId) === tableId) && 
+                            ((i.note || '') === originalNote) &&
+                            (Number(i.price || 0) === Number(price)) &&
+                            (Number(i.discount || 0) === Number(discount)) &&
+                            ((i.discountType || 'fixed') === discountType);
+            return isMatch ? { ...i, note } : i;
+        });
         onUpdateDraftItems(newItems);
     }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
-    const handleUpdateItemDiscount = useCallback((productId, tableId, updates, originalNote = '') => {
+    const handleUpdateItemDiscount = useCallback((productId, tableId, updates, originalNote = '', price = 0, discount = 0, discountType = 'fixed') => {
         const fallbackTId = dbTableId || selectedTable?.id;
-        const newItems = draftItems.map(i =>
-            ((i.product_id || i.id) === productId && (i.tableId || fallbackTId) === tableId && (i.note || '') === originalNote)
-                ? { ...i, ...updates }
-                : i
-        );
+        const newItems = draftItems.map(i => {
+            const isMatch = ((i.product_id || i.id) === productId) && 
+                            ((i.tableId || fallbackTId) === tableId) && 
+                            ((i.note || '') === originalNote) &&
+                            (Number(i.price || 0) === Number(price)) &&
+                            (Number(i.discount || 0) === Number(discount)) &&
+                            ((i.discountType || 'fixed') === discountType);
+            return isMatch ? { ...i, ...updates } : i;
+        });
         onUpdateDraftItems(newItems);
     }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
