@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useReservationForm } from '../../hooks/useReservationForm';
-import { deleteReservationAsync } from '../../store/slices/reservationSlice';
 import ReservationDishesForm from '../../components/reservations/ReservationDishesForm';
 import ReservationTableSelector from '../../components/reservations/ReservationTableSelector';
 
@@ -23,11 +22,11 @@ const ReservationCreate = () => {
         handleTabChange, onSubmit
     } = useReservationForm(id, user);
 
-    const handleRemove = async () => {
+    const handleCancel = async () => {
         const name = reservationData?.tour_guide_name || reservationData?.lead_name || 'this reservation';
-        if (window.confirm(`Xóa đặt chỗ cho "${name}"? Hành động này không thể hoàn tác.`)) {
-            await dispatch(deleteReservationAsync(id));
-            navigate('/reservations');
+        if (window.confirm(`Hủy đặt chỗ cho "${name}"?`)) {
+            setValue('status', 'completed');
+            onSubmit();
         }
     };
 
@@ -173,10 +172,10 @@ const ReservationCreate = () => {
                     {isEdit && (
                         <button
                             type="button"
-                            onClick={handleRemove}
+                            onClick={handleCancel}
                             className="order-3 py-4 px-6 bg-red-50 text-red-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] cursor-pointer border-none hover:bg-red-100 transition-all"
                         >
-                            Remove
+                            Cancel
                         </button>
                     )}
                 </div>

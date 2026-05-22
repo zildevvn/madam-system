@@ -83,6 +83,7 @@ const ReservationList = () => {
     const user = useAppSelector(state => state.auth.user);
     const dispatch = useAppDispatch();
     const [viewingReservation, setViewingReservation] = useState(null);
+    const [confirmArrivedReservation, setConfirmArrivedReservation] = useState(null);
     const navigate = useNavigate();
 
     // [WHY] Prepare and sort reservations for the current view.
@@ -148,15 +149,8 @@ const ReservationList = () => {
     const handlers = useMemo(() => ({
         onView: (r) => setViewingReservation(r),
         onEdit: (id) => navigate(`/reservations/edit/${id}`),
-        onDone: async (r) => {
-            if (window.confirm(`Mark reservation for ${r.lead_name} as done?`)) {
-                await dispatch(saveReservationAsync({
-                    id: r.id,
-                    data: { ...r, status: 'completed' }
-                }));
-            }
-        }
-    }), [navigate, dispatch]);
+        onDone: (r) => setConfirmArrivedReservation(r)
+    }), [navigate]);
 
     return (
         <div className="max-w-6xl mx-auto p-4 lg:p-8">
@@ -325,6 +319,42 @@ const ReservationList = () => {
                 tables={tables}
                 onClose={() => setViewingReservation(null)}
             />
+
+            {/* Custom Confirmation Modal for Arrived Action */}
+            {confirmArrivedReservation && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-[24px] p-6 md:p-8 max-w-[320px] w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                        </div>
+                        <h5 className="text-center text-gray-900 mb-2">Customer Arrived?</h5>
+                        <p className="text-sm text-center text-gray-500 mb-6 leading-relaxed">
+                            Confirm <strong className="text-gray-800">{confirmArrivedReservation.lead_name || confirmArrivedReservation.tour_guide_name}</strong> has arrived?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmArrivedReservation(null)}
+                                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-colors border-none cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const r = confirmArrivedReservation;
+                                    setConfirmArrivedReservation(null);
+                                    await dispatch(saveReservationAsync({
+                                        id: r.id,
+                                        data: { ...r, status: 'completed' }
+                                    }));
+                                }}
+                                className="flex-1 py-3 bg-green-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-green-600 transition-colors border-none cursor-pointer shadow-sm shadow-green-500/30"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
