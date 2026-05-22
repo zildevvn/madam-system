@@ -47,13 +47,25 @@ export const useReservationForm = (id = null, user = null) => {
                         data.reservation_date = data.reservation_date.toString().split(/[\sT]/)[0];
                     }
 
-                    // [FIX] Reverse VAT calculation if applied, so the user edits the base price
-                    if (data.apply_vat && data.items) {
-                        const vatRate = 1 + (data.vat_percentage / 100);
-                        data.dishes = data.items.map(item => ({
-                            ...item,
-                            price: Math.round(item.price / vatRate)
-                        }));
+                    // [FIX] Map dishes with VAT and Child Pricing reverse-calculations
+                    if (data.items) {
+                        data.dishes = data.items.map(item => {
+                            let basePrice = item.price;
+                            if (data.apply_vat) {
+                                const vatRate = 1 + (data.vat_percentage / 100);
+                                basePrice = Math.round(item.price / vatRate);
+                            }
+                            
+                            const isChild = item.name && item.name.includes('(Trẻ em)');
+                            const originalPrice = isChild ? Math.round(basePrice / 0.75) : basePrice;
+                            
+                            return {
+                                ...item,
+                                price: basePrice,
+                                original_price: originalPrice,
+                                is_child: isChild
+                            };
+                        });
                     }
 
                     form.reset(data);
@@ -97,12 +109,17 @@ export const useReservationForm = (id = null, user = null) => {
             if (payload.dishes && Array.isArray(payload.dishes)) {
                 payload.dishes = payload.dishes.filter(dish =>
                     dish.name && String(dish.name).trim() !== ''
-                ).map(dish => ({
-                    ...dish,
-                    quantity: parseInt(dish.quantity, 10),
-                    price: parseFloat(dish.price),
-                    type: dish.type || 'food'
-                }));
+                ).map(dish => {
+                    const mappedDish = {
+                        ...dish,
+                        quantity: parseInt(dish.quantity, 10),
+                        price: parseFloat(dish.price),
+                        type: dish.type || 'food'
+                    };
+                    delete mappedDish.is_child;
+                    delete mappedDish.original_price;
+                    return mappedDish;
+                });
             }
         }
 
