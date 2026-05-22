@@ -16,6 +16,7 @@ export default function Checkout() {
         isConfirmed,
         isModified,
         selectedItems,
+        originalItems,
         allTables,
         tableIdToGroupKey,
         selectedTableId,
@@ -68,6 +69,7 @@ export default function Checkout() {
 
             <CheckoutItemList
                 selectedItems={selectedItems}
+                originalItems={originalItems}
                 handleUpdateQuantity={handleUpdateQuantity}
                 handleUpdateNote={handleUpdateNote}
                 guestCount={guestCount}

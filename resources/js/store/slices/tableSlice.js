@@ -161,9 +161,23 @@ const tableSlice = createSlice({
         (state, action) => {
           const order = action.payload;
           if (order && order.table_id && state.byId[order.table_id]) {
-            state.byId[order.table_id].active_order = order;
+            const table = state.byId[order.table_id];
+            table.active_order = order;
+            
+            // [FIX] If active_orders array exists (e.g. split bills, merged tables),
+            // we must also update the specific order within that array so that useConsolidatedOrders
+            // (which prefers the array) receives the instantaneous local update before WebSockets fire.
+            if (table.active_orders) {
+                const idx = table.active_orders.findIndex(o => o.id === order.id);
+                if (idx !== -1) {
+                    table.active_orders[idx] = order;
+                } else {
+                    table.active_orders.push(order);
+                }
+            }
+
             if (action.type === checkoutOrderAsync.fulfilled.type) {
-              state.byId[order.table_id].status = 'busy';
+              table.status = 'busy';
             }
           }
         }

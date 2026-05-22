@@ -88,9 +88,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                 const normalizedFilter = filterType ? filterType.toString().toLowerCase().trim() : null;
 
                 if (normalizedFilter) {
-                    if (normalizedFilter === 'drink' && (productType === 'drink' || productType === 'packaged_drink')) {
-                        // Allow packaged_drink to show up on Bar page
-                    } else if (productType !== normalizedFilter) {
+                    if (productType !== normalizedFilter) {
                         return;
                     }
                 }

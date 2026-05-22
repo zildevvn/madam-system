@@ -7,6 +7,7 @@ import TableDetailModal from '../components/TableDetailModal';
 import BillsStatusBar from '../components/Bills/BillsStatusBar';
 import BillsContent from '../components/Bills/BillsContent';
 
+
 const Bar = () => {
     const dispatch = useAppDispatch();
     const [selectedTable, setSelectedTable] = useState(null);

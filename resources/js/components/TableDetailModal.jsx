@@ -105,6 +105,7 @@ const TableDetailModal = ({
 
                 <div className="px-2 py-4 md:p-6 max-h-[70vh] overflow-y-auto mdt-scrollbar">
                     <div className="space-y-4">
+
                         {consolidatedItems.map((item, idx) => {
                             const key = getItemKey(item);
                             const isCurrentlyDone = (localChanges[key] || item.status) === 'served';
