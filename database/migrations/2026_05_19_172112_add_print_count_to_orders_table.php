@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->unsignedInteger('print_count')->default(0)->after('is_printed');
+            if (!Schema::hasColumn('orders', 'is_printed')) {
+                $table->boolean('is_printed')->default(false);
+            }
+            $table->unsignedInteger('print_count')->default(0);
         });
     }
 
@@ -23,6 +26,9 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             $table->dropColumn('print_count');
+            if (Schema::hasColumn('orders', 'is_printed')) {
+                $table->dropColumn('is_printed');
+            }
         });
     }
 };

@@ -40,12 +40,16 @@ const CheckoutHeader = ({
                                 {allTables.find(t => t.id.toString() === tableId?.toString())?.name || `Bàn ${tableId.toString().replace(/^Bàn\s+/i, '')}`}
                             </option>
                             {allTables
-                                .filter(t => !t.active_order && !tableIdToGroupKey[t.id.toString()] && t.id.toString() !== tableId?.toString())
-                                .map(t => (
-                                    <option key={t.id} value={t.id.toString()}>
-                                        {t.name}
-                                    </option>
-                                ))}
+                                .filter(t => t.id.toString() !== tableId?.toString())
+                                .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' }))
+                                .map(t => {
+                                    const hasGuests = t.active_order || (t.active_orders && t.active_orders.length > 0);
+                                    return (
+                                        <option key={t.id} value={t.id.toString()}>
+                                            {t.name}{hasGuests ? ' (Có khách)' : ''}
+                                        </option>
+                                    );
+                                })}
                         </select>
                         <svg className="w-3.5 h-3.5 absolute right-3 pointer-events-none text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                     </div>
