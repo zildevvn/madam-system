@@ -13,9 +13,7 @@ const PersonnelPage = () => {
     const { user: currentUser } = useAppSelector(state => state.auth);
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <UserManagement currentUser={currentUser} />
-        </div>
+        <UserManagement currentUser={currentUser} />
     );
 };
 

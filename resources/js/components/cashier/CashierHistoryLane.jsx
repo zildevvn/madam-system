@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 
 /**
@@ -29,6 +29,30 @@ const CashierHistoryLane = ({
         d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
         return d.toISOString().split('T')[0];
     };
+
+    const totals = useMemo(() => {
+        let cash = 0;
+        let bank = 0;
+        let card = 0;
+        let debt = 0;
+
+        historyOrders.forEach(order => {
+            const method = (order.payment_method || '').toLowerCase();
+            const total = Number(order.total_price) || 0;
+            if (method === 'cash') {
+                cash += total;
+            } else if (method === 'bank') {
+                bank += total;
+            } else if (method === 'card') {
+                card += total;
+            } else if (method === 'debt') {
+                debt += total;
+            }
+        });
+
+        return { cash, bank, card, debt };
+    }, [historyOrders]);
+
     const resolveTableName = (order) => {
         if (order.merged_tables) {
             const ids = order.merged_tables.split('-').filter(Boolean);
@@ -83,6 +107,35 @@ const CashierHistoryLane = ({
                         </div>
                     )}
                 </div>
+
+                {!isCollapsed && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2 py-3 bg-gray-50/50 rounded-2xl border border-gray-100/50">
+                        {/* Cash Card */}
+                        <div className="flex flex-col bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-[3px] bg-green-400"></div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tiền mặt (Cash)</span>
+                            <span className="text-[14px] font-black text-gray-900 mt-1">{formatPrice(totals.cash)}đ</span>
+                        </div>
+                        {/* Bank Card */}
+                        <div className="flex flex-col bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-[3px] bg-blue-400"></div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Chuyển khoản (Bank)</span>
+                            <span className="text-[14px] font-black text-gray-900 mt-1">{formatPrice(totals.bank)}đ</span>
+                        </div>
+                        {/* Card Card */}
+                        <div className="flex flex-col bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-[3px] bg-purple-400"></div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Cà thẻ (Card)</span>
+                            <span className="text-[14px] font-black text-gray-900 mt-1">{formatPrice(totals.card)}đ</span>
+                        </div>
+                        {/* Debt/Credit Card */}
+                        <div className="flex flex-col bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-[3px] bg-orange-400"></div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Ghi nợ (Debt)</span>
+                            <span className="text-[14px] font-black text-gray-900 mt-1">{formatPrice(totals.debt)}đ</span>
+                        </div>
+                    </div>
+                )}
 
                 <div className={`grid ${!isCollapsed ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1'} gap-6 overflow-y-auto max-h-[400px] px-2 custom-scrollbar`}>
                     {historyOrders.map(order => (
