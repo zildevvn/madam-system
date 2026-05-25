@@ -37,9 +37,13 @@ export const useCashierHistory = (historyOrders = []) => {
 
             const signals = [
                 order.reservation_id ? `res-${order.reservation_id}` : null,
-                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null, // [WHY] Scoped by time to avoid cross-day grouping
-                `tx-${timeKey}-${order.payment_method}`
+                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null
             ].filter(Boolean);
+
+            // [WHY] Fallback to a unique signal per order if neither merged nor group reservation
+            if (signals.length === 0) {
+                signals.push(`order-${order.id}`);
+            }
 
             let existingGroupId = null;
             for (const s of signals) {
@@ -61,9 +65,12 @@ export const useCashierHistory = (historyOrders = []) => {
 
             const signals = [
                 order.reservation_id ? `res-${order.reservation_id}` : null,
-                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null,
-                `tx-${timeKey}-${order.payment_method}`
+                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null
             ].filter(Boolean);
+
+            if (signals.length === 0) {
+                signals.push(`order-${order.id}`);
+            }
 
             let groupKey = null;
             for (const s of signals) {
@@ -85,7 +92,7 @@ export const useCashierHistory = (historyOrders = []) => {
                     allTableIds: new Set()
                 };
 
-                // [WHY] Initialize itemsMap with the first order's items
+                // [WHY] Initialize itemsMap with the first order's items, merging duplicates of the same product/key
                 (order.items || []).forEach(item => {
                     const itemId = item.id || item.order_item_id;
                     if (itemId && handledItemIds.has(itemId)) return;
@@ -93,7 +100,11 @@ export const useCashierHistory = (historyOrders = []) => {
 
                     const tid = item.tableId || order.table_id;
                     const key = `${item.product_id || item.name}-${item.note || ''}`; // [WHY] No tid in key to merge across tables
-                    groups[groupKey].itemsMap[key] = { ...item, tableId: tid };
+                    if (groups[groupKey].itemsMap[key]) {
+                        groups[groupKey].itemsMap[key].quantity += item.quantity;
+                    } else {
+                        groups[groupKey].itemsMap[key] = { ...item, tableId: tid };
+                    }
                 });
 
                 // Track all table IDs involved

@@ -272,6 +272,10 @@ class OrderService
                         $newOrderItem->save();
                         
                         $handledItemIds[] = $newOrderItem->id;
+                        
+                        // [FIX] Add the newly replicated item's price (net of item discount) to the order total
+                        $totalPrice += ($newItemGross - $newItemDiscountAmount);
+                        
                         // Subtract the new item's price from total (since the old item loop recalculates its own)
                         // Wait, the main loop recalculates the ORIGINAL item using $itemData['quantity']
                         // which is the SUM of old + new. So we MUST update the original item's quantity back to old!

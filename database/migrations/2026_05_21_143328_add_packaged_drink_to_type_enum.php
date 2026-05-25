@@ -12,9 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE products MODIFY type ENUM('food', 'drink', 'packaged_drink')");
-        DB::statement("ALTER TABLE categories MODIFY type ENUM('food', 'drink', 'packaged_drink')");
-        DB::statement("ALTER TABLE order_items MODIFY type ENUM('food', 'drink', 'packaged_drink')");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE products MODIFY type ENUM('food', 'drink', 'packaged_drink')");
+            DB::statement("ALTER TABLE categories MODIFY type ENUM('food', 'drink', 'packaged_drink')");
+            DB::statement("ALTER TABLE order_items MODIFY type ENUM('food', 'drink', 'packaged_drink')");
+        }
     }
 
     /**
