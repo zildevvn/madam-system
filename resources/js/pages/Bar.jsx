@@ -30,7 +30,7 @@ const Bar = () => {
     };
 
     const handleToggleItemStatus = async (item, nextStatus, quantityToServe = null, tableIdOverride = null) => {
-        const tableId = tableIdOverride || (activeOrders[selectedTable?.id?.toString()]?.tableId || selectedTable?.id);
+        const tableId = tableIdOverride || item.tableId || (activeOrders[selectedTable?.id?.toString()]?.tableId || selectedTable?.id);
 
         if (!tableId) {
             console.error('No tableId resolved for item status update');

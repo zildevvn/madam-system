@@ -45,6 +45,17 @@ const tableSlice = createSlice({
             }
           });
         }
+        if (table?.active_orders) {
+          table.active_orders.forEach(o => {
+            if (o.items) {
+              o.items.forEach(item => {
+                if (itemIds.includes(item.id)) {
+                  item.status = status;
+                }
+              });
+            }
+          });
+        }
       });
     },
     // [WHY] Optimistically removes a completed order from the active orders list immediately.
@@ -127,13 +138,9 @@ const tableSlice = createSlice({
             state.pendingTableIds[tableId] -= 1;
           }
 
+          // 1. Surgical patch with server-confirmed statuses for active_order
           const existingOrder = state.byId[tableId].active_order;
-          if (!existingOrder) {
-            state.byId[tableId].active_order = order;
-            return;
-          }
-          // Surgical patch with server-confirmed statuses
-          if (order.items && existingOrder.items) {
+          if (existingOrder && order.items && existingOrder.items) {
             order.items.forEach(updatedItem => {
               const idx = existingOrder.items.findIndex(i => i.id === updatedItem.id);
               if (idx !== -1) {
@@ -142,6 +149,31 @@ const tableSlice = createSlice({
                 existingOrder.items.push(updatedItem);
               }
             });
+          } else if (!existingOrder) {
+            state.byId[tableId].active_order = order;
+          }
+
+          // 2. Surgical patch with server-confirmed statuses for active_orders array
+          const activeOrders = state.byId[tableId].active_orders;
+          if (activeOrders && order.items) {
+            const orderIdx = activeOrders.findIndex(o => o.id === order.id);
+            if (orderIdx !== -1) {
+              const existingO = activeOrders[orderIdx];
+              if (existingO.items) {
+                order.items.forEach(updatedItem => {
+                  const idx = existingO.items.findIndex(i => i.id === updatedItem.id);
+                  if (idx !== -1) {
+                    existingO.items[idx] = updatedItem;
+                  } else {
+                    existingO.items.push(updatedItem);
+                  }
+                });
+              } else {
+                existingO.items = order.items;
+              }
+            } else {
+              activeOrders.push(order);
+            }
           }
         }
       )
