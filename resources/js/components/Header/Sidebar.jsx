@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import NavItem from './NavItem';
 
 /**
@@ -53,15 +54,23 @@ const Sidebar = ({
                     {/* User Profile */}
                     {user && (
                         <div className="px-4 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white text-sm font-black">
-                                    {user.name?.[0].toUpperCase() || 'U'}
+                            <Link 
+                                to="/profile" 
+                                onClick={onClose}
+                                className="flex items-center gap-3 hover:opacity-85 transition-opacity group cursor-pointer"
+                            >
+                                <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white text-sm font-black overflow-hidden ring-2 ring-orange-100 group-hover:scale-105 transition-all">
+                                    {user.photo ? (
+                                        <img src={`/storage/${user.photo}`} alt="avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        user.name?.[0].toUpperCase() || 'U'
+                                    )}
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                    <p className="text-sm font-bold text-slate-900 truncate uppercase tracking-tight">{user.name}</p>
+                                    <p className="text-sm font-bold text-slate-900 truncate uppercase tracking-tight group-hover:text-orange-500 transition-colors">{user.name}</p>
                                     <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{user.role}</p>
                                 </div>
-                            </div>
+                            </Link>
 
                             <button
                                 type="button"
