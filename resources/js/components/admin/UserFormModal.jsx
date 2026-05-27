@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
+import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processing = false }) => {
     const { register, handleSubmit, reset, formState: { errors } } = useForm({
@@ -75,7 +76,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                     email: '',
                     password: '',
                     role: 'order_staff',
-                    join_date: new Date().toISOString().split('T')[0], // Default to today
+                    join_date: formatLocalDate(new Date()), // Default to today
                     date_of_birth: '',
                     work_shift: 'Ca sáng',
                     salary: '',

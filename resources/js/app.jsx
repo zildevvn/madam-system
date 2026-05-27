@@ -10,7 +10,6 @@ import { Toaster } from 'react-hot-toast';
 
 import axios from "axios";
 import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
-import Header from "./components/Header";
 import DefaultLayout from "./layouts/DefaultLayout";
 import StaffOrderLayout from "./layouts/StaffOrderLayout";
 import OrderLayout from "./layouts/OrderLayout";
@@ -33,6 +32,7 @@ import ReservationList from './pages/reservations/ReservationList';
 import ReservationCreate from './pages/reservations/ReservationCreate';
 import ExpenseManagement from './pages/ExpenseManagement';
 import UserProfilePage from './pages/UserProfilePage';
+import EmployeeSchedulePage from './pages/EmployeeSchedulePage';
 
 // Set base default header
 window.axios = axios;
@@ -213,6 +213,7 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     {/* User Profile */}
                     <Route path="/profile" element={<DefaultLayout><UserProfilePage /></DefaultLayout>} />
+                    <Route path="/employee-schedule" element={<DefaultLayout><EmployeeSchedulePage /></DefaultLayout>} />
 
                     {/* Order page: Access by admin, manager, order_staff, seller */}
                     <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />

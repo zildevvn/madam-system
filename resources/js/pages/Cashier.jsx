@@ -13,6 +13,8 @@ import { optimisticallyCompleteOrder } from '../store/slices/tableSlice';
 
 import CheckoutManager from '../components/cashier/CheckoutManager';
 
+import { formatLocalDate } from '../shared/utils/formatLocalDate';
+
 const COLLAPSE_ZONES = {
     INDIVIDUAL: 'individual',
     GROUP: 'group',
@@ -37,9 +39,7 @@ const Cashier = () => {
 
     // [WHY] Centralized date state for history filtering
     const getTodayStr = () => {
-        const d = new Date();
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().split('T')[0];
+        return formatLocalDate(new Date());
     };
     const [selectedDate, setSelectedDate] = useState(getTodayStr());
 

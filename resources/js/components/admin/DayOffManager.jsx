@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { getUsersApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi, updateLeaveStatusApi, deleteLeaveRequestApi } from '../../services/leaveService';
+import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 
-const DayOffManager = ({ currentUser }) => {
-    const [requests, setRequests] = useState([]);
+const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propSetRequests }) => {
+    const [localRequests, setLocalRequests] = useState([]);
+    const requests = propRequests !== undefined ? propRequests : localRequests;
+    const setRequests = propSetRequests !== undefined ? propSetRequests : setLocalRequests;
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
@@ -26,7 +29,7 @@ const DayOffManager = ({ currentUser }) => {
                 getUsersApi()
             ]);
             setRequests(reqRes.data);
-            
+
             // Only active users
             const activeEmps = empRes.data.filter(u => u.status !== 'inactive');
             setEmployees(activeEmps);
@@ -44,9 +47,9 @@ const DayOffManager = ({ currentUser }) => {
 
     useEffect(() => {
         fetchData();
-        
+
         // Reset date defaults
-        const today = new Date().toISOString().split('T')[0];
+        const today = formatLocalDate(new Date());
         setStartDate(today);
         setEndDate(today);
     }, []);
@@ -169,16 +172,10 @@ const DayOffManager = ({ currentUser }) => {
 
     return (
         <div className="space-y-6">
-            
+
             {/* Header Options */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Yêu cầu nghỉ phép</h2>
-                    <p className="text-slate-400 text-[10px] sm:text-xs mt-1 leading-relaxed">
-                        Theo dõi lịch xin nghỉ, duyệt và từ chối ngày phép nhân viên.
-                    </p>
-                </div>
-
+                <h4 className="font-black text-slate-800 tracking-tight">Yêu cầu nghỉ phép</h4>
                 <button
                     onClick={() => setShowForm(!showForm)}
                     className="mdt-btn flex items-center justify-center gap-2 group self-start sm:self-auto cursor-pointer"

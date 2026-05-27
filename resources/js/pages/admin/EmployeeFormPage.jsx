@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import { createUserApi, updateUserApi, getUsersApi, getUserByIdApi } from '../../services/userService';
+import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 
 const EmployeeFormPage = () => {
     const { id } = useParams();
@@ -102,7 +103,7 @@ const EmployeeFormPage = () => {
                 email: '',
                 password: '',
                 role: 'order_staff',
-                join_date: new Date().toISOString().split('T')[0],
+                join_date: formatLocalDate(new Date()),
                 date_of_birth: '',
                 work_shift: 'Ca sáng',
                 salary: '',

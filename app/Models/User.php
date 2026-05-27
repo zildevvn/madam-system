@@ -27,6 +27,7 @@ class User extends Authenticatable
         'join_date',
         'date_of_birth',
         'work_shift',
+        'flexible_shifts',
         'salary',
         'bonus',
         'address',
@@ -57,6 +58,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'flexible_shifts' => 'array',
         ];
     }
 

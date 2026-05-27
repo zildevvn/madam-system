@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
+import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 
 /**
  * CashierHistoryLane: Renders the payment history lane of the Cashier dashboard.
@@ -18,16 +19,13 @@ const CashierHistoryLane = ({
     onDateChange
 }) => {
     const getTodayStr = () => {
-        const d = new Date();
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().split('T')[0];
+        return formatLocalDate(new Date());
     };
 
     const getYesterdayStr = () => {
         const d = new Date();
         d.setDate(d.getDate() - 1);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().split('T')[0];
+        return formatLocalDate(d);
     };
 
     const totals = useMemo(() => {

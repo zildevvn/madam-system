@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getUserByIdApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi } from '../../services/leaveService';
+import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 
 const EmployeeDetailPage = () => {
     const { id } = useParams();
@@ -78,7 +79,7 @@ const EmployeeDetailPage = () => {
 
     useEffect(() => {
         fetchEmployeeData();
-        const today = new Date().toISOString().split('T')[0];
+        const today = formatLocalDate(new Date());
         setStartDate(today);
         setEndDate(today);
     }, [id, navigate]);
