@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processing = false }) => {
-    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
         defaultValues: {
             name: '',
             email: '',
@@ -17,6 +17,9 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
             address: ''
         }
     });
+
+    const salary = watch('salary');
+    const bonus = watch('bonus');
 
     const [showPassword, setShowPassword] = useState(false);
     
@@ -334,14 +337,19 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                     Mức lương (VND/tháng) <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    {...register('salary', { 
-                                        required: 'Mức lương là bắt buộc',
-                                        min: { value: 0, message: 'Lương không được nhỏ hơn 0' }
-                                    })}
-                                    type="number"
+                                    type="text"
+                                    value={salary ? Number(salary).toLocaleString('vi-VN') : ''}
+                                    onChange={(e) => {
+                                        const cleanVal = e.target.value.replace(/\D/g, '');
+                                        setValue('salary', cleanVal ? parseInt(cleanVal, 10) : '', { shouldValidate: true });
+                                    }}
                                     className={`text-[15px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-medium placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.salary ? 'ring-2 ring-red-500/20' : ''}`}
-                                    placeholder="Ví dụ: 8000000"
+                                    placeholder="Ví dụ: 8.000.000"
                                 />
+                                <input type="hidden" {...register('salary', { 
+                                    required: 'Mức lương là bắt buộc',
+                                    min: { value: 0, message: 'Lương không được nhỏ hơn 0' }
+                                })} />
                                 {errors.salary && <span className="text-[10px] text-red-500 mt-1 font-bold block">{errors.salary.message}</span>}
                             </div>
 
@@ -350,14 +358,19 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                     Thưởng cố định (VND/tháng) <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    {...register('bonus', { 
-                                        required: 'Mức thưởng là bắt buộc',
-                                        min: { value: 0, message: 'Mức thưởng không được nhỏ hơn 0' }
-                                    })}
-                                    type="number"
+                                    type="text"
+                                    value={bonus || bonus === 0 ? Number(bonus).toLocaleString('vi-VN') : ''}
+                                    onChange={(e) => {
+                                        const cleanVal = e.target.value.replace(/\D/g, '');
+                                        setValue('bonus', cleanVal !== '' ? parseInt(cleanVal, 10) : 0, { shouldValidate: true });
+                                    }}
                                     className={`text-[15px] w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-medium placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.bonus ? 'ring-2 ring-red-500/20' : ''}`}
-                                    placeholder="Ví dụ: 500000"
+                                    placeholder="Ví dụ: 500.000"
                                 />
+                                <input type="hidden" {...register('bonus', { 
+                                    required: 'Mức thưởng là bắt buộc',
+                                    min: { value: 0, message: 'Mức thưởng không được nhỏ hơn 0' }
+                                })} />
                                 {errors.bonus && <span className="text-[10px] text-red-500 mt-1 font-bold block">{errors.bonus.message}</span>}
                             </div>
 
