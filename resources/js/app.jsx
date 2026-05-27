@@ -20,6 +20,8 @@ import Kitchen from "./pages/Kitchen";
 import Admin from "./pages/Admin";
 import AdminContent from "./pages/admin/AdminContent";
 import PersonnelPage from "./pages/admin/PersonnelPage";
+import EmployeeFormPage from "./pages/admin/EmployeeFormPage";
+import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import Order from "./pages/Order";
@@ -30,10 +32,28 @@ import Bar from './pages/Bar';
 import ReservationList from './pages/reservations/ReservationList';
 import ReservationCreate from './pages/reservations/ReservationCreate';
 import ExpenseManagement from './pages/ExpenseManagement';
+import UserProfilePage from './pages/UserProfilePage';
 
 // Set base default header
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+window.axios.defaults.withCredentials = true;
+
+// Stateless authorization: send current user ID in the headers
+window.axios.interceptors.request.use((config) => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+        try {
+            const user = JSON.parse(storedUser);
+            if (user && user.id) {
+                config.headers['X-User-Id'] = user.id;
+            }
+        } catch (e) {
+            console.error('Failed to parse user from localStorage', e);
+        }
+    }
+    return config;
+});
 
 import { ROLES } from "./shared/constants/roles";
 
@@ -191,6 +211,9 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route element={<ProtectedRoute />}>
+                    {/* User Profile */}
+                    <Route path="/profile" element={<DefaultLayout><UserProfilePage /></DefaultLayout>} />
+
                     {/* Order page: Access by admin, manager, order_staff, seller */}
                     <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
                     <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
@@ -214,6 +237,9 @@ function App() {
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
                         <Route index element={<AdminContent />} />
                         <Route path="personnel" element={<PersonnelPage />} />
+                        <Route path="personnel/create" element={<EmployeeFormPage />} />
+                        <Route path="personnel/edit/:id" element={<EmployeeFormPage />} />
+                        <Route path="personnel/:id" element={<EmployeeDetailPage />} />
                         <Route path="tables" element={<TableManagement />} />
                         <Route path="products" element={<ProductManagement />} />
                     </Route>

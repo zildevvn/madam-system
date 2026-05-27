@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Services\UserService;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -16,10 +17,29 @@ class UserController extends Controller
     }
 
     /**
+     * Helper to retrieve active user context from request headers securely verified against DB.
+     */
+    private function getCurrentUser(Request $request)
+    {
+        $userId = $request->header('X-User-Id');
+        if (!$userId) {
+            return null;
+        }
+        return User::find($userId);
+    }
+
+    /**
      * Display a listing of the users.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $currentUser = $this->getCurrentUser($request);
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
         $users = $this->userService->getAllUsers();
         return response()->json([
             'data' => $users,
@@ -31,8 +51,17 @@ class UserController extends Controller
     /**
      * Display the specified user.
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
+        $currentUser = $this->getCurrentUser($request);
+        
+        // Proper authorization check: regular users can only fetch their own profile details
+        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->id != $id) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
         $user = $this->userService->getUserById($id);
         return response()->json([
             'data' => $user,
@@ -71,6 +100,13 @@ class UserController extends Controller
      */
     public function updateRole(Request $request, $id)
     {
+        $currentUser = $this->getCurrentUser($request);
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'role' => 'required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller'
         ]);
@@ -89,14 +125,37 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $currentUser = $this->getCurrentUser($request);
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'sometimes|nullable|email|unique:users,email',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role' => 'required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+            'join_date' => 'required|date',
+            'date_of_birth' => 'required|date',
+            'work_shift' => 'required|string|max:255',
+            'salary' => 'required|numeric|min:0',
+            'bonus' => 'required|numeric|min:0',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'status' => 'sometimes|required|string|in:active,inactive',
+            'id_card_image' => 'nullable|image|max:1024',
+            'contract_image' => 'nullable|image|max:1024',
+            'photo' => 'nullable|image|max:1024',
         ]);
 
-        $user = $this->userService->createUser($validated);
+        $user = $this->userService->createUser(
+            $validated,
+            $request->file('id_card_image'),
+            $request->file('contract_image'),
+            $request->file('photo')
+        );
 
         return response()->json([
             'data' => $user,
@@ -110,14 +169,62 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $currentUser = $this->getCurrentUser($request);
+        
+        // Proper authorization check: regular users can only edit their own profile
+        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->id != $id) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|nullable|email|unique:users,email,' . $id,
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,' . $id,
             'password' => 'sometimes|nullable|string|min:6',
-            'role' => 'sometimes|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+            'role' => 'sometimes|required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+            'join_date' => 'sometimes|required|date',
+            'date_of_birth' => 'sometimes|required|date',
+            'work_shift' => 'sometimes|required|string|max:255',
+            'salary' => 'sometimes|required|numeric|min:0',
+            'bonus' => 'sometimes|required|numeric|min:0',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:50',
+            'status' => 'sometimes|required|string|in:active,inactive',
+            'id_card_image' => 'nullable|image|max:1024',
+            'contract_image' => 'nullable|image|max:1024',
+            'photo' => 'nullable|image|max:1024',
+            'remove_id_card_image' => 'nullable|boolean',
+            'remove_contract_image' => 'nullable|boolean',
         ]);
 
-        $user = $this->userService->updateUser($id, array_filter($validated));
+        // Security check: If not admin/manager, strip administrative parameters from being changed
+        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager') {
+            unset($validated['role']);
+            unset($validated['salary']);
+            unset($validated['bonus']);
+            unset($validated['join_date']);
+            unset($validated['status']);
+
+            // Validate shift values if sent by non-admin/non-manager
+            if (isset($validated['work_shift']) && !in_array($validated['work_shift'], ['Ca sáng', 'Ca tối', 'Ca full time'])) {
+                return response()->json([
+                    'message' => 'Ca làm việc không hợp lệ. Chỉ chấp nhận Ca sáng, Ca tối hoặc Ca full time.'
+                ], 422);
+            }
+        }
+
+        if (isset($validated['password']) && empty($validated['password'])) {
+            unset($validated['password']);
+        }
+
+        $user = $this->userService->updateUser(
+            $id,
+            $validated,
+            $request->file('id_card_image'),
+            $request->file('contract_image'),
+            $request->file('photo')
+        );
 
         return response()->json([
             'data' => $user,
@@ -131,9 +238,13 @@ class UserController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        // Simple protection: don't let a user delete themselves 
-        // (assuming the current user can be checked e.g. via token if auth were fully integrated)
-        // For now we just implement the capability.
+        $currentUser = $this->getCurrentUser($request);
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ], 403);
+        }
+
         $this->userService->deleteUser($id);
 
         return response()->json([

@@ -24,6 +24,17 @@ class User extends Authenticatable
         'password',
         'plain_password',
         'role',
+        'join_date',
+        'date_of_birth',
+        'work_shift',
+        'salary',
+        'bonus',
+        'address',
+        'id_card_image',
+        'contract_image',
+        'photo',
+        'status',
+        'phone',
     ];
 
     /**
