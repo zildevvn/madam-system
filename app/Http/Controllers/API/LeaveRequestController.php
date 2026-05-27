@@ -35,9 +35,12 @@ class LeaveRequestController extends Controller
 
         $query = LeaveRequest::with(['user', 'approver']);
 
-        // Strict security boundaries: Regular employees can only view their own leave requests
+        // Strict security boundaries: Regular employees can only view their own leave requests OR approved leave requests of colleagues
         if ($currentUser->role !== 'admin' && $currentUser->role !== 'manager') {
-            $query->where('user_id', $currentUser->id);
+            $query->where(function($q) use ($currentUser) {
+                $q->where('user_id', $currentUser->id)
+                  ->orWhere('status', 'approved');
+            });
         } else {
             // Admin or manager can filter by user_id if passed, otherwise view all
             if ($request->has('user_id')) {

@@ -10,6 +10,7 @@ export const NAVIGATION_ITEMS = [
         href: '/admin',
         roles: [], // Handled by ROLES.ADMIN logic
         children: [
+            { name: 'Lịch Làm Việc', href: '/employee-schedule' },
             { name: 'Nhân sự', href: '/admin/personnel' },
             { name: 'Quản Lý Bàn', href: '/admin/tables' },
             { name: 'Quản Lý Menu', href: '/admin/products' },

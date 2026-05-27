@@ -34,13 +34,27 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $currentUser = $this->getCurrentUser($request);
-        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+        if (!$currentUser) {
             return response()->json([
                 'message' => 'Forbidden'
             ], 403);
         }
 
         $users = $this->userService->getAllUsers();
+
+        // Security filter: If not admin/manager, strip sensitive details
+        if ($currentUser->role !== 'admin' && $currentUser->role !== 'manager') {
+            $users = $users->map(function($u) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'photo' => $u->photo,
+                    'work_shift' => $u->work_shift,
+                    'role' => $u->role,
+                ];
+            });
+        }
+
         return response()->json([
             'data' => $users,
             'message' => 'Success',
@@ -178,6 +192,13 @@ class UserController extends Controller
             ], 403);
         }
 
+        if ($request->has('flexible_shifts') && is_string($request->input('flexible_shifts'))) {
+            $decoded = json_decode($request->input('flexible_shifts'), true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $request->merge(['flexible_shifts' => $decoded]);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $id,
@@ -186,6 +207,7 @@ class UserController extends Controller
             'join_date' => 'sometimes|required|date',
             'date_of_birth' => 'sometimes|required|date',
             'work_shift' => 'sometimes|required|string|max:255',
+            'flexible_shifts' => 'sometimes|nullable|array',
             'salary' => 'sometimes|required|numeric|min:0',
             'bonus' => 'sometimes|required|numeric|min:0',
             'address' => 'nullable|string',
