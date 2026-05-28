@@ -27,6 +27,7 @@ export default function Checkout() {
         showSuccessPopup,
         successMessage,
         showWarningPopup,
+        warningTitle,
         warningMessage,
         setShowWarningPopup,
         isTableChanged,
@@ -111,6 +112,7 @@ export default function Checkout() {
                 showSuccessPopup={showSuccessPopup}
                 successMessage={successMessage}
                 showWarningPopup={showWarningPopup}
+                warningTitle={warningTitle}
                 warningMessage={warningMessage}
                 setShowWarningPopup={setShowWarningPopup}
             />

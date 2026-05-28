@@ -36,7 +36,7 @@ export const useCheckoutLogic = () => {
         isMergeChanged,
         guestCount,
         orderNote,
-        setWarningMessage, setSuccessMessage, setShowSuccessPopup,
+        setWarningTitle, setWarningMessage, setSuccessMessage, setShowSuccessPopup,
         allTables, currentUser
     } = state;
 
@@ -293,13 +293,14 @@ export const useCheckoutLogic = () => {
             safeSetTimeout(() => setShowSuccessPopup(false), 2000);
         } catch (error) {
             console.error(error);
-            setWarningMessage('Tách đơn thất bại. Vui lòng thử lại!');
+            setWarningTitle('Tách đơn thất bại!');
+            setWarningMessage('Vui lòng kiểm tra lại món hoặc thử lại sau!');
             setShowWarningPopup(true);
         } finally {
             isProcessing.current = false;
             setIsSaving(false);
         }
-    }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningMessage, setShowWarningPopup]);
+    }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningTitle, setWarningMessage, setShowWarningPopup]);
 
     const toggleSplitMode = useCallback(() => {
         setIsSplitMode(prev => !prev);
@@ -309,27 +310,67 @@ export const useCheckoutLogic = () => {
     const toggleSplitItem = useCallback((item) => {
         setSelectedSplitItems(prev => {
             const itemId = item.order_item_id || item.id;
-            const existing = prev.find(i => i.order_item_id === itemId);
+            const existing = prev.find(i => String(i.order_item_id || i.id) === String(itemId));
             if (existing) {
-                return prev.filter(i => i.order_item_id !== itemId);
+                return prev.filter(i => String(i.order_item_id || i.id) !== String(itemId));
             } else {
-                return [...prev, { order_item_id: itemId, quantity: item.quantity }];
+                return [...prev, { order_item_id: itemId, quantity: 1 }];
             }
         });
     }, []);
 
     const handleUpdateSplitQuantity = useCallback((itemId, quantity) => {
         setSelectedSplitItems(prev =>
-            prev.map(i => i.order_item_id === itemId ? { ...i, quantity } : i)
+            prev.map(i => String(i.order_item_id || i.id) === String(itemId) ? { ...i, quantity } : i)
         );
     }, []);
 
     const onConfirmSplit = useCallback(async () => {
         if (!selectedSplitItems.length) return;
-        await handleSplitOrder(selectedSplitItems);
+
+        // Distribute split quantities across individual database order items
+        const distributedSplitItems = [];
+        
+        selectedSplitItems.forEach(splitItem => {
+            const splitItemId = splitItem.order_item_id || splitItem.id;
+            
+            // Find the representative item to get product/note mapping
+            const repItem = selectedItems.find(it => String(it.order_item_id || it.id) === String(splitItemId));
+            if (!repItem) return;
+
+            // Find all matching items in cart (same product/note or custom name/note)
+            const matchingItems = selectedItems.filter(it => {
+                if (repItem.product_id) {
+                    return it.product_id === repItem.product_id && (it.note || '') === (repItem.note || '');
+                } else {
+                    return it.name === repItem.name && (it.note || '') === (repItem.note || '');
+                }
+            });
+
+            // Distribute requested split quantity
+            let remainingToSplit = splitItem.quantity;
+            for (const it of matchingItems) {
+                if (remainingToSplit <= 0) break;
+                if (!it.order_item_id) continue; // Skip unsaved drafts
+
+                const availableQty = it.quantity;
+                const splitQty = Math.min(availableQty, remainingToSplit);
+                
+                distributedSplitItems.push({
+                    order_item_id: it.order_item_id,
+                    quantity: splitQty
+                });
+                
+                remainingToSplit -= splitQty;
+            }
+        });
+
+        if (distributedSplitItems.length === 0) return;
+
+        await handleSplitOrder(distributedSplitItems);
         setIsSplitMode(false);
         setSelectedSplitItems([]);
-    }, [selectedSplitItems, handleSplitOrder]);
+    }, [selectedSplitItems, selectedItems, handleSplitOrder]);
 
     useEffect(() => {
         const handleBeforeUnload = () => {

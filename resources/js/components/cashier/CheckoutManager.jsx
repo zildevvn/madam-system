@@ -110,7 +110,13 @@ const CheckoutManager = ({
         if (!existing || isOrderSwitched) {
             dispatch({ type: 'INITIALIZE_TABLE', payload: { lookupKey, items: initialItems, orderId: currentOrder.id } });
         } else if (serverItemsChanged) {
-            dispatch({ type: 'REFRESH_ITEMS', payload: { lookupKey, items: initialItems } });
+            // [FIX] Defensive guard: never wipe existing draftItems with an empty server list.
+            // This prevents transient fetchTables states (during payment/broadcast) from clearing
+            // items that are correctly in the parent order but temporarily missing from the payload.
+            const wouldClearItems = initialItems.length === 0 && (existing.draftItems || []).length > 0;
+            if (!wouldClearItems) {
+                dispatch({ type: 'REFRESH_ITEMS', payload: { lookupKey, items: initialItems } });
+            }
         }
     }, [selectedTable, currentOrder, currentLookupKey]);
 

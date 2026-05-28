@@ -64,11 +64,22 @@ const tableSlice = createSlice({
       const orderId = action.payload;
       state.allIds.forEach(id => {
         const table = state.byId[id];
-        if (table?.active_order?.id === orderId) {
-          table.active_order = null;
-        }
+        let hasActiveOrders = false;
         if (table?.active_orders) {
           table.active_orders = table.active_orders.filter(o => o.id !== orderId);
+          if (table.active_orders.length > 0) {
+            // Find the remaining active order with the max ID (matches Laravel backend max ID logic)
+            const remainingSorted = [...table.active_orders].sort((a, b) => b.id - a.id);
+            table.active_order = remainingSorted[0];
+            hasActiveOrders = true;
+          } else {
+            table.active_order = null;
+          }
+        }
+        
+        // Fallback for singular active_order case
+        if (!hasActiveOrders && table?.active_order?.id === orderId) {
+          table.active_order = null;
         }
       });
     },

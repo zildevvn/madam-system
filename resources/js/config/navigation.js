@@ -14,6 +14,7 @@ export const NAVIGATION_ITEMS = [
             { name: 'Nhân sự', href: '/admin/personnel' },
             { name: 'Quản Lý Bàn', href: '/admin/tables' },
             { name: 'Quản Lý Menu', href: '/admin/products' },
+            // { name: 'Hiệu Suất Nhân Viên', href: '/admin/performance' },
         ]
     },
     { name: 'Staff Order', href: '/staff-order', roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER] },

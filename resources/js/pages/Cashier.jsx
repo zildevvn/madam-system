@@ -8,7 +8,7 @@ import orderApi from '../services/orderApi';
 import { useCashierHistory } from '../hooks/useCashierHistory';
 import { useCashierData } from '../hooks/useCashierData';
 import { useAppDispatch } from '../store/hooks';
-import { optimisticallyCompleteOrder } from '../store/slices/tableSlice';
+import { optimisticallyCompleteOrder, fetchTables } from '../store/slices/tableSlice';
 
 
 import CheckoutManager from '../components/cashier/CheckoutManager';
@@ -87,13 +87,16 @@ const Cashier = () => {
     const handleHistoryPaymentSuccess = useCallback(() => {
         setEditingHistoryOrder(null);
         refreshData();
-    }, [refreshData]);
+        dispatch(fetchTables());
+    }, [refreshData, dispatch]);
 
     const handleActivePaymentSuccess = useCallback((paidOrderId) => {
         setSelectedTableId(null);
+
         if (paidOrderId) {
             dispatch(optimisticallyCompleteOrder(paidOrderId));
         }
+        dispatch(fetchTables());
     }, [dispatch]);
 
     const handleReopenOrder = useCallback(async (orderId) => {
@@ -103,13 +106,14 @@ const Cashier = () => {
         try {
             await orderApi.reopen(orderId);
             refreshData();
+            dispatch(fetchTables());
         } catch (err) {
             console.error(err);
             alert(err.response?.data?.message || "Failed to reopen order");
         } finally {
             setIsReopening(null);
         }
-    }, [refreshData]);
+    }, [refreshData, dispatch]);
 
     const handleEditHistoryOrder = useCallback((order) => {
         setEditingHistoryOrder(order);

@@ -32,11 +32,13 @@ const CheckoutItemList = ({
                     ...item,
                     groupKey,
                     originalIds: [item.id],
+                    originalOrderItemIds: [item.order_item_id || item.id],
                     totalQuantity: item.quantity,
                     originalTotalQuantity: originalQty,
                 };
             } else {
                 groups[groupKey].originalIds.push(item.id);
+                groups[groupKey].originalOrderItemIds.push(item.order_item_id || item.id);
                 groups[groupKey].totalQuantity += item.quantity;
                 groups[groupKey].originalTotalQuantity += originalQty;
             }
@@ -102,12 +104,15 @@ const CheckoutItemList = ({
 
                         {groupedSelectedItems.map((group, index) => {
                             // Determine if any item in this group is split
-                            const splitItem = selectedSplitItems.find(si => group.originalIds.includes(si.order_item_id || si.id));
+                            const splitItem = selectedSplitItems.find(si => {
+                                const siId = String(si.order_item_id || si.id);
+                                return group.originalOrderItemIds.some(id => String(id) === siId);
+                            });
                             const isSelected = !!splitItem;
 
                             return (
                                 <div key={group.groupKey || index} className="flex items-start gap-3">
-                                    {isSplitMode && !group.isSplit && (
+                                    {isSplitMode && !group.isSplit && group.order_item_id && (
                                         <div className="flex flex-col items-center gap-2 pt-4">
                                             <input
                                                 type="checkbox"
@@ -120,22 +125,22 @@ const CheckoutItemList = ({
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleUpdateSplitQuantity(splitItem.order_item_id, Math.max(1, splitItem.quantity - 1));
+                                                            handleUpdateSplitQuantity(splitItem.order_item_id || splitItem.id, Math.max(1, splitItem.quantity - 1));
                                                         }}
                                                         disabled={splitItem.quantity <= 1}
                                                         className={`w-6 h-6 flex items-center justify-center rounded-full border-none transition-all ${splitItem.quantity <= 1 ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
                                                     >
                                                         <svg width="12" height="12" strokeWidth="2.5" viewBox="0 0 24 24" fill="none"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                                                     </button>
-
+ 
                                                     <span className="px-2 font-black text-gray-800 text-[10px] min-w-[18px] text-center">
                                                         {splitItem.quantity}
                                                     </span>
-
+ 
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleUpdateSplitQuantity(splitItem.order_item_id, Math.min(group.totalQuantity, splitItem.quantity + 1));
+                                                            handleUpdateSplitQuantity(splitItem.order_item_id || splitItem.id, Math.min(group.totalQuantity, splitItem.quantity + 1));
                                                         }}
                                                         disabled={splitItem.quantity >= group.totalQuantity}
                                                         className={`w-6 h-6 flex items-center justify-center rounded-full border-none transition-all ${splitItem.quantity >= group.totalQuantity ? 'bg-transparent text-gray-300' : 'bg-orange-500 text-white shadow-md active:scale-90 cursor-pointer'}`}

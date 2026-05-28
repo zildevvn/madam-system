@@ -108,7 +108,8 @@ export const useCashierSegmentation = (orders, allTables) => {
                         relatedOrderIds: mainOrderIds, // [FIX] Isolate to main orders only
                         items: order.items.filter(i => mainOrderIds.includes(i.order_id)),
                         is_printed: mainOrders.some(o => o.is_printed || o.is_printed === 1 || o.is_printed === '1'),
-                        print_count: Math.max(0, ...mainOrders.map(o => Number(o.print_count || 0)))
+                        print_count: Math.max(0, ...mainOrders.map(o => Number(o.print_count || 0))),
+                        hasUnpaidSplits: true
                     };
 
                     individualOrders[mainLookupKey] = mainReconstructed;
@@ -132,7 +133,8 @@ export const useCashierSegmentation = (orders, allTables) => {
                             relatedOrderIds: subOrderIds, // [FIX] Isolate to this split order only
                             items: order.items.filter(i => i.order_id === subOrder.id),
                             is_printed: subOrder.is_printed || subOrder.is_printed === 1 || subOrder.is_printed === '1',
-                            print_count: Number(subOrder.print_count || 0)
+                            print_count: Number(subOrder.print_count || 0),
+                            hasUnpaidSplits: true
                         };
 
                         individualOrders[subLookupKey] = subReconstructed;

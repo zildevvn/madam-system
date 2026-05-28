@@ -253,4 +253,128 @@ class StatsService
             ->whereDate('updated_at', now()->toDateString())
             ->sum('total_price');
     }
+
+    /**
+     * getEmployeePerformance
+     * [WHY] Returns performance statistics for restaurant employees and sellers.
+     * [RULE] Avoids double-counting and aggregation errors via optimized subqueries.
+     */
+    public function getEmployeePerformance($period = 'today', $startDate = null, $endDate = null)
+    {
+        $referenceDate = now();
+        
+        if ($startDate && $endDate) {
+            $start = \Illuminate\Support\Carbon::parse($startDate)->startOfDay();
+            $end = \Illuminate\Support\Carbon::parse($endDate)->endOfDay();
+        } else {
+            switch ($period) {
+                case 'week':
+                    $start = $referenceDate->copy()->startOfWeek();
+                    $end = $referenceDate->copy()->endOfWeek();
+                    break;
+                case 'month':
+                    $start = $referenceDate->copy()->startOfMonth();
+                    $end = $referenceDate->copy()->endOfMonth();
+                    break;
+                case 'today':
+                default:
+                    $start = $referenceDate->copy()->startOfDay();
+                    $end = $referenceDate->copy()->endOfDay();
+                    break;
+            }
+        }
+
+        // 1. Restaurant Employees Performance (where role !== 'seller')
+        $restaurantStats = DB::table('users')
+            ->where('users.role', '!=', 'seller')
+            ->where('users.status', 'active')
+            ->leftJoinSub(
+                DB::table('orders')
+                    ->where('status', 'completed')
+                    ->whereBetween('updated_at', [$start, $end])
+                    ->select(
+                        'user_id',
+                        DB::raw('COUNT(id) as orders_count'),
+                        DB::raw('SUM(total_price) as total_revenue'),
+                        DB::raw('SUM(guest_count) as total_guests')
+                    )
+                    ->groupBy('user_id'),
+                'o',
+                'users.id',
+                '=',
+                'o.user_id'
+            )
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.photo',
+                'users.role',
+                DB::raw('COALESCE(o.orders_count, 0) as orders_count'),
+                DB::raw('COALESCE(o.total_revenue, 0) as total_revenue'),
+                DB::raw('COALESCE(o.total_guests, 0) as total_guests')
+            )
+            ->orderByDesc('orders_count')
+            ->get();
+
+        // 2. Seller Employees Performance (where role === 'seller')
+        $resItemsSub = DB::table('reservation_items')
+            ->select('reservation_id', DB::raw('SUM(price * quantity) as items_revenue'))
+            ->groupBy('reservation_id');
+
+        $resSub = DB::table('reservations')
+            ->whereBetween('reservation_date', [$start->toDateString(), $end->toDateString()])
+            ->leftJoinSub($resItemsSub, 'ri', 'reservations.id', '=', 'ri.reservation_id')
+            ->select(
+                DB::raw('COALESCE(
+                    reservations.staff_id,
+                    (SELECT user_id FROM reservation_histories WHERE reservation_id = reservations.id AND action = "created" LIMIT 1),
+                    reservations.updated_by
+                ) as seller_id'),
+                DB::raw('COUNT(reservations.id) as reservations_count'),
+                DB::raw('SUM(reservations.number_of_guests) as total_guests'),
+                DB::raw('SUM(COALESCE(ri.items_revenue, 0)) as total_revenue')
+            )
+            ->groupBy(DB::raw('COALESCE(
+                reservations.staff_id,
+                (SELECT user_id FROM reservation_histories WHERE reservation_id = reservations.id AND action = "created" LIMIT 1),
+                reservations.updated_by
+            )'));
+
+        $sellerStats = DB::table('users')
+            ->leftJoinSub(
+                $resSub,
+                'r',
+                'users.id',
+                '=',
+                'r.seller_id'
+            )
+            ->where(function($q) {
+                $q->where('users.role', '=', 'seller')
+                  ->orWhere('r.reservations_count', '>', 0);
+            })
+            ->where('users.status', 'active')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.photo',
+                'users.role',
+                DB::raw('COALESCE(r.reservations_count, 0) as reservations_count'),
+                DB::raw('COALESCE(r.total_guests, 0) as total_guests'),
+                DB::raw('COALESCE(r.total_revenue, 0) as total_revenue')
+            )
+            ->orderByDesc('reservations_count')
+            ->get();
+
+        return [
+            'restaurant' => $restaurantStats,
+            'seller' => $sellerStats,
+            'filter' => [
+                'period' => $period,
+                'start_date' => $start->toDateString(),
+                'end_date' => $end->toDateString()
+            ]
+        ];
+    }
 }

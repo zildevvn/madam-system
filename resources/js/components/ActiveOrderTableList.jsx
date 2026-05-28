@@ -25,9 +25,11 @@ const ActiveOrderTableList = ({
     const activeTables = React.useMemo(() => {
         return tables.filter(table => {
             const order = tableOrderMap[table.id.toString()];
-            return order && order.items && order.items.length > 0;
+            if (!order) return false;
+            if (showPrintedState) return true; // Keep active tables visible on Cashier page even if items are empty
+            return order.items && order.items.length > 0;
         });
-    }, [tables, tableOrderMap]);
+    }, [tables, tableOrderMap, showPrintedState]);
 
     // 3. Memoize status options for cards to avoid breaking child memoization
     const cardOptions = React.useMemo(() => ({ 

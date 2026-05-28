@@ -84,3 +84,4 @@ Route::post('/system-messages/{id}/read', [SystemMessageController::class, 'mark
 Route::get('/stats/today-revenue', [StatsController::class, 'todayRevenue']);
 Route::get('/stats/revenue-report', [StatsController::class, 'revenueReport']);
 Route::get('/stats/item-stats', [StatsController::class, 'itemStats']);
+Route::get('/stats/employee-performance', [StatsController::class, 'employeePerformance']);
