@@ -45,22 +45,22 @@ export default function useEmployeeSchedule() {
         switch (status) {
             case 'Ca sáng':
                 return {
-                    bg: 'bg-orange-50/50 border-orange-100/50 hover:bg-orange-100/40 text-orange-700',
+                    bg: 'border-orange-100/50 text-orange-700',
                     icon: <span className="w-5 h-5 rounded-lg bg-orange-100 text-orange-500 flex items-center justify-center flex-shrink-0"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg></span>
                 };
             case 'Ca tối':
                 return {
-                    bg: 'bg-indigo-50/40 border-indigo-100/50 hover:bg-indigo-100/40 text-indigo-700',
+                    bg: 'bg-indigo-50/40 border-indigo-100/50  text-indigo-700',
                     icon: <span className="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-500 flex items-center justify-center flex-shrink-0"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg></span>
                 };
             case 'Ca full time':
                 return {
-                    bg: 'bg-emerald-50/40 border-emerald-100/50 hover:bg-emerald-100/40 text-emerald-700',
+                    bg: 'bg-emerald-50/40 border-emerald-100/50 text-emerald-700',
                     icon: <span className="w-5 h-5 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></span>
                 };
             case 'Off day':
                 return {
-                    bg: 'bg-rose-500 border-rose-600 text-white hover:bg-rose-600 shadow-sm shadow-rose-500/10',
+                    bg: 'bg-rose-500 border-rose-600 text-white shadow-sm shadow-rose-500/10',
                     icon: <span className="w-5 h-5 rounded-lg bg-white/20 text-white flex items-center justify-center flex-shrink-0"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg></span>
                 };
             default:

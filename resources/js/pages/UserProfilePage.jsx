@@ -43,6 +43,7 @@ const UserProfilePage = () => {
         handleRemoveContract,
         handleUpdateProfile,
         handleCreateLeave,
+        handleCancelLeave,
         formatCurrency,
         formatDate,
         getRoleLabel
@@ -342,6 +343,7 @@ const UserProfilePage = () => {
                         setReason={setReason}
                         submittingLeave={submittingLeave}
                         handleCreateLeave={handleCreateLeave}
+                        handleCancelLeave={handleCancelLeave}
                     />
                 </div>
 

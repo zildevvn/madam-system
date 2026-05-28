@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { createLeaveRequestApi } from '../services/leaveService';
+import { createLeaveRequestApi, deleteLeaveRequestApi } from '../services/leaveService';
 import { getTodayDateString, formatToLocalDateStr, isDateInRange } from '../shared/utils/dateUtils';
 
 // [WHY] Decoupled hook for managing leave request submissions, input bounds, and approved overlap checks.
@@ -24,7 +24,8 @@ export const useLeaveRequests = (user, leaves, fetchProfileAndLeaves) => {
         return leaves.some(l => {
             const start = formatToLocalDateStr(l.start_date);
             const end = formatToLocalDateStr(l.end_date);
-            return isDateInRange(dateStr, start, end) && l.status === 'approved';
+            return isDateInRange(dateStr, start, end) && 
+                (l.status === 'approved' || l.status === 'pending_cancel' || l.status === 'rejected_cancel');
         });
     };
 
@@ -58,6 +59,28 @@ export const useLeaveRequests = (user, leaves, fetchProfileAndLeaves) => {
         }
     };
 
+    const handleCancelLeave = async (leave) => {
+        const isApproved = leave.status === 'approved' || leave.status === 'rejected_cancel';
+        const confirmMsg = isApproved 
+            ? 'Bạn có chắc chắn muốn gửi yêu cầu HỦY nghỉ phép đã duyệt này? Yêu cầu cần Quản lý phê duyệt.'
+            : 'Bạn có chắc chắn muốn hủy yêu cầu nghỉ phép này?';
+        
+        if (!window.confirm(confirmMsg)) return;
+
+        try {
+            await deleteLeaveRequestApi(leave.id);
+            const successMsg = isApproved 
+                ? 'Gửi yêu cầu hủy nghỉ phép thành công, vui lòng chờ duyệt!'
+                : 'Hủy yêu cầu nghỉ phép thành công!';
+            toast.success(successMsg);
+            fetchProfileAndLeaves();
+        } catch (err) {
+            console.error('Failed to cancel leave request:', err);
+            const msg = err.response?.data?.message || 'Có lỗi xảy ra khi hủy yêu cầu';
+            toast.error(msg);
+        }
+    };
+
     return {
         showLeaveForm, setShowLeaveForm,
         startDate, setStartDate,
@@ -66,6 +89,7 @@ export const useLeaveRequests = (user, leaves, fetchProfileAndLeaves) => {
         reason, setReason,
         submittingLeave,
         isDateOnLeave,
-        handleCreateLeave
+        handleCreateLeave,
+        handleCancelLeave
     };
 };

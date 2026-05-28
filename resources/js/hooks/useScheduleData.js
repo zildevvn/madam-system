@@ -13,8 +13,8 @@ export default function useScheduleData() {
     const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const loadData = async () => {
-        setLoading(true);
+    const loadData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const [usersRes, leavesRes] = await Promise.all([
                 getUsersApi(),
@@ -26,12 +26,23 @@ export default function useScheduleData() {
             console.error('Failed to load schedule metadata:', error);
             toast.error('Không thể tải dữ liệu lịch làm việc');
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
     useEffect(() => {
         loadData();
+
+        if (window.Echo) {
+            const channel = window.Echo.channel('orders');
+            const handleLeaveUpdate = () => {
+                loadData(true);
+            };
+            channel.listen('.leave_updated', handleLeaveUpdate);
+            return () => {
+                channel.stopListening('.leave_updated', handleLeaveUpdate);
+            };
+        }
     }, []);
 
     return { employees, leaves, loading, loadData };
