@@ -17,7 +17,7 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
     const leavesByEmployee = useMemo(() => {
         const map = {};
         leaves.forEach(leave => {
-            if (leave.status !== 'approved') return;
+            if (leave.status !== 'approved' && leave.status !== 'pending_cancel' && leave.status !== 'rejected_cancel') return;
             const empId = leave.user_id;
             if (!map[empId]) {
                 map[empId] = [];

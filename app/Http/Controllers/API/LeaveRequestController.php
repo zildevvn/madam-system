@@ -93,8 +93,15 @@ class LeaveRequestController extends Controller
             'status' => 'pending'
         ]);
 
+        $fullLeave = LeaveRequest::with(['user', 'approver'])->find($leave->id);
+        try {
+            broadcast(new \App\Events\LeaveRequestUpdated($fullLeave, 'created'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed for leave request creation: ' . $e->getMessage());
+        }
+
         return response()->json([
-            'data' => LeaveRequest::with(['user', 'approver'])->find($leave->id),
+            'data' => $fullLeave,
             'message' => 'Day off requested successfully',
             'errors' => null
         ], 201);
@@ -115,7 +122,7 @@ class LeaveRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|string|in:approved,rejected',
+            'status' => 'required|string|in:approved,rejected,approved_cancel,rejected_cancel',
             'approved_by' => 'required|exists:users,id'
         ]);
 
@@ -124,8 +131,15 @@ class LeaveRequestController extends Controller
         $leave->approved_by = $validated['approved_by'];
         $leave->save();
 
+        $fullLeave = LeaveRequest::with(['user', 'approver'])->find($leave->id);
+        try {
+            broadcast(new \App\Events\LeaveRequestUpdated($fullLeave, 'updated'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed for leave request status update: ' . $e->getMessage());
+        }
+
         return response()->json([
-            'data' => LeaveRequest::with(['user', 'approver'])->find($leave->id),
+            'data' => $fullLeave,
             'message' => 'Day off status updated successfully',
             'errors' => null
         ]);
@@ -145,21 +159,50 @@ class LeaveRequestController extends Controller
 
         $leave = LeaveRequest::findOrFail($id);
 
-        // Strict security checks: Regular employees can only cancel their own pending request
+        // Strict security checks: Regular employees can only cancel their own future requests
         if ($currentUser->role !== 'admin' && $currentUser->role !== 'manager') {
             if ($leave->user_id != $currentUser->id) {
                 return response()->json([
                     'message' => 'Forbidden'
                 ], 403);
             }
-            if ($leave->status !== 'pending') {
+            
+            // Check if it is a future off request (start_date >= today in local time)
+            $today = now()->toDateString();
+            if ($leave->start_date < $today) {
                 return response()->json([
-                    'message' => 'Cannot cancel a request that has already been processed'
+                    'message' => 'Cannot cancel a past off request'
                 ], 400);
             }
         }
 
+        // If the request was approved or rejected_cancel, transition to pending_cancel instead of deleting
+        if ($leave->status === 'approved' || $leave->status === 'rejected_cancel') {
+            $leave->status = 'pending_cancel';
+            $leave->save();
+
+            $fullLeave = LeaveRequest::with(['user', 'approver'])->find($leave->id);
+            try {
+                broadcast(new \App\Events\LeaveRequestUpdated($fullLeave, 'updated'));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Broadcast failed for leave cancellation request: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'data' => $fullLeave,
+                'message' => 'Cancellation request submitted successfully. Waiting for approval.',
+                'errors' => null
+            ]);
+        }
+
+        $leaveCopy = clone $leave;
         $leave->delete();
+
+        try {
+            broadcast(new \App\Events\LeaveRequestUpdated($leaveCopy, 'deleted'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed for leave request cancellation: ' . $e->getMessage());
+        }
 
         return response()->json([
             'data' => null,

@@ -21,8 +21,8 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
     const [reason, setReason] = useState('');
 
     // Fetch day off requests and list of active employees
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const [reqRes, empRes] = await Promise.all([
                 getLeaveRequestsApi(),
@@ -34,14 +34,14 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
             const activeEmps = empRes.data.filter(u => u.status !== 'inactive');
             setEmployees(activeEmps);
 
-            if (activeEmps.length > 0) {
+            if (activeEmps.length > 0 && !selectedEmployeeId) {
                 setSelectedEmployeeId(activeEmps[0].id);
             }
         } catch (err) {
             console.error('Failed to load leave data:', err);
             toast.error('Không thể tải danh sách dữ liệu');
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
@@ -52,6 +52,17 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
         const today = formatLocalDate(new Date());
         setStartDate(today);
         setEndDate(today);
+
+        if (window.Echo) {
+            const channel = window.Echo.channel('orders');
+            const handleLeaveUpdate = () => {
+                fetchData(true);
+            };
+            channel.listen('.leave_updated', handleLeaveUpdate);
+            return () => {
+                channel.stopListening('.leave_updated', handleLeaveUpdate);
+            };
+        }
     }, []);
 
     const handleCreateRequest = async (e) => {
@@ -96,11 +107,16 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                 status: status,
                 approved_by: currentUser.id
             });
-            toast.success(status === 'approved' ? 'Phê duyệt đơn thành công!' : 'Từ chối đơn thành công!');
+            let msg = 'Thao tác thành công!';
+            if (status === 'approved') msg = 'Phê duyệt đơn thành công!';
+            else if (status === 'rejected') msg = 'Từ chối đơn thành công!';
+            else if (status === 'approved_cancel') msg = 'Đồng ý hủy nghỉ phép thành công!';
+            else if (status === 'rejected_cancel') msg = 'Từ chối hủy nghỉ phép thành công!';
+            toast.success(msg);
             fetchData();
         } catch (err) {
             console.error('Failed to update leave status:', err);
-            toast.error('Có lỗi xảy ra khi phê duyệt');
+            toast.error('Có lỗi xảy ra khi xử lý yêu cầu');
         }
     };
 
@@ -146,6 +162,27 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                         Từ chối
                     </span>
                 );
+            case 'pending_cancel':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>
+                        Yêu cầu hủy Off
+                    </span>
+                );
+            case 'approved_cancel':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
+                        Đã hủy Off
+                    </span>
+                );
+            case 'rejected_cancel':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                        Từ chối hủy
+                    </span>
+                );
             default:
                 return (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-wider">
@@ -178,7 +215,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                 <h4 className="font-black text-slate-800 tracking-tight">Yêu cầu nghỉ phép</h4>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="mdt-btn flex items-center justify-center gap-2 group self-start sm:self-auto cursor-pointer"
+                    className="mdt-btn flex items-center justify-center gap-2 group w-full sm:w-auto self-stretch sm:self-auto cursor-pointer"
                 >
                     <svg className={`w-5 h-5 transition-transform ${showForm ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -216,14 +253,14 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
 
                             <div>
                                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Khoảng thời gian nghỉ</label>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                     <input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         className="text-sm w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-medium focus:ring-4 focus:ring-orange-500/10 transition-all"
                                     />
-                                    <span className="text-slate-400 text-xs font-bold font-mono">đến</span>
+                                    <span className="text-slate-400 text-xs font-bold uppercase tracking-wider text-center block sm:inline py-0.5">đến</span>
                                     <input
                                         type="date"
                                         value={endDate}
@@ -272,92 +309,209 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                     <p className="text-slate-400 font-bold text-xs tracking-widest uppercase">Đang tải thông tin nghỉ phép...</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left min-w-[700px]">
-                            <thead>
-                                <tr className="bg-slate-50/50">
-                                    <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Nhân sự xin nghỉ</th>
-                                    <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Phạm vi ngày</th>
-                                    <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Lý do xin nghỉ</th>
-                                    <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                                    <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Lựa chọn</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {requests.map((req) => (
-                                    <tr key={req.id} className="group hover:bg-slate-50/40 transition-all">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-[18px] bg-slate-100 flex items-center justify-center text-xs font-black text-slate-500 uppercase overflow-hidden">
-                                                    {req.user?.photo ? (
-                                                        <img src={`/storage/${req.user.photo}`} alt="avatar" className="w-full h-full object-cover" />
+                <div className="space-y-4">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left min-w-[700px]">
+                                <thead>
+                                    <tr className="bg-slate-50/50">
+                                        <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Nhân sự xin nghỉ</th>
+                                        <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Phạm vi ngày</th>
+                                        <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Lý do xin nghỉ</th>
+                                        <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                                        <th className="px-6 py-4 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">Lựa chọn</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {requests.map((req) => (
+                                        <tr key={req.id} className="group hover:bg-slate-50/40 transition-all">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-[18px] bg-slate-100 flex items-center justify-center text-xs font-black text-slate-500 uppercase overflow-hidden">
+                                                        {req.user?.photo ? (
+                                                            <img src={`/storage/${req.user.photo}`} alt="avatar" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            req.user?.name.split(' ').map(n => n[0]).join('').slice(0, 2)
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-xs font-black text-slate-900 uppercase truncate max-w-[150px]">{req.user?.name}</span>
+                                                        <span className="text-[9px] text-slate-400 font-bold">{req.user?.email}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-slate-800">
+                                                        {formatDateStr(req.start_date)} - {formatDateStr(req.end_date)}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-bold mt-0.5">
+                                                        Tổng cộng: {calculateDays(req.start_date, req.end_date)} ngày
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-[200px] truncate text-xs font-medium text-slate-600" title={req.reason}>
+                                                {req.reason || <em className="text-slate-300">Không có lý do đính kèm</em>}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {getStatusBadge(req.status)}
+                                                {req.status !== 'pending' && req.approver && (
+                                                    <span className="text-[9px] text-slate-400 font-bold block mt-1">Duyệt bởi: {req.approver.name}</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {req.status === 'pending' ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(req.id, 'approved')}
+                                                                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer"
+                                                                title="Đồng ý xin nghỉ"
+                                                            >
+                                                                Duyệt
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(req.id, 'rejected')}
+                                                                className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-red-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer"
+                                                                title="Từ chối xin nghỉ"
+                                                            >
+                                                                Từ chối
+                                                            </button>
+                                                        </>
+                                                    ) : req.status === 'pending_cancel' ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(req.id, 'approved_cancel')}
+                                                                className="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer"
+                                                                title="Đồng ý hủy nghỉ phép"
+                                                            >
+                                                                Duyệt Hủy
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleUpdateStatus(req.id, 'rejected_cancel')}
+                                                                className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-slate-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer"
+                                                                title="Từ chối hủy nghỉ phép"
+                                                            >
+                                                                Bác Hủy
+                                                            </button>
+                                                        </>
                                                     ) : (
-                                                        req.user?.name.split(' ').map(n => n[0]).join('').slice(0, 2)
+                                                        <button
+                                                            onClick={() => handleDeleteRequest(req.id)}
+                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
+                                                            title="Hủy đơn"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        </button>
                                                     )}
                                                 </div>
-                                                <div className="flex flex-col min-w-0">
-                                                    <span className="text-xs font-black text-slate-900 uppercase truncate max-w-[150px]">{req.user?.name}</span>
-                                                    <span className="text-[9px] text-slate-400 font-bold">{req.user?.email}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-bold text-slate-800">
-                                                    {formatDateStr(req.start_date)} - {formatDateStr(req.end_date)}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 font-bold mt-0.5">
-                                                    Tổng cộng: {calculateDays(req.start_date, req.end_date)} ngày
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 max-w-[200px] truncate text-xs font-medium text-slate-600" title={req.reason}>
-                                            {req.reason || <em className="text-slate-300">Không có lý do đính kèm</em>}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {getStatusBadge(req.status)}
-                                            {req.status !== 'pending' && req.approver && (
-                                                <span className="text-[9px] text-slate-400 font-bold block mt-1">Duyệt bởi: {req.approver.name}</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {req.status === 'pending' ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleUpdateStatus(req.id, 'approved')}
-                                                            className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer"
-                                                            title="Đồng ý xin nghỉ"
-                                                        >
-                                                            Duyệt
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleUpdateStatus(req.id, 'rejected')}
-                                                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-black text-[9px] uppercase tracking-wider hover:bg-red-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer"
-                                                            title="Từ chối xin nghỉ"
-                                                        >
-                                                            Từ chối
-                                                        </button>
-                                                    </>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Mobile Card Grid View */}
+                    <div className="md:hidden space-y-3">
+                        {requests.map((req) => {
+                            const daysCount = calculateDays(req.start_date, req.end_date);
+                            return (
+                                <div key={req.id} className="bg-white px-2 py-3 rounded-md border border-slate-100 flex flex-col gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-11 h-11 rounded-[18px] bg-slate-100 flex items-center justify-center text-xs font-black text-slate-500 uppercase overflow-hidden flex-shrink-0">
+                                                {req.user?.photo ? (
+                                                    <img src={`/storage/${req.user.photo}`} alt="avatar" className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <button
-                                                        onClick={() => handleDeleteRequest(req.id)}
-                                                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
-                                                        title="Hủy đơn"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                    </button>
+                                                    req.user?.name.split(' ').map(n => n[0]).join('').slice(0, 2)
                                                 )}
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-xs font-black text-slate-900 uppercase truncate max-w-[150px]">{req.user?.name}</span>
+                                                <span className="text-[10px] text-slate-400 font-bold truncate max-w-[170px]">{req.user?.email}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex-shrink-0">
+                                            {getStatusBadge(req.status)}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-50/50 rounded-xl p-3 space-y-2 text-xs">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider">Thời gian</span>
+                                            <span className="text-[11px] font-bold text-slate-800">
+                                                {formatDateStr(req.start_date)} - {formatDateStr(req.end_date)} ({daysCount} ngày)
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start justify-between gap-4">
+                                            <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider flex-shrink-0">Lý do</span>
+                                            <span className="text-[11px] text-slate-600 text-right break-words">
+                                                {req.reason || 'Không có lý do đính kèm'}
+                                            </span>
+                                        </div>
+                                        {req.status !== 'pending' && req.approver && (
+                                            <div className="pt-2 flex items-center justify-between pt-1 border-t border-dashed border-slate-200/60">
+                                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider">Người duyệt</span>
+                                                <span className="text-slate-500 font-bold">{req.approver.name}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-2 flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                                        {req.status === 'pending' ? (
+                                            <>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(req.id, 'approved')}
+                                                    className="flex-1 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer text-center"
+                                                    title="Đồng ý xin nghỉ"
+                                                >
+                                                    Duyệt
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(req.id, 'rejected')}
+                                                    className="flex-1 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-red-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer text-center"
+                                                    title="Từ chối xin nghỉ"
+                                                >
+                                                    Từ chối
+                                                </button>
+                                            </>
+                                        ) : req.status === 'pending_cancel' ? (
+                                            <>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(req.id, 'approved_cancel')}
+                                                    className="flex-1 px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer text-center"
+                                                    title="Đồng ý hủy nghỉ phép"
+                                                >
+                                                    Duyệt Hủy
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(req.id, 'rejected_cancel')}
+                                                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-slate-500 hover:text-white transition-all active:scale-95 border-none cursor-pointer text-center"
+                                                    title="Từ chối hủy nghỉ phép"
+                                                >
+                                                    Bác Hủy
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleDeleteRequest(req.id)}
+                                                className="w-10 h-10 flex items-center justify-center text-white rounded-sm transition-all border-none mdt-bg-primary  cursor-pointer"
+                                                title="Hủy đơn"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
+
                     {requests.length === 0 && (
-                        <div className="py-20 flex flex-col items-center justify-center text-center">
+                        <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 py-20 flex flex-col items-center justify-center text-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-4">
                                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>

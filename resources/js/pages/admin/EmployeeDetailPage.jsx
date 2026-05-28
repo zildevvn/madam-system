@@ -127,6 +127,9 @@ const EmployeeDetailPage = () => {
         switch (status) {
             case 'approved': return 'bg-emerald-50 text-emerald-600';
             case 'rejected': return 'bg-red-50 text-red-600';
+            case 'pending_cancel': return 'bg-rose-50 text-rose-600';
+            case 'approved_cancel': return 'bg-slate-100 text-slate-500';
+            case 'rejected_cancel': return 'bg-orange-50 text-orange-600';
             default: return 'bg-amber-50 text-amber-600';
         }
     };
@@ -135,6 +138,9 @@ const EmployeeDetailPage = () => {
         switch (status) {
             case 'approved': return 'Đã duyệt';
             case 'rejected': return 'Từ chối';
+            case 'pending_cancel': return 'Chờ duyệt hủy';
+            case 'approved_cancel': return 'Đã hủy Off';
+            case 'rejected_cancel': return 'Từ chối hủy';
             default: return 'Chờ duyệt';
         }
     };
@@ -465,6 +471,33 @@ const EmployeeDetailPage = () => {
                                         badgeStyle = 'bg-red-100 text-red-800 border-red-200/50';
                                         statusIcon = (
                                             <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/10">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </div>
+                                        );
+                                    } else if (leave.status === 'pending_cancel') {
+                                        statusBgColor = 'bg-rose-50/30 border-rose-100 hover:border-rose-200';
+                                        statusBorderLeft = 'border-l-4 border-l-rose-450';
+                                        badgeStyle = 'bg-rose-100 text-rose-800 border-rose-200/50';
+                                        statusIcon = (
+                                            <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-500/10">
+                                                <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            </div>
+                                        );
+                                    } else if (leave.status === 'approved_cancel') {
+                                        statusBgColor = 'bg-slate-50 border-slate-200 hover:border-slate-300';
+                                        statusBorderLeft = 'border-l-4 border-l-slate-400';
+                                        badgeStyle = 'bg-slate-100 text-slate-500 border-slate-200/50';
+                                        statusIcon = (
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                            </div>
+                                        );
+                                    } else if (leave.status === 'rejected_cancel') {
+                                        statusBgColor = 'bg-orange-50/20 border-orange-100 hover:border-orange-200';
+                                        statusBorderLeft = 'border-l-4 border-l-orange-500';
+                                        badgeStyle = 'bg-orange-100 text-orange-800 border-orange-200/50';
+                                        statusIcon = (
+                                            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-orange-500/10">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                                             </div>
                                         );

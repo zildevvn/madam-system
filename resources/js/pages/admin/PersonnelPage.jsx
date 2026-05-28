@@ -33,10 +33,10 @@ const PersonnelPage = () => {
         <div className="space-y-6">
 
             {/* Elegant Tab Switcher */}
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 border-b border-slate-100 pb-3">
                 <button
                     onClick={() => setActiveTab('employees')}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer ${activeTab === 'employees'
+                    className={`flex-1 sm:flex-none text-center justify-center px-2 sm:px-5 py-2.5 sm:py-2.5 rounded-md text-[9px] md:text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer ${activeTab === 'employees'
                         ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                         : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                         }`}
@@ -45,7 +45,7 @@ const PersonnelPage = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('leaves')}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer flex items-center gap-2 ${activeTab === 'leaves'
+                    className={`flex-1 sm:flex-none text-center justify-center px-2 sm:px-5 py-2.5 sm:py-2.5 rounded-md text-[9px] md:text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer flex items-center gap-2 ${activeTab === 'leaves'
                         ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                         : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                         }`}

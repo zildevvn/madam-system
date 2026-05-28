@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import dayjs from 'dayjs';
 import {
     formatToLocalDateStr,
     formatDateToVietnamese,
@@ -16,14 +17,67 @@ const FlexibleShiftCalendar = ({
     isDateOnLeave,
     isDateInPast
 }) => {
+    const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
+
+    const today = dayjs();
+    const startOfCurrentMonth = today.startOf('month');
+    const startOfNextMonth = today.add(1, 'month').startOf('month');
+
+    const isNextMonth = dayjs(currentMonthDate).isSame(startOfNextMonth, 'month');
+
+    const handlePrevMonth = () => {
+        if (isNextMonth) {
+            setCurrentMonthDate(startOfCurrentMonth.toDate());
+        }
+    };
+
+    const handleNextMonth = () => {
+        if (!isNextMonth) {
+            setCurrentMonthDate(startOfNextMonth.toDate());
+        }
+    };
 
     return (
         <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-3 sm:p-4 space-y-4">
-            <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                    Lịch Tháng {getMonthYearHeading(new Date())}
-                </span>
-                <span className="text-[9px] text-slate-400 font-bold">
+            
+            {/* Calendar Navigation Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handlePrevMonth}
+                        disabled={!isNextMonth}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all ${
+                            isNextMonth 
+                                ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-90 cursor-pointer shadow-sm' 
+                                : 'bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed'
+                        }`}
+                        title="Tháng trước"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider select-none min-w-[100px] text-center">
+                        Tháng {getMonthYearHeading(currentMonthDate)}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={handleNextMonth}
+                        disabled={isNextMonth}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-all ${
+                            !isNextMonth 
+                                ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-90 cursor-pointer shadow-sm' 
+                                : 'bg-slate-100/50 border-slate-100 text-slate-300 cursor-not-allowed'
+                        }`}
+                        title="Tháng sau"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+                <span className="text-[9px] text-slate-400 font-bold self-end sm:self-auto bg-slate-100/70 px-2.5 py-1 rounded-lg">
                     Đã đăng ký: {Object.keys(flexibleShifts).length} ngày
                 </span>
             </div>
@@ -36,12 +90,12 @@ const FlexibleShiftCalendar = ({
                 ))}
 
                 {/* Padding empty slots */}
-                {Array.from({ length: getMonthWeekdayPadding() }).map((_, i) => (
+                {Array.from({ length: getMonthWeekdayPadding(currentMonthDate) }).map((_, i) => (
                     <div key={`pad-${i}`} className="aspect-[1.4]"></div>
                 ))}
 
                 {/* Days of the month */}
-                {getMonthDatesList().map((date, idx) => {
+                {getMonthDatesList(currentMonthDate).map((date, idx) => {
                     const dateStr = formatToLocalDateStr(date);
                     const isLeave = isDateOnLeave(dateStr);
                     const isPast = isDateInPast(dateStr);
@@ -109,7 +163,6 @@ const FlexibleShiftCalendar = ({
             {selectedCalendarDate && (
                 <div className="p-3 bg-white rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
 
-
                     <h5 className="!text-[11px] font-black text-slate-800 uppercase mt-0.5 font-bold">
                         {formatDateToVietnamese(selectedCalendarDate)}
                         {isDateOnLeave(formatToLocalDateStr(selectedCalendarDate)) ? (
@@ -118,7 +171,6 @@ const FlexibleShiftCalendar = ({
                             <span className="text-slate-400 text-[9px] font-black uppercase tracking-wider ml-2 bg-slate-100 px-1.5 py-0.5 rounded">Lịch sử (Chỉ đọc)</span>
                         ) : null}
                     </h5>
-
 
                     {!isDateOnLeave(formatToLocalDateStr(selectedCalendarDate)) && (
                         isDateInPast(formatToLocalDateStr(selectedCalendarDate)) ? (
