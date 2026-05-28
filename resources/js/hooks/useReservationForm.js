@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useAppDispatch } from '../store/hooks';
 import { saveReservationAsync } from '../store/slices/reservationSlice';
 import { reservationApi } from '../services/reservationApi';
+import { getUsersApi } from '../services/userService';
 
 export const useReservationForm = (id = null, user = null) => {
     const isEdit = !!id;
@@ -16,6 +17,8 @@ export const useReservationForm = (id = null, user = null) => {
     const [activeTab, setActiveTab] = useState('individual');
     const [reservationData, setReservationData] = useState(null);
 
+    const [sellers, setSellers] = useState([]);
+
     const form = useForm({
         defaultValues: {
             type: 'individual',
@@ -24,7 +27,8 @@ export const useReservationForm = (id = null, user = null) => {
             table_ids: [],
             status: 'pending',
             apply_vat: false,
-            vat_percentage: 0
+            vat_percentage: 0,
+            staff_id: ''
         }
     });
 
@@ -32,6 +36,18 @@ export const useReservationForm = (id = null, user = null) => {
         control: form.control,
         name: "dishes"
     });
+
+    // [WHY] Fetch active sellers list for dropdown selection
+    useEffect(() => {
+        getUsersApi()
+            .then(res => {
+                if (res && res.data) {
+                    const activeSellers = res.data.filter(u => u.role === 'seller' && u.status === 'active');
+                    setSellers(activeSellers);
+                }
+            })
+            .catch(err => console.error('Failed to fetch sellers:', err));
+    }, []);
 
     // [WHY] Fetch existing data if in edit mode
     useEffect(() => {
@@ -94,6 +110,10 @@ export const useReservationForm = (id = null, user = null) => {
 
         if (user && user.id) {
             payload.updated_by = user.id;
+            // If the logged in user is a seller, set staff_id to user.id automatically
+            if (user.role === 'seller') {
+                payload.staff_id = user.id;
+            }
         }
 
         if (payload.reservation_date) {
@@ -102,6 +122,7 @@ export const useReservationForm = (id = null, user = null) => {
         }
 
         if (payload.table_id === "") payload.table_id = null;
+        if (payload.staff_id === "") payload.staff_id = null;
 
         if (payload.type === 'individual') {
             payload.dishes = [];
@@ -152,6 +173,7 @@ export const useReservationForm = (id = null, user = null) => {
         message,
         activeTab,
         reservationData,
+        sellers,
         handleTabChange,
         onSubmit: form.handleSubmit(onSubmit)
     };

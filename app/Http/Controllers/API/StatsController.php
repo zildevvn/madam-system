@@ -72,4 +72,23 @@ class StatsController extends Controller
             'errors' => null
         ]);
     }
+
+    /**
+     * employeePerformance
+     * [WHY] Returns employee and seller performance stats based on actual orders and reservations.
+     */
+    public function employeePerformance(Request $request)
+    {
+        $period = $request->query('period', 'today');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $stats = $this->statsService->getEmployeePerformance($period, $startDate, $endDate);
+
+        return response()->json([
+            'data' => $stats,
+            'message' => 'Success',
+            'errors' => null
+        ]);
+    }
 }

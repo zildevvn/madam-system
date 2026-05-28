@@ -193,13 +193,30 @@ class OrderService
             // If we only look at the primary order, items belonging to other tables in the merge
             // would be treated as "new" and cloned into the primary order, while also remaining
             // in their original orders.
-            $mergedString = $mergedTables ?? $order->merged_tables;
-            $tableIds = $mergedString ? explode('-', $mergedString) : [$order->table_id];
-            
-            $involvedOrderIds = Order::whereIn('table_id', $tableIds)
-                ->whereIn('status', ['draft', 'pending', 'processing'])
-                ->pluck('id')
-                ->toArray();
+            // [FIX] CRITICAL: If this order is a split child (has parent_order_id), scope
+            // $involvedOrderIds to ONLY itself. Split children are independent; looking at
+            // all table orders would include the parent's items in $existingItems, and the
+            // product-based fallback lookup could accidentally steal parent items by setting
+            // $orderItem->order_id = $orderId on a parent item.
+            if ($order->parent_order_id) {
+                $involvedOrderIds = [$order->id];
+            } else {
+                $mergedString = $mergedTables ?? $order->merged_tables;
+                $tableIds = $mergedString ? explode('-', $mergedString) : [$order->table_id];
+                
+                // [FIX] Exclude split child orders (those with parent_order_id) from the
+                // involved set. Split children have their own checkout flow and must not
+                // be interfered with during a parent/merged table checkout.
+                $involvedOrderIds = Order::whereIn('table_id', $tableIds)
+                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->whereNull('parent_order_id')
+                    ->pluck('id')
+                    ->toArray();
+                // Always include the order itself in case it was filtered out
+                if (!in_array($order->id, $involvedOrderIds)) {
+                    $involvedOrderIds[] = $order->id;
+                }
+            }
 
             $existingItems = OrderItem::whereIn('order_id', $involvedOrderIds)->get();
             $existingItemsById = $existingItems->keyBy('id');

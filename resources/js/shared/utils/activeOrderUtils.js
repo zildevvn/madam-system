@@ -78,7 +78,7 @@ export const useActiveTableOrders = (tables, orders, filterType) => {
                 })
                 .map(item => ({ ...item, orderTimeTs: safeParseDate(item.orderTime).getTime() }));
 
-            if (items.length === 0) {
+            if (items.length === 0 && !order.hasUnpaidSplits && (!order.orders || order.orders.length === 0)) {
                 map[tableIdStr] = null;
                 return;
             }
@@ -93,7 +93,7 @@ export const useActiveTableOrders = (tables, orders, filterType) => {
             map[tableIdStr] = {
                 ...order,
                 items,
-                isServed: items.every(item => item.status === 'ready' || item.status === 'served'),
+                isServed: !order.hasUnpaidSplits && items.every(item => item.status === 'ready' || item.status === 'served'),
                 earliestActiveTimeTs: activeItems.length > 0 ? Math.min(...activeItems.map(i => i.orderTimeTs)) : null,
                 latestAdditionalPendingTimeTs: additionalPendingItems.length > 0 ? Math.max(...additionalPendingItems.map(i => i.orderTimeTs)) : null,
                 hasAdditionalPendingItems: additionalPendingItems.length > 0

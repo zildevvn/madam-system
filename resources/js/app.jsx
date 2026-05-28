@@ -23,6 +23,7 @@ import EmployeeFormPage from "./pages/admin/EmployeeFormPage";
 import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
+import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
@@ -243,6 +244,7 @@ function App() {
                         <Route path="personnel/:id" element={<EmployeeDetailPage />} />
                         <Route path="tables" element={<TableManagement />} />
                         <Route path="products" element={<ProductManagement />} />
+                        <Route path="performance" element={<EmployeePerformancePage />} />
                     </Route>
 
                     {/* Kitchen and Bar: Access by admin, kitchen, bar */}

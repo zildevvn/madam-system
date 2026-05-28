@@ -18,7 +18,7 @@ const ReservationCreate = () => {
         form: { register, watch, setValue, formState: { errors } },
         fields, append, remove,
         fetching, loading, message, activeTab,
-        reservationData,
+        reservationData, sellers,
         handleTabChange, onSubmit
     } = useReservationForm(id, user);
 
@@ -156,6 +156,18 @@ const ReservationCreate = () => {
                                 )}
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {user?.role !== 'seller' && (
+                    <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100/50">
+                        <label className={labelClasses}>Nhân viên Seller (Người giới thiệu)</label>
+                        <select {...register('staff_id')} className={`${inputClasses} cursor-pointer`}>
+                            <option value="">-- Chọn Seller (Không bắt buộc) --</option>
+                            {sellers && sellers.map(s => (
+                                <option key={s.id} value={s.id}>{s.name} ({s.email})</option>
+                            ))}
+                        </select>
                     </div>
                 )}
 

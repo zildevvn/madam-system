@@ -51,6 +51,7 @@ export const useCheckoutState = () => {
     const [showMergeDropdown, setShowMergeDropdown] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [showWarningPopup, setShowWarningPopup] = useState(false);
+    const [warningTitle, setWarningTitle] = useState('Lỗi in Bill Bar!');
     const [warningMessage, setWarningMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
 
@@ -97,6 +98,8 @@ export const useCheckoutState = () => {
         setShowSuccessPopup,
         showWarningPopup,
         setShowWarningPopup,
+        warningTitle,
+        setWarningTitle,
         warningMessage,
         setWarningMessage,
         successMessage,

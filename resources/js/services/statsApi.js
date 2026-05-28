@@ -21,6 +21,15 @@ const statsApi = {
     getItemStats: async (params) => {
         const response = await axios.get('/api/stats/item-stats', { params });
         return response.data;
+    },
+
+    /**
+     * getEmployeePerformance
+     * [WHY] Fetches employee and seller performance statistics.
+     */
+    getEmployeePerformance: async (params) => {
+        const response = await axios.get('/api/stats/employee-performance', { params });
+        return response.data;
     }
 };
 

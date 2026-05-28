@@ -89,7 +89,11 @@ export const usePaymentLogic = ({
                     await orderApi.checkout(currentOrder.id, {
                         items: draftItems.map(i => ({
                             product_id: (i.isCustom || i.product_id === null) ? null : (i.product_id || i.id),
-                            order_item_id: i.order_item_id || null,
+                            // [FIX] i.order_item_id is set for PaymentModal-native items.
+                            // For items from consolidateOrders format, i.id IS the DB OrderItem ID —
+                            // BUT only if it differs from i.product_id (a newly-added item has id === product_id
+                            // as a placeholder; those are not yet in the DB so order_item_id must be null).
+                            order_item_id: i.order_item_id || (typeof i.id === 'number' && i.id !== i.product_id ? i.id : null),
                             name: (i.isCustom || i.product_id === null) ? i.name : undefined,
                             type: (i.isCustom || i.product_id === null) ? i.type : undefined,
                             quantity: i.quantity,
@@ -263,7 +267,51 @@ export const usePaymentLogic = ({
 
         setIsProcessing(true);
         try {
-            const response = await orderApi.split(currentOrder.id, selectedSplitItems);
+            // Distribute split quantities across individual database order items
+            const distributedSplitItems = [];
+            
+            selectedSplitItems.forEach(splitItem => {
+                const splitItemId = splitItem.order_item_id || splitItem.id;
+                
+                // Find the representative item to get product/note mapping
+                const repItem = draftItems.find(it => String(it.order_item_id || it.id) === String(splitItemId));
+                if (!repItem) return;
+
+                // Find all matching items in draftItems (same product/note or custom name/note)
+                const matchingItems = draftItems.filter(it => {
+                    if (repItem.product_id) {
+                        return it.product_id === repItem.product_id && (it.note || '') === (repItem.note || '');
+                    } else {
+                        return it.name === repItem.name && (it.note || '') === (repItem.note || '');
+                    }
+                });
+
+                // Distribute requested split quantity
+                let remainingToSplit = splitItem.quantity;
+                for (const it of matchingItems) {
+                    if (remainingToSplit <= 0) break;
+                    
+                    const actualId = it.order_item_id || it.id;
+                    if (!actualId) continue;
+
+                    const availableQty = it.quantity;
+                    const splitQty = Math.min(availableQty, remainingToSplit);
+                    
+                    distributedSplitItems.push({
+                        order_item_id: actualId,
+                        quantity: splitQty
+                    });
+                    
+                    remainingToSplit -= splitQty;
+                }
+            });
+
+            if (distributedSplitItems.length === 0) {
+                setIsProcessing(false);
+                return;
+            }
+
+            const response = await orderApi.split(currentOrder.id, distributedSplitItems);
             setIsSplitMode(false);
             setSelectedSplitItems([]);
             // [WHY] Refresh data after split
@@ -275,24 +323,23 @@ export const usePaymentLogic = ({
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, selectedSplitItems, isProcessing, onPaymentSuccess]);
+    }, [currentOrder, selectedSplitItems, draftItems, isProcessing, onPaymentSuccess]);
 
     const toggleSplitItem = useCallback((item) => {
         setSelectedSplitItems(prev => {
             const itemId = item.order_item_id || item.id;
-            const existing = prev.find(i => i.order_item_id === itemId);
+            const existing = prev.find(i => String(i.order_item_id || i.id) === String(itemId));
             if (existing) {
-                return prev.filter(i => i.order_item_id !== itemId);
+                return prev.filter(i => String(i.order_item_id || i.id) !== String(itemId));
             } else {
-                // [WHY] Initialize with the full quantity of the item
-                return [...prev, { order_item_id: itemId, quantity: item.quantity }];
+                return [...prev, { order_item_id: itemId, quantity: 1 }];
             }
         });
     }, []);
 
     const handleUpdateSplitQuantity = useCallback((itemId, quantity) => {
         setSelectedSplitItems(prev =>
-            prev.map(i => i.order_item_id === itemId ? { ...i, quantity } : i)
+            prev.map(i => String(i.order_item_id || i.id) === String(itemId) ? { ...i, quantity } : i)
         );
     }, []);
 
