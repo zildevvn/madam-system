@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatPrice } from '../shared/utils/formatCurrency';
+import Icon from './shared/Icon';
 
 /**
  * ProductItem: Renders individual product details (name, price, qty).
@@ -90,7 +91,7 @@ export default function ProductItem({
                             onClick={() => setShowNote(!showNote)}
                             className={`px-3 py-1.5 flex items-center gap-1.5 text-[11px] rounded-lg transition-all border-none cursor-pointer font-bold uppercase tracking-wider ${showNote ? 'bg-gray-100 text-gray-700' : 'bg-transparent text-gray-400 hover:text-gray-600'}`}
                         >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            <Icon name="pencil" size={13} strokeWidth={2.5} />
                             Ghi chú
                         </button>
 
@@ -99,7 +100,7 @@ export default function ProductItem({
                                 onClick={() => setShowDiscount(!showDiscount)}
                                 className={`px-3 py-1.5 flex items-center gap-1.5 text-[11px] rounded-lg transition-all border-none cursor-pointer font-bold uppercase tracking-wider ${showDiscount || hasDiscount ? 'bg-red-50 text-red-600' : 'bg-transparent text-gray-400 hover:text-gray-600'}`}
                             >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M7 7l10 10M17 7L7 17" /></svg>
+                                <Icon name="close" size={13} strokeWidth={3} />
                                 Giảm giá
                             </button>
                         )}
@@ -112,7 +113,7 @@ export default function ProductItem({
                             onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
                             className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer shadow-sm"
                         >
-                            <svg width="14" height="14" strokeWidth="2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                            <Icon name="minus" size={14} strokeWidth={2} />
                         </button>
                         <span className="px-4 font-black text-on-surface text-xs min-w-[24px] flex items-center justify-center gap-1 text-center">
                             {item.quantity}
@@ -126,7 +127,7 @@ export default function ProductItem({
                             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                             className="btn-plus w-6 h-6 flex items-center justify-center rounded-full text-white shadow-md active:scale-90 transition-all hover:brightness-110 cursor-pointer bg-orange-500"
                         >
-                            <svg width="14" height="14" strokeWidth="2.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                            <Icon name="plus" size={14} strokeWidth={2.5} />
                         </button>
                     </div>
                 )}
@@ -216,7 +217,7 @@ export default function ProductItem({
                                 }}
                                 className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-red-500 hover:bg-red-100/50 rounded-md transition-colors border-none bg-transparent cursor-pointer"
                             >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                <Icon name="save" size={14} strokeWidth={3} />
                             </button>
                         </div>
                     </div>

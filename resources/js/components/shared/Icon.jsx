@@ -3,6 +3,8 @@ import {
     ChevronLeft, 
     ChevronRight, 
     ChevronDown,
+    ChevronUp,
+    ChevronsUp,
     Pencil, 
     X, 
     LogOut, 
@@ -23,13 +25,30 @@ import {
     Eye,
     Sun,
     Moon,
-    Briefcase
+    Briefcase,
+    LayoutGrid,
+    ClipboardList,
+    CreditCard,
+    QrCode,
+    Shield,
+    DollarSign,
+    Zap,
+    Percent,
+    Minus,
+    Save,
+    ArrowLeft,
+    Menu,
+    ConciergeBell,
+    RotateCw,
+    Printer
 } from 'lucide-react';
 
 export const ICONS = {
     chevronLeft: ChevronLeft,
     chevronRight: ChevronRight,
     chevronDown: ChevronDown,
+    chevronUp: ChevronUp,
+    chevronsUp: ChevronsUp,
     pencil: Pencil,
     close: X,
     logout: LogOut,
@@ -50,7 +69,22 @@ export const ICONS = {
     eye: Eye,
     sun: Sun,
     moon: Moon,
-    briefcase: Briefcase
+    briefcase: Briefcase,
+    layoutGrid: LayoutGrid,
+    clipboardList: ClipboardList,
+    creditCard: CreditCard,
+    qrCode: QrCode,
+    shield: Shield,
+    dollarSign: DollarSign,
+    zap: Zap,
+    percent: Percent,
+    minus: Minus,
+    save: Save,
+    arrowLeft: ArrowLeft,
+    menu: Menu,
+    conciergeBell: ConciergeBell,
+    refresh: RotateCw,
+    printer: Printer
 };
 
 export default function Icon({ name, className = '', size = 18, strokeWidth = 2.5, ...props }) {

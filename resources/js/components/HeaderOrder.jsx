@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { cancelOrderAsync } from '../store/slices/orderSlice';
 import { setSearchQuery } from '../store/slices/productSlice';
 import LogoImg from '../../images/Logo.png';
+import Icon from './shared/Icon';
 
 export default function HeaderOrder() {
     const navigate = useNavigate();
@@ -76,7 +77,7 @@ export default function HeaderOrder() {
                             onClick={handleCloseSearch}
                             className="p-2.5 hover:bg-gray-100 active:bg-gray-200 active:scale-90 rounded-full transition-all duration-200 ease-out border-none bg-transparent cursor-pointer text-gray-600 shrink-0 select-none touch-manipulation flex items-center justify-center"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                            <Icon name="chevronLeft" size={24} className="w-6 h-6" />
                         </button>
                         <div className="flex-1 relative">
                             <input
@@ -90,9 +91,9 @@ export default function HeaderOrder() {
                             {searchQuery && (
                                 <button
                                     onClick={() => dispatch(setSearchQuery(''))}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-gray-800 active:scale-90 bg-transparent border-none p-2 cursor-pointer transition-all duration-200 ease-out select-none touch-manipulation"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 active:text-gray-800 active:scale-90 bg-transparent border-none p-2 cursor-pointer transition-all duration-200 ease-out select-none touch-manipulation flex items-center justify-center"
                                 >
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                                    <Icon name="xCircle" size={16} className="w-4 h-4 text-gray-400 hover:text-gray-600" />
                                 </button>
                             )}
                         </div>
@@ -105,7 +106,7 @@ export default function HeaderOrder() {
                                 onClick={handleBackClick}
                                 className="mdt-btn-back p-2.5 -ml-1 hover:bg-gray-100 active:bg-gray-200 active:scale-90 rounded-full transition-all duration-200 ease-out border-none bg-transparent cursor-pointer select-none touch-manipulation flex items-center justify-center"
                             >
-                                <svg width="24px" height="24px" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                <Icon name="arrowLeft" size={24} className="w-6 h-6 text-black" strokeWidth={1.5} />
                             </button>
                         </div>
 
@@ -118,14 +119,10 @@ export default function HeaderOrder() {
                                 onClick={handleSearchClick}
                                 className="p-2.5 hover:bg-gray-100 active:bg-gray-200 active:scale-90 rounded-full transition-all duration-200 ease-out border-none bg-transparent cursor-pointer text-gray-600 select-none touch-manipulation flex items-center justify-center"
                             >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                                <Icon name="search" size={24} className="w-6 h-6" />
                             </button>
                             <button className="p-2.5 hover:bg-gray-100 active:bg-gray-200 active:scale-90 rounded-full transition-all duration-200 ease-out border-none bg-transparent cursor-pointer text-gray-600 select-none touch-manipulation flex items-center justify-center">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                </svg>
+                                <Icon name="menu" size={24} className="w-6 h-6" />
                             </button>
                         </div>
                     </div>

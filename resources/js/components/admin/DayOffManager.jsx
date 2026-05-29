@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { getUsersApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi, updateLeaveStatusApi, deleteLeaveRequestApi } from '../../services/leaveService';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
+import Icon from '../shared/Icon';
 
 const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propSetRequests }) => {
     const [localRequests, setLocalRequests] = useState([]);
@@ -217,9 +218,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                     onClick={() => setShowForm(!showForm)}
                     className="mdt-btn flex items-center justify-center gap-2 group w-full sm:w-auto self-stretch sm:self-auto cursor-pointer"
                 >
-                    <svg className={`w-5 h-5 transition-transform ${showForm ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Icon name="plus" size={20} strokeWidth={2.5} className={`w-5 h-5 transition-transform ${showForm ? 'rotate-45' : ''}`} />
                     <span>{showForm ? 'Đóng form đăng ký' : 'Đăng ký nghỉ phép mới'}</span>
                 </button>
             </div>
@@ -246,7 +245,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                                         ))}
                                     </select>
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                        <Icon name="chevronDown" size={16} strokeWidth={2.5} className="w-4 h-4 text-slate-400" />
                                     </div>
                                 </div>
                             </div>
@@ -402,7 +401,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                                                             className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border-none bg-transparent cursor-pointer"
                                                             title="Hủy đơn"
                                                         >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                            <Icon name="trash" size={16} strokeWidth={2.5} className="w-4 h-4 text-slate-300 hover:text-red-500" />
                                                         </button>
                                                     )}
                                                 </div>
@@ -501,7 +500,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                                                 className="w-10 h-10 flex items-center justify-center text-white rounded-sm transition-all border-none mdt-bg-primary  cursor-pointer"
                                                 title="Hủy đơn"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                <Icon name="trash" size={16} strokeWidth={2.5} className="w-4 h-4 text-white" />
                                             </button>
                                         )}
                                     </div>
@@ -513,7 +512,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                     {requests.length === 0 && (
                         <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 py-20 flex flex-col items-center justify-center text-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-4">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <Icon name="calendar" size={32} strokeWidth={2.5} className="w-8 h-8 text-slate-200" />
                             </div>
                             <p className="text-slate-400 font-black text-[11px] uppercase tracking-[0.2em]">Chưa có yêu cầu nghỉ phép nào</p>
                         </div>

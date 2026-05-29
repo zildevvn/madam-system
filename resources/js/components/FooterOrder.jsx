@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateQuantity, updateItemNote } from '../store/slices/orderSlice';
 import ProductItem from './ProductItem';
+import Icon from './shared/Icon';
 
 export default function FooterOrder() {
     const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function FooterOrder() {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
                     <h5 className='!font-semibold'>Món đã chọn ({totalQuantity})</h5>
                     <button onClick={() => setShowList(false)} className="p-2 text-gray-400 hover:text-gray-600 outline-none rounded-full cursor-pointer hover:bg-gray-100 active:scale-95 transition-all outline-none border-none bg-transparent">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <Icon name="close" size={20} className="w-5 h-5" />
                     </button>
                 </div>
 
@@ -70,7 +71,7 @@ export default function FooterOrder() {
                         className="btn-show-list-product"
                         onClick={() => setShowList(!showList)}
                     >
-                        <svg className={`transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center ${showList ? 'rotate-180 translate-y-0.5' : '-translate-y-0.5'}`} width="24px" height="24px" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M6 11L12 5L18 11" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path><path d="M6 19L12 13L18 19" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                        <Icon name="chevronsUp" size={24} className={`transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center ${showList ? 'rotate-180 translate-y-0.5' : '-translate-y-0.5'}`} />
                     </button>
                 </div>
 
@@ -87,7 +88,7 @@ export default function FooterOrder() {
                             disabled={totalQuantity === 0}
                         >
                             Tiếp
-                            <svg width="24px" height="24px" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M9 6L15 12L9 18" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                            <Icon name="chevronRight" size={16} className="w-4 h-4 text-current" />
                         </button>
                     </div>
                 </div>
