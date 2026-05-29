@@ -161,7 +161,7 @@ export default function AttendanceManagementPage() {
                 <div className="bg-white p-4 rounded-[16px] border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="relative w-full sm:max-w-xs">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <Icon name="search" size={16} className="w-4 h-4 text-slate-400" />
                         </div>
                         <input
                             type="text"
@@ -198,7 +198,7 @@ export default function AttendanceManagementPage() {
                 {/* List & Cards Content */}
                 {loading ? (
                     <div className="py-20 flex flex-col items-center justify-center gap-3">
-                        <svg className="w-8 h-8 text-orange-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15H19" /></svg>
+                        <Icon name="spinner" size={32} className="w-8 h-8 text-orange-500 animate-spin" />
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Đang tải dữ liệu chấm công...</span>
                     </div>
                 ) : filteredRecords.length > 0 ? (
@@ -210,7 +210,7 @@ export default function AttendanceManagementPage() {
                     />
                 ) : (
                     <div className="py-20 flex flex-col items-center justify-center gap-2 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
-                        <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        <Icon name="alert" size={40} className="w-10 h-10 text-slate-300" />
                         <h5 className="text-sm font-black text-slate-700 uppercase tracking-tight mt-1">Không tìm thấy nhân viên nào</h5>
                         <p className="text-xs text-slate-400">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm khác.</p>
                     </div>
