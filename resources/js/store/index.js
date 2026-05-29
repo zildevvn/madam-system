@@ -6,6 +6,7 @@ import authReducer from './slices/authSlice';
 import reservationReducer from './slices/reservationSlice';
 import expenseReducer from './slices/expenseSlice';
 import notificationReducer from './slices/notificationSlice';
+import attendanceReducer from './slices/attendanceSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     reservation: reservationReducer,
     expense: expenseReducer,
     notification: notificationReducer,
+    attendance: attendanceReducer,
   },
 });
 

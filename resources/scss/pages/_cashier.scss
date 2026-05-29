@@ -15,7 +15,7 @@
         }
     }
 
-    &.has-marquee {
+    [data-has-banner='true'] & {
         .main-inner {
             padding-top: 50px;
         }

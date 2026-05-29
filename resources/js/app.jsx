@@ -24,6 +24,7 @@ import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
+import AttendanceManagementPage from "./pages/AttendanceManagementPage";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
@@ -34,6 +35,7 @@ import ReservationCreate from './pages/reservations/ReservationCreate';
 import ExpenseManagement from './pages/ExpenseManagement';
 import UserProfilePage from './pages/UserProfilePage';
 import EmployeeSchedulePage from './pages/EmployeeSchedulePage';
+import AttendanceGuard from "./components/attendance/AttendanceGuard";
 
 // Set base default header
 window.axios = axios;
@@ -91,7 +93,11 @@ const ProtectedRoute = ({ children }) => {
     if (!user) {
         return <Navigate to="/" replace />;
     }
-    return children ? children : <Outlet />;
+    return (
+        <AttendanceGuard>
+            {children ? children : <Outlet />}
+        </AttendanceGuard>
+    );
 };
 
 const RoleProtectedRoute = ({ children, allowedRoles }) => {
@@ -234,6 +240,9 @@ function App() {
 
                     {/* Bill page: Access by admin, bill */}
                     <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
+
+                    {/* Attendance page: Access by admin, manager */}
+                    <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
 
                     {/* Admin Dashboard */}
                     <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>

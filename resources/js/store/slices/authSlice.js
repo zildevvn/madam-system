@@ -12,9 +12,21 @@ export const login = createAsyncThunk('auth/login', async ({ username, password 
   }
 });
 
-const storedUser = localStorage.getItem('user');
+const getInitialUser = () => {
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    try {
+      return JSON.parse(storedUser);
+    } catch (e) {
+      console.warn('Invalid user data in localStorage inside authSlice, clearing...', e);
+      localStorage.removeItem('user');
+    }
+  }
+  return null;
+};
+
 const initialState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
+  user: getInitialUser(),
   status: 'idle',
   error: null,
 };

@@ -1,7 +1,12 @@
 import React from 'react';
 import Header from '../components/Header';
+import HeaderBannerOnly from '../components/HeaderBannerOnly';
 import { useAppSelector } from '../store/hooks';
 
+/**
+ * DefaultLayout Component
+ * [WHY] Standard wrapper for page templates, including Header and main body layout.
+ */
 const DefaultLayout = ({ children, hideHeader = false }) => {
     const { user } = useAppSelector(state => state.auth);
 
@@ -11,7 +16,7 @@ const DefaultLayout = ({ children, hideHeader = false }) => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header onlyBanner={shouldHide} />
+            {shouldHide ? <HeaderBannerOnly /> : <Header />}
             <main>{children}</main>
         </div>
     );

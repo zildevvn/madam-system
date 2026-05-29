@@ -54,6 +54,16 @@ Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
 Route::put('/leave-requests/{id}/status', [LeaveRequestController::class, 'updateStatus']);
 Route::delete('/leave-requests/{id}', [LeaveRequestController::class, 'destroy']);
 
+// Attendance Management
+Route::get('/attendances', [\App\Http\Controllers\API\AttendanceController::class, 'index']);
+Route::post('/attendances', [\App\Http\Controllers\API\AttendanceController::class, 'store']);
+Route::delete('/attendances/{id}', [\App\Http\Controllers\API\AttendanceController::class, 'destroy']);
+Route::get('/attendances/today-status', [\App\Http\Controllers\API\AttendanceController::class, 'todayStatus']);
+Route::post('/attendances/request-checkin', [\App\Http\Controllers\API\AttendanceController::class, 'requestCheckIn']);
+Route::post('/attendances/request-checkout', [\App\Http\Controllers\API\AttendanceController::class, 'requestCheckout']);
+Route::post('/attendances/{id}/approve', [\App\Http\Controllers\API\AttendanceController::class, 'approveRequest']);
+Route::post('/attendances/{id}/reject', [\App\Http\Controllers\API\AttendanceController::class, 'rejectRequest']);
+
 // Products
 Route::get('/products', [ProductController::class, 'index']);
 Route::post('/products', [ProductController::class, 'store']);
