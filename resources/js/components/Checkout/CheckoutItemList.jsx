@@ -111,7 +111,7 @@ const CheckoutItemList = ({
                             const isSelected = !!splitItem;
 
                             return (
-                                <div key={group.groupKey || index} className="flex items-start gap-3">
+                                <div key={group.originalIds[0] || index} className="flex items-start gap-3">
                                     {isSplitMode && !group.isSplit && group.order_item_id && (
                                         <div className="flex flex-col items-center gap-2 pt-4">
                                             <input

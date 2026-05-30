@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatPrice } from '../shared/utils/formatCurrency';
 
 /**
@@ -18,9 +18,24 @@ export default function ProductItem({
     const [showDiscount, setShowDiscount] = useState(false);
     const [noteValue, setNoteValue] = useState(item.note || '');
 
+    const onUpdateNoteRef = useRef(onUpdateNote);
+    useEffect(() => {
+        onUpdateNoteRef.current = onUpdateNote;
+    }, [onUpdateNote]);
+
+    const debounceTimeoutRef = useRef(null);
+
     useEffect(() => {
         setNoteValue(item.note || '');
     }, [item.note]);
+
+    useEffect(() => {
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const effectiveIsReadOnly = isReadOnly || item.isSplit;
 
@@ -40,7 +55,7 @@ export default function ProductItem({
     })();
 
     const itemTotal = (item.price * item.quantity) - calculatedItemDiscount;
-    
+
     const addedQuantity = Math.max(0, item.quantity - originalQuantity);
 
     return (
@@ -143,18 +158,31 @@ export default function ProductItem({
                             onChange={(e) => {
                                 const newValue = e.target.value;
                                 setNoteValue(newValue);
-                                if (onUpdateNote) onUpdateNote(item.id, newValue);
+                                if (debounceTimeoutRef.current) {
+                                    clearTimeout(debounceTimeoutRef.current);
+                                }
+                                debounceTimeoutRef.current = setTimeout(() => {
+                                    if (onUpdateNoteRef.current) {
+                                        onUpdateNoteRef.current(item.id, newValue);
+                                    }
+                                }, 300);
                             }}
                             onBlur={() => {
+                                if (debounceTimeoutRef.current) {
+                                    clearTimeout(debounceTimeoutRef.current);
+                                }
                                 if (onUpdateNote) onUpdateNote(item.id, noteValue);
                             }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
+                                    if (debounceTimeoutRef.current) {
+                                        clearTimeout(debounceTimeoutRef.current);
+                                    }
                                     if (onUpdateNote) onUpdateNote(item.id, noteValue);
                                     setShowNote(false);
                                 }
                             }}
-                            className="w-full text-sm px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
+                            className="w-full text-[16px] px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500/30 focus:border-orange-500 transition-all"
                             autoFocus
                         />
                     </div>
