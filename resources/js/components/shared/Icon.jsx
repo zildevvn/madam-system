@@ -40,7 +40,8 @@ import {
     Menu,
     ConciergeBell,
     RotateCw,
-    Printer
+    Printer,
+    Image
 } from 'lucide-react';
 
 export const ICONS = {
@@ -84,7 +85,8 @@ export const ICONS = {
     menu: Menu,
     conciergeBell: ConciergeBell,
     refresh: RotateCw,
-    printer: Printer
+    printer: Printer,
+    image: Image
 };
 
 export default function Icon({ name, className = '', size = 18, strokeWidth = 2.5, ...props }) {
