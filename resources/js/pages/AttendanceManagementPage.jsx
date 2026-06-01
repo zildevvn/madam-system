@@ -87,16 +87,15 @@ export default function AttendanceManagementPage() {
 
                 {/* Pending Requests Banner */}
                 {allPendingRequests.length > 0 && (
-                    <div className="bg-amber-50/40 rounded-3xl border border-amber-200/60 p-4 sm:p-5 shadow-sm space-y-4 animate-in slide-in-from-top-4 duration-500">
+                    <div className="bg-amber-50/40 rounded-md px-2 py-3 sm:p-5  space-y-2 animate-in slide-in-from-top-4 duration-500">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="flex h-2.5 w-2.5 relative">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                                 </span>
-                                <h5 className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Yêu cầu chờ duyệt ({allPendingRequests.length})</h5>
+                                <h6 className="text-amber-800 uppercase tracking-wider">Yêu cầu chờ duyệt ({allPendingRequests.length})</h6>
                             </div>
-                            <span className="text-[9px] font-black text-amber-500 bg-amber-100/50 px-2 py-0.5 rounded-full uppercase">Realtime</span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -105,7 +104,7 @@ export default function AttendanceManagementPage() {
                                  * [WHY] Composite key prevents collisions because a single attendance_id 
                                  * can contain multiple concurrent request types (e.g. pending check-in and check-out).
                                  */
-                                <div key={`${req.attendance_id}-${req.type}`} className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between gap-3 shadow-xs">
+                                <div key={`${req.attendance_id}-${req.type}`} className="bg-white px-2 py-3 md:p-3 rounded-md border border-slate-100 flex items-center justify-between gap-3 shadow-xs">
                                     <div className="flex items-center gap-2.5 min-w-0">
                                         <div className="w-9 h-9 rounded-xl bg-slate-100 overflow-hidden border border-slate-200/50 flex items-center justify-center font-bold text-slate-400 uppercase text-xs flex-shrink-0">
                                             {req.employee_avatar ? (

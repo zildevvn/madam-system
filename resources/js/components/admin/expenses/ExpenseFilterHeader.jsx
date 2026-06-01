@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../shared/Icon';
 
 /**
  * Expense Filter Header Component
@@ -9,8 +10,8 @@ const ExpenseFilterHeader = ({ searchTerm, setSearchTerm, typeFilter, setTypeFil
     return (
         <div className="flex flex-col sm:flex-row flex-1 max-w-2xl gap-3">
             <div className="relative flex-1 group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors flex items-center justify-center">
+                    <Icon name="search" className="w-5 h-5" size={20} />
                 </div>
                 <input
                     type="text"
@@ -24,7 +25,7 @@ const ExpenseFilterHeader = ({ searchTerm, setSearchTerm, typeFilter, setTypeFil
                         onClick={() => setSearchTerm('')}
                         className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-500 transition-colors"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <Icon name="close" className="w-4 h-4" size={16} />
                     </button>
                 )}
             </div>

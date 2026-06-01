@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
+import Icon from '../shared/Icon';
 
 /**
  * CashierHistoryLane: Renders the payment history lane of the Cashier dashboard.
@@ -159,7 +160,7 @@ const CashierHistoryLane = ({
                                             <>
                                                 <span>•</span>
                                                 <span className="flex items-center gap-1 text-orange-500">
-                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                                    <Icon name="users" className="w-3.5 h-3.5" size={14} />
                                                     {order.guest_count}
                                                 </span>
                                             </>
@@ -176,7 +177,7 @@ const CashierHistoryLane = ({
 
                             {order.cashier_note && (
                                 <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100 italic text-[11px] text-gray-500 leading-relaxed relative flex gap-2">
-                                    <svg className="shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                                    <Icon name="message" className="shrink-0 mt-0.5" size={12} />
                                     <span>{order.cashier_note}</span>
                                 </div>
                             )}
@@ -187,7 +188,7 @@ const CashierHistoryLane = ({
                                     onClick={() => onEditOrder(order)}
                                     className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
                                 >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>
+                                    <Icon name="pencil" className="w-3 h-3" size={12} />
                                     Edit
                                 </button>
                             </div>

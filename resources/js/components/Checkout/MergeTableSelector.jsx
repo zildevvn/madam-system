@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 const MergeTableSelector = ({
     allTables,
@@ -15,7 +16,7 @@ const MergeTableSelector = ({
                 onClick={() => setShowMergeDropdown(!showMergeDropdown)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors border ${mergedTableIds.length > 0 ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200'} hover:bg-orange-100 hover:border-orange-300 cursor-pointer`}
             >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+                <Icon name="plus" className="w-3.5 h-3.5" size={14} />
                 <span>Gộp{mergedTableIds.length > 0 ? `: ${mergedTableIds.length}` : ' bàn'}</span>
             </button>
 

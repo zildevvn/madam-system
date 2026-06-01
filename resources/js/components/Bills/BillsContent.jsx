@@ -1,6 +1,7 @@
 import React from 'react';
 import ActiveOrderTableList from '../ActiveOrderTableList';
 import DelayWarnings from '../delay-warning/DelayWarnings';
+import Icon from '../shared/Icon';
 
 const BillsContent = ({
     activeTablesToDisplay,
@@ -32,9 +33,7 @@ const BillsContent = ({
                     <div className="col-span-12 md:col-span-8 lg:col-span-9 bg-gray-50/50 rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                         {error && (
                             <div className="w-full bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm flex items-center gap-2">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                                <Icon name="alert" className="w-5 h-5" size={20} />
                                 {error}
                             </div>
                         )}

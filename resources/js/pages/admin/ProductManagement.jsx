@@ -4,6 +4,7 @@ import ProductFormModal from '../../components/admin/ProductFormModal';
 import CategoryFormModal from '../../components/admin/CategoryFormModal';
 import ProductList from '../../components/admin/ProductList';
 import CategoryList from '../../components/admin/CategoryList';
+import Icon from '../../components/shared/Icon';
 
 // [WHY] Component to manage products and categories in the admin dashboard.
 // [RULE] Delegated UI for lists to sub-components.
@@ -108,7 +109,7 @@ const ProductManagement = () => {
                                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                 }`}
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                            <Icon name="menu" className="w-4 h-4" size={16} strokeWidth={2.5} />
                             Quản lý món
                         </button>
                         <button
@@ -118,7 +119,7 @@ const ProductManagement = () => {
                                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                 }`}
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01" /></svg>
+                            <Icon name="grid" className="w-4 h-4" size={16} strokeWidth={2.5} />
                             Danh mục
                         </button>
                     </div>
@@ -150,12 +151,12 @@ const ProductManagement = () => {
                             onClick={activeTab === 'products' ? handleAddProduct : handleAddCategoryClick}
                             className="mdt-btn flex items-center justify-center group shrink-0"
                         >
-                            <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                            <Icon name="plus" className="w-5 h-5 group-hover:rotate-90 transition-transform" size={20} strokeWidth={2.5} />
                             <span>{activeTab === 'products' ? 'Thêm món mới' : 'Thêm danh mục'}</span>
                         </button>
                         <div className="relative flex-1 group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                <Icon name="search" className="w-5 h-5" size={20} strokeWidth={2.5} />
                             </div>
                             <input
                                 type="text"
@@ -169,7 +170,7 @@ const ProductManagement = () => {
                                     onClick={() => setSearchTerm('')}
                                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-500 transition-colors"
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <Icon name="close" className="w-4 h-4" size={16} strokeWidth={3} />
                                 </button>
                             )}
                         </div>
@@ -178,7 +179,7 @@ const ProductManagement = () => {
 
                 {error && (
                     <div className="bg-red-50 text-red-600 p-5 rounded-3xl text-[11px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-4 animate-in shake duration-500">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        <Icon name="alert" className="w-5 h-5" size={20} strokeWidth={2.5} />
                         {error}
                     </div>
                 )}

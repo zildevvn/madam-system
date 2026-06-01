@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 import ProductItem from '../ProductItem';
+import Icon from '../shared/Icon';
 
 /**
  * PaymentItemEditor: Renders the scrollable item list with per-table grouping,
@@ -65,7 +66,7 @@ const PaymentItemEditor = ({
                                 onClick={() => setShowProductSearch(!showProductSearch)}
                                 className={`ml-auto w-6 h-6 rounded-lg ${showProductSearch ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'} flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-colors`}
                             >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" /></svg>
+                                <Icon name="plus" className="w-[14px] h-[14px]" size={14} />
                             </button>
                         </div>
 
@@ -198,7 +199,7 @@ const PaymentItemEditor = ({
                                                             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-orange-500 border-orange-500 shadow-md shadow-orange-200' : 'border-gray-200 bg-white hover:border-gray-400'}`}
                                                         >
                                                             {isSelected && (
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4"><path d="M20 6L9 17l-5-5" /></svg>
+                                                                <Icon name="check" className="w-[14px] h-[14px] text-white" size={14} />
                                                             )}
                                                         </div>
                                                         {isSelected && item.quantity > 1 && (

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import ProductImageInput from './products/ProductImageInput';
 import ProductFormFields from './products/ProductFormFields';
+import Icon from '../shared/Icon';
 
 /**
  * Product Form Modal Component
@@ -82,7 +83,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                         type="button"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <Icon name="close" className="w-6 h-6" size={24} />
                     </button>
                 </div>
 
@@ -102,7 +103,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                     <form onSubmit={handleSubmit(onFormSubmit)} className="px-3 py-2 lg:px-6 lg:py-4 space-y-3 lg:space-y-4 overflow-y-auto custom-scrollbar h-full">
                         {serverError && (
                             <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-3 duration-300">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77-1.333.192-3 1.732-3z" /></svg>
+                                <Icon name="alert" className="w-4 h-4 flex-shrink-0" size={16} />
                                 <span>{serverError}</span>
                             </div>
                         )}

@@ -7,6 +7,7 @@ import {
     getMonthDatesList,
     getMonthWeekdayPadding
 } from '../../shared/utils/dateUtils';
+import Icon from '../shared/Icon';
 
 // [WHY] Component to render an interactive, beautiful monthly calendar for flexible daily shift assignments.
 const FlexibleShiftCalendar = ({
@@ -54,9 +55,7 @@ const FlexibleShiftCalendar = ({
                         }`}
                         title="Tháng trước"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <Icon name="chevronLeft" className="w-4 h-4" size={16} strokeWidth={2.5} />
                     </button>
                     <span className="text-xs font-black text-slate-800 uppercase tracking-wider select-none min-w-[100px] text-center">
                         Tháng {getMonthYearHeading(currentMonthDate)}
@@ -72,9 +71,7 @@ const FlexibleShiftCalendar = ({
                         }`}
                         title="Tháng sau"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
-                        </svg>
+                        <Icon name="chevronRight" className="w-4 h-4" size={16} strokeWidth={2.5} />
                     </button>
                 </div>
                 <span className="text-[9px] text-slate-400 font-bold self-end sm:self-auto bg-slate-100/70 px-2.5 py-1 rounded-lg">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePaymentLogic } from '../../hooks/usePaymentLogic';
 import PaymentItemEditor from './PaymentItemEditor';
 import PaymentModalFooter from './PaymentModalFooter';
+import Icon from '../shared/Icon';
 
 /**
  * PaymentModal: Full-screen modal for reviewing items, applying discounts,
@@ -96,9 +97,7 @@ const PaymentModal = ({
                 <div className="px-5 py-3 flex items-center justify-between border-b border-gray-100 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                            <svg className="w-[18px] h-[18px] text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
+                            <Icon name="dollarSign" className="w-[18px] h-[18px] text-orange-500" size={18} />
                         </div>
                         <div>
                             <p className="m-0 text-[9px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn</p>
@@ -108,7 +107,7 @@ const PaymentModal = ({
 
                             {currentOrder?.guestCount > 0 && (
                                 <p className="number-guests m-0 mt-0.5 text-[11px] font-bold text-gray-500 flex items-center gap-1">
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                    <Icon name="users" className="w-3.5 h-3.5" size={14} />
                                     {currentOrder.guestCount} Khách
                                 </p>
                             )}
@@ -125,8 +124,8 @@ const PaymentModal = ({
                                 Hủy Bàn
                             </button>
                         )}
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500 flex items-center justify-center">
+                            <Icon name="close" className="w-4 h-4" size={16} />
                         </button>
                     </div>
                 </div>

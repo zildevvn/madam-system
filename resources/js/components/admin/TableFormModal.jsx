@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import Icon from '../shared/Icon';
 
 const TableFormModal = ({ isOpen, onClose, onSubmit, table = null, processing = false }) => {
     const { register, handleSubmit, reset } = useForm({
@@ -33,7 +34,7 @@ const TableFormModal = ({ isOpen, onClose, onSubmit, table = null, processing = 
                     </h4>
 
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors" type="button">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <Icon name="close" className="w-6 h-6" size={24} />
                     </button>
                 </div>
 

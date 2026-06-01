@@ -1,5 +1,6 @@
 import React from 'react';
 import MergeTableSelector from './MergeTableSelector';
+import Icon from '../shared/Icon';
 
 const CheckoutHeader = ({
     isConfirmed,
@@ -21,9 +22,9 @@ const CheckoutHeader = ({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => isConfirmed ? navigate('/staff-order') : navigate(`/order/${tableId}`)}
-                        className="mdt-btn-back p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
+                        className="mdt-btn-back p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
                     >
-                        <svg width="24px" height="24px" viewBox="0 0 24 24" strokeWidth="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000"><path d="M21 12L3 12M3 12L11.5 3.5M3 12L11.5 20.5" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                        <Icon name="arrowLeft" className="w-6 h-6 text-slate-800" size={24} />
                     </button>
                     <h1 className="h6">{isConfirmed ? 'Chi tiết hóa đơn' : 'Tạo hóa đơn'}</h1>
                 </div>
@@ -55,7 +56,9 @@ const CheckoutHeader = ({
                                     );
                                 })}
                         </select>
-                        <svg className="w-3.5 h-3.5 absolute right-3 pointer-events-none text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 flex items-center justify-center">
+                            <Icon name="chevronDown" className="w-3.5 h-3.5" size={14} />
+                        </div>
                     </div>
 
                     <MergeTableSelector

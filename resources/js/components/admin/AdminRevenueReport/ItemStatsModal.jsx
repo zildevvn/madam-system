@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatPrice } from '../../../shared/utils/formatCurrency';
 import statsApi from '../../../services/statsApi';
+import Icon from '../../shared/Icon';
 
 /**
  * ItemStatsModal
@@ -49,9 +50,7 @@ const ItemStatsModal = ({ isOpen, onClose, filters, type, totalItemsCount }) => 
                 <div className="px-4 md:px-6 py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-white">
                     <div className="flex items-center gap-4">
                         <div className={`p-3 rounded-[12px] text-white shadow-md ${type === 'top' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={type === 'top' ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
-                            </svg>
+                            <Icon name={type === 'top' ? 'trendingUp' : 'trendingDown'} className="w-6 h-6" size={24} />
                         </div>
                         <div>
                             <h5 className="text-slate-900 mb-0 font-black text-base uppercase tracking-widest leading-none mb-1">
@@ -63,7 +62,7 @@ const ItemStatsModal = ({ isOpen, onClose, filters, type, totalItemsCount }) => 
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-slate-400">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <Icon name="close" className="w-6 h-6" size={24} />
                     </button>
                 </div>
 

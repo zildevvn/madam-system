@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import ProductItem from '../ProductItem';
+import Icon from '../shared/Icon';
 
 const CheckoutItemList = ({
     selectedItems,
@@ -130,7 +131,7 @@ const CheckoutItemList = ({
                                                         disabled={splitItem.quantity <= 1}
                                                         className={`w-6 h-6 flex items-center justify-center rounded-full border-none transition-all ${splitItem.quantity <= 1 ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
                                                     >
-                                                        <svg width="12" height="12" strokeWidth="2.5" viewBox="0 0 24 24" fill="none"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                        <Icon name="minus" className="w-3 h-3" size={12} />
                                                     </button>
  
                                                     <span className="px-2 font-black text-gray-800 text-[10px] min-w-[18px] text-center">
@@ -145,7 +146,7 @@ const CheckoutItemList = ({
                                                         disabled={splitItem.quantity >= group.totalQuantity}
                                                         className={`w-6 h-6 flex items-center justify-center rounded-full border-none transition-all ${splitItem.quantity >= group.totalQuantity ? 'bg-transparent text-gray-300' : 'bg-orange-500 text-white shadow-md active:scale-90 cursor-pointer'}`}
                                                     >
-                                                        <svg width="12" height="12" strokeWidth="3" viewBox="0 0 24 24" fill="none"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                        <Icon name="plus" className="w-3 h-3" size={12} />
                                                     </button>
                                                 </div>
                                             )}

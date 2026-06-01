@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 const KitchenDishList = ({ consolidatedItems, isBar = false }) => {
     return (
@@ -34,9 +35,7 @@ const KitchenDishList = ({ consolidatedItems, isBar = false }) => {
                     </div>
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-gray-300 italic py-20">
-                        <svg className="w-16 h-16 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <Icon name="clock" className="w-16 h-16 mb-4 opacity-20" size={64} strokeWidth={1} />
                         <p>Không có {isBar ? 'đồ uống' : 'món'} nào đang chờ xử lý</p>
                     </div>
                 )}

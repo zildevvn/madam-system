@@ -1,6 +1,7 @@
 import React from 'react';
 import { useWatch } from 'react-hook-form';
 import { formatPrice } from '../../shared/utils/formatCurrency';
+import Icon from '../shared/Icon';
 
 const ReservationDishesForm = ({ fields, register, watch, setValue, append, remove, inputClasses, sectionTitle }) => {
 
@@ -32,8 +33,8 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
     };
     return (
         <>
-            <div className="mb-1">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20v-6M9 20v-4M15 20v-8M18 20V4M6 20v-2" /></svg>
+            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <Icon name="utensils" size={18} strokeWidth={2.5} />
                 Dishes Selection
             </div>
             <div className="space-y-4">
@@ -60,8 +61,8 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                                             <option value="drink">Drink</option>
                                             <option value="packaged_drink">Packaged Drink</option>
                                         </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/select:text-orange-500 transition-colors">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover/select:text-orange-500 transition-colors flex items-center justify-center">
+                                            <Icon name="chevronDown" className="w-3 h-3" size={12} strokeWidth={3} />
                                         </div>
                                     </div>
                                 </div>
@@ -113,8 +114,8 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                                     className="absolute -top-3 -right-3 xl:relative xl:top-auto xl:right-auto xl:mt-5 p-2 bg-white xl:bg-red-50 text-red-400 xl:text-red-500 rounded-full xl:rounded-xl hover:bg-red-500 hover:text-white transition-all border border-gray-100 xl:border-none shadow-sm xl:shadow-none cursor-pointer h-8 w-8 xl:h-[46px] xl:w-[46px] flex items-center justify-center shrink-0 z-10 group/delete"
                                     title="Remove Dish"
                                 >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="hidden xl:block group-hover/delete:scale-110 transition-transform"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="block xl:hidden"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                    <Icon name="trash" className="hidden xl:block group-hover/delete:scale-110 transition-transform" size={16} strokeWidth={2.5} />
+                                    <Icon name="close" className="block xl:hidden" size={14} strokeWidth={3} />
                                 </button>
                             </div>
                         </div>
@@ -127,8 +128,8 @@ const ReservationDishesForm = ({ fields, register, watch, setValue, append, remo
                     }}
                     className="w-full py-3 mdt-bg-primary text-white rounded-xl text-[11px] font-black text-orange-600 hover:border-orange-400 transition-all cursor-pointer flex items-center justify-center gap-2 group shadow-sm"
                 >
-                    <div className="bg-white text-orange-600 p-1 rounded-lg group-hover:scale-110 transition-transform shadow-sm">
-                        <svg className="group-hover:rotate-90 transition-transform duration-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+                    <div className="bg-white text-orange-600 p-1 rounded-lg group-hover:scale-110 transition-transform shadow-sm flex items-center justify-center">
+                        <Icon name="plus" className="group-hover:rotate-90 transition-transform duration-500" size={14} strokeWidth={4} />
                     </div>
                     <span className="uppercase tracking-widest">Add New Dish</span>
                 </button>

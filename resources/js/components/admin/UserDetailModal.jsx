@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../shared/Icon';
 
 const UserDetailModal = ({ isOpen, onClose, user, roles }) => {
     if (!isOpen || !user) return null;
@@ -58,13 +59,11 @@ const UserDetailModal = ({ isOpen, onClose, user, roles }) => {
                             </div>
                         </div>
                         <button 
-                            onClick={onClose} 
-                            className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all" 
-                            type="button"
+                             onClick={onClose} 
+                             className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all" 
+                             type="button"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <Icon name="close" className="w-5 h-5" size={20} />
                         </button>
                     </div>
 
@@ -140,12 +139,12 @@ const UserDetailModal = ({ isOpen, onClose, user, roles }) => {
                                         >
                                             <img src={`/storage/${user.id_card_image}`} alt="ID Card" className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                <Icon name="search" className="w-8 h-8 text-white" size={32} />
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="h-40 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400">
-                                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <Icon name="image" className="w-8 h-8" size={32} />
                                             <span className="text-[10px] font-bold uppercase tracking-wider mt-2">Chưa đính kèm</span>
                                         </div>
                                     )}
@@ -161,12 +160,12 @@ const UserDetailModal = ({ isOpen, onClose, user, roles }) => {
                                         >
                                             <img src={`/storage/${user.contract_image}`} alt="Contract" className="w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                <Icon name="search" className="w-8 h-8 text-white" size={32} />
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="h-40 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400">
-                                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <Icon name="image" className="w-8 h-8" size={32} />
                                             <span className="text-[10px] font-bold uppercase tracking-wider mt-2">Chưa đính kèm</span>
                                         </div>
                                     )}
@@ -201,7 +200,7 @@ const UserDetailModal = ({ isOpen, onClose, user, roles }) => {
                             onClick={() => setLightboxImage(null)}
                             className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <Icon name="close" className="w-6 h-6" size={24} />
                         </button>
                     </div>
                 </div>
