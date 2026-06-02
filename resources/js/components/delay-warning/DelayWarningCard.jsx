@@ -1,11 +1,7 @@
 import React from 'react';
 import { safeParseDate } from '../../shared/utils/dateUtils';
 import { ADDITIONAL_ITEM_THRESHOLD_MS, NEW_ORDER_PULSING_TIMEOUT_S } from '../../shared/constants/orderThresholds';
-const NoteIcon = () => (
-    <svg width="12px" height="12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-    </svg>
-);
+import Icon from '../shared/Icon';
 
 /**
  * Individual card representing a delayed dish and the tables waiting for it.
@@ -44,14 +40,12 @@ const DelayWarningCard = React.memo(({
                         return (
                             <span key={tid} className={`text-[12px] font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded uppercase flex items-center gap-1`}>
                                 {isNew && (
-                                    <svg className={`w-2.5 h-2.5 text-red-500 ${isPulsing ? 'animate-pulse' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                                    </svg>
+                                    <Icon name="plusCircle" className={`w-2.5 h-2.5 text-red-500 ${isPulsing ? 'animate-pulse' : ''}`} size={10} />
                                 )}
                                 Bàn {t.name.toString().replace(/^Bàn\s+/i, '')}
                                 {hasNote && (
-                                    <span className="text-orange-600 ml-1">
-                                        <NoteIcon />
+                                    <span className="text-orange-600 ml-1 flex items-center">
+                                        <Icon name="message" className="w-3 h-3" size={12} />
                                     </span>
                                 )}
                             </span>

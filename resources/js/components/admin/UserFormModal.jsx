@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
+import Icon from '../shared/Icon';
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processing = false }) => {
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
@@ -177,9 +178,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0 bg-slate-50/50">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                            </svg>
+                            <Icon name="userPlus" className="w-5 h-5" size={20} />
                         </div>
                         <div>
                             <h4 className="text-gray-900 mb-0 font-black text-lg leading-tight">
@@ -195,9 +194,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                         className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all" 
                         type="button"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <Icon name="close" className="w-5 h-5" size={20} />
                     </button>
                 </div>
 
@@ -259,9 +256,9 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
                                     >
                                         {showPassword ? (
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <Icon name="eye" className="w-5 h-5" size={20} />
                                         ) : (
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                                            <Icon name="eyeOff" className="w-5 h-5" size={20} />
                                         )}
                                     </button>
                                 </div>
@@ -313,8 +310,8 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                             <option key={role.value} value={role.value}>{role.label}</option>
                                         ))}
                                     </select>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 flex items-center justify-center">
+                                        <Icon name="chevronDown" className="w-4 h-4" size={16} />
                                     </div>
                                 </div>
                             </div>
@@ -409,9 +406,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                             <img src={idCardPreview} alt="ID Card Preview" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="flex flex-col items-center justify-center text-slate-400">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                                </svg>
+                                                <Icon name="plus" className="w-6 h-6" size={24} />
                                                 <span className="text-[8px] font-bold uppercase tracking-widest mt-1">Tải ảnh</span>
                                             </div>
                                         )}
@@ -429,7 +424,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                                 onClick={() => removeFile('id_card')}
                                                 className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1 hover:text-red-600 transition-colors flex items-center gap-1"
                                             >
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                <Icon name="trash" className="w-3 h-3" size={12} />
                                                 Gỡ bỏ
                                             </button>
                                         )}
@@ -459,9 +454,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                             <img src={contractPreview} alt="Contract Preview" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="flex flex-col items-center justify-center text-slate-400">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                                </svg>
+                                                <Icon name="plus" className="w-6 h-6" size={24} />
                                                 <span className="text-[8px] font-bold uppercase tracking-widest mt-1">Tải ảnh</span>
                                             </div>
                                         )}
@@ -479,7 +472,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, roles, user = null, processi
                                                 onClick={() => removeFile('contract')}
                                                 className="text-[9px] font-black text-red-500 uppercase tracking-widest mt-1 hover:text-red-600 transition-colors flex items-center gap-1"
                                             >
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                <Icon name="trash" className="w-3 h-3" size={12} />
                                                 Gỡ bỏ
                                             </button>
                                         )}

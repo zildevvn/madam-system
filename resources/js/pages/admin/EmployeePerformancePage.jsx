@@ -16,7 +16,9 @@ const EmployeePerformancePage = () => {
         setEndDate,
         stats,
         loading,
-        handlePeriodChange
+        error,
+        handlePeriodChange,
+        fetchPerformance
     } = useEmployeePerformance();
 
     const [activeTab, setActiveTab] = useState('restaurant'); // restaurant, seller
@@ -131,6 +133,18 @@ const EmployeePerformancePage = () => {
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[40px] border border-slate-100 shadow-sm animate-pulse">
                     <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-orange-500 animate-spin mb-4"></div>
                     <p className="text-slate-400 font-bold text-[11px] tracking-widest uppercase">Đang đồng bộ dữ liệu hiệu suất...</p>
+                </div>
+            ) : error ? (
+                <div className="py-16 px-6 flex flex-col items-center justify-center bg-white rounded-[32px] border border-red-100 shadow-sm text-center max-w-xl mx-auto animate-in fade-in duration-300">
+                    <div className="w-16 h-16 bg-red-50 rounded-[24px] flex items-center justify-center text-red-500 text-2xl mb-4 shadow-sm">⚠️</div>
+                    <h4 className="text-slate-900 font-black text-xs uppercase tracking-wider mb-2">Đã xảy ra sự cố tải dữ liệu</h4>
+                    <p className="text-slate-500 text-xs mb-6 max-w-md leading-relaxed">{error}</p>
+                    <button
+                        onClick={fetchPerformance}
+                        className="px-6 py-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-orange-500/20 cursor-pointer border-none"
+                    >
+                        Thử lại ngay
+                    </button>
                 </div>
             ) : (
                 <div className="animate-in fade-in duration-300">

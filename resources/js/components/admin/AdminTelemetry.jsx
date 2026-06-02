@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 const AdminTelemetry = ({ testPrinter, testingPrinter, testWebsocket, testingWS, setLogs, logs }) => {
     return (
@@ -24,7 +25,7 @@ const AdminTelemetry = ({ testPrinter, testingPrinter, testWebsocket, testingWS,
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-[24px] sm:rounded-[32px] bg-white/[0.03] border border-white/5 group/link hover:bg-white/[0.06] hover:border-orange-500/30 transition-all duration-300 gap-4 shadow-inner">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500 group-hover/link:animate-pulse shadow-sm">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                <Icon name="printer" size={20} strokeWidth={2} className="w-5 h-5" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[#475569] text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">Terminal</span>
@@ -43,7 +44,7 @@ const AdminTelemetry = ({ testPrinter, testingPrinter, testWebsocket, testingWS,
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-[24px] sm:rounded-[32px] bg-white/[0.03] border border-white/5 group/link hover:bg-white/[0.06] hover:border-blue-500/30 transition-all duration-300 gap-4 shadow-inner">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover/link:animate-pulse shadow-sm">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                <Icon name="zap" size={20} strokeWidth={2} className="w-5 h-5" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[#475569] text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">Broadcaster</span>

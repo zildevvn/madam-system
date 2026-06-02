@@ -3,6 +3,7 @@ import { useUserProfile } from '../hooks/useUserProfile';
 import DocumentUploadCard from '../components/profile/DocumentUploadCard';
 import FlexibleShiftCalendar from '../components/profile/FlexibleShiftCalendar';
 import LeaveRegistrySection from '../components/profile/LeaveRegistrySection';
+import Icon from '../components/shared/Icon';
 
 // [WHY] Orchestrator page for Employee personal profile management.
 // Delegates data management, hooks state processing, validation, and APIs completely to useUserProfile hook.
@@ -101,7 +102,7 @@ const UserProfilePage = () => {
                                 </div>
                             )}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                <Icon name="camera" className="w-6 h-6 text-white" size={24} strokeWidth={2.5} />
                             </div>
                             <input
                                 type="file"
@@ -232,9 +233,9 @@ const UserProfilePage = () => {
                                                     : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
                                                 }`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors ${workShift === 'Ca sáng' ? 'bg-orange-100 text-orange-500' : 'bg-slate-100 text-slate-400'
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors flex-shrink-0 ${workShift === 'Ca sáng' ? 'bg-orange-100 text-orange-500' : 'bg-slate-100 text-slate-400'
                                                 }`}>
-                                                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+                                                <Icon name="sun" className="w-4.5 h-4.5" size={18} strokeWidth={2.5} />
                                             </div>
                                             <span className="text-xs font-black uppercase tracking-wider">Ca sáng</span>
                                             <span className="text-[9px] text-slate-400 font-medium mt-0.5">Ca làm việc sáng</span>
@@ -247,9 +248,9 @@ const UserProfilePage = () => {
                                                     : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
                                                 }`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors ${workShift === 'Ca tối' ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors flex-shrink-0 ${workShift === 'Ca tối' ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'
                                                 }`}>
-                                                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                                                <Icon name="moon" className="w-4.5 h-4.5" size={18} strokeWidth={2.5} />
                                             </div>
                                             <span className="text-xs font-black uppercase tracking-wider">Ca tối</span>
                                             <span className="text-[9px] text-slate-400 font-medium mt-0.5">Ca làm việc tối</span>
@@ -262,9 +263,9 @@ const UserProfilePage = () => {
                                                     : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
                                                 }`}
                                         >
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors ${workShift === 'Ca full time' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors flex-shrink-0 ${workShift === 'Ca full time' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'
                                                 }`}>
-                                                <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                <Icon name="briefcase" className="w-4.5 h-4.5" size={18} strokeWidth={2.5} />
                                             </div>
                                             <span className="text-xs font-black uppercase tracking-wider">Ca full time</span>
                                             <span className="text-[9px] text-slate-400 font-medium mt-0.5">Ca làm việc cả ngày</span>
@@ -359,9 +360,9 @@ const UserProfilePage = () => {
                         <img src={lightboxImage} alt="Zoomed Document" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200" />
                         <button
                             onClick={() => setLightboxImage(null)}
-                            className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none cursor-pointer"
+                            className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none cursor-pointer flex items-center justify-center"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <Icon name="close" className="w-6 h-6" size={24} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>

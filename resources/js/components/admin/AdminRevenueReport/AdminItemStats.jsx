@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { formatPrice } from '../../../shared/utils/formatCurrency';
 import ItemStatsModal from './ItemStatsModal';
+import Icon from '../../shared/Icon';
 
 /**
  * AdminItemStats
@@ -22,7 +23,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                     <div className="p-4 md:p-6 border-b border-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-emerald-50/30 gap-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-emerald-500 text-white rounded-[12px] shadow-sm group-hover:scale-110 transition-transform">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                <Icon name="trendingUp" className="w-5 h-5" size={20} />
                             </div>
                             <div>
                                 <h5 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Bán chạy nhất</h5>
@@ -67,7 +68,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                                         <tr>
                                             <td colSpan="3" className="py-16 text-center">
                                                 <div className="flex flex-col items-center opacity-20">
-                                                    <svg className="w-12 h-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                                                    <Icon name="package" className="w-12 h-12 mb-4" size={48} strokeWidth={1.5} />
                                                     <p className="text-xs font-black uppercase tracking-widest">Chưa có dữ liệu bán hàng</p>
                                                 </div>
                                             </td>
@@ -84,7 +85,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                     <div className="p-4 md:p-6 border-b border-slate-50 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-rose-50/30 gap-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-rose-500 text-white rounded-[12px] shadow-sm group-hover:scale-110 transition-transform">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+                                <Icon name="trendingDown" className="w-5 h-5" size={20} />
                             </div>
                             <div>
                                 <h5 className="text-sm font-black text-slate-800 uppercase tracking-widest leading-none mb-1">Bán ít nhất</h5>
@@ -129,7 +130,7 @@ const AdminItemStats = ({ stats, loading, filters }) => {
                                         <tr>
                                             <td colSpan="3" className="py-16 text-center">
                                                 <div className="flex flex-col items-center opacity-20">
-                                                    <svg className="w-12 h-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                                                    <Icon name="package" className="w-12 h-12 mb-4" size={48} strokeWidth={1.5} />
                                                     <p className="text-xs font-black uppercase tracking-widest">Chưa có dữ liệu bán hàng</p>
                                                 </div>
                                             </td>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Icon from './shared/Icon';
 
 const TableDetailModal = ({
     tableId,
@@ -80,16 +81,14 @@ const TableDetailModal = ({
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {guestCount > 0 && (
                                 <span className="text-[12px] font-bold text-gray-500 flex items-center gap-1">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                    <Icon name="users" size={12} className="w-3 h-3 text-gray-500" />
                                     {guestCount} khách
                                 </span>
                             )}
                             {staffName && (
                                 <span className="text-[12px] font-bold text-gray-500 flex items-center gap-1">
                                     <span className="text-gray-300">•</span>
-                                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
+                                    <Icon name="user" size={14} className="w-3.5 h-3.5 text-gray-500" />
                                     {staffName}
                                 </span>
                             )}
@@ -104,7 +103,7 @@ const TableDetailModal = ({
                         onClick={onClose}
                         className="btn-close p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        <Icon name="close" size={24} className="w-6 h-6" />
                     </button>
                 </div>
 
@@ -132,9 +131,7 @@ const TableDetailModal = ({
                                             className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isFullyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : (addedQty > 0 ? 'bg-orange-400 border-orange-400 shadow-lg shadow-orange-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110')}`}
                                         >
                                             {(isFullyDone || addedQty > 0) && (
-                                                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                </svg>
+                                                <Icon name="check" size={14} className="w-3.5 h-3.5 text-white" />
                                             )}
                                         </div>
                                         <div className="flex-1">
@@ -166,7 +163,7 @@ const TableDetailModal = ({
                                                             disabled={addedQty >= item.pendingQuantity}
                                                             className={`w-7 h-7 flex items-center justify-center rounded-full border-none transition-all ${addedQty >= item.pendingQuantity ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
                                                         >
-                                                            <svg width="14" height="14" strokeWidth="3" viewBox="0 0 24 24" fill="none"><path d="M6 12H18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                            <Icon name="minus" size={14} strokeWidth={3} />
                                                         </button>
 
                                                         <span className={`px-2 font-black text-[14px] min-w-[28px] text-center ${addedQty > 0 ? 'text-orange-600' : 'text-gray-800'}`}>
@@ -182,7 +179,7 @@ const TableDetailModal = ({
                                                             disabled={addedQty <= 0}
                                                             className={`w-7 h-7 flex items-center justify-center rounded-full border-none transition-all ${addedQty <= 0 ? 'bg-transparent text-gray-300' : 'bg-white text-gray-700 shadow-sm active:scale-90 cursor-pointer'}`}
                                                         >
-                                                            <svg width="14" height="14" strokeWidth="3" viewBox="0 0 24 24" fill="none"><path d="M6 12H12M18 12H12M12 12V6M12 12V18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                                                            <Icon name="plus" size={14} strokeWidth={3} />
                                                         </button>
                                                     </div>
                                                 )}
@@ -200,7 +197,7 @@ const TableDetailModal = ({
                                             </div>
                                             {item.note && (
                                                 <div className="mt-2 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                                                    <svg className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" /></svg>
+                                                    <Icon name="pencil" size={12} className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" strokeWidth={2.5} />
                                                     <p className="m-0 text-[11px] font-bold text-gray-800 leading-tight">
                                                         {item.note}
                                                     </p>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
@@ -23,11 +23,23 @@ const AdminDateFilters = ({
     setEndDate,
     getWeekRange
 }) => {
-    const years = Array.from({ length: 12 }, (_, i) => new Date().getFullYear() - i);
-    const months = [
+    const years = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        return Array.from({ length: 12 }, (_, i) => currentYear - i);
+    }, []);
+
+    const { currentYearNum, currentMonthNum } = useMemo(() => {
+        const d = new Date();
+        return {
+            currentYearNum: d.getFullYear(),
+            currentMonthNum: d.getMonth()
+        };
+    }, []);
+
+    const months = useMemo(() => [
         "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
         "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
-    ];
+    ], []);
 
     // [WHY] Parsing once at the top level avoids repetitive splitting/parsing logic inside the JSX.
     const dateObj = parseISO(selectedDate);
@@ -122,7 +134,7 @@ const AdminDateFilters = ({
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                             {months.map((m, i) => {
-                                const isFuture = currentYear === new Date().getFullYear() && i > new Date().getMonth();
+                                const isFuture = currentYear === currentYearNum && i > currentMonthNum;
                                 const isActive = currentMonthIdx === i;
 
                                 return (

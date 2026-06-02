@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getUserByIdApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi } from '../../services/leaveService';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
+import Icon from '../../components/shared/Icon';
 
 const EmployeeDetailPage = () => {
     const { id } = useParams();
@@ -163,7 +164,7 @@ const EmployeeDetailPage = () => {
             time: 'Hôm nay, 08:30 AM',
             icon: (
                 <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <Icon name="checkCircle" className="w-4 h-4" size={16} strokeWidth={2.5} />
                 </div>
             ),
             title: 'Bắt đầu ca làm việc',
@@ -174,7 +175,7 @@ const EmployeeDetailPage = () => {
             time: 'Hôm qua, 05:45 PM',
             icon: (
                 <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <Icon name="clock" className="w-4 h-4" size={16} strokeWidth={2.5} />
                 </div>
             ),
             title: 'Hoàn thành ca làm việc',
@@ -185,7 +186,7 @@ const EmployeeDetailPage = () => {
             time: formatDate(user.join_date),
             icon: (
                 <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <Icon name="clipboard" className="w-4 h-4" size={16} strokeWidth={2.5} />
                 </div>
             ),
             title: 'Ký kết hợp đồng lao động',
@@ -208,20 +209,16 @@ const EmployeeDetailPage = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/admin/personnel')}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all border-none cursor-pointer"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all border-none cursor-pointer animate-none shadow-none"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
+                        <Icon name="arrowLeft" className="w-4 h-4" size={16} strokeWidth={2.5} />
                         <span>Quay lại</span>
                     </button>
                     <button
                         onClick={() => navigate(`/admin/personnel/edit/${user.id}`)}
                         className="flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-orange-600 transition-all shadow-md active:scale-95 border-none cursor-pointer"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <Icon name="pencil" className="w-4 h-4" size={16} strokeWidth={2.5} />
                         <span>Chỉnh sửa hồ sơ</span>
                     </button>
                 </div>
@@ -294,16 +291,16 @@ const EmployeeDetailPage = () => {
                                 {user.id_card_image ? (
                                     <div
                                         onClick={() => setLightboxImage(`/storage/${user.id_card_image}`)}
-                                        className="h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-zoom-in hover:brightness-95 transition-all relative group"
+                                        className="h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-zoom-in hover:brightness-95 transition-all relative flex items-center justify-center group"
                                     >
                                         <img src={`/storage/${user.id_card_image}`} alt="ID Card" className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                            <Icon name="eye" className="w-6 h-6 text-white" size={24} strokeWidth={2} />
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="h-32 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 text-center p-2">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        <Icon name="image" className="w-6 h-6" size={24} strokeWidth={2} />
                                         <span className="text-[9px] font-bold uppercase tracking-wider mt-1 block">Chưa đính kèm</span>
                                     </div>
                                 )}
@@ -314,16 +311,16 @@ const EmployeeDetailPage = () => {
                                 {user.contract_image ? (
                                     <div
                                         onClick={() => setLightboxImage(`/storage/${user.contract_image}`)}
-                                        className="h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-zoom-in hover:brightness-95 transition-all relative group"
+                                        className="h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-zoom-in hover:brightness-95 transition-all relative flex items-center justify-center group"
                                     >
                                         <img src={`/storage/${user.contract_image}`} alt="Contract" className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                            <Icon name="eye" className="w-6 h-6 text-white" size={24} strokeWidth={2} />
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="h-32 rounded-xl border border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 text-center p-2">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        <Icon name="image" className="w-6 h-6" size={24} strokeWidth={2} />
                                         <span className="text-[9px] font-bold uppercase tracking-wider mt-1 block">Chưa đính kèm</span>
                                     </div>
                                 )}
@@ -452,7 +449,7 @@ const EmployeeDetailPage = () => {
                                     let badgeStyle = 'bg-amber-100 text-amber-800 border-amber-200/50';
                                     let statusIcon = (
                                         <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/10">
-                                            <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            <Icon name="clock" className="w-4 h-4 animate-pulse" size={16} strokeWidth={2.5} />
                                         </div>
                                     );
 
@@ -462,7 +459,7 @@ const EmployeeDetailPage = () => {
                                         badgeStyle = 'bg-emerald-100 text-emerald-800 border-emerald-200/50';
                                         statusIcon = (
                                             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/10">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                <Icon name="check" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                             </div>
                                         );
                                     } else if (leave.status === 'rejected') {
@@ -471,7 +468,7 @@ const EmployeeDetailPage = () => {
                                         badgeStyle = 'bg-red-100 text-red-800 border-red-200/50';
                                         statusIcon = (
                                             <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/10">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                <Icon name="close" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                             </div>
                                         );
                                     } else if (leave.status === 'pending_cancel') {
@@ -480,7 +477,7 @@ const EmployeeDetailPage = () => {
                                         badgeStyle = 'bg-rose-100 text-rose-800 border-rose-200/50';
                                         statusIcon = (
                                             <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-500/10">
-                                                <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                <Icon name="clock" className="w-4 h-4 animate-pulse" size={16} strokeWidth={2.5} />
                                             </div>
                                         );
                                     } else if (leave.status === 'approved_cancel') {
@@ -489,7 +486,7 @@ const EmployeeDetailPage = () => {
                                         badgeStyle = 'bg-slate-100 text-slate-500 border-slate-200/50';
                                         statusIcon = (
                                             <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                <Icon name="check" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                             </div>
                                         );
                                     } else if (leave.status === 'rejected_cancel') {
@@ -498,7 +495,7 @@ const EmployeeDetailPage = () => {
                                         badgeStyle = 'bg-orange-100 text-orange-800 border-orange-200/50';
                                         statusIcon = (
                                             <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-orange-500/10">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                <Icon name="close" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                             </div>
                                         );
                                     }
@@ -530,7 +527,7 @@ const EmployeeDetailPage = () => {
                                                 </span>
                                                 {leave.status !== 'pending' && leave.approver && (
                                                     <span className="text-[8px] text-slate-400 font-bold mt-1.5 flex items-center gap-1">
-                                                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                                        <Icon name="shield" className="w-2.5 h-2.5" size={10} strokeWidth={2.5} />
                                                         {leave.approver.name}
                                                     </span>
                                                 )}
@@ -550,16 +547,16 @@ const EmployeeDetailPage = () => {
             {/* Lightbox */}
             {lightboxImage && (
                 <div
-                    onClick={() => setLightboxImage(null)}
-                    className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+                     onClick={() => setLightboxImage(null)}
+                     className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
                 >
                     <div className="max-w-4xl max-h-[90vh] relative">
                         <img src={lightboxImage} alt="Zoomed Document" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
                         <button
                             onClick={() => setLightboxImage(null)}
-                            className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none cursor-pointer"
+                            className="absolute top-4 right-4 bg-black/50 hover:bg-black/75 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors border-none cursor-pointer flex items-center justify-center"
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <Icon name="close" className="w-6 h-6" size={24} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>

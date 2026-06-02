@@ -5,6 +5,7 @@ import { getIcon } from '../shared/constants/categoryIcons';
 import { useAppDispatch } from '../store/hooks';
 import { addCustomToCart } from '../store/slices/orderSlice';
 import { formatPrice } from '../shared/utils/formatCurrency';
+import Icon from '../components/shared/Icon';
 
 const Order = () => {
     const {
@@ -85,7 +86,7 @@ const Order = () => {
                             className="item-category flex flex-col items-center justify-center text-center py-[12px] px-[4px] md:px-4 md:py-6 cursor-pointer border-none bg-gradient-to-br from-orange-50 to-orange-100/50 hover:from-orange-100 hover:to-orange-200/50 border-b border-orange-100 transition-all duration-300 group"
                         >
                             <div className="category-icon mb-1 md:mb-2 text-orange-500 bg-orange-100 p-2 rounded-xl group-hover:scale-110 group-hover:bg-orange-200 transition-all duration-300">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                <Icon name="plus" size={20} strokeWidth={2.5} />
                             </div>
                             <span className="category-name text-[10px] md:text-[11px] font-black uppercase tracking-wider text-orange-600">Món Thêm</span>
                         </button>
@@ -115,9 +116,7 @@ const Order = () => {
                     <div className="w-full">
                         {filteredCategories.length === 0 ? (
                             <div className="flex flex-col items-center justify-center p-8 text-center sm:min-h-[400px]">
-                                <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                                <Icon name="search" size={64} className="w-16 h-16 text-gray-300 mb-4" strokeWidth={1} />
                                 <p className="text-gray-500 font-medium">Không tìm thấy món ăn, thức uống nào</p>
                             </div>
                         ) : (
@@ -152,7 +151,7 @@ const Order = () => {
                                                         <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${animatingItems[product.id] ? 'opacity-100 bg-black/20 backdrop-blur-[2px]' : 'opacity-0 bg-transparent pointer-events-none'}`}>
                                                             <div className={`flex flex-col items-center justify-center transition-all duration-500 transform ${animatingItems[product.id] ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-50 opacity-0'}`}>
                                                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-[#03b879] rounded-full flex items-center justify-center shadow-lg shadow-[#03b879]/40 mb-1">
-                                                                    <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                                                    <Icon name="check" size={20} className="w-5 h-5 md:w-6 md:h-6 text-white" strokeWidth={3} />
                                                                 </div>
                                                                 <span className="text-white font-bold text-[11px] md:text-[13px] drop-shadow-md tracking-wide">
                                                                     +1 {category.type === 'drink' ? 'Ly' : 'Phần'}
@@ -188,10 +187,7 @@ const Order = () => {
                         <div className="px-5 py-3.5 flex items-center justify-between border-b border-gray-100 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                                    <svg className="w-[18px] h-[18px] text-orange-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    </svg>
+                                    <Icon name="plus" size={18} className="text-orange-500" strokeWidth={2.5} />
                                 </div>
                                 <div>
                                     <p className="m-0 text-[9px] font-black uppercase tracking-widest text-gray-600 leading-none mb-0.5">Gọi món tự do</p>
@@ -207,7 +203,7 @@ const Order = () => {
                                 }}
                                 className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500 active:scale-95"
                             >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <Icon name="close" size={15} strokeWidth={2.5} />
                             </button>
                         </div>
 
@@ -282,7 +278,7 @@ const Order = () => {
                                             onClick={() => setCustomQty(Math.max(1, customQty - 1))}
                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-150 hover:bg-gray-100 text-gray-600 active:scale-95 transition-all cursor-pointer"
                                         >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                            <Icon name="minus" size={14} strokeWidth={3} />
                                         </button>
                                         <input
                                             type="number"
@@ -297,7 +293,7 @@ const Order = () => {
                                             onClick={() => setCustomQty(customQty + 1)}
                                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500 hover:bg-orange-600 text-white active:scale-95 transition-all cursor-pointer shadow-sm shadow-orange-500/20"
                                         >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                            <Icon name="plus" size={14} strokeWidth={3} />
                                         </button>
                                     </div>
                                 </div>

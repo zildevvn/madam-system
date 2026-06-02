@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, formatTime, formatDate }) => {
     return (
@@ -58,7 +59,7 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                         <div className="flex items-center justify-center gap-1.5">
-                                            <svg className="text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+                                            <Icon name="user" className="text-gray-400" size={14} strokeWidth={3} />
                                             <span className="text-sm font-black text-gray-800">{r.number_of_guests}</span>
                                         </div>
                                     </td>

@@ -1,5 +1,6 @@
 import React from 'react';
 import DelayWarningSection from './DelayWarningSection';
+import Icon from '../shared/Icon';
 
 /**
  * Orchestrates the list of delay warning sections.
@@ -35,9 +36,7 @@ const DelayWarningsList = React.memo(({
                 </>
             ) : (
                 <div className="h-full flex flex-col items-center justify-center text-gray-300 italic py-10 opacity-60">
-                    <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Icon name="checkCircle" className="w-12 h-12 mb-2" size={48} />
                     <p className="text-xs">Không có món nào đang chờ</p>
                 </div>
             )}

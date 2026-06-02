@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatPrice } from '../../../shared/utils/formatCurrency';
+import Icon from '../../shared/Icon';
 
 /**
  * AdminExpenses
@@ -59,7 +60,7 @@ const AdminExpenses = ({ stats, loading, period }) => {
                     disabled={current === 1}
                     className="p-2 rounded-lg border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
                 >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                    <Icon name="chevronLeft" className="w-4 h-4" size={16} />
                 </button>
                 <div className="flex items-center gap-1">
                     {[...Array(total)].map((_, i) => (
@@ -80,7 +81,7 @@ const AdminExpenses = ({ stats, loading, period }) => {
                     disabled={current === total}
                     className="p-2 rounded-lg border border-slate-100 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
                 >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7-7" /></svg>
+                    <Icon name="chevronRight" className="w-4 h-4" size={16} />
                 </button>
             </div>
         );

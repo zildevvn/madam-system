@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
+import Icon from '../shared/Icon';
 
 const ReservationDetailModal = ({ reservation, tables, onClose }) => {
     if (!reservation) return null;
@@ -37,9 +38,9 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-xl transition-all border-none cursor-pointer flex-shrink-0"
+                        className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-xl transition-all border-none cursor-pointer flex-shrink-0 flex items-center justify-center"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                        <Icon name="close" className="w-5 h-5" size={20} strokeWidth={2.5} />
                     </button>
                 </div>
 
@@ -70,7 +71,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                     {isGroup && (
                         <div className="flex flex-wrap items-center gap-4 px-1 py-1">
                             <div className="flex items-center gap-2 text-[11px] sm:text-[12px] font-black text-gray-900 uppercase tracking-[0.2em] whitespace-nowrap">
-                                <svg className="text-orange-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                <Icon name="mapPin" className="text-orange-500" size={14} strokeWidth={3} />
                                 Tables:
                             </div>
                             <div className="flex flex-wrap gap-2">

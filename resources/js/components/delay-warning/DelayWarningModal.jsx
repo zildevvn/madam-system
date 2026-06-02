@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { safeParseDate } from '../../shared/utils/dateUtils';
+import Icon from '../shared/Icon';
 
 /**
  * Modal to display detailed notes for a dish, categorized by table,
@@ -57,9 +58,9 @@ const DelayWarningModal = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="btn-close p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer"
+                        className="btn-close p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
                     >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        <Icon name="close" className="w-6 h-6 text-slate-500" size={24} />
                     </button>
                 </div>
 
@@ -78,9 +79,7 @@ const DelayWarningModal = ({
                                     <div className="flex items-center gap-4 flex-1">
                                         <div className={`w-4 h-4 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${isCurrentlyDone ? 'bg-green-500 border-green-500 shadow-lg shadow-green-100' : 'bg-white border-gray-200 hover:border-orange-400 group-hover:scale-110'}`}>
                                             {isCurrentlyDone && (
-                                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                </svg>
+                                                <Icon name="check" className="w-3 h-3 text-white" size={12} />
                                             )}
                                         </div>
                                         <div className="flex-1">
@@ -107,7 +106,7 @@ const DelayWarningModal = ({
                                             </div>
                                             {t.note && (
                                                 <div className="mt-2 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                                                    <svg className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" /></svg>
+                                                    <Icon name="pencil" className="w-3 h-3 text-orange-400 mt-0.5 shrink-0" size={12} />
                                                     <p className="m-0 text-[11px] font-bold text-gray-800 leading-tight">
                                                         {t.note}
                                                     </p>

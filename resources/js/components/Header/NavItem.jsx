@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Icon from '../shared/Icon';
 
 /**
  * NavItem: Individual navigation link or expandable group.
@@ -41,15 +42,12 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
                             setExpanded(!expanded);
                         }}
                     >
-                        <svg
-                            className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="3.5"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <Icon 
+                            name="chevronDown" 
+                            className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} 
+                            size={14} 
+                            strokeWidth={3.5} 
+                        />
                     </div>
                 )}
             </Link>

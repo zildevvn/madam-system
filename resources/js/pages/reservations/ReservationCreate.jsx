@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useReservationForm } from '../../hooks/useReservationForm';
 import ReservationDishesForm from '../../components/reservations/ReservationDishesForm';
 import ReservationTableSelector from '../../components/reservations/ReservationTableSelector';
+import Icon from '../../components/shared/Icon';
 
 const ReservationCreate = () => {
     const { id } = useParams();
@@ -106,10 +107,7 @@ const ReservationCreate = () => {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${watch('apply_vat') ? ' text-white ' : ''}`}>
-
-                                            <svg width="800px" height="800px" viewBox="0 -32 1088 1088" fill="#000000" className="icon" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M992 64H768c-52.8 0-126.546 30.546-163.882 67.882L227.882 508.118c-37.334 37.334-37.334 98.428 0 135.764l280.236 280.232c37.334 37.336 98.428 37.336 135.764 0l376.232-376.232C1057.454 510.546 1088 436.8 1088 384V160c0-52.8-43.2-96-96-96z m-128 320c-53.02 0-96-42.98-96-96s42.98-96 96-96 96 42.98 96 96-42.98 96-96 96zM86.626 598.624l342.378 342.378c-36.264 19.16-82.462 13.54-112.886-16.888L35.882 643.882c-37.334-37.336-37.334-98.43 0-135.764L412.118 131.882C449.454 94.546 523.2 64 576 64L86.626 553.372c-12.444 12.446-12.444 32.808 0 45.252z" />
-                                            </svg>
+                                            <Icon name="tag" size={24} strokeWidth={2.5} />
                                         </div>
 
                                         <div>

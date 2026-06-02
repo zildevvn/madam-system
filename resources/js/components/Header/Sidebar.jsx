@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import NavItem from './NavItem';
+import Icon from '../shared/Icon';
 
 /**
  * Sidebar Component
@@ -78,9 +79,7 @@ const Sidebar = ({
                                 className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg bg-white text-slate-400 hover:text-slate-900 hover:shadow-sm transition-all border border-slate-100"
                                 aria-label="Close sidebar"
                             >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <Icon name="close" className="w-4 h-4" size={16} strokeWidth={3} />
                             </button>
                         </div>
                     )}
@@ -102,12 +101,10 @@ const Sidebar = ({
                         <button
                             type="button"
                             onClick={onLogout}
-                            className="mdt-btn w-full"
+                            className="mdt-btn w-full flex items-center justify-center gap-1.5"
                         >
-                            <span className="relative z-10 mr-1">Log Out</span>
-                            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7" />
-                            </svg>
+                            <span className="relative z-10">Log Out</span>
+                            <Icon name="logout" className="w-4 h-4 transition-transform group-hover:translate-x-1" size={16} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>

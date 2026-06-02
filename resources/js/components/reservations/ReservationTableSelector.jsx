@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectTables, selectTableIdToGroupKey } from '../../store/selectors/tableSelectors';
 import { fetchTables } from '../../store/slices/tableSlice';
+import Icon from '../shared/Icon';
 
 const ReservationTableSelector = ({ selectedTables, onToggle }) => {
     const dispatch = useAppDispatch();
@@ -32,11 +33,11 @@ const ReservationTableSelector = ({ selectedTables, onToggle }) => {
                 onClick={() => setShowTableDropdown(!showTableDropdown)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md text-[12px] font-black transition-all border ${selectedTables.length > 0 ? 'bg-orange-50 text-orange-600 border-orange-200 shadow-sm' : 'bg-gray-200 text-gray-600 border-gray-200'} hover:border-orange-300 cursor-pointer w-full md:w-auto`}
             >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+                <Icon name="plus" size={18} strokeWidth={2.5} />
                 <span className="tracking-widest">
                     {selectedTables.length > 0 ? `Selected: ${selectedTables.length} Tables` : 'Select Tables'}
                 </span>
-                <svg className={`ml-auto transition-transform duration-200 ${showTableDropdown ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                <Icon name="chevronDown" className={`ml-auto transition-transform duration-200 ${showTableDropdown ? 'rotate-180' : ''}`} size={16} strokeWidth={2.5} />
             </button>
 
             {showTableDropdown && (

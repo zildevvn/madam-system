@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterType, formatDate, formatTime }) => {
     return (
@@ -20,7 +21,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                                     <div className="flex items-center gap-1.5">
-                                        <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                        <Icon name="clock" className="text-gray-400" size={12} strokeWidth={3} />
                                         <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
                                     </div>
                                     {r.apply_vat && (
@@ -42,7 +43,7 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                                     {r.type}
                                 </span>
                                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100/30 rounded-lg">
-                                    <svg className="text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+                                    <Icon name="user" className="text-gray-400" size={12} strokeWidth={3} />
                                     <span className="text-[12px] font-black text-gray-700">{r.number_of_guests}</span>
                                 </div>
                             </div>

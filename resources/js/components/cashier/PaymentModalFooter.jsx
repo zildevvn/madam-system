@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 import PaymentMethodSelector from './PaymentMethodSelector';
+import Icon from '../shared/Icon';
 
 /**
  * PaymentModalFooter: Renders the sticky bottom panel of the payment modal, 
@@ -45,10 +46,8 @@ const PaymentModalFooter = ({
                 className="w-full px-5 py-2 flex items-center justify-between border-none bg-transparent cursor-pointer hover:bg-gray-50 transition-colors"
             >
                 <div className="flex items-center gap-2">
-                    <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${showExtras ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                    </svg>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Giảm giá tổng & Ghi chú Tổng</span>
+                    <Icon name="chevronDown" className={`text-gray-400 transition-transform duration-200 ${showExtras ? 'rotate-180' : ''}`} size={14} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-red-600">Giảm giá tổng & Ghi chú Tổng</span>
                 </div>
                 {(discountValue > 0 || itemDiscountsTotal > 0 || cashierNote) && (
                     <div className="flex items-center gap-1.5">
@@ -178,7 +177,7 @@ const PaymentModalFooter = ({
                         onClick={() => setIsSplitMode(true)}
                         className="w-full bg-white border border-orange-100 text-orange-500 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-50 transition-colors cursor-pointer"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 3v18M16 3v18M3 8h18M3 16h18" /></svg>
+                        <Icon name="grid" size={14} />
                         Tách hóa đơn
                     </button>
                 )}
@@ -203,14 +202,14 @@ const PaymentModalFooter = ({
                     ) : (
                         <>
                             <button onClick={handlePrintInvoice} className="btn-print mdt-btn !bg-gray-100 !text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer border-none text-sm py-2.5">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2m8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                <Icon name="printer" className="w-4 h-4" size={16} />
                                 In hóa đơn
                             </button>
 
                             {step === 1 ? (
                                 <button disabled={draftItemsCount === 0} onClick={() => onUpdateStep(2)} className={`mdt-btn cursor-pointer text-sm py-2.5 ${draftItemsCount === 0 ? '!bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}>
                                     Tiếp theo
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                    <Icon name="arrowRight" className="w-4 h-4" size={16} />
                                 </button>
                             ) : (
                                 <div className="flex gap-2">
@@ -218,7 +217,7 @@ const PaymentModalFooter = ({
                                         onClick={() => onUpdateStep(1)}
                                         className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                        <Icon name="chevronLeft" size={20} />
                                     </button>
                                     <button
                                         disabled={draftItemsCount === 0 || !paymentMethod || isProcessing}
@@ -227,7 +226,7 @@ const PaymentModalFooter = ({
                                     >
                                         {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
                                             <div className="flex items-center gap-2">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                <Icon name="check" className="w-4 h-4" size={16} />
                                                 {isHistoryEdit ? 'Cập nhật' : 'Xác Nhận'}
                                             </div>
                                         )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Icon from '../shared/Icon';
 
 /**
  * CheckoutOrderNote: A debounced textarea for adding an order-level staff note.
@@ -31,10 +32,7 @@ const CheckoutOrderNote = ({ orderNote, onUpdateOrderNote }) => {
                     htmlFor="order-note"
                     className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
                 >
-                    <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
+                    <Icon name="pencil" className="w-3.5 h-3.5 text-orange-400 shrink-0" size={14} />
                     Ghi chú bàn
                 </label>
                 <textarea

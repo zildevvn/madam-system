@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 const AdminPersonnelList = ({ users, fetchUsers, updating, currentUser, roles, handleRoleChange }) => {
     return (
@@ -9,7 +10,7 @@ const AdminPersonnelList = ({ users, fetchUsers, updating, currentUser, roles, h
                     <p className="text-slate-400 text-[10px] sm:text-xs mt-1 leading-relaxed">Phân quyền tài khoản.</p>
                 </div>
                 <button onClick={fetchUsers} className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 flex items-center justify-center rounded-xl sm:rounded-2xl bg-slate-50 text-orange-500 hover:bg-orange-500 hover:text-white transition-all shadow-sm border-none active:scale-90">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <Icon name="refresh" size={20} className="w-5 h-5" strokeWidth={2.5} />
                 </button>
             </div>
             <div className="overflow-x-auto custom-scrollbar">
@@ -46,7 +47,7 @@ const AdminPersonnelList = ({ users, fetchUsers, updating, currentUser, roles, h
                                             {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                                         </select>
                                         <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+                                            <Icon name="chevronDown" size={12} strokeWidth={3} className="w-3 h-3 text-slate-400" />
                                         </div>
                                     </div>
                                 </td>

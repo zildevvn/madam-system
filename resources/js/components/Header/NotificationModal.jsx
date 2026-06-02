@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchNotificationsAsync, markNotificationAsReadAsync } from '../../store/slices/notificationSlice';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import Icon from '../shared/Icon';
 
 const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
     const dispatch = useAppDispatch();
@@ -45,17 +46,13 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                             className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-orange-500 hover:bg-orange-50 transition-all border border-slate-100 active:scale-90"
                             title="Refresh"
                         >
-                            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
+                            <Icon name="refresh" className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} size={16} strokeWidth={3} />
                         </button>
                         <button
                             onClick={onClose}
                             className="cursor-pointer w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-100 active:scale-90"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            <Icon name="close" className="w-4 h-4" size={16} strokeWidth={3} />
                         </button>
                     </div>
                 </div>
@@ -70,9 +67,7 @@ const NotificationModal = ({ isOpen, onClose, onUpdate }) => {
                     ) : messages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 md:py-20 space-y-4">
                             <div className="w-14 h-14 bg-slate-100 rounded-[20px] flex items-center justify-center text-slate-300">
-                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                </svg>
+                                <Icon name="inbox" className="w-7 h-7" size={28} />
                             </div>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No notifications yet</p>
                         </div>

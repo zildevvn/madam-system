@@ -1,18 +1,27 @@
-import React from "react";
+// 1. React & Hooks
+import React, { useEffect } from "react";
+
+// 2. Third-party Libraries
 import ReactDOM from "react-dom/client";
 import { Provider } from 'react-redux';
-import { store } from './store';
-import './bootstrap';
-import "../css/app.css";
-import "../scss/app.scss";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 
+// 3. Shared/constants
+import { ROLES } from "./shared/constants/roles";
 
-import axios from "axios";
-import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from "react-router-dom";
+// 5. Hooks / Store Hooks
+import { useAppDispatch, useAppSelector } from "./store/hooks";
+import { useGlobalSocket } from "./hooks/useGlobalSocket";
+
+// 6. Components / Layouts & Guards
 import DefaultLayout from "./layouts/DefaultLayout";
 import StaffOrderLayout from "./layouts/StaffOrderLayout";
 import OrderLayout from "./layouts/OrderLayout";
+import AttendanceGuard from "./components/attendance/AttendanceGuard";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+// 7. Pages
 import Home from "./pages/Home";
 import StaffOrder from "./pages/StaffOrder";
 import Kitchen from "./pages/Kitchen";
@@ -24,6 +33,7 @@ import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
+import AttendanceManagementPage from "./pages/AttendanceManagementPage";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
 import Bills from "./pages/Bills";
@@ -31,56 +41,58 @@ import Cashier from './pages/Cashier';
 import Bar from './pages/Bar';
 import ReservationList from './pages/reservations/ReservationList';
 import ReservationCreate from './pages/reservations/ReservationCreate';
+const ReservationEdit = ReservationCreate; // [WHY] Alias to make the dual-use of the component self-documenting in the router config
 import ExpenseManagement from './pages/ExpenseManagement';
 import UserProfilePage from './pages/UserProfilePage';
 import EmployeeSchedulePage from './pages/EmployeeSchedulePage';
 
-// Set base default header
-window.axios = axios;
-window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-window.axios.defaults.withCredentials = true;
-
-// Stateless authorization: send current user ID in the headers
-window.axios.interceptors.request.use((config) => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-        try {
-            const user = JSON.parse(storedUser);
-            if (user && user.id) {
-                config.headers['X-User-Id'] = user.id;
-            }
-        } catch (e) {
-            console.error('Failed to parse user from localStorage', e);
-        }
-    }
-    return config;
-});
-
-import { ROLES } from "./shared/constants/roles";
-
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { updateReservationFromSocket } from "./store/slices/reservationSlice";
-import { updateOrderFromSocket } from "./store/slices/orderSlice";
-import { updateTableFromSocket, fetchTables } from "./store/slices/tableSlice";
-import { addNotificationFromSocket, fetchNotificationsAsync } from "./store/slices/notificationSlice";
+// 8. Store / Slices / Bootstraps / Styles
+import { store } from './store';
+import './bootstrap';
 import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
-import { useAppDispatch, useAppSelector } from "./store/hooks";
+import "../css/app.css";
+import "../scss/app.scss";
 
-const RouteBodyClass = () => {
+
+
+/**
+ * RouteLayoutHandler: Unifies and standardizes the page layout state communication
+ * via standardized HTML5 dataset attributes (document.documentElement.dataset.page).
+ * Non-destructively synchronizes the body classList to preserve backwards-compatible styling.
+ */
+const RouteLayoutHandler = () => {
     const location = useLocation();
 
     useEffect(() => {
-        // Preserve common classes, remove existing page-* classes
-        const existingClasses = document.body.className.split(' ').filter(c => c && !c.startsWith('page-'));
-
         // Sanitize path (e.g., /reservations/edit/1 -> reservations-edit)
         const pathSegments = location.pathname === '/'
             ? ['home']
             : location.pathname.split('/').filter(p => p && isNaN(p));
 
-        const pageClass = `page-${pathSegments.join('-')}`;
-        document.body.className = [...existingClasses, pageClass].join(' ');
+        const pageType = pathSegments.join('-');
+
+        // 1. Standardize layout state communication via document.documentElement.dataset
+        document.documentElement.dataset.page = pageType;
+
+        // 2. Synchronize body classes non-destructively for existing SCSS selectors
+        const newPageClass = `page-${pageType}`;
+        
+        // Safely remove any stale page-* classes
+        const classesToRemove = Array.from(document.body.classList).filter(c => c.startsWith('page-'));
+        classesToRemove.forEach(c => {
+            if (c !== newPageClass) {
+                document.body.classList.remove(c);
+            }
+        });
+
+        // Safely add the new page class
+        document.body.classList.add(newPageClass);
+
+        return () => {
+            // Clean up attributes upon unmounting
+            document.documentElement.removeAttribute('data-page');
+            document.body.classList.remove(newPageClass);
+        };
     }, [location]);
 
     return null;
@@ -94,6 +106,41 @@ const ProtectedRoute = ({ children }) => {
     return children ? children : <Outlet />;
 };
 
+/**
+ * OrderStaffRoute: Dynamic guard that enforces the AttendanceGuard check
+ * ONLY for employees with the 'ORDER_STAFF' role.
+ * Admin, manager, and cashier roles completely bypass this validation.
+ */
+const OrderStaffRoute = ({ children }) => {
+    const user = useAppSelector(state => state.auth.user);
+    if (user?.role === ROLES.ORDER_STAFF) {
+        return (
+            <AttendanceGuard>
+                {children ? children : <Outlet />}
+            </AttendanceGuard>
+        );
+    }
+    return children ? children : <Outlet />;
+};
+
+/**
+ * ROLE_DEFAULT_ROUTES: Centralized role-to-route configuration.
+ * Maps each employee role to its default workspace page and a user-friendly label.
+ * Makes introducing or modifying roles extremely trivial.
+ */
+const ROLE_DEFAULT_ROUTES = {
+    [ROLES.ADMIN]: { path: '/admin', label: 'Go to Admin Dashboard' },
+    [ROLES.KITCHEN]: { path: '/kitchen', label: 'Go to Kitchen Page' },
+    [ROLES.BAR]: { path: '/bar', label: 'Go to Bar Page' },
+    [ROLES.CASHIER]: { path: '/cashier', label: 'Go to Cashier Page' },
+    [ROLES.BILL]: { path: '/bills', label: 'Go to Bill Page' },
+    [ROLES.MANAGER]: { path: '/staff-order', label: 'Go to Order Page' },
+    [ROLES.ORDER_STAFF]: { path: '/staff-order', label: 'Go to Order Page' },
+    [ROLES.SELLER]: { path: '/staff-order', label: 'Go to Order Page' },
+};
+
+const DEFAULT_REDIRECT = { path: '/', label: 'Go to Home' };
+
 const RoleProtectedRoute = ({ children, allowedRoles }) => {
     const user = useAppSelector(state => state.auth.user);
     if (!user) {
@@ -106,20 +153,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        const getRoleRedirect = (role) => {
-            switch (role) {
-                case ROLES.KITCHEN: return { path: '/kitchen', label: 'Go to Kitchen Page' };
-                case ROLES.BAR: return { path: '/bar', label: 'Go to Bar Page' };
-                case ROLES.CASHIER: return { path: '/cashier', label: 'Go to Cashier Page' };
-                case ROLES.BILL: return { path: '/bills', label: 'Go to Bill Page' };
-                case ROLES.MANAGER:
-                case ROLES.ORDER_STAFF:
-                case ROLES.SELLER: return { path: '/staff-order', label: 'Go to Order Page' };
-                default: return { path: '/', label: 'Go to Home' };
-            }
-        };
-
-        const redirect = getRoleRedirect(user.role);
+        const redirect = ROLE_DEFAULT_ROUTES[user.role] || DEFAULT_REDIRECT;
 
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
@@ -143,118 +177,83 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 function App() {
     const dispatch = useAppDispatch();
     const { user } = useAppSelector(state => state.auth);
-
-    // [WHY] Initial Data Fetch for Products and Categories
-    useEffect(() => {
-        dispatch(fetchProducts());
-        dispatch(fetchCategories());
-    }, [dispatch]);
+    const productCount = useAppSelector(state => state.product.products.allIds.length);
+    const categoryCount = useAppSelector(state => state.product.categories.allIds.length);
 
     // [WHY] Global Real-time Listeners (Rule 412)
     // [RULE] Public channel listeners should be registered once and stay active.
+    // Encapsulated in the useGlobalSocket hook to prevent App component bloating.
+    useGlobalSocket();
+
+    // [WHY] Initial Data Fetch for Products and Categories
+    // Performs cache validation before dispatching to optimize network usage and boot performance.
     useEffect(() => {
-        if (window.Echo) {
-            // 1. Orders & Reservations (Public Channel)
-            const orderChannel = window.Echo.channel('orders');
-            orderChannel.stopListening('.reservation_updated');
-            orderChannel.listen('.reservation_updated', (data) => {
-                dispatch(updateReservationFromSocket({
-                    id: data.id.toString(),
-                    reservation: data.reservation,
-                    action: data.action
-                }));
-
-                if (data.reservation?.table_id) {
-                    dispatch(updateTableFromSocket({
-                        id: data.reservation.table_id,
-                        status: data.action === 'confirmed' ? 'busy' : 'available'
-                    }));
-                }
-            });
-
-            const handleOrderEvent = (data) => {
-                if (data.order) {
-                    dispatch(updateOrderFromSocket(data.order));
-                    if (data.order.table) {
-                        dispatch(updateTableFromSocket(data.order.table));
-                    }
-                }
-                dispatch(fetchTables());
-            };
-
-            orderChannel.stopListening('.order_created');
-            orderChannel.stopListening('.order_updated');
-            orderChannel.stopListening('.item_status_updated');
-            orderChannel.listen('.order_created', handleOrderEvent);
-            orderChannel.listen('.order_updated', handleOrderEvent);
-            orderChannel.listen('.item_status_updated', handleOrderEvent);
-
-            // 2. System Notifications (Public Channel)
-            const notificationChannel = window.Echo.channel('system-notifications');
-            notificationChannel.stopListening('.new-message');
-            notificationChannel.listen('.new-message', (data) => {
-                const message = data.message || data;
-                if (message) {
-                    dispatch(addNotificationFromSocket(message));
-                }
-            });
-
-            return () => {
-                window.Echo.leaveChannel('orders');
-                window.Echo.leaveChannel('system-notifications');
-            };
+        if (productCount === 0) {
+            dispatch(fetchProducts());
         }
-    }, [dispatch]);
+        if (categoryCount === 0) {
+            dispatch(fetchCategories());
+        }
+    }, [dispatch, productCount, categoryCount]);
 
     return (
-        <BrowserRouter>
-            <RouteBodyClass />
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route element={<ProtectedRoute />}>
-                    {/* User Profile */}
-                    <Route path="/profile" element={<DefaultLayout><UserProfilePage /></DefaultLayout>} />
-                    <Route path="/employee-schedule" element={<DefaultLayout><EmployeeSchedulePage /></DefaultLayout>} />
+        <ErrorBoundary>
+            <BrowserRouter>
+                <RouteLayoutHandler />
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route element={<ProtectedRoute />}>
+                        {/* User Profile */}
+                        <Route path="/profile" element={<DefaultLayout><UserProfilePage /></DefaultLayout>} />
+                        <Route path="/employee-schedule" element={<DefaultLayout><EmployeeSchedulePage /></DefaultLayout>} />
 
-                    {/* Order page: Access by admin, manager, order_staff, seller */}
-                    <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
-                    <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
-                    <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><Checkout /></RoleProtectedRoute>} />
+                        {/* Order & Reservation pages: guarded by attendance checks only for ORDER_STAFF role */}
+                        <Route element={<OrderStaffRoute />}>
+                            {/* Order page: Access by admin, manager, order_staff, seller */}
+                            <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
+                            <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
+                            <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><Checkout /></RoleProtectedRoute>} />
 
-                    {/* Reservations: Access by admin, manager, order_staff, seller */}
-                    <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+                            {/* Reservations: Access by admin, manager, order_staff, seller */}
+                            <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
+                            {/* [WHY] ReservationCreate handles both create and edit flows. The ReservationEdit alias is used to document this intent. */}
+                            <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationEdit /></DefaultLayout></RoleProtectedRoute>} />
+                        </Route>
 
-                    {/* Cashier page: Access by admin, cashier */}
-                    <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                        {/* Cashier page: Access by admin, cashier */}
+                        <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
 
-                    {/* Expenses: Access by admin, cashier */}
-                    <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
+                        {/* Expenses: Access by admin, cashier */}
+                        <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
 
-                    {/* Bill page: Access by admin, bill */}
-                    <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                        {/* Bill page: Access by admin, bill */}
+                        <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
 
-                    {/* Admin Dashboard */}
-                    <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
-                        <Route index element={<AdminContent />} />
-                        <Route path="personnel" element={<PersonnelPage />} />
-                        <Route path="personnel/create" element={<EmployeeFormPage />} />
-                        <Route path="personnel/edit/:id" element={<EmployeeFormPage />} />
-                        <Route path="personnel/:id" element={<EmployeeDetailPage />} />
-                        <Route path="tables" element={<TableManagement />} />
-                        <Route path="products" element={<ProductManagement />} />
-                        <Route path="performance" element={<EmployeePerformancePage />} />
+                        {/* Attendance page: Access by admin, manager */}
+                        <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
+
+                        {/* Admin Dashboard */}
+                        <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
+                            <Route index element={<AdminContent />} />
+                            <Route path="personnel" element={<PersonnelPage />} />
+                            <Route path="personnel/create" element={<EmployeeFormPage />} />
+                            <Route path="personnel/edit/:id" element={<EmployeeFormPage />} />
+                            <Route path="personnel/:id" element={<EmployeeDetailPage />} />
+                            <Route path="tables" element={<TableManagement />} />
+                            <Route path="products" element={<ProductManagement />} />
+                            <Route path="performance" element={<EmployeePerformancePage />} />
+                        </Route>
+
+                        {/* Kitchen and Bar: Access by admin, kitchen, bar */}
+                        <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
                     </Route>
-
-                    {/* Kitchen and Bar: Access by admin, kitchen, bar */}
-                    <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />
-                    <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
-                </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            <Toaster position="top-right" />
-        </BrowserRouter>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <Toaster position="top-right" />
+            </BrowserRouter>
+        </ErrorBoundary>
     );
 }
 

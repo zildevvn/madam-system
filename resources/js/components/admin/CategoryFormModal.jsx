@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { CATEGORY_ICONS, DEFAULT_ICON } from '../../shared/constants/categoryIcons';
+import Icon from '../shared/Icon';
 
 const CategoryFormModal = ({ isOpen, onClose, onSubmit, category = null, processing = false }) => {
     const { register, handleSubmit, reset, watch, setValue } = useForm({
@@ -41,7 +42,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, category = null, process
                         {category ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}
                     </h4>
                     <button onClick={onClose} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all" type="button">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <Icon name="close" size={24} strokeWidth={2.5} className="w-6 h-6" />
                     </button>
                 </div>
 
@@ -69,7 +70,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, category = null, process
                                     <option value="packaged_drink">Packaged Drinks</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                    <Icon name="chevronDown" size={16} strokeWidth={2.5} className="w-4 h-4 text-slate-400" />
                                 </div>
                             </div>
                         </div>

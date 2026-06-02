@@ -1,6 +1,7 @@
 import React from 'react';
 import dayjs from 'dayjs';
 import { formatDateToVietnamese } from '../../shared/utils/dateUtils';
+import Icon from '../shared/Icon';
 
 // [WHY] Component to handle user leave registration form and display past leave request timeline history.
 const LeaveRegistrySection = ({
@@ -108,7 +109,7 @@ const LeaveRegistrySection = ({
                         let badgeStyle = 'bg-amber-100 text-amber-800 border-amber-200/50';
                         let statusIcon = (
                             <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/10">
-                                <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <Icon name="clock" className="w-4 h-4 animate-pulse" size={16} strokeWidth={2.5} />
                             </div>
                         );
 
@@ -118,7 +119,7 @@ const LeaveRegistrySection = ({
                             badgeStyle = 'bg-emerald-100 text-emerald-800 border-emerald-200/50';
                             statusIcon = (
                                 <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/10">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                    <Icon name="check" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                 </div>
                             );
                         } else if (leave.status === 'rejected') {
@@ -127,7 +128,7 @@ const LeaveRegistrySection = ({
                             badgeStyle = 'bg-red-100 text-red-800 border-red-200/50';
                             statusIcon = (
                                 <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/10">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <Icon name="close" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                 </div>
                             );
                         } else if (leave.status === 'pending_cancel') {
@@ -136,7 +137,7 @@ const LeaveRegistrySection = ({
                             badgeStyle = 'bg-rose-100 text-rose-800 border-rose-200/50';
                             statusIcon = (
                                 <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-500/10">
-                                    <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <Icon name="clock" className="w-4 h-4 animate-pulse" size={16} strokeWidth={2.5} />
                                 </div>
                             );
                         } else if (leave.status === 'approved_cancel') {
@@ -145,7 +146,7 @@ const LeaveRegistrySection = ({
                             badgeStyle = 'bg-slate-105 text-slate-500 border-slate-200/50';
                             statusIcon = (
                                 <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 shadow-sm">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                    <Icon name="check" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                 </div>
                             );
                         } else if (leave.status === 'rejected_cancel') {
@@ -154,7 +155,7 @@ const LeaveRegistrySection = ({
                             badgeStyle = 'bg-orange-100 text-orange-800 border-orange-200/50';
                             statusIcon = (
                                 <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-orange-500/10">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <Icon name="close" className="w-4 h-4" size={16} strokeWidth={2.5} />
                                 </div>
                             );
                         }
@@ -192,16 +193,14 @@ const LeaveRegistrySection = ({
                                                 className="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-full text-[9px] font-black uppercase tracking-wider transition-all border-none cursor-pointer flex items-center justify-center gap-1 shadow-sm"
                                                 title="Huỷ đăng ký nghỉ phép"
                                             >
-                                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
+                                                <Icon name="trash" className="w-2.5 h-2.5" size={10} strokeWidth={2.5} />
                                                 Huỷ Off
                                             </button>
                                         )}
                                     </div>
                                     {leave.status !== 'pending' && leave.approver && (
                                         <span className="text-[8px] text-slate-400 font-bold flex items-center gap-1 mt-0 sm:mt-1.5">
-                                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                            <Icon name="shield" className="w-2.5 h-2.5" size={10} strokeWidth={2.5} />
                                             {leave.approver.name}
                                         </span>
                                     )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 /**
  * ScheduleWeekNav Component
@@ -61,7 +62,7 @@ export default function ScheduleWeekNav({
                         className="w-8 h-8 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/50 flex items-center justify-center transition-all cursor-pointer"
                         title="Tuần trước"
                     >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                        <Icon name="chevronLeft" className="w-3.5 h-3.5" size={14} strokeWidth={2.5} />
                     </button>
 
                     <button
@@ -76,7 +77,7 @@ export default function ScheduleWeekNav({
                         className="w-8 h-8 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/50 flex items-center justify-center transition-all cursor-pointer"
                         title="Tuần sau"
                     >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                        <Icon name="chevronRight" className="w-3.5 h-3.5" size={14} strokeWidth={2.5} />
                     </button>
 
                     <span className="text-[11px] md:text-xs font-black text-slate-800 ml-2 tracking-tight">
@@ -95,7 +96,7 @@ export default function ScheduleWeekNav({
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="text-[11px] w-full bg-slate-50 border-none rounded-xl py-2 pl-9 pr-3 text-slate-900 font-medium placeholder:text-slate-400 focus:ring-4 focus:ring-orange-500/10 transition-all"
                         />
-                        <svg className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        <Icon name="search" className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" size={14} strokeWidth={2.5} />
                     </div>
 
                     {/* Shift filter */}

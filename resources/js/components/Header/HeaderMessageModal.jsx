@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createSystemMessageApi } from '../../services/systemMessageService';
 import { useAppSelector } from '../../store/hooks';
 import toast from 'react-hot-toast';
+import Icon from '../shared/Icon';
 
 const HeaderMessageModal = ({ isOpen, onClose, onSuccess }) => {
     const [message, setMessage] = useState('');
@@ -44,9 +45,7 @@ const HeaderMessageModal = ({ isOpen, onClose, onSuccess }) => {
                         onClick={onClose}
                         className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-slate-200 text-slate-600 transition-all cursor-pointer"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <Icon name="close" className="w-4 h-4" size={16} strokeWidth={3} />
                     </button>
                 </div>
 
@@ -87,9 +86,7 @@ const HeaderMessageModal = ({ isOpen, onClose, onSuccess }) => {
                             ) : (
                                 <>
                                     <span>Send</span>
-                                    <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                                    </svg>
+                                    <Icon name="arrowRight" className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" size={14} strokeWidth={3} />
                                 </>
                             )}
                         </button>

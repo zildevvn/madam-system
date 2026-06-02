@@ -5,6 +5,7 @@ import ExpenseListDesktop from '../components/admin/ExpenseListDesktop';
 import ExpenseListMobile from '../components/admin/ExpenseListMobile';
 import ExpenseFilterHeader from '../components/admin/expenses/ExpenseFilterHeader';
 import ExpenseAdvancedFilters from '../components/admin/expenses/ExpenseAdvancedFilters';
+import Icon from '../components/shared/Icon';
 
 /**
  * Expense Management Page Component
@@ -107,7 +108,7 @@ const ExpenseManagement = () => {
                         onClick={handleAddExpense}
                         className="mdt-btn flex items-center justify-center gap-2 group self-stretch md:self-auto"
                     >
-                        <svg className="w-5 h-5 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                        <Icon name="plus" className="w-5 h-5 group-hover:rotate-90 transition-transform" size={20} strokeWidth={2.5} />
                         <span>Thêm chi tiêu</span>
                     </button>
                 </div>
@@ -124,7 +125,7 @@ const ExpenseManagement = () => {
 
                 {error && (
                     <div className="bg-red-50 text-red-600 p-5 rounded-3xl text-[11px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-4 animate-in shake duration-500 mt-4">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77-1.333.192-3 1.732-3z" /></svg>
+                        <Icon name="alert" className="w-5 h-5" size={20} strokeWidth={2.5} />
                         {error}
                     </div>
                 )}
@@ -147,7 +148,7 @@ const ExpenseManagement = () => {
                     {filteredExpenses.length === 0 && (
                         <div className="py-24 flex flex-col items-center justify-center bg-white rounded-[32px] border border-slate-100 shadow-sm animate-in zoom-in-95 duration-500">
                             <div className="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-4">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <Icon name="dollarSign" className="w-8 h-8 text-slate-400" size={32} strokeWidth={2.5} />
                             </div>
                             <p className="text-slate-400 font-black text-[11px] uppercase tracking-[0.2em]">Không có dữ liệu chi tiêu nào</p>
                         </div>
