@@ -30,6 +30,15 @@ const statsApi = {
     getEmployeePerformance: async (params) => {
         const response = await axios.get('/api/stats/employee-performance', { params });
         return response.data;
+    },
+
+    /**
+     * getReservationStats
+     * [WHY] Fetches monthly reservation stats, top companies, and company comparisons.
+     */
+    getReservationStats: async (params) => {
+        const response = await axios.get('/api/stats/reservation-stats', { params });
+        return response.data;
     }
 };
 

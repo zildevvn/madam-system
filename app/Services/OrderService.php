@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Table;
+use App\Models\Reservation;
 use App\Events\OrderUpdated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -131,9 +132,9 @@ class OrderService
                 }
 
                 if ($order->reservation_id) {
-                    $reservation = \App\Models\Reservation::find($order->reservation_id);
-                    if ($reservation && $reservation->status === 'seated') {
-                        $reservation->update(['status' => 'confirmed']);
+                    $reservation = Reservation::find($order->reservation_id);
+                    if ($reservation && $reservation->status === Reservation::STATUS_SEATED) {
+                        $reservation->update(['status' => Reservation::STATUS_CONFIRMED]);
                     }
                 }
 

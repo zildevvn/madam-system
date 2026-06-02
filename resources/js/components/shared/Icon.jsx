@@ -68,7 +68,8 @@ import {
     Cake,
     Wine,
     Beer,
-    Utensils
+    Utensils,
+    Trophy
 } from 'lucide-react';
 
 export const ICONS = {
@@ -103,6 +104,7 @@ export const ICONS = {
     sun: Sun,
     moon: Moon,
     briefcase: Briefcase,
+    trophy: Trophy,
     layoutGrid: LayoutGrid,
     clipboardList: ClipboardList,
     creditCard: CreditCard,

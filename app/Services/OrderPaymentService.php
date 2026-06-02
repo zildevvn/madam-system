@@ -80,7 +80,7 @@ class OrderPaymentService
             if ($order->reservation_id) {
                 $reservation = Reservation::find($order->reservation_id);
                 if ($reservation && $reservation->type === 'group') {
-                    $reservation->update(['status' => 'completed']);
+                    $reservation->update(['status' => Reservation::STATUS_COMPLETED]);
                 }
             }
 
@@ -144,8 +144,8 @@ class OrderPaymentService
 
             if ($order->reservation_id) {
                 $reservation = Reservation::find($order->reservation_id);
-                if ($reservation && $reservation->status === 'completed') {
-                    $reservation->update(['status' => 'confirmed']);
+                if ($reservation && $reservation->status === Reservation::STATUS_COMPLETED) {
+                    $reservation->update(['status' => Reservation::STATUS_CONFIRMED]);
                 }
             }
 

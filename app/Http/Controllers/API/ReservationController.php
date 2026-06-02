@@ -168,7 +168,13 @@ class ReservationController extends Controller
             'reservation_date' => 'required|date',
             'reservation_time' => 'required|string',
             'note' => 'nullable|string',
-            'status' => 'nullable|in:pending,confirmed,cancelled,completed',
+            'status' => 'nullable|in:' . implode(',', [
+                Reservation::STATUS_PENDING,
+                Reservation::STATUS_CONFIRMED,
+                Reservation::STATUS_CANCELLED,
+                Reservation::STATUS_COMPLETED,
+                Reservation::STATUS_SEATED
+            ]),
             'staff_id' => 'nullable|exists:users,id',
             'updated_by' => 'nullable|exists:users,id',
             'apply_vat' => 'nullable|boolean',
@@ -230,7 +236,7 @@ class ReservationController extends Controller
     {
         $reservation = Reservation::findOrFail($id);
 
-        if ($reservation->status === 'confirmed') {
+        if ($reservation->status === Reservation::STATUS_CONFIRMED) {
             return response()->json(['message' => 'Reservation is already confirmed.'], 400);
         }
 

@@ -9,6 +9,11 @@ use App\Models\ReservationItem;
 
 class Reservation extends Model
 {
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_CONFIRMED = 'confirmed';
+    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_SEATED = 'seated';
     protected $fillable = [
         'type',
         'lead_name',

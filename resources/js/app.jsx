@@ -33,6 +33,7 @@ import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
+import ReservationStatsPage from "./pages/admin/ReservationStatsPage";
 import AttendanceManagementPage from "./pages/AttendanceManagementPage";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
@@ -243,6 +244,7 @@ function App() {
                             <Route path="tables" element={<TableManagement />} />
                             <Route path="products" element={<ProductManagement />} />
                             <Route path="performance" element={<EmployeePerformancePage />} />
+                            <Route path="reservation-stats" element={<ReservationStatsPage />} />
                         </Route>
 
                         {/* Kitchen and Bar: Access by admin, kitchen, bar */}
