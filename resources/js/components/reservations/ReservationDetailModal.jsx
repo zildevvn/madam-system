@@ -2,10 +2,50 @@ import React from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 import Icon from '../shared/Icon';
 
+const renderStatusBadge = (status) => {
+    switch (status) {
+        case 'completed':
+            return (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+                    <Icon name="checkCircle" size={9} strokeWidth={3} />
+                    Completed
+                </span>
+            );
+        case 'cancelled':
+            return (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 shadow-sm">
+                    <Icon name="xCircle" size={9} strokeWidth={3} />
+                    Cancelled
+                </span>
+            );
+        case 'confirmed':
+            return (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100 shadow-sm">
+                    <Icon name="check" size={9} strokeWidth={3} />
+                    Confirmed
+                </span>
+            );
+        case 'pending':
+        default:
+            return (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
+                    <Icon name="clock" size={9} strokeWidth={3} />
+                    Pending
+                </span>
+            );
+    }
+};
+
 const ReservationDetailModal = ({ reservation, tables, onClose }) => {
     if (!reservation) return null;
 
     const isGroup = reservation.type === 'group';
+
+    const subtotal = reservation.dishes ? reservation.dishes.reduce((sum, dish) => sum + (dish.price || 0) * (dish.quantity || 1), 0) : 0;
+    const vatAmount = reservation.apply_vat ? subtotal * ((reservation.vat_percentage || 0) / 100) : 0;
+    const totalAmount = subtotal + vatAmount;
+
+    const assignedTables = tables ? tables.filter(t => reservation.table_ids?.includes(t.id.toString()) || reservation.table_id === t.id) : [];
 
     // Refined styles for high-density layout
     const labelStyle = "text-[10px] sm:text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5 block";
@@ -28,9 +68,12 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                 {/* Clean Minimalist Header */}
                 <div className="px-3 py-3 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white z-20 font-second">
                     <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                            <span className={`w-2 h-2 rounded-full ${isGroup ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{reservation.type} Booking</span>
+                        <div className="flex items-center gap-3 mb-0.5 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${isGroup ? 'bg-purple-500' : 'bg-blue-500'}`}></span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{reservation.type} Booking</span>
+                            </div>
+                            {renderStatusBadge(reservation.status)}
                         </div>
                         <h3 className="text-gray-900 m-0 tracking-tight leading-tight truncate pr-4 text-lg">
                             {isGroup ? (reservation.company_name || 'Group Booking') : reservation.lead_name}
@@ -75,13 +118,13 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                 Tables:
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {tables.filter(t => reservation.table_ids?.includes(t.id.toString()) || reservation.table_id === t.id).map(t => (
+                                {assignedTables.map(t => (
                                     <div key={t.id} className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100 shadow-sm">
                                         <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-2"></div>
                                         <span className="text-[12px] font-black text-gray-800 tracking-tight">{t.name}</span>
                                     </div>
                                 ))}
-                                {tables.filter(t => reservation.table_ids?.includes(t.id.toString()) || reservation.table_id === t.id).length === 0 && (
+                                {assignedTables.length === 0 && (
                                     <span className="text-gray-400 italic text-[11px] font-bold uppercase tracking-widest py-1 px-3 bg-gray-50 rounded-lg">Not assigned</span>
                                 )}
                             </div>
@@ -170,37 +213,21 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                 <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-gray-400">
                                     <span>Subtotal</span>
                                     <span className="text-gray-700">
-                                        {formatPrice(
-                                            reservation.dishes.reduce((sum, dish) => {
-                                                const total = (dish.price || 0) * (dish.quantity || 1);
-                                                const vatRate = 1 + ((reservation.vat_percentage || 0) / 100);
-                                                return sum + (reservation.apply_vat ? total / vatRate : total);
-                                            }, 0)
-                                        )}đ
+                                        {formatPrice(subtotal)}đ
                                     </span>
                                 </div>
                                 {reservation.apply_vat && (
                                     <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-orange-500">
                                         <span>VAT ({reservation.vat_percentage || 0}%)</span>
                                         <span>
-                                            {formatPrice(
-                                                reservation.dishes.reduce((sum, dish) => {
-                                                    const total = (dish.price || 0) * (dish.quantity || 1);
-                                                    const vatRate = 1 + ((reservation.vat_percentage || 0) / 100);
-                                                    return sum + (total - (total / vatRate));
-                                                }, 0)
-                                            )}đ
+                                            {formatPrice(vatAmount)}đ
                                         </span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-50">
                                     <span className="text-xs font-black uppercase tracking-[0.2em] text-gray-900">Total Amount</span>
                                     <span className="text-lg font-black text-orange-600">
-                                        {formatPrice(
-                                            reservation.dishes.reduce((sum, dish) => {
-                                                return sum + ((dish.price || 0) * (dish.quantity || 1));
-                                            }, 0)
-                                        )}đ
+                                        {formatPrice(totalAmount)}đ
                                     </span>
                                 </div>
                             </div>

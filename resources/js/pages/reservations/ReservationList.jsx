@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { format, isBefore, isAfter, startOfDay } from 'date-fns';
+import { format, isBefore, isAfter, startOfDay, subDays } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, FilterX } from 'lucide-react';
 import Icon from '../../components/shared/Icon';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import { useReservations } from '../../hooks/useReservations';
+import { ROLES } from '../../shared/constants/roles';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { saveReservationAsync } from '../../store/slices/reservationSlice';
 import ReservationDetailModal from '../../components/reservations/ReservationDetailModal';
@@ -63,17 +65,9 @@ const ReservationList = () => {
             params.start_date = format(dateRange.from, 'yyyy-MM-dd');
             params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : params.start_date;
         } else if (dateFilter === 'today') {
-            const y = renderTime.getFullYear();
-            const m = String(renderTime.getMonth() + 1).padStart(2, '0');
-            const d = String(renderTime.getDate()).padStart(2, '0');
-            params.date = `${y}-${m}-${d}`;
+            params.date = format(renderTime, 'yyyy-MM-dd');
         } else if (dateFilter === 'yesterday') {
-            const yesterday = new Date(renderTime);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const y = yesterday.getFullYear();
-            const m = String(yesterday.getMonth() + 1).padStart(2, '0');
-            const d = String(yesterday.getDate()).padStart(2, '0');
-            params.date = `${y}-${m}-${d}`;
+            params.date = format(subDays(renderTime, 1), 'yyyy-MM-dd');
         } else if (dateFilter !== 'all') {
             params.month = dateFilter;
         }
@@ -85,6 +79,7 @@ const ReservationList = () => {
     const dispatch = useAppDispatch();
     const [viewingReservation, setViewingReservation] = useState(null);
     const [confirmArrivedReservation, setConfirmArrivedReservation] = useState(null);
+    const [confirmCancelReservation, setConfirmCancelReservation] = useState(null);
     const navigate = useNavigate();
 
     // [WHY] Prepare and sort reservations for the current view.
@@ -130,7 +125,7 @@ const ReservationList = () => {
             }));
     }, [reservations, dateFilter, renderTime]);
 
-    const isManager = user?.role === 'cashier' || user?.role === 'admin';
+    const isAdminOrCashier = user?.role === ROLES.ADMIN || user?.role === ROLES.CASHIER;
 
     const formatTime = (time) => {
         if (!time) return '';
@@ -150,8 +145,29 @@ const ReservationList = () => {
     const handlers = useMemo(() => ({
         onView: (r) => setViewingReservation(r),
         onEdit: (id) => navigate(`/reservations/edit/${id}`),
-        onDone: (r) => setConfirmArrivedReservation(r)
+        onDone: (r) => setConfirmArrivedReservation(r),
+        onCancel: (r) => setConfirmCancelReservation(r)
     }), [navigate]);
+
+    const handleConfirmArrived = useCallback(async () => {
+        if (!confirmArrivedReservation) return;
+        const r = confirmArrivedReservation;
+        setConfirmArrivedReservation(null);
+        await dispatch(saveReservationAsync({
+            id: r.id,
+            data: { ...r, status: 'completed' }
+        }));
+    }, [dispatch, confirmArrivedReservation]);
+
+    const handleConfirmCancel = useCallback(async () => {
+        if (!confirmCancelReservation) return;
+        const r = confirmCancelReservation;
+        setConfirmCancelReservation(null);
+        await dispatch(saveReservationAsync({
+            id: r.id,
+            data: { ...r, status: 'cancelled' }
+        }));
+    }, [dispatch, confirmCancelReservation]);
 
     return (
         <div className="max-w-6xl mx-auto p-4 lg:p-8">
@@ -269,15 +285,24 @@ const ReservationList = () => {
             {/* Statistics Summary Bar */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
                 {(() => {
+                    const activeReservations = sortedReservations.filter(r => r.status !== 'cancelled');
                     const stats = [
-                        { label: 'Total Bookings', value: sortedReservations.length, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'blue' },
-                        { label: 'Individual', value: sortedReservations.filter(r => r.type === 'individual').length, icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', color: 'teal' },
-                        { label: 'Group', value: sortedReservations.filter(r => r.type === 'group').length, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5', color: 'purple' },
-                        { label: 'VAT Bookings', value: sortedReservations.filter(r => r.apply_vat).length, icon: 'M9 14l6-6m-5.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5m.5.5h.5M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z', color: 'orange' },
+                        { label: 'Total Bookings', value: activeReservations.length, icon: 'calendar', color: 'blue' },
+                        { label: 'Individual', value: activeReservations.filter(r => r.type === 'individual').length, icon: 'user', color: 'teal' },
+                        { label: 'Group', value: activeReservations.filter(r => r.type === 'group').length, icon: 'users', color: 'purple' },
+                        { label: 'VAT Bookings', value: activeReservations.filter(r => r.apply_vat).length, icon: 'percent', color: 'orange' },
                     ];
+
+                    const colorMap = {
+                        blue: 'text-blue-500',
+                        teal: 'text-teal-500',
+                        purple: 'text-purple-500',
+                        orange: 'text-orange-500'
+                    };
 
                     return stats.map((stat, i) => (
                         <div key={i} className="flex items-center gap-2" style={{ animationDelay: `${i * 100}ms` }}>
+                            <Icon name={stat.icon} size={14} className={colorMap[stat.color]} />
                             <div className="flex items-center w-full gap-1">
                                 <span className="text-[11px] md:text-[13px] font-black text-gray-900 tracking-widest uppercase">{stat.label}:</span>
                                 <span className="text-[11px] md:text-[13px] font-black text-gray-900 tracking-tight">{stat.value}</span>
@@ -296,12 +321,13 @@ const ReservationList = () => {
                 <>
                     <ReservationTable
                         reservations={sortedReservations}
-                        isManager={isManager}
+                        isAdminOrCashier={isAdminOrCashier}
                         formatDate={formatDate}
                         formatTime={formatTime}
                         onView={handlers.onView}
                         onEdit={handlers.onEdit}
                         onDone={handlers.onDone}
+                        onCancel={handlers.onCancel}
                     />
 
                     {/* Mobile View */}
@@ -321,41 +347,29 @@ const ReservationList = () => {
                 onClose={() => setViewingReservation(null)}
             />
 
-            {/* Custom Confirmation Modal for Arrived Action */}
-            {confirmArrivedReservation && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-[24px] p-6 md:p-8 max-w-[320px] w-full shadow-2xl animate-in zoom-in-95 duration-200">
-                        <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Icon name="check" className="w-8 h-8 text-green-500" size={32} />
-                        </div>
-                        <h5 className="text-center text-gray-900 mb-2">Customer Arrived?</h5>
-                        <p className="text-sm text-center text-gray-500 mb-6 leading-relaxed">
-                            Confirm <strong className="text-gray-800">{confirmArrivedReservation.lead_name || confirmArrivedReservation.tour_guide_name}</strong> has arrived?
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setConfirmArrivedReservation(null)}
-                                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-colors border-none cursor-pointer"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    const r = confirmArrivedReservation;
-                                    setConfirmArrivedReservation(null);
-                                    await dispatch(saveReservationAsync({
-                                        id: r.id,
-                                        data: { ...r, status: 'completed' }
-                                    }));
-                                }}
-                                className="flex-1 py-3 bg-green-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-green-600 transition-colors border-none cursor-pointer shadow-sm shadow-green-500/30"
-                            >
-                                Confirm
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Confirmation Modal for Arrived Action */}
+            <ConfirmDialog
+                isOpen={!!confirmArrivedReservation}
+                title="Customer Arrived?"
+                message={`Confirm ${confirmArrivedReservation ? (confirmArrivedReservation.lead_name || confirmArrivedReservation.tour_guide_name) : ''} has arrived?`}
+                type="info"
+                confirmText="Confirm"
+                cancelText="Cancel"
+                onConfirm={handleConfirmArrived}
+                onCancel={() => setConfirmArrivedReservation(null)}
+            />
+
+            {/* Confirmation Modal for Cancel Action */}
+            <ConfirmDialog
+                isOpen={!!confirmCancelReservation}
+                title="Cancel Reservation?"
+                message={`Are you sure you want to cancel the reservation for ${confirmCancelReservation ? (confirmCancelReservation.lead_name || confirmCancelReservation.tour_guide_name) : ''}?`}
+                type="danger"
+                confirmText="Confirm"
+                cancelText="Close"
+                onConfirm={handleConfirmCancel}
+                onCancel={() => setConfirmCancelReservation(null)}
+            />
         </div>
     );
 };

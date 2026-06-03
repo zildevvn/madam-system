@@ -13,14 +13,16 @@ const SummaryCard = React.memo(({ title, value, subtitle, iconName, bgVariant, c
         orange: 'bg-orange-50 text-orange-600',
         blue: 'bg-blue-50 text-blue-600',
         emerald: 'bg-emerald-50 text-emerald-600',
-        purple: 'bg-purple-50 text-purple-600'
+        purple: 'bg-purple-50 text-purple-600',
+        teal: 'bg-teal-50 text-teal-600'
     };
 
     const gradientClasses = {
         orange: 'bg-orange-50',
         blue: 'bg-blue-50',
         emerald: 'bg-emerald-50',
-        purple: 'bg-purple-50'
+        purple: 'bg-purple-50',
+        teal: 'bg-teal-50'
     };
 
     return (
@@ -120,6 +122,18 @@ const ReservationStatsPage = () => {
                 difference: stats.group_summary.guests.difference,
                 growthPercentage: stats.group_summary.guests.growth_percentage,
                 formattedPrevValue: `${stats.group_summary.guests.previous} khách`
+            } : null
+        },
+        {
+            title: 'Tổng khách lẻ',
+            value: `${stats.group_summary?.individual_guests?.current ?? 0} khách`,
+            subtitle: 'Khách lẻ ngoài công ty',
+            iconName: 'user',
+            bgVariant: 'teal',
+            comparison: stats.group_summary?.individual_guests ? {
+                difference: stats.group_summary.individual_guests.difference,
+                growthPercentage: stats.group_summary.individual_guests.growth_percentage,
+                formattedPrevValue: `${stats.group_summary.individual_guests.previous} khách`
             } : null
         },
         {
@@ -260,7 +274,7 @@ const ReservationStatsPage = () => {
                                 <div className="w-1 h-4 bg-orange-500 rounded-full" />
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Thống kê Khách đoàn / Doanh nghiệp</span>
                             </div>
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                                 {groupSummaryCards.map((card) => (
                                     <SummaryCard key={card.title} {...card} />
                                 ))}

@@ -2,17 +2,22 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { useReservationForm } from '../../hooks/useReservationForm';
+import { ROLES } from '../../shared/constants/roles';
 import ReservationDishesForm from '../../components/reservations/ReservationDishesForm';
 import ReservationTableSelector from '../../components/reservations/ReservationTableSelector';
 import Icon from '../../components/shared/Icon';
-import partnerCompanyService from '../../services/partnerCompanyService';
+import { usePartnerCompanies } from '../../hooks/usePartnerCompanies';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import SearchableSelect from '../../components/shared/SearchableSelect';
+import toast from 'react-hot-toast';
 
 const ReservationCreate = () => {
     const { id } = useParams();
     const isEdit = !!id;
     const user = useAppSelector(state => state.auth.user);
     const navigate = useNavigate();
-    const isManager = user?.role === 'cashier' || user?.role === 'admin';
+    // Cashier and Admin both have permission to assign tables based on business rules
+    const canAssignTables = user?.role === ROLES.ADMIN || user?.role === ROLES.CASHIER;
 
     const dispatch = useAppDispatch();
 
@@ -24,23 +29,39 @@ const ReservationCreate = () => {
         handleTabChange, onSubmit
     } = useReservationForm(id, user);
 
-    const [partnerCompanies, setPartnerCompanies] = React.useState([]);
+    const { companies: partnerCompanies, refresh: fetchPartnerCompanies } = usePartnerCompanies(false);
 
     React.useEffect(() => {
-        partnerCompanyService.getAllPartnerCompanies({ all: true })
-            .then(res => {
-                setPartnerCompanies(res || []);
-            })
-            .catch(err => console.error('Failed to load partner companies', err));
-    }, []);
+        fetchPartnerCompanies(1, '', true);
+    }, [fetchPartnerCompanies]);
 
     const isLegacy = isEdit && reservationData && !reservationData.partner_company_id && reservationData.company_name;
 
-    const handleCancel = async () => {
-        const name = reservationData?.tour_guide_name || reservationData?.lead_name || 'this reservation';
-        if (window.confirm(`Hủy đặt chỗ cho "${name}"?`)) {
-            setValue('status', 'completed');
-            onSubmit();
+    const [showCancelConfirm, setShowCancelConfirm] = React.useState(false);
+
+    const handleCancel = () => {
+        setShowCancelConfirm(true);
+    };
+
+    const handleConfirmCancel = async () => {
+        setShowCancelConfirm(false);
+        if (isEdit && reservationData?.id) {
+            try {
+                await dispatch(saveReservationAsync({
+                    id: reservationData.id,
+                    data: { ...reservationData, status: 'cancelled' }
+                })).unwrap();
+                toast.success('Reservation cancelled successfully!');
+                navigate('/reservations');
+            } catch (err) {
+                console.error('Failed to cancel reservation:', err);
+                const responseData = err?.response?.data || err;
+                let msg = 'Failed to cancel reservation.';
+                if (responseData?.message) {
+                    msg = responseData.message;
+                }
+                toast.error(msg);
+            }
         }
     };
 
@@ -102,33 +123,26 @@ const ReservationCreate = () => {
                             <div><label className={labelClasses}>Tour Guide</label><input {...register('tour_guide_name')} className={inputClasses} /></div>
                             <div>
                                 <label className={labelClasses}>Tên Công Ty<span className="text-red-500">*</span></label>
-                                <select
+                                <input
+                                    type="hidden"
                                     {...register('partner_company_id', {
                                         required: (activeTab === 'group' && !isLegacy) ? 'Vui lòng chọn đối tác' : false
                                     })}
+                                />
+                                <SearchableSelect
+                                    options={partnerCompanies}
                                     value={watch('partner_company_id') || ''}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        setValue('partner_company_id', val || '');
-                                        if (val) {
-                                            const selected = partnerCompanies.find(c => c.id === parseInt(val, 10));
-                                            if (selected) {
-                                                setValue('company_name', selected.name);
-                                            }
-                                        } else {
-                                            setValue('company_name', '');
-                                        }
+                                    onChange={(id, name) => {
+                                        setValue('partner_company_id', id || '', { shouldValidate: true });
+                                        setValue('company_name', name || '');
                                     }}
-                                    className={inputClasses}
-                                >
-                                    <option value="">-- Chọn Công Ty --</option>
-                                    {isLegacy && !watch('partner_company_id') && (
-                                        <option value="" disabled>{watch('company_name')} (Legacy)</option>
-                                    )}
-                                    {partnerCompanies.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                                    placeholder="-- Chọn Công Ty --"
+                                    searchPlaceholder="Tìm kiếm công ty..."
+                                    emptyMessage="Không tìm thấy đối tác"
+                                    isLegacy={isLegacy}
+                                    legacyName={watch('company_name')}
+                                    inputClasses={inputClasses}
+                                />
                                 {errors.partner_company_id && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{errors.partner_company_id.message}</p>}
                             </div>
                         </div>
@@ -182,7 +196,7 @@ const ReservationCreate = () => {
                             </div>
 
                             <div className="section-container">
-                                {isManager ? (
+                                {canAssignTables ? (
                                     <ReservationTableSelector
                                         selectedTables={selectedTables}
                                         onToggle={(tableId) => {
@@ -257,6 +271,17 @@ const ReservationCreate = () => {
                     </div>
                 )}
             </form>
+
+            <ConfirmDialog
+                isOpen={showCancelConfirm}
+                title="Cancel Reservation?"
+                message={`Are you sure you want to cancel the reservation for ${reservationData ? (reservationData.tour_guide_name || reservationData.lead_name || 'this customer') : ''}?`}
+                type="danger"
+                confirmText="Confirm"
+                cancelText="Close"
+                onConfirm={handleConfirmCancel}
+                onCancel={() => setShowCancelConfirm(false)}
+            />
         </div>
     );
 };
