@@ -45,6 +45,10 @@ class StatsService
         }
 
         $stats = $query->leftJoin('reservations', 'orders.reservation_id', '=', 'reservations.id')
+            ->where(function($q) {
+                $q->whereNull('reservations.id')
+                  ->orWhere('reservations.status', '!=', Reservation::STATUS_CANCELLED);
+            })
             ->selectRaw("
                 COALESCE(SUM(orders.total_price), 0) as total_revenue,
                 
@@ -325,6 +329,7 @@ class StatsService
             ->groupBy('reservation_id');
 
         $resSub = DB::table('reservations')
+            ->where('reservations.status', '!=', Reservation::STATUS_CANCELLED)
             ->whereBetween('reservation_date', [$start->toDateString(), $end->toDateString()])
             ->leftJoinSub($resItemsSub, 'ri', 'reservations.id', '=', 'ri.reservation_id')
             ->select(
@@ -441,11 +446,13 @@ class StatsService
                 DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN r.revenue ELSE 0 END), 0) as total_revenue_this_month"),
                 DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN r.number_of_guests ELSE 0 END), 0) as total_guests_this_month"),
                 DB::raw("COUNT(DISTINCT CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' AND r.company_name IS NOT NULL AND r.company_name != '' THEN r.company_name END) as active_companies_this_month"),
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'individual' THEN r.number_of_guests ELSE 0 END), 0) as total_individual_guests_this_month"),
 
                 // Previous month
                 DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' THEN r.revenue ELSE 0 END), 0) as total_revenue_last_month"),
                 DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' THEN r.number_of_guests ELSE 0 END), 0) as total_guests_last_month"),
-                DB::raw("COUNT(DISTINCT CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' AND r.company_name IS NOT NULL AND r.company_name != '' THEN r.company_name END) as active_companies_last_month")
+                DB::raw("COUNT(DISTINCT CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' AND r.company_name IS NOT NULL AND r.company_name != '' THEN r.company_name END) as active_companies_last_month"),
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'individual' THEN r.number_of_guests ELSE 0 END), 0) as total_individual_guests_last_month")
             )
             ->first();
 
@@ -561,6 +568,10 @@ class StatsService
                 'guests' => $this->calculateGrowth(
                     (int) ($groupSummary->total_guests_this_month ?? 0),
                     (int) ($groupSummary->total_guests_last_month ?? 0)
+                ),
+                'individual_guests' => $this->calculateGrowth(
+                    (int) ($groupSummary->total_individual_guests_this_month ?? 0),
+                    (int) ($groupSummary->total_individual_guests_last_month ?? 0)
                 ),
                 'revenue' => $this->calculateGrowth(
                     (float) ($groupSummary->total_revenue_this_month ?? 0),

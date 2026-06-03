@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../shared/Icon';
 
-const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, formatTime, formatDate }) => {
+const ReservationTable = ({ reservations, onView, onEdit, onDone, onCancel, isAdminOrCashier, formatTime, formatDate }) => {
     return (
         <div className="hidden md:block bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
@@ -30,11 +30,12 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                                     key={r.id}
                                     className={`
                                         transition-colors
-                                        ${r.status === 'completed' ? 'opacity-50 line-through' : ''}
-                                        ${r.type === 'group' ? 'bg-purple-50/20 hover:bg-purple-50/50' : 'bg-blue-50/20 hover:bg-blue-50/50'}
+                                        ${r.status === 'completed' ? 'bg-emerald-50/20 hover:bg-emerald-50/30 opacity-75 line-through' : ''}
+                                        ${r.status === 'cancelled' ? 'bg-red-50/20 hover:bg-red-50/30 opacity-60 line-through' : ''}
+                                        ${r.status !== 'completed' && r.status !== 'cancelled' ? (r.type === 'group' ? 'bg-purple-50/20 hover:bg-purple-50/50' : 'bg-blue-50/20 hover:bg-blue-50/50') : ''}
                                     `}
                                 >
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className={`px-6 py-4 whitespace-nowrap transition-all ${r.status === 'completed' ? 'border-l-4 border-emerald-500' : r.status === 'cancelled' ? 'border-l-4 border-red-500' : 'border-l-4 border-transparent'}`}>
                                         <div className="flex flex-col gap-1.5">
                                             <span className="text-sm font-black text-gray-700">{formatTime(r.reservation_time)} - {formatDate(r.reservation_date)}</span>
                                             {r.apply_vat && (
@@ -87,12 +88,20 @@ const ReservationTable = ({ reservations, onView, onEdit, onDone, isManager, for
                                             >
                                                 Edit
                                             </button>
-                                            {r.type === 'individual' && r.status !== 'completed' && (
+                                            {r.type === 'individual' && r.status !== 'completed' && r.status !== 'cancelled' && (
                                                 <button
                                                     onClick={() => onDone(r)}
                                                     className="px-3 py-1.5 bg-green-100 text-green-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-green-200 transition-all border-none cursor-pointer"
                                                 >
                                                     Arrived
+                                                </button>
+                                            )}
+                                            {r.status !== 'completed' && r.status !== 'cancelled' && (
+                                                <button
+                                                    onClick={() => onCancel(r)}
+                                                    className="px-3 py-1.5 bg-red-100 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-200 transition-all border-none cursor-pointer"
+                                                >
+                                                    Cancel
                                                 </button>
                                             )}
                                         </div>

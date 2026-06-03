@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../shared/Icon';
 
-const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterType, formatDate, formatTime }) => {
+const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, onCancel, filterType, formatDate, formatTime }) => {
     return (
         <div className="md:hidden space-y-4">
             {reservations.length === 0 ? (
@@ -14,7 +14,8 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                         key={r.id}
                         className={`
                             rounded-lg p-2 shadow-sm transition-all space-y-2 bg-white
-                            ${r.status === 'completed' ? 'opacity-50 line-through' : ''}
+                            ${r.status === 'completed' ? 'bg-emerald-50/20 border-l-4 border-l-emerald-500 border-y border-r border-y-emerald-100/30 border-r-emerald-100/30 opacity-75 line-through' : ''}
+                            ${r.status === 'cancelled' ? 'bg-red-50/20 border-l-4 border-l-red-500 border-y border-r border-y-red-100/30 border-r-red-100/30 opacity-60 line-through' : ''}
                         `}
                     >
                         <div className="flex justify-between items-start">
@@ -57,25 +58,33 @@ const ReservationMobileCards = ({ reservations, onView, onEdit, onDone, filterTy
                             </div>
                         )}
 
-                        <div className={`grid ${(r.type === 'individual' && r.status !== 'completed') ? 'grid-cols-3' : 'grid-cols-2'} gap-3 pt-2`}>
+                        <div className="flex flex-wrap gap-2 pt-2">
                             <button
                                 onClick={() => onView(r)}
-                                className="py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all border-none cursor-pointer"
+                                className="flex-1 min-w-[70px] py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all border-none cursor-pointer text-center"
                             >
                                 View
                             </button>
                             <button
                                 onClick={() => onEdit(r.id)}
-                                className="py-1 bg-orange-100 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer"
+                                className="flex-1 min-w-[70px] py-1.5 bg-orange-100 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-200 transition-all border-none cursor-pointer text-center"
                             >
                                 Edit
                             </button>
-                            {r.type === 'individual' && r.status !== 'completed' && (
+                            {r.type === 'individual' && r.status !== 'completed' && r.status !== 'cancelled' && (
                                 <button
                                     onClick={() => onDone(r)}
-                                    className="py-1 bg-green-100 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-200 transition-all border-none cursor-pointer"
+                                    className="flex-1 min-w-[70px] py-1.5 bg-green-100 text-green-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-200 transition-all border-none cursor-pointer text-center"
                                 >
                                     Arrived
+                                </button>
+                            )}
+                            {r.status !== 'completed' && r.status !== 'cancelled' && (
+                                <button
+                                    onClick={() => onCancel(r)}
+                                    className="flex-1 min-w-[70px] py-1.5 bg-red-100 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-200 transition-all border-none cursor-pointer text-center"
+                                >
+                                    Cancel
                                 </button>
                             )}
                         </div>
