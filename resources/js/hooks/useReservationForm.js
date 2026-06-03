@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -6,6 +7,8 @@ import { useAppDispatch } from '../store/hooks';
 import { saveReservationAsync } from '../store/slices/reservationSlice';
 import { reservationApi } from '../services/reservationApi';
 import { getUsersApi } from '../services/userService';
+
+const CHILD_PRICE_RATIO = 0.75; // [RULE] Child price is 75% of adult price
 
 export const useReservationForm = (id = null, user = null) => {
     const isEdit = !!id;
@@ -28,78 +31,91 @@ export const useReservationForm = (id = null, user = null) => {
             status: 'pending',
             apply_vat: false,
             vat_percentage: 0,
-            staff_id: ''
+            staff_id: '',
+            partner_company_id: ''
         }
     });
 
+    const { reset, setValue, control } = form;
+
     const { fields, append, remove } = useFieldArray({
-        control: form.control,
+        control,
         name: "dishes"
     });
 
     // [WHY] Fetch active sellers list for dropdown selection
     useEffect(() => {
-        getUsersApi()
+        const controller = new AbortController();
+        getUsersApi({ signal: controller.signal })
             .then(res => {
                 if (res && res.data) {
                     const activeSellers = res.data.filter(u => u.role === 'seller' && u.status === 'active');
                     setSellers(activeSellers);
                 }
             })
-            .catch(err => console.error('Failed to fetch sellers:', err));
+            .catch(err => {
+                if (axios.isCancel(err)) return;
+                console.error('Failed to fetch sellers:', err);
+            });
+
+        return () => controller.abort();
     }, []);
 
     // [WHY] Fetch existing data if in edit mode
     useEffect(() => {
-        if (isEdit) {
-            reservationApi.getById(id)
-                .then(res => {
-                    const data = res.data;
-                    setReservationData(data); // [WHY] Store raw data for display-only fields (e.g. updated_at, updater)
-                    
-                    if (data.reservation_date) {
-                        // [FIX] Robustly extract ONLY the YYYY-MM-DD part to prevent timezone shifts or invalid input values
-                        // Handles both ISO (T separator) and DB (space separator) formats
-                        data.reservation_date = data.reservation_date.toString().split(/[\sT]/)[0];
-                    }
+        if (!isEdit) return;
 
-                    // [FIX] Map dishes with VAT and Child Pricing reverse-calculations
-                    if (data.items) {
-                        data.dishes = data.items.map(item => {
-                            let basePrice = item.price;
-                            if (data.apply_vat) {
-                                const vatRate = 1 + (data.vat_percentage / 100);
-                                basePrice = Math.round(item.price / vatRate);
-                            }
-                            
-                            const isChild = item.name && item.name.includes('(Trẻ em)');
-                            const originalPrice = isChild ? Math.round(basePrice / 0.75) : basePrice;
-                            
-                            return {
-                                ...item,
-                                price: basePrice,
-                                original_price: originalPrice,
-                                is_child: isChild
-                            };
-                        });
-                    }
+        const controller = new AbortController();
+        reservationApi.getById(id, { signal: controller.signal })
+            .then(res => {
+                const data = res.data;
+                setReservationData(data); // [WHY] Store raw data for display-only fields (e.g. updated_at, updater)
+                
+                if (data.reservation_date) {
+                    // [FIX] Robustly extract ONLY the YYYY-MM-DD part to prevent timezone shifts or invalid input values
+                    // Handles both ISO (T separator) and DB (space separator) formats
+                    data.reservation_date = data.reservation_date.toString().split(/[\sT]/)[0];
+                }
 
-                    form.reset(data);
-                    setActiveTab(data.type);
-                    setFetching(false);
-                })
-                .catch(err => {
-                    console.error('Failed to fetch reservation:', err);
-                    setMessage({ type: 'error', text: 'Reservation not found.' });
-                    setFetching(false);
-                });
-        }
-    }, [id, isEdit, form]);
+                // [FIX] Map dishes with VAT and Child Pricing reverse-calculations
+                if (data.items) {
+                    data.dishes = data.items.map(item => {
+                        let basePrice = item.price;
+                        if (data.apply_vat) {
+                            const vatRate = 1 + (data.vat_percentage / 100);
+                            basePrice = Math.round(item.price / vatRate);
+                        }
+                        
+                        const isChild = item.is_child === true || (item.name && item.name.includes('(Trẻ em)'));
+                        const originalPrice = isChild ? Math.round(basePrice / CHILD_PRICE_RATIO) : basePrice;
+                        
+                        return {
+                            ...item,
+                            price: basePrice,
+                            original_price: originalPrice,
+                            is_child: isChild
+                        };
+                    });
+                }
+
+                reset(data);
+                setActiveTab(data.type);
+                setFetching(false);
+            })
+            .catch(err => {
+                if (axios.isCancel(err)) return;
+                console.error('Failed to fetch reservation:', err);
+                setMessage({ type: 'error', text: 'Reservation not found.' });
+                setFetching(false);
+            });
+
+        return () => controller.abort();
+    }, [id, isEdit, reset]);
 
     const handleTabChange = useCallback((type) => {
         setActiveTab(type);
-        form.setValue('type', type);
-    }, [form]);
+        setValue('type', type);
+    }, [setValue]);
 
     const onSubmit = async (data) => {
         setLoading(true);
@@ -123,6 +139,7 @@ export const useReservationForm = (id = null, user = null) => {
 
         if (payload.table_id === "") payload.table_id = null;
         if (payload.staff_id === "") payload.staff_id = null;
+        if (payload.partner_company_id === "") payload.partner_company_id = null;
 
         if (payload.type === 'individual') {
             payload.dishes = [];

@@ -20,6 +20,14 @@ class ReservationService
             unset($data['dishes']);
 
             $data['updated_by'] = $data['updated_by'] ?? auth()->id();
+
+            if (!empty($data['partner_company_id'])) {
+                $partner = \App\Models\PartnerCompany::find($data['partner_company_id']);
+                if ($partner) {
+                    $data['company_name'] = $partner->name;
+                }
+            }
+
             $reservation = Reservation::create($data);
 
             if (!empty($dishes)) {
@@ -73,6 +81,14 @@ class ReservationService
             unset($data['dishes']);
 
             $data['updated_by'] = $data['updated_by'] ?? auth()->id();
+
+            if (!empty($data['partner_company_id'])) {
+                $partner = \App\Models\PartnerCompany::find($data['partner_company_id']);
+                if ($partner) {
+                    $data['company_name'] = $partner->name;
+                }
+            }
+
             $reservation->update($data);
 
             if ($hasDishesKey) {

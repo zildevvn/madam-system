@@ -12,6 +12,7 @@ use App\Http\Controllers\API\ReservationController;
 use App\Http\Controllers\API\ExpenseController;
 use App\Http\Controllers\API\StatsController;
 use App\Http\Controllers\API\SystemMessageController;
+use App\Http\Controllers\API\PartnerCompanyController;
 
 // Same-domain or stateless API routes
 Route::get('/tables', [TableController::class, 'index']);
@@ -89,6 +90,7 @@ Route::apiResource('reservations', ReservationController::class);
 Route::apiResource('expenses', ExpenseController::class);
 Route::apiResource('system-messages', SystemMessageController::class);
 Route::post('/system-messages/{id}/read', [SystemMessageController::class, 'markAsRead']);
+Route::apiResource('partner-companies', PartnerCompanyController::class);
 
 // Analytics
 Route::get('/stats/today-revenue', [StatsController::class, 'todayRevenue']);

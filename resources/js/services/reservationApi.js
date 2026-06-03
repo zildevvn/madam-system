@@ -14,8 +14,8 @@ export const reservationApi = {
         const response = await axios.get(url, config);
         return response.data;
     },
-    getById: async (id) => {
-        const response = await axios.get(`/api/reservations/${id}`);
+    getById: async (id, config = {}) => {
+        const response = await axios.get(`/api/reservations/${id}`, config);
         return response.data;
     },
     create: async (payload) => {
