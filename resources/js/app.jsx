@@ -33,8 +33,8 @@ import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
-import ReservationStatsPage from "./pages/admin/ReservationStatsPage";
-import PartnerCompaniesPage from "./pages/admin/PartnerCompaniesPage";
+import ReservationStatsPage from "./pages/reservations/ReservationStatsPage";
+import PartnerCompaniesPage from "./pages/reservations/PartnerCompaniesPage";
 import AttendanceManagementPage from "./pages/AttendanceManagementPage";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
@@ -221,6 +221,8 @@ function App() {
                             <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
                             {/* [WHY] ReservationCreate handles both create and edit flows. The ReservationEdit alias is used to document this intent. */}
                             <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationEdit /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/stats" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><ReservationStatsPage /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/partner-companies" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><PartnerCompaniesPage /></DefaultLayout></RoleProtectedRoute>} />
                         </Route>
 
                         {/* Cashier page: Access by admin, cashier */}
@@ -245,8 +247,6 @@ function App() {
                             <Route path="tables" element={<TableManagement />} />
                             <Route path="products" element={<ProductManagement />} />
                             <Route path="performance" element={<EmployeePerformancePage />} />
-                            <Route path="reservation-stats" element={<ReservationStatsPage />} />
-                            <Route path="partner-companies" element={<PartnerCompaniesPage />} />
                         </Route>
 
                         {/* Kitchen and Bar: Access by admin, kitchen, bar */}

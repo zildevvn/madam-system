@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { usePartnerCompanies } from '../../hooks/usePartnerCompanies';
-import PartnerCompanyFormModal from '../../components/admin/PartnerCompanyFormModal';
+import PartnerCompanyFormModal from '../../components/reservations/PartnerCompanyFormModal';
 import Icon from '../../components/shared/Icon';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
 
@@ -144,7 +144,7 @@ const PartnerCompaniesPage = () => {
     }
 
     return (
-        <>
+        <div className='max-w-7xl mx-auto p-4 lg:p-8'>
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Header & Controls */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -305,11 +305,10 @@ const PartnerCompaniesPage = () => {
                                 <button
                                     key={pageNum}
                                     onClick={() => handlePageChange(pageNum)}
-                                    className={`w-9 h-9 flex items-center justify-center font-bold text-xs rounded-xl border transition-all cursor-pointer ${
-                                        isCurrent
-                                            ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/25'
-                                            : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
-                                    }`}
+                                    className={`w-9 h-9 flex items-center justify-center font-bold text-xs rounded-xl border transition-all cursor-pointer ${isCurrent
+                                        ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/25'
+                                        : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                        }`}
                                 >
                                     {pageNum}
                                 </button>
@@ -349,7 +348,7 @@ const PartnerCompaniesPage = () => {
                 }}
                 onCancel={() => setDeletingCompany(null)}
             />
-        </>
+        </div>
     );
 };
 

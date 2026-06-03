@@ -72,7 +72,17 @@ export default function Header() {
     const navigation = useMemo(() => {
         if (!user) return [];
         if (user.role === ROLES.ADMIN) return NAVIGATION_ITEMS;
-        return NAVIGATION_ITEMS.filter(item => item.roles.includes(user.role));
+        return NAVIGATION_ITEMS
+            .filter(item => item.roles && item.roles.includes(user.role))
+            .map(item => {
+                if (item.children) {
+                    return {
+                        ...item,
+                        children: item.children.filter(child => !child.roles || child.roles.includes(user.role))
+                    };
+                }
+                return item;
+            });
     }, [user]);
 
     const isActive = useCallback(
