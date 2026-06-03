@@ -31,8 +31,6 @@ export default function useEmployeeSchedule() {
         setShiftFilter,
         roleTab,
         setRoleTab,
-        activeMobileDayIndex,
-        setActiveMobileDayIndex,
         leavesByEmployee,
         roleFilteredEmployees,
         filteredSchedules
@@ -89,8 +87,6 @@ export default function useEmployeeSchedule() {
         setSearchQuery,
         shiftFilter,
         setShiftFilter,
-        activeMobileDayIndex,
-        setActiveMobileDayIndex,
         filteredSchedules,
         getShiftBadgeStyle,
         getWeekdayLabel,

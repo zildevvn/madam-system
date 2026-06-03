@@ -10,7 +10,6 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
     const [searchQuery, setSearchQuery] = useState('');
     const [shiftFilter, setShiftFilter] = useState('all');
     const [roleTab, setRoleTab] = useState('all');
-    const [activeMobileDayIndex, setActiveMobileDayIndex] = useState(0);
 
     // [WHY] Pre-maps leaves by employee ID in O(L) time.
     // [RULE] Transforms complex O(N*L) checks into extremely fast O(1) hash maps for peak performance.
@@ -43,10 +42,15 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
     // [WHY] Processed weekly schedule grid for the active role selection.
     // [RULE] Uses indexed leavesByEmployee hash lookup to achieve O(N * 7) linear scale performance.
     const schedulesList = useMemo(() => {
+        // Pre-format weekDates once to avoid formatting them repeatedly in the nested loop
+        const formattedWeekDates = weekDates.map(date => ({
+            date,
+            dateStr: formatLocalDate(date)
+        }));
+
         return roleFilteredEmployees.map(emp => {
             const empLeaves = leavesByEmployee[emp.id] || [];
-            const dailySchedules = weekDates.map(date => {
-                const dateStr = formatLocalDate(date);
+            const dailySchedules = formattedWeekDates.map(({ date, dateStr }) => {
                 const isOnLeave = empLeaves.some(l => dateStr >= l.start && dateStr <= l.end);
                 
                 // Resolve shift: check flexible shifts first, otherwise fallback to default fixed shift
@@ -81,7 +85,14 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
             if (shiftFilter === 'all') return matchesSearch;
             const matchesShift = item.dailySchedules.some(s => {
                 if (shiftFilter === 'off') return s.status === 'Off day';
-                return s.status.toLowerCase() === shiftFilter.toLowerCase();
+                const statusLower = s.status.toLowerCase();
+                if (shiftFilter === 'ca sáng') {
+                    return statusLower === 'ca sáng' || statusLower === 'ca full time';
+                }
+                if (shiftFilter === 'ca tối') {
+                    return statusLower === 'ca tối' || statusLower === 'ca full time';
+                }
+                return statusLower === shiftFilter.toLowerCase();
             });
             return matchesSearch && matchesShift;
         });
@@ -94,8 +105,6 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
         setShiftFilter,
         roleTab,
         setRoleTab,
-        activeMobileDayIndex,
-        setActiveMobileDayIndex,
         leavesByEmployee,
         roleFilteredEmployees,
         filteredSchedules
