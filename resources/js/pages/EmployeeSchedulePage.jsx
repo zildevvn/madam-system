@@ -8,7 +8,6 @@ import Icon from '../components/shared/Icon';
 import TodayStats from '../components/schedule/TodayStats';
 import ScheduleWeekNav from '../components/schedule/ScheduleWeekNav';
 import ScheduleDesktopGrid from '../components/schedule/ScheduleDesktopGrid';
-import ScheduleMobileStack from '../components/schedule/ScheduleMobileStack';
 
 /**
  * EmployeeSchedulePage Component
@@ -29,8 +28,6 @@ export default function EmployeeSchedulePage() {
         setSearchQuery,
         shiftFilter,
         setShiftFilter,
-        activeMobileDayIndex,
-        setActiveMobileDayIndex,
         filteredSchedules,
         getShiftBadgeStyle,
         getWeekdayLabel,
@@ -73,26 +70,12 @@ export default function EmployeeSchedulePage() {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Đang tính toán lịch trình...</span>
                 </div>
             ) : filteredSchedules.length > 0 ? (
-                <>
-                    <div className="hidden md:block">
-                         <ScheduleDesktopGrid
-                             filteredSchedules={filteredSchedules}
-                             weekDates={weekDates}
-                             getWeekdayLabel={getWeekdayLabel}
-                             getShiftBadgeStyle={getShiftBadgeStyle}
-                         />
-                    </div>
-                    <div className="block md:hidden">
-                         <ScheduleMobileStack
-                             weekDates={weekDates}
-                             activeMobileDayIndex={activeMobileDayIndex}
-                             setActiveMobileDayIndex={setActiveMobileDayIndex}
-                             getWeekdayLabel={getWeekdayLabel}
-                             filteredSchedules={filteredSchedules}
-                             getShiftBadgeStyle={getShiftBadgeStyle}
-                         />
-                    </div>
-                </>
+                <ScheduleDesktopGrid
+                    filteredSchedules={filteredSchedules}
+                    weekDates={weekDates}
+                    getWeekdayLabel={getWeekdayLabel}
+                    getShiftBadgeStyle={getShiftBadgeStyle}
+                />
             ) : (
                 <div className="py-20 flex flex-col items-center justify-center gap-2 text-center bg-white rounded-3xl border border-slate-100">
                     <Icon name="alert" size={40} className="w-10 h-10 text-slate-300" />

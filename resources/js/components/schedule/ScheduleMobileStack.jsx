@@ -32,13 +32,18 @@ export default function ScheduleMobileStack({
                             key={idx}
                             type="button"
                             onClick={() => setActiveMobileDayIndex(idx)}
-                            className={`px-3 py-1.5 rounded-lg border text-center transition-all flex-shrink-0 cursor-pointer flex flex-col items-center min-w-[65px] relative ${isDayToday
-                                ? 'bg-orange-50 border-orange-200 text-orange-600 font-extrabold shadow-sm'
-                                : 'bg-slate-50 border-slate-200/40 text-slate-600 hover:bg-slate-100'
-                                }`}
+                            className={`px-3 py-1.5 rounded-lg border text-center transition-all flex-shrink-0 cursor-pointer flex flex-col items-center min-w-[65px] relative ${
+                                idx === activeMobileDayIndex
+                                    ? 'bg-orange-50 border-orange-200 text-orange-600 font-extrabold shadow-sm'
+                                    : 'bg-slate-50 border-slate-200/40 text-slate-600 hover:bg-slate-100'
+                            }`}
                         >
                             <span className="text-[9px] font-black uppercase tracking-wider block">{getWeekdayLabel(date)}</span>
-                            <span className={`text-[8px] font-bold mt-0.5 block ${isDayToday ? 'text-orange-400' : 'text-slate-400'}`}>
+                            <span className={`text-[8px] font-bold mt-0.5 block ${
+                                idx === activeMobileDayIndex 
+                                    ? 'text-orange-400' 
+                                    : 'text-slate-400'
+                            }`}>
                                 {date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
                             </span>
                         </button>
