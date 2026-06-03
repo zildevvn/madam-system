@@ -5,6 +5,7 @@ import { useReservationForm } from '../../hooks/useReservationForm';
 import ReservationDishesForm from '../../components/reservations/ReservationDishesForm';
 import ReservationTableSelector from '../../components/reservations/ReservationTableSelector';
 import Icon from '../../components/shared/Icon';
+import partnerCompanyService from '../../services/partnerCompanyService';
 
 const ReservationCreate = () => {
     const { id } = useParams();
@@ -22,6 +23,18 @@ const ReservationCreate = () => {
         reservationData, sellers,
         handleTabChange, onSubmit
     } = useReservationForm(id, user);
+
+    const [partnerCompanies, setPartnerCompanies] = React.useState([]);
+
+    React.useEffect(() => {
+        partnerCompanyService.getAllPartnerCompanies({ all: true })
+            .then(res => {
+                setPartnerCompanies(res || []);
+            })
+            .catch(err => console.error('Failed to load partner companies', err));
+    }, []);
+
+    const isLegacy = isEdit && reservationData && !reservationData.partner_company_id && reservationData.company_name;
 
     const handleCancel = async () => {
         const name = reservationData?.tour_guide_name || reservationData?.lead_name || 'this reservation';
@@ -87,7 +100,37 @@ const ReservationCreate = () => {
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-gray-100">
                             <div><label className={labelClasses}>Tour Guide</label><input {...register('tour_guide_name')} className={inputClasses} /></div>
-                            <div><label className={labelClasses}>Company</label><input {...register('company_name', { required: 'Required' })} className={inputClasses} /></div>
+                            <div>
+                                <label className={labelClasses}>Tên Công Ty<span className="text-red-500">*</span></label>
+                                <select
+                                    {...register('partner_company_id', {
+                                        required: (activeTab === 'group' && !isLegacy) ? 'Vui lòng chọn đối tác' : false
+                                    })}
+                                    value={watch('partner_company_id') || ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setValue('partner_company_id', val || '');
+                                        if (val) {
+                                            const selected = partnerCompanies.find(c => c.id === parseInt(val, 10));
+                                            if (selected) {
+                                                setValue('company_name', selected.name);
+                                            }
+                                        } else {
+                                            setValue('company_name', '');
+                                        }
+                                    }}
+                                    className={inputClasses}
+                                >
+                                    <option value="">-- Chọn Công Ty --</option>
+                                    {isLegacy && !watch('partner_company_id') && (
+                                        <option value="" disabled>{watch('company_name')} (Legacy)</option>
+                                    )}
+                                    {partnerCompanies.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                                {errors.partner_company_id && <p className="mt-1 text-[10px] text-red-500 font-bold uppercase">{errors.partner_company_id.message}</p>}
+                            </div>
                         </div>
 
                         <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100 flex flex-col gap-6">
@@ -157,7 +200,7 @@ const ReservationCreate = () => {
                     </div>
                 )}
 
-                {user?.role !== 'seller' && (
+                {/* {user?.role !== 'seller' && (
                     <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100/50">
                         <label className={labelClasses}>Nhân viên Seller (Người giới thiệu)</label>
                         <select {...register('staff_id')} className={`${inputClasses} cursor-pointer`}>
@@ -167,7 +210,7 @@ const ReservationCreate = () => {
                             ))}
                         </select>
                     </div>
-                )}
+                )} */}
 
                 <div className="bg-gray-50/50 p-3 rounded-[16px] border border-gray-100/50">
                     <label className={labelClasses}>Notes</label>

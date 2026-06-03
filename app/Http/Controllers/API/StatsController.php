@@ -91,4 +91,21 @@ class StatsController extends Controller
             'errors' => null
         ]);
     }
+
+    /**
+     * reservationStats
+     * [WHY] Returns monthly reservation revenue, top companies, and company comparisons.
+     */
+    public function reservationStats(Request $request)
+    {
+        $month = $request->query('month', now()->format('Y-m'));
+
+        $stats = $this->statsService->getReservationStats($month);
+
+        return response()->json([
+            'data' => $stats,
+            'message' => 'Success',
+            'errors' => null
+        ]);
+    }
 }

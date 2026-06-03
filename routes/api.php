@@ -12,6 +12,8 @@ use App\Http\Controllers\API\ReservationController;
 use App\Http\Controllers\API\ExpenseController;
 use App\Http\Controllers\API\StatsController;
 use App\Http\Controllers\API\SystemMessageController;
+use App\Http\Controllers\API\PartnerCompanyController;
+use App\Http\Controllers\API\SystemSettingController;
 
 // Same-domain or stateless API routes
 Route::get('/tables', [TableController::class, 'index']);
@@ -89,9 +91,15 @@ Route::apiResource('reservations', ReservationController::class);
 Route::apiResource('expenses', ExpenseController::class);
 Route::apiResource('system-messages', SystemMessageController::class);
 Route::post('/system-messages/{id}/read', [SystemMessageController::class, 'markAsRead']);
+Route::apiResource('partner-companies', PartnerCompanyController::class);
 
 // Analytics
 Route::get('/stats/today-revenue', [StatsController::class, 'todayRevenue']);
 Route::get('/stats/revenue-report', [StatsController::class, 'revenueReport']);
 Route::get('/stats/item-stats', [StatsController::class, 'itemStats']);
 Route::get('/stats/employee-performance', [StatsController::class, 'employeePerformance']);
+Route::get('/stats/reservation-stats', [StatsController::class, 'reservationStats']);
+
+// System Settings
+Route::get('/system-settings', [SystemSettingController::class, 'index']);
+Route::put('/system-settings', [SystemSettingController::class, 'update']);

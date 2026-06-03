@@ -18,7 +18,7 @@ class ReservationConfirmService
         return DB::transaction(function () use ($reservation, $tableIds, $staffId) {
             // [WHY] Mark reservation as confirmed and save staff assignment
             $reservation->update([
-                'status' => 'confirmed',
+                'status' => Reservation::STATUS_CONFIRMED,
                 'staff_id' => $staffId
             ]);
 

@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Expense;
+use App\Models\Reservation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class StatsService
 {
@@ -16,14 +18,14 @@ class StatsService
     public function getRevenueReport($period = 'day', $date = null, $startDate = null, $endDate = null)
     {
         $query = Order::where('orders.status', 'completed');
-        $referenceDate = $date ? \Illuminate\Support\Carbon::parse($date) : now();
+        $referenceDate = $date ? Carbon::parse($date) : now();
 
         switch ($period) {
             case 'week':
                 if ($startDate && $endDate) {
                     $query->whereBetween('orders.updated_at', [
-                        \Illuminate\Support\Carbon::parse($startDate)->startOfDay(),
-                        \Illuminate\Support\Carbon::parse($endDate)->endOfDay()
+                        Carbon::parse($startDate)->startOfDay(),
+                        Carbon::parse($endDate)->endOfDay()
                     ]);
                 } else {
                     $query->whereBetween('orders.updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
@@ -130,8 +132,8 @@ class StatsService
             case 'week':
                 if ($startDate && $endDate) {
                     $subQuery->whereBetween('orders.updated_at', [
-                        \Illuminate\Support\Carbon::parse($startDate)->startOfDay(),
-                        \Illuminate\Support\Carbon::parse($endDate)->endOfDay()
+                        Carbon::parse($startDate)->startOfDay(),
+                        Carbon::parse($endDate)->endOfDay()
                     ]);
                 } else {
                     $subQuery->whereBetween('orders.updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
@@ -192,7 +194,7 @@ class StatsService
 
     public function getItemSalesStats($period = 'day', $date = null, $startDate = null, $endDate = null, $type = 'top')
     {
-        $referenceDate = $date ? \Illuminate\Support\Carbon::parse($date) : now();
+        $referenceDate = $date ? Carbon::parse($date) : now();
 
         $subQuery = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
@@ -203,8 +205,8 @@ class StatsService
             case 'week':
                 if ($startDate && $endDate) {
                     $subQuery->whereBetween('orders.updated_at', [
-                        \Illuminate\Support\Carbon::parse($startDate)->startOfDay(),
-                        \Illuminate\Support\Carbon::parse($endDate)->endOfDay()
+                        Carbon::parse($startDate)->startOfDay(),
+                        Carbon::parse($endDate)->endOfDay()
                     ]);
                 } else {
                     $subQuery->whereBetween('orders.updated_at', [$referenceDate->copy()->startOfWeek(), $referenceDate->copy()->endOfWeek()]);
@@ -262,10 +264,10 @@ class StatsService
     public function getEmployeePerformance($period = 'today', $startDate = null, $endDate = null)
     {
         $referenceDate = now();
-        
+
         if ($startDate && $endDate) {
-            $start = \Illuminate\Support\Carbon::parse($startDate)->startOfDay();
-            $end = \Illuminate\Support\Carbon::parse($endDate)->endOfDay();
+            $start = Carbon::parse($startDate)->startOfDay();
+            $end = Carbon::parse($endDate)->endOfDay();
         } else {
             switch ($period) {
                 case 'week':
@@ -349,9 +351,9 @@ class StatsService
                 '=',
                 'r.seller_id'
             )
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->where('users.role', '=', 'seller')
-                  ->orWhere('r.reservations_count', '>', 0);
+                    ->orWhere('r.reservations_count', '>', 0);
             })
             ->where('users.status', 'active')
             ->select(
@@ -375,6 +377,227 @@ class StatsService
                 'start_date' => $start->toDateString(),
                 'end_date' => $end->toDateString()
             ]
+        ];
+    }
+
+    /**
+     * getReservationStats
+     * [WHY] Compiles monthly reservation revenue, top companies, and company comparisons.
+     */
+    public function getReservationStats($monthStr)
+    {
+        if (!preg_match('/^\d{4}-\d{2}$/', $monthStr)) {
+            $monthStr = now()->format('Y-m');
+        }
+
+        $selectedMonthStart = Carbon::parse($monthStr . '-01')->startOfMonth();
+        $selectedMonthEnd = $selectedMonthStart->copy()->endOfMonth();
+
+        $prevMonthStart = $selectedMonthStart->copy()->subMonth()->startOfMonth();
+        $prevMonthEnd = $prevMonthStart->copy()->endOfMonth();
+
+        $selectedStartStr = $selectedMonthStart->toDateString();
+        $selectedEndStr = $selectedMonthEnd->toDateString();
+        $prevStartStr = $prevMonthStart->toDateString();
+        $prevEndStr = $prevMonthEnd->toDateString();
+
+        // 1. Build subquery to compute the individual revenue for each reservation
+        $reservationRevenues = DB::table('reservations')
+            ->leftJoin('reservation_items', 'reservations.id', '=', 'reservation_items.reservation_id')
+            ->select(
+                'reservations.id',
+                'reservations.company_name',
+                'reservations.number_of_guests',
+                'reservations.reservation_date',
+                'reservations.type',
+                DB::raw('COALESCE(SUM(reservation_items.price * reservation_items.quantity), 0) as revenue')
+            )
+            ->where('reservations.status', '!=', Reservation::STATUS_CANCELLED)
+            ->whereBetween('reservations.reservation_date', [$prevStartStr, $selectedEndStr])
+            ->groupBy(
+                'reservations.id',
+                'reservations.company_name',
+                'reservations.number_of_guests',
+                'reservations.reservation_date',
+                'reservations.type'
+            );
+
+        // 2. Query summary statistics for the selected month at database-level
+        $summary = DB::query()
+            ->fromSub($reservationRevenues, 'r')
+            ->select(
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' THEN r.revenue ELSE 0 END), 0) as total_revenue"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' THEN 1 ELSE 0 END) as total_reservations"),
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' THEN r.number_of_guests ELSE 0 END), 0) as total_guests"),
+                DB::raw("COUNT(DISTINCT CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.company_name IS NOT NULL AND r.company_name != '' THEN r.company_name END) as active_companies_count")
+            )
+            ->first();
+
+        // 2b. Query group summary statistics for both selected and previous month
+        $groupSummary = DB::query()
+            ->fromSub($reservationRevenues, 'r')
+            ->select(
+                // Selected month
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN r.revenue ELSE 0 END), 0) as total_revenue_this_month"),
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN r.number_of_guests ELSE 0 END), 0) as total_guests_this_month"),
+                DB::raw("COUNT(DISTINCT CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' AND r.company_name IS NOT NULL AND r.company_name != '' THEN r.company_name END) as active_companies_this_month"),
+
+                // Previous month
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' THEN r.revenue ELSE 0 END), 0) as total_revenue_last_month"),
+                DB::raw("COALESCE(SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' THEN r.number_of_guests ELSE 0 END), 0) as total_guests_last_month"),
+                DB::raw("COUNT(DISTINCT CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' AND r.type = 'group' AND r.company_name IS NOT NULL AND r.company_name != '' THEN r.company_name END) as active_companies_last_month")
+            )
+            ->first();
+
+        // Query top group company of the selected month
+        $topGroupCompanyRaw = DB::query()
+            ->fromSub($reservationRevenues, 'r')
+            ->select(
+                'r.company_name',
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN r.revenue ELSE 0 END) as revenue"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN 1 ELSE 0 END) as reservations_count"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' AND r.type = 'group' THEN r.number_of_guests ELSE 0 END) as guests_count")
+            )
+            ->whereNotNull('r.company_name')
+            ->where('r.company_name', '!=', '')
+            ->groupBy('r.company_name')
+            ->orderByDesc('revenue')
+            ->first();
+
+        $topGroupCompany = null;
+        if ($topGroupCompanyRaw && (float) $topGroupCompanyRaw->revenue > 0) {
+            $topGroupCompany = [
+                'company_name' => $topGroupCompanyRaw->company_name,
+                'revenue' => (float) $topGroupCompanyRaw->revenue,
+                'reservations_count' => (int) $topGroupCompanyRaw->reservations_count,
+                'guests_count' => (int) $topGroupCompanyRaw->guests_count
+            ];
+        }
+
+        // 3. Query aggregated company statistics directly at database-level
+        $companyStats = DB::query()
+            ->fromSub($reservationRevenues, 'r')
+            ->select(
+                'r.company_name',
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' THEN r.revenue ELSE 0 END) as revenue_this_month"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' THEN r.revenue ELSE 0 END) as revenue_last_month"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' THEN 1 ELSE 0 END) as res_count_this_month"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' THEN 1 ELSE 0 END) as res_count_last_month"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$selectedStartStr}' AND r.reservation_date <= '{$selectedEndStr}' THEN r.number_of_guests ELSE 0 END) as guest_count_this_month"),
+                DB::raw("SUM(CASE WHEN r.reservation_date >= '{$prevStartStr}' AND r.reservation_date <= '{$prevEndStr}' THEN r.number_of_guests ELSE 0 END) as guest_count_last_month")
+            )
+            ->whereNotNull('r.company_name')
+            ->where('r.company_name', '!=', '')
+            ->groupBy('r.company_name')
+            ->get();
+
+        // 4. Map top companies of the month
+        $selectedCompanies = $companyStats
+            ->filter(fn($row) => $row->revenue_this_month > 0 || $row->res_count_this_month > 0)
+            ->map(function ($row) {
+                return [
+                    'company_name' => $row->company_name,
+                    'reservations_count' => (int) $row->res_count_this_month,
+                    'guests_count' => (int) $row->guest_count_this_month,
+                    'revenue' => (float) $row->revenue_this_month
+                ];
+            })
+            ->sortByDesc('revenue')
+            ->values();
+
+        $topCompany = $selectedCompanies->first() ?: null;
+
+        // 5. Map MoM company comparisons
+        $companyComparison = $companyStats->map(function ($row) {
+            $revenueThisMonth = (float) $row->revenue_this_month;
+            $revenueLastMonth = (float) $row->revenue_last_month;
+            $revenueDifference = $revenueThisMonth - $revenueLastMonth;
+
+            $resCountThisMonth = (int) $row->res_count_this_month;
+            $resCountLastMonth = (int) $row->res_count_last_month;
+            $resCountDifference = $resCountThisMonth - $resCountLastMonth;
+
+            $guestCountThisMonth = (int) $row->guest_count_this_month;
+            $guestCountLastMonth = (int) $row->guest_count_last_month;
+            $guestCountDifference = $guestCountThisMonth - $guestCountLastMonth;
+
+            $growthPercentage = 0.0;
+            if ($revenueLastMonth == 0.0) {
+                if ($revenueThisMonth > 0.0) {
+                    $growthPercentage = 100.0;
+                } elseif ($revenueThisMonth < 0.0) {
+                    $growthPercentage = -100.0;
+                } else {
+                    $growthPercentage = 0.0;
+                }
+            } else {
+                $growthPercentage = ($revenueDifference / abs($revenueLastMonth)) * 100.0;
+            }
+
+            return [
+                'company_name' => $row->company_name,
+                'revenue_this_month' => $revenueThisMonth,
+                'revenue_last_month' => $revenueLastMonth,
+                'revenue_difference' => $revenueDifference,
+                'reservation_count_this_month' => $resCountThisMonth,
+                'reservation_count_last_month' => $resCountLastMonth,
+                'reservation_count_difference' => $resCountDifference,
+                'guest_count_this_month' => $guestCountThisMonth,
+                'guest_count_last_month' => $guestCountLastMonth,
+                'guest_count_difference' => $guestCountDifference,
+                'growth_percentage' => round($growthPercentage, 2)
+            ];
+        })->sortByDesc('revenue_this_month')->values();
+
+        return [
+            'summary' => [
+                'total_revenue' => (float) ($summary->total_revenue ?? 0),
+                'total_reservations' => (int) ($summary->total_reservations ?? 0),
+                'total_guests' => (int) ($summary->total_guests ?? 0),
+                'active_companies_count' => (int) ($summary->active_companies_count ?? 0),
+                'top_company' => $topCompany
+            ],
+            'group_summary' => [
+                'guests' => $this->calculateGrowth(
+                    (int) ($groupSummary->total_guests_this_month ?? 0),
+                    (int) ($groupSummary->total_guests_last_month ?? 0)
+                ),
+                'revenue' => $this->calculateGrowth(
+                    (float) ($groupSummary->total_revenue_this_month ?? 0),
+                    (float) ($groupSummary->total_revenue_last_month ?? 0)
+                ),
+                'active_companies' => $this->calculateGrowth(
+                    (int) ($groupSummary->active_companies_this_month ?? 0),
+                    (int) ($groupSummary->active_companies_last_month ?? 0)
+                ),
+                'top_company' => $topGroupCompany
+            ],
+            'top_companies' => $selectedCompanies->all(),
+            'company_comparison' => $companyComparison->all(),
+            'month' => $monthStr
+        ];
+    }
+
+    private function calculateGrowth($current, $previous)
+    {
+        $difference = $current - $previous;
+        $growthPercentage = 0.0;
+        if ($previous == 0.0) {
+            if ($current > 0.0) {
+                $growthPercentage = 100.0;
+            } elseif ($current < 0.0) {
+                $growthPercentage = -100.0;
+            } else {
+                $growthPercentage = 0.0;
+            }
+        } else {
+            $growthPercentage = ($difference / abs($previous)) * 100.0;
+        }
+        return [
+            'current' => $current,
+            'previous' => $previous,
+            'difference' => $difference,
+            'growth_percentage' => round($growthPercentage, 2)
         ];
     }
 }

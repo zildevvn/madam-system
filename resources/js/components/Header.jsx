@@ -23,14 +23,15 @@ export default function Header() {
     const dispatch = useAppDispatch();
     const { user } = useAppSelector(state => state.auth);
     const { todayStatus } = useAppSelector(state => state.attendance);
+    const attendanceEnabled = useAppSelector(state => state.settings.settings.attendance_enabled);
 
     const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false);
 
     useEffect(() => {
-        if (user && user.role === ROLES.ORDER_STAFF) {
+        if (attendanceEnabled === 'true' && user && user.role === ROLES.ORDER_STAFF) {
             dispatch(fetchTodayAttendanceStatus());
         }
-    }, [user, dispatch]);
+    }, [user, dispatch, attendanceEnabled]);
 
     const handleCheckoutRequest = () => {
         if (todayStatus === 'checkout_pending') {
@@ -72,7 +73,17 @@ export default function Header() {
     const navigation = useMemo(() => {
         if (!user) return [];
         if (user.role === ROLES.ADMIN) return NAVIGATION_ITEMS;
-        return NAVIGATION_ITEMS.filter(item => item.roles.includes(user.role));
+        return NAVIGATION_ITEMS
+            .filter(item => item.roles && item.roles.includes(user.role))
+            .map(item => {
+                if (item.children) {
+                    return {
+                        ...item,
+                        children: item.children.filter(child => !child.roles || child.roles.includes(user.role))
+                    };
+                }
+                return item;
+            });
     }, [user]);
 
     const isActive = useCallback(
@@ -115,7 +126,7 @@ export default function Header() {
 
                         {user && (
                             <div className="flex items-center gap-2 md:gap-4">
-                                {user.role === ROLES.ORDER_STAFF && todayStatus !== null && (
+                                {attendanceEnabled === 'true' && user.role === ROLES.ORDER_STAFF && todayStatus !== null && (
                                     <button
                                         type="button"
                                         onClick={handleCheckoutRequest}

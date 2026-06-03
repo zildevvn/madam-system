@@ -7,6 +7,7 @@ import reservationReducer from './slices/reservationSlice';
 import expenseReducer from './slices/expenseSlice';
 import notificationReducer from './slices/notificationSlice';
 import attendanceReducer from './slices/attendanceSlice';
+import settingsReducer from './slices/settingsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     expense: expenseReducer,
     notification: notificationReducer,
     attendance: attendanceReducer,
+    settings: settingsReducer,
   },
 });
 

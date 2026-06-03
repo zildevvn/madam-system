@@ -33,6 +33,8 @@ import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
+import ReservationStatsPage from "./pages/reservations/ReservationStatsPage";
+import PartnerCompaniesPage from "./pages/reservations/PartnerCompaniesPage";
 import AttendanceManagementPage from "./pages/AttendanceManagementPage";
 import Order from "./pages/Order";
 import Checkout from "./pages/Checkout";
@@ -50,6 +52,7 @@ import EmployeeSchedulePage from './pages/EmployeeSchedulePage';
 import { store } from './store';
 import './bootstrap';
 import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
+import { fetchSettings } from "./store/slices/settingsSlice";
 import "../css/app.css";
 import "../scss/app.scss";
 
@@ -188,6 +191,7 @@ function App() {
     // [WHY] Initial Data Fetch for Products and Categories
     // Performs cache validation before dispatching to optimize network usage and boot performance.
     useEffect(() => {
+        dispatch(fetchSettings());
         if (productCount === 0) {
             dispatch(fetchProducts());
         }
@@ -219,6 +223,8 @@ function App() {
                             <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
                             {/* [WHY] ReservationCreate handles both create and edit flows. The ReservationEdit alias is used to document this intent. */}
                             <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationEdit /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/stats" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><ReservationStatsPage /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/partner-companies" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><PartnerCompaniesPage /></DefaultLayout></RoleProtectedRoute>} />
                         </Route>
 
                         {/* Cashier page: Access by admin, cashier */}

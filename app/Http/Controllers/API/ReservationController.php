@@ -22,7 +22,7 @@ class ReservationController extends Controller
     public function index(Request $request)
     {
         // [WHY] Allow filtering by type for dashboard scannability.
-        $query = Reservation::with(['table:id,name', 'items', 'updater:id,name', 'histories']);
+        $query = Reservation::with(['table:id,name', 'items', 'updater:id,name', 'histories', 'partnerCompany']);
 
         if ($request->query('type')) {
             $query->where('type', $request->query('type'));
@@ -64,6 +64,7 @@ class ReservationController extends Controller
             'nationality' => 'nullable|string|max:100',
             'tour_guide_name' => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
+            'partner_company_id' => 'nullable|exists:partner_companies,id',
             'set_menu' => 'nullable|string|max:255',
             'dishes' => 'nullable|array',
             'dishes.*.name' => 'required_with:dishes|string|max:255',
@@ -131,7 +132,7 @@ class ReservationController extends Controller
      */
     public function show($id)
     {
-        $reservation = Reservation::with(['items', 'updater:id,name', 'histories'])->findOrFail($id);
+        $reservation = Reservation::with(['items', 'updater:id,name', 'histories', 'partnerCompany'])->findOrFail($id);
         $reservation->dishes = $reservation->items;
 
         return response()->json([
@@ -156,6 +157,7 @@ class ReservationController extends Controller
             'nationality' => 'nullable|string|max:100',
             'tour_guide_name' => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
+            'partner_company_id' => 'nullable|exists:partner_companies,id',
             'set_menu' => 'nullable|string|max:255',
             'dishes' => 'nullable|array',
             'dishes.*.name' => 'required_with:dishes|string|max:255',
@@ -168,7 +170,13 @@ class ReservationController extends Controller
             'reservation_date' => 'required|date',
             'reservation_time' => 'required|string',
             'note' => 'nullable|string',
-            'status' => 'nullable|in:pending,confirmed,cancelled,completed',
+            'status' => 'nullable|in:' . implode(',', [
+                Reservation::STATUS_PENDING,
+                Reservation::STATUS_CONFIRMED,
+                Reservation::STATUS_CANCELLED,
+                Reservation::STATUS_COMPLETED,
+                Reservation::STATUS_SEATED
+            ]),
             'staff_id' => 'nullable|exists:users,id',
             'updated_by' => 'nullable|exists:users,id',
             'apply_vat' => 'nullable|boolean',
@@ -230,7 +238,7 @@ class ReservationController extends Controller
     {
         $reservation = Reservation::findOrFail($id);
 
-        if ($reservation->status === 'confirmed') {
+        if ($reservation->status === Reservation::STATUS_CONFIRMED) {
             return response()->json(['message' => 'Reservation is already confirmed.'], 400);
         }
 
