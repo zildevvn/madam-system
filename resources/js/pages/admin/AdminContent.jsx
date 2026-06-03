@@ -6,6 +6,10 @@ import AdminProfitReport from '../../components/admin/AdminRevenueReport/AdminPr
 import AdminExpenses from '../../components/admin/AdminRevenueReport/AdminExpenses';
 import AdminPeriodSelector from '../../components/admin/shared/AdminPeriodSelector';
 import AdminDateFilters from '../../components/admin/shared/AdminDateFilters';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { updateSetting } from '../../store/slices/settingsSlice';
+import toast from 'react-hot-toast';
+import Icon from '../../components/shared/Icon';
 
 /**
  * AdminContent Component
@@ -14,6 +18,20 @@ import AdminDateFilters from '../../components/admin/shared/AdminDateFilters';
  * Now manages global filtering state to ensure consistency across all sections.
  */
 const AdminContent = () => {
+    const dispatch = useAppDispatch();
+    const attendanceEnabled = useAppSelector(state => state.settings.settings.attendance_enabled);
+    const settingsLoading = useAppSelector(state => state.settings.loading);
+
+    const handleToggleAttendance = async () => {
+        const newValue = attendanceEnabled === 'true' ? 'false' : 'true';
+        try {
+            await dispatch(updateSetting({ key: 'attendance_enabled', value: newValue })).unwrap();
+            toast.success(`Hệ thống chấm công đã được ${newValue === 'true' ? 'BẬT' : 'TẮT'}`);
+        } catch (err) {
+            toast.error(err || 'Cập nhật cấu hình thất bại');
+        }
+    };
+
     const {
         period,
         selectedDate,
@@ -60,6 +78,50 @@ const AdminContent = () => {
                             />
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* ─── SYSTEM CONFIGURATION / ATTENDANCE TOGGLE ─── */}
+            <div className="bg-white rounded-[32px] p-5 md:p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 ${attendanceEnabled === 'true' ? 'bg-orange-50 text-orange-500' : 'bg-slate-50 text-slate-400'}`}>
+                        <Icon name="clock" size={24} />
+                    </div>
+                    <div className="space-y-1">
+                        <h5 className="text-slate-900 font-black uppercase text-xs tracking-wider">Hệ thống Điểm danh / Chấm công</h5>
+                        <p className="text-slate-500 text-[11px] md:text-xs leading-relaxed max-w-2xl font-medium">
+                            {attendanceEnabled === 'true'
+                                ? "Hệ thống chấm công đang BẬT. Nhân viên order bắt buộc phải check-in để truy cập các tính năng bán hàng."
+                                : "Hệ thống chấm công đang TẮT. Nhân viên có thể truy cập đầy đủ các chức năng mà không cần điểm danh."
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4 shrink-0 self-end md:self-auto">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-bold">Trạng thái hiện tại</span>
+                        <span className={`text-xs font-black uppercase tracking-wider font-extrabold ${attendanceEnabled === 'true' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                            {attendanceEnabled === 'true' ? 'Đang hoạt động (ON)' : 'Tạm tắt (OFF)'}
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleToggleAttendance}
+                        disabled={settingsLoading}
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+                            attendanceEnabled === 'true' ? 'bg-orange-500' : 'bg-slate-200'
+                        }`}
+                    >
+                        <span className="sr-only">Toggle Attendance System</span>
+                        <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                attendanceEnabled === 'true' ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                        />
+                    </button>
                 </div>
             </div>
 

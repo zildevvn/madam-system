@@ -30,7 +30,7 @@ export const NAVIGATION_ITEMS = [
         children: [
             { name: 'Danh Sách Đặt Chỗ', href: '/reservations', roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER] },
             { name: 'Thống Kê Đặt Chỗ', href: '/reservations/stats', roles: [ROLES.ADMIN] },
-            { name: 'Đối Tác / Doanh Nghiệp', href: '/reservations/partner-companies', roles: [ROLES.ADMIN] },
+            { name: 'Đối Tác', href: '/reservations/partner-companies', roles: [ROLES.ADMIN] },
         ]
     },
     { name: 'Expense Management', href: '/expenses', roles: [ROLES.CASHIER] },

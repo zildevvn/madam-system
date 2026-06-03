@@ -52,6 +52,7 @@ import EmployeeSchedulePage from './pages/EmployeeSchedulePage';
 import { store } from './store';
 import './bootstrap';
 import { fetchProducts, fetchCategories } from "./store/slices/productSlice";
+import { fetchSettings } from "./store/slices/settingsSlice";
 import "../css/app.css";
 import "../scss/app.scss";
 
@@ -190,6 +191,7 @@ function App() {
     // [WHY] Initial Data Fetch for Products and Categories
     // Performs cache validation before dispatching to optimize network usage and boot performance.
     useEffect(() => {
+        dispatch(fetchSettings());
         if (productCount === 0) {
             dispatch(fetchProducts());
         }

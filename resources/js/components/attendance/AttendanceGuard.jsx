@@ -19,9 +19,13 @@ export default function AttendanceGuard({ children }) {
     const dispatch = useAppDispatch();
     const currentUser = useCurrentUser();
     const { todayStatus } = useAppSelector(state => state.attendance);
+    const attendanceEnabled = useAppSelector(state => state.settings.settings.attendance_enabled);
     const [requesting, setRequesting] = useState(false);
 
     const attendanceStatus = useMemo(() => {
+        if (attendanceEnabled !== 'true') {
+            return 'approved';
+        }
         if (!currentUser || currentUser.role !== ROLES.ORDER_STAFF) {
             return 'approved';
         }
@@ -37,15 +41,17 @@ export default function AttendanceGuard({ children }) {
             return 'approved';
         }
         return todayStatus;
-    }, [currentUser, todayStatus]);
+    }, [currentUser, todayStatus, attendanceEnabled]);
 
     const checkTodayStatus = useCallback((signal) => {
-        if (currentUser && currentUser.role === ROLES.ORDER_STAFF) {
+        if (attendanceEnabled === 'true' && currentUser && currentUser.role === ROLES.ORDER_STAFF) {
             dispatch(fetchTodayAttendanceStatus(signal));
         }
-    }, [dispatch, currentUser]);
+    }, [dispatch, currentUser, attendanceEnabled]);
 
     useEffect(() => {
+        if (attendanceEnabled !== 'true') return;
+
         const controller = new AbortController();
         checkTodayStatus(controller.signal);
 

@@ -187,6 +187,15 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
+        if (\App\Models\SystemSetting::getVal('attendance_enabled') !== 'true') {
+            return response()->json([
+                'date' => Carbon::today()->toDateString(),
+                'status' => 'working',
+                'attendance' => null,
+                'on_leave' => false
+            ]);
+        }
+
         $dateStr = Carbon::today()->toDateString();
         $attendance = Attendance::where('user_id', $currentUser->id)
             ->where('date', $dateStr)

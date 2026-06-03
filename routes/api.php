@@ -13,6 +13,7 @@ use App\Http\Controllers\API\ExpenseController;
 use App\Http\Controllers\API\StatsController;
 use App\Http\Controllers\API\SystemMessageController;
 use App\Http\Controllers\API\PartnerCompanyController;
+use App\Http\Controllers\API\SystemSettingController;
 
 // Same-domain or stateless API routes
 Route::get('/tables', [TableController::class, 'index']);
@@ -98,3 +99,7 @@ Route::get('/stats/revenue-report', [StatsController::class, 'revenueReport']);
 Route::get('/stats/item-stats', [StatsController::class, 'itemStats']);
 Route::get('/stats/employee-performance', [StatsController::class, 'employeePerformance']);
 Route::get('/stats/reservation-stats', [StatsController::class, 'reservationStats']);
+
+// System Settings
+Route::get('/system-settings', [SystemSettingController::class, 'index']);
+Route::put('/system-settings', [SystemSettingController::class, 'update']);
