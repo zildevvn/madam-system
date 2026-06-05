@@ -165,8 +165,9 @@ const PaymentModalFooter = ({
             {step === 2 && (
                 <PaymentMethodSelector
                     paymentMethod={paymentMethod}
-                    setPaymentMethod={setPaymentMethod}
+                    onSelect={setPaymentMethod}
                     isGroup={isGroup}
+                    isProcessing={isProcessing}
                 />
             )}
 

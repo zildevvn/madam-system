@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { usePaymentLogic } from '../../hooks/usePaymentLogic';
 import PaymentItemEditor from './PaymentItemEditor';
 import PaymentModalFooter from './PaymentModalFooter';
 import Icon from '../shared/Icon';
+import ConfirmDialog from '../shared/ConfirmDialog';
 
 /**
  * PaymentModal: Full-screen modal for reviewing items, applying discounts,
@@ -76,7 +77,7 @@ const PaymentModal = ({
 
     if (!selectedTable) return null;
 
-    const tableName = (() => {
+    const tableName = useMemo(() => {
         // [RULE] Prioritize the consolidated tableName from the order object (e.g. "44-45-46")
         if (currentOrder?.tableName) {
             return currentOrder.tableName.replace(/^Bàn\s+/i, '');
@@ -85,9 +86,27 @@ const PaymentModal = ({
         // [FALLBACK] Single table resolution
         return (selectedTable.name || selectedTable.id.toString())
             .replace(/^Bàn\s+/i, '');
-    })();
+    }, [currentOrder?.tableName, selectedTable.name, selectedTable.id]);
 
-    const totalQty = draftItems.reduce((s, i) => s + i.quantity, 0);
+    const totalQty = useMemo(() => draftItems.reduce((s, i) => s + i.quantity, 0), [draftItems]);
+
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+    const handleSearchChange = useCallback((query) => {
+        setSearchQuery(query);
+    }, [setSearchQuery]);
+
+    const handleToggleProductSearch = useCallback((show) => {
+        setShowProductSearch(show);
+    }, [setShowProductSearch]);
+
+    const handleSelectTargetTable = useCallback((tableId) => {
+        setTargetTableId(tableId);
+    }, [setTargetTableId]);
+
+    const handleConfirmCancel = () => {
+        setShowCancelConfirm(true);
+    };
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
@@ -116,7 +135,7 @@ const PaymentModal = ({
                     <div className="flex items-center gap-2">
                         {currentOrder && !isHistoryEdit && (
                             <button
-                                onClick={handleCancelTable}
+                                onClick={handleConfirmCancel}
                                 disabled={isProcessing}
                                 className="px-3 h-8 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors border-none cursor-pointer text-[10px] font-bold uppercase tracking-widest disabled:opacity-50"
                                 title="Hủy bàn"
@@ -144,11 +163,11 @@ const PaymentModal = ({
                         draftItems={draftItems}
                         allProducts={allProducts}
                         searchQuery={searchQuery}
-                        setSearchQuery={setSearchQuery}
+                        onSearchChange={handleSearchChange}
                         showProductSearch={showProductSearch}
-                        setShowProductSearch={setShowProductSearch}
+                        onToggleProductSearch={handleToggleProductSearch}
                         targetTableId={targetTableId}
-                        setTargetTableId={setTargetTableId}
+                        onSelectTargetTable={handleSelectTargetTable}
                         handleUpdateQuantity={handleUpdateQuantity}
                         handleUpdateNote={handleUpdateNote}
                         handleUpdateItemDiscount={handleUpdateItemDiscount}
@@ -194,6 +213,20 @@ const PaymentModal = ({
                     handlePrintInvoice={handlePrintInvoice}
                 />
             </div>
+
+            <ConfirmDialog
+                isOpen={showCancelConfirm}
+                title="Hủy Bàn?"
+                message="Bạn có chắc chắn muốn hủy bàn này? Mọi dữ liệu món và đơn hàng sẽ bị xóa hoàn toàn."
+                confirmText="Hủy Bàn"
+                cancelText="Quay Lại"
+                type="danger"
+                onConfirm={async () => {
+                    setShowCancelConfirm(false);
+                    await handleCancelTable();
+                }}
+                onCancel={() => setShowCancelConfirm(false)}
+            />
         </div>
     );
 };

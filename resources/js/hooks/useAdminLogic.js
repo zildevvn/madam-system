@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { getUsersApi, updateUserRoleApi } from '../services/userService';
+import statsApi from '../services/statsApi';
 import { useAppSelector } from '../store/hooks';
 
 /**
@@ -66,6 +67,8 @@ export const useAdminLogic = () => {
     useEffect(() => {
         return () => {
             cleanupAbortControllerRef.current.abort();
+            if (usersAbortControllerRef.current) usersAbortControllerRef.current.abort();
+            if (statsAbortControllerRef.current) statsAbortControllerRef.current.abort();
             if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
         };
     }, []);
@@ -139,11 +142,11 @@ export const useAdminLogic = () => {
         statsAbortControllerRef.current = new AbortController();
 
         try {
-            const res = await axios.get('/api/stats/today-revenue', {
+            const res = await statsApi.getTodayRevenue({
                 signal: statsAbortControllerRef.current.signal
             });
             if (!cleanupAbortControllerRef.current.signal.aborted) {
-                setTodayRevenue(res.data.data.revenue || 0);
+                setTodayRevenue(res.data?.revenue || 0);
             }
         } catch (error) {
             if (axios.isCancel(error)) return;
@@ -163,23 +166,16 @@ export const useAdminLogic = () => {
         fetchStats();
 
         // Listen for system diagnostics
+        let channel = null;
         if (window.Echo) {
-            const channel = window.Echo.channel('system-diagnostics');
+            channel = window.Echo.channel('system-diagnostics');
             channel.listen('SystemTestEvent', handleSystemTest);
-
-            return () => {
-                channel.stopListening('SystemTestEvent');
-                // [WHY] Abort all pending requests on unmount
-                if (usersAbortControllerRef.current) usersAbortControllerRef.current.abort();
-                if (statsAbortControllerRef.current) statsAbortControllerRef.current.abort();
-                cleanupAbortControllerRef.current.abort();
-            };
         }
 
         return () => {
-            if (usersAbortControllerRef.current) usersAbortControllerRef.current.abort();
-            if (statsAbortControllerRef.current) statsAbortControllerRef.current.abort();
-            cleanupAbortControllerRef.current.abort();
+            if (channel) {
+                channel.stopListening('SystemTestEvent');
+            }
         };
     }, [fetchUsers, fetchStats, handleSystemTest]);
 

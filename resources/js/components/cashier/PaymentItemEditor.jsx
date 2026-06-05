@@ -15,11 +15,11 @@ const PaymentItemEditor = ({
     allProducts,
     allTables = [],
     searchQuery,
-    setSearchQuery,
+    onSearchChange,
     showProductSearch,
-    setShowProductSearch,
+    onToggleProductSearch,
     targetTableId,
-    setTargetTableId,
+    onSelectTargetTable,
     handleUpdateQuantity,
     handleUpdateNote,
     handleUpdateItemDiscount,
@@ -48,11 +48,74 @@ const PaymentItemEditor = ({
     // [WHY] Centralized table resolution logic to ensure consistent ID identification
     const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
 
+    // [WHY] Precompute map of table IDs to display names for O(1) rendering lookups
+    const tableMap = React.useMemo(() => {
+        const map = new Map();
+        for (let i = 0; i < allTables.length; i++) {
+            const tbl = allTables[i];
+            map.set(tbl.id.toString(), (tbl.name || tbl.id).toString().replace(/^Bàn\s+/i, ''));
+        }
+        return map;
+    }, [allTables]);
+
     // [WHY] Map IDs to display names (e.g. 47 -> "44")
-    const resolveTableLabel = (tid) => {
-        const t = allTables.find(tbl => tbl.id.toString() === tid.toString());
-        return (t?.name || tid).toString().replace(/^Bàn\s+/i, '');
-    };
+    const resolveTableLabel = React.useCallback((tid) => {
+        if (!tid) return '';
+        return tableMap.get(tid.toString()) || tid.toString().replace(/^Bàn\s+/i, '');
+    }, [tableMap]);
+
+    // [WHY] Group and consolidate draft items outside JSX to avoid complex nested reduce operations on render
+    const groupedAndConsolidatedSections = React.useMemo(() => {
+        const groups = draftItems.reduce((acc, item) => {
+            let tGroup;
+            if (isUnifiedGroup) {
+                tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
+            } else {
+                tGroup = item.tableId || dbTableId || selectedTable?.id || 'GROUP';
+            }
+
+            if (!acc[tGroup]) acc[tGroup] = [];
+            acc[tGroup].push(item);
+            return acc;
+        }, {});
+
+        const sortedEntries = Object.entries(groups).sort(([a], [b]) => {
+            if (a === 'GROUP') return -1;
+            if (b === 'GROUP') return 1;
+            return isNaN(a) ? 1 : a - b;
+        });
+
+        return sortedEntries.map(([tGroup, tableItems]) => {
+            const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+            const isSharedSection = tGroup === 'GROUP';
+            const displayTableTitle = isSharedSection
+                ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.map(resolveTableLabel).join('-')})` : ''}`
+                : `Bàn ${resolveTableLabel(tGroup)}`;
+            const sectionReadOnly = isSharedSection && isUnifiedGroup;
+
+            const consolidatedMap = tableItems.reduce((grp, item) => {
+                const k = item.product_id 
+                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}` 
+                    : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`;
+                if (!grp[k]) {
+                    grp[k] = { ...item, mergeKey: k, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
+                } else {
+                    grp[k].originalIds.push(item.id || item.order_item_id);
+                    grp[k].quantity += item.quantity;
+                }
+                return grp;
+            }, {});
+
+            return {
+                tGroup,
+                subtotal,
+                isSharedSection,
+                displayTableTitle,
+                sectionReadOnly,
+                items: Object.values(consolidatedMap)
+            };
+        });
+    }, [draftItems, isUnifiedGroup, dbTableId, selectedTable?.id, groupTableIds, resolveTableLabel]);
 
     return (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -63,7 +126,7 @@ const PaymentItemEditor = ({
                         <div className="flex items-center gap-2 mb-2">
                             <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-gray-400">Điều chỉnh món</p>
                             <button
-                                onClick={() => setShowProductSearch(!showProductSearch)}
+                                onClick={() => onToggleProductSearch(!showProductSearch)}
                                 className={`ml-auto w-6 h-6 rounded-lg ${showProductSearch ? 'bg-gray-200 text-gray-500' : 'bg-orange-500 text-white'} flex items-center justify-center border-none cursor-pointer hover:opacity-80 transition-colors`}
                             >
                                 <Icon name="plus" className="w-[14px] h-[14px]" size={14} />
@@ -76,7 +139,7 @@ const PaymentItemEditor = ({
                                 {selectorTableIds.map(id => (
                                     <button
                                         key={id}
-                                        onClick={() => setTargetTableId(id)}
+                                        onClick={() => onSelectTargetTable(id)}
                                         className={`
                                             px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border-none cursor-pointer
                                             ${targetTableId === id
@@ -98,7 +161,7 @@ const PaymentItemEditor = ({
                                     autoFocus
                                     placeholder="Tìm món thêm..."
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) => onSearchChange(e.target.value)}
                                     className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[16px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium"
                                 />
                                 {filteredProducts.length > 0 && (
@@ -127,118 +190,85 @@ const PaymentItemEditor = ({
                     <div className="text-center py-8 text-gray-400 italic text-sm">Chưa có món nào.</div>
                 ) : (
                     <div className="space-y-1">
-                        {Object.entries(
-                            draftItems.reduce((acc, item) => {
-                                let tGroup;
-                                if (isUnifiedGroup) {
-                                    // Shared pre-order items go to GROUP, individual extras go to their specific table
-                                    tGroup = item.reservation_item_id ? 'GROUP' : (item.tableId || 'GROUP');
-                                } else {
-                                    // Standard/Merged/Split: group by table (favor item.tableId if set)
-                                    tGroup = item.tableId || dbTableId || selectedTable?.id || 'GROUP';
-                                }
+                        {groupedAndConsolidatedSections.map(({ tGroup, subtotal, isSharedSection, displayTableTitle, sectionReadOnly, items }) => (
+                            <div key={tGroup} className="space-y-1 mb-4 last:mb-0">
+                                {/* Section header — always show for unified group, or staff-merged */}
+                                {(isUnifiedGroup || mergedStr) && (
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border italic ${isSharedSection ? 'text-orange-400 bg-orange-50 border-orange-100' : 'text-gray-400 bg-gray-50 border-gray-100'}`}>
+                                            {displayTableTitle}
+                                        </span>
+                                        <div className="flex-1 h-[1px] bg-gray-100"></div>
+                                        <span className="text-[10px] font-black text-gray-400 tracking-tighter">
+                                            {formatPrice(subtotal)}đ
+                                        </span>
+                                    </div>
+                                )}
+                                {items.map((item, idx) => {
+                                    const actualTableId = item.tableId || dbTableId || selectedTable?.id;
+                                    const itemId = item.order_item_id || item.id;
+                                    const splitEntry = selectedSplitItems.find(i => i.order_item_id === itemId);
+                                    const isSelected = !!splitEntry;
+                                    const productItemReadOnly = isReadOnly || sectionReadOnly || isSplitMode;
 
-                                if (!acc[tGroup]) acc[tGroup] = [];
-                                acc[tGroup].push(item);
-                                return acc;
-                            }, {})
-                        ).sort(([a], [b]) => a === 'GROUP' ? -1 : (isNaN(a) ? 1 : a - b)).map(([tGroup, tableItems]) => {
-                        const subtotal = tableItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-                        const isSharedSection = tGroup === 'GROUP';
+                                    const itemContext = {
+                                        productId: item.product_id || item.id,
+                                        tableId: parseInt(actualTableId),
+                                        note: item.note || '',
+                                        price: item.price,
+                                        discount: item.discount,
+                                        discountType: item.discountType,
+                                    };
 
-                        // [WHY] Standardized title for each section
-                        const displayTableTitle = isSharedSection
-                            ? `Món chung${groupTableIds.length > 0 ? ` (Bàn ${groupTableIds.map(resolveTableLabel).join('-')})` : ''}`
-                            : `Bàn ${resolveTableLabel(tGroup)}`;
-
-                        // [WHY] Sections are read-only if they are part of a pre-ordered group set
-                        const sectionReadOnly = isSharedSection && isUnifiedGroup;
-
-                            return (
-                                <div key={tGroup} className="space-y-1 mb-4 last:mb-0">
-                                    {/* Section header — always show for unified group, or staff-merged */}
-                                    {(isUnifiedGroup || mergedStr) && (
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border italic ${isSharedSection ? 'text-orange-400 bg-orange-50 border-orange-100' : 'text-gray-400 bg-gray-50 border-gray-100'}`}>
-                                                {displayTableTitle}
-                                            </span>
-                                            <div className="flex-1 h-[1px] bg-gray-100"></div>
-                                            <span className="text-[10px] font-black text-gray-400 tracking-tighter">
-                                                {formatPrice(subtotal)}đ
-                                            </span>
-                                        </div>
-                                    )}
-                                    {Object.values(tableItems.reduce((grp, item) => {
-                                        const k = item.product_id 
-                                            ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}` 
-                                            : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`;
-                                        if (!grp[k]) {
-                                            grp[k] = { ...item, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
-                                        } else {
-                                            grp[k].originalIds.push(item.id || item.order_item_id);
-                                            grp[k].quantity += item.quantity;
-                                        }
-                                        return grp;
-                                    }, {})).map((item, idx) => {
-                                        const dbTableId = selectedTable?.originalTableId || currentOrder?.tableId || currentOrder?.table_id || currentOrder?.table?.id;
-                                        const actualTableId = item.tableId || dbTableId || selectedTable?.id;
-                                        // [WHY] Per-item read-only: shared dishes (reservation_item_id) are locked
-                                        const itemId = item.order_item_id || item.id;
-                                        const splitEntry = selectedSplitItems.find(i => i.order_item_id === itemId);
-                                        const isSelected = !!splitEntry;
-
-                                        // [WHY] When splitting, we disable regular quantity/note editing to avoid conflicts
-                                        const productItemReadOnly = isReadOnly || sectionReadOnly || isSplitMode;
-
-                                        return (
-                                            <div key={`${item.product_id || item.id}-${actualTableId}`} className="flex items-center gap-4 py-1">
-                                                {isSplitMode && !sectionReadOnly && (
-                                                    <div className="flex flex-col items-center gap-2 shrink-0">
-                                                        <div
-                                                            onClick={() => onToggleSplitItem(item)}
-                                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-orange-500 border-orange-500 shadow-md shadow-orange-200' : 'border-gray-200 bg-white hover:border-gray-400'}`}
-                                                        >
-                                                            {isSelected && (
-                                                                <Icon name="check" className="w-[14px] h-[14px] text-white" size={14} />
-                                                            )}
-                                                        </div>
-                                                        {isSelected && item.quantity > 1 && (
-                                                            <div className="flex flex-col items-center bg-orange-50 rounded-lg p-1 border border-orange-100 shadow-sm">
-                                                                <button
-                                                                    onClick={() => onUpdateSplitQuantity(itemId, Math.min(item.quantity, splitEntry.quantity + 1))}
-                                                                    disabled={splitEntry.quantity >= item.quantity}
-                                                                    className="w-5 h-5 flex items-center justify-center text-[12px] font-black text-orange-400 hover:text-orange-600 disabled:opacity-30 border-none bg-transparent cursor-pointer"
-                                                                >
-                                                                    +
-                                                                </button>
-                                                                <span className="text-[11px] font-black text-orange-600 leading-none py-1">{splitEntry.quantity}</span>
-                                                                <button
-                                                                    onClick={() => onUpdateSplitQuantity(itemId, Math.max(1, splitEntry.quantity - 1))}
-                                                                    disabled={splitEntry.quantity <= 1}
-                                                                    className="w-5 h-5 flex items-center justify-center text-[12px] font-black text-orange-400 hover:text-orange-600 disabled:opacity-30 border-none bg-transparent cursor-pointer"
-                                                                >
-                                                                    -
-                                                                </button>
-                                                            </div>
+                                    return (
+                                        <div key={item.mergeKey} className="flex items-center gap-4 py-1">
+                                            {isSplitMode && !sectionReadOnly && (
+                                                <div className="flex flex-col items-center gap-2 shrink-0">
+                                                    <div
+                                                        onClick={() => onToggleSplitItem(item)}
+                                                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all ${isSelected ? 'bg-orange-500 border-orange-500 shadow-md shadow-orange-200' : 'border-gray-200 bg-white hover:border-gray-400'}`}
+                                                    >
+                                                        {isSelected && (
+                                                            <Icon name="check" className="w-[14px] h-[14px] text-white" size={14} />
                                                         )}
                                                     </div>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <ProductItem
-                                                        item={item}
-                                                        onUpdateQuantity={(id, q) => handleUpdateQuantity(item.product_id || item.id, parseInt(actualTableId), q, item.note || '', item.price, item.discount, item.discountType)}
-                                                        onUpdateNote={(id, n) => handleUpdateNote(item.product_id || item.id, parseInt(actualTableId), n, item.note || '', item.price, item.discount, item.discountType)}
-                                                        onUpdateDiscount={(id, d) => handleUpdateItemDiscount(item.product_id || item.id, parseInt(actualTableId), d, item.note || '', item.price, item.discount, item.discountType)}
-                                                        showNoteButton={!productItemReadOnly}
-                                                        isReadOnly={productItemReadOnly}
-                                                    />
+                                                    {isSelected && item.quantity > 1 && (
+                                                        <div className="flex flex-col items-center bg-orange-50 rounded-lg p-1 border border-orange-100 shadow-sm">
+                                                            <button
+                                                                onClick={() => onUpdateSplitQuantity(itemId, Math.min(item.quantity, splitEntry.quantity + 1))}
+                                                                disabled={splitEntry.quantity >= item.quantity}
+                                                                className="w-5 h-5 flex items-center justify-center text-[12px] font-black text-orange-400 hover:text-orange-600 disabled:opacity-30 border-none bg-transparent cursor-pointer"
+                                                            >
+                                                                +
+                                                            </button>
+                                                            <span className="text-[11px] font-black text-orange-600 leading-none py-1">{splitEntry.quantity}</span>
+                                                            <button
+                                                                onClick={() => onUpdateSplitQuantity(itemId, Math.max(1, splitEntry.quantity - 1))}
+                                                                disabled={splitEntry.quantity <= 1}
+                                                                className="w-5 h-5 flex items-center justify-center text-[12px] font-black text-orange-400 hover:text-orange-600 disabled:opacity-30 border-none bg-transparent cursor-pointer"
+                                                            >
+                                                                -
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <ProductItem
+                                                    item={item}
+                                                    context={itemContext}
+                                                    onUpdateQuantity={handleUpdateQuantity}
+                                                    onUpdateNote={handleUpdateNote}
+                                                    onUpdateDiscount={handleUpdateItemDiscount}
+                                                    showNoteButton={!productItemReadOnly}
+                                                    isReadOnly={productItemReadOnly}
+                                                />
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

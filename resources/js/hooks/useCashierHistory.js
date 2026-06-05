@@ -3,6 +3,45 @@ import { cleanMergedString, generateTableRange } from '../shared/utils/normalize
 import { calculateTotals } from '../shared/utils/priceCalculations';
 
 /**
+ * computeSignals
+ * [WHY] Helper to generate the unique linkage signals for a given order (ReservationID, Time, Merged Tables).
+ */
+export const computeSignals = (order) => {
+    // [WHY] Round time to nearest 2 seconds to handle minor drift in DB timestamps
+    const roundedTime = Math.floor(new Date(order.updated_at).getTime() / 2000) * 2000;
+    const timeKey = roundedTime.toString();
+    const cleanedMerged = cleanMergedString(order.merged_tables);
+
+    const signals = [
+        order.reservation_id ? `res-${order.reservation_id}` : null,
+        cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null
+    ].filter(Boolean);
+
+    // [WHY] Fallback to a unique signal per order if neither merged nor group reservation
+    if (signals.length === 0) {
+        signals.push(`order-${order.id}`);
+    }
+
+    return signals;
+};
+
+/**
+ * getPrimaryOrder
+ * [WHY] Resolves the single source-of-truth order for inherited group metadata.
+ * [RULE] Priority: 1. Order with a reservation. 2. Most recently updated order. 3. Fallback to first order.
+ */
+const getPrimaryOrder = (orders) => {
+    if (!orders || orders.length === 0) return null;
+    
+    // Find order with reservation
+    const resOrder = orders.find(o => o.reservation);
+    if (resOrder) return resOrder;
+    
+    // Find most recently updated order
+    return [...orders].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+};
+
+/**
  * useCashierHistory
  * [WHY] Extracts complex grouping/consolidation logic for historical bills.
  * [RULE] Tách logic và UI — README.md Component Rule. Keeps Cashier.jsx clean.
@@ -15,35 +54,34 @@ export const useCashierHistory = (historyOrders = []) => {
         const signalToGroupId = {};
         const handledItemIds = new Set(); // [WHY] Prevent processing the same item twice
 
-        // [WHY] Step 1: Normalize order items and basic metadata
-        const normalizedHistory = historyOrders.map(order => ({
-            ...order,
-            mergedTables: order.merged_tables,
-            isGroup: !!order.reservation_id,
-            items: (order.items || []).map(i => ({
-                ...i,
-                name: i.product?.name || i.name || 'Unknown',
-                tableId: i.table_id || order.table_id // [WHY] Use order.table_id as fallback
-            }))
-        }));
+        // [WHY] Step 1: Normalize order items and basic metadata with consistent numeric table IDs
+        const normalizedHistory = historyOrders.map(order => {
+            const numericTableId = order.table_id ? Number(order.table_id) : null;
+            const cm = cleanMergedString(order.merged_tables);
+            const parsedMergedTableIds = cm ? cm.split('-').map(Number) : [];
+            const reservationTableIds = order.reservation?.table_ids 
+                ? (order.reservation.table_ids || []).map(Number) 
+                : [];
+
+            return {
+                ...order,
+                table_id: numericTableId,
+                mergedTables: order.merged_tables,
+                isGroup: !!order.reservation_id,
+                parsedMergedTableIds,
+                reservationTableIds,
+                items: (order.items || []).map(i => ({
+                    ...i,
+                    name: i.product?.name || i.name || 'Unknown',
+                    tableId: i.table_id ? Number(i.table_id) : numericTableId
+                }))
+            };
+        });
 
         // [WHY] Step 2: Build linkage signals (ReservationID, Time, Merged Tables)
         // [RULE] If orders share ANY of these markers, they are part of one group bill.
         normalizedHistory.forEach(order => {
-            // [WHY] Round time to nearest 2 seconds to handle minor drift in DB timestamps
-            const roundedTime = Math.floor(new Date(order.updated_at).getTime() / 2000) * 2000;
-            const timeKey = roundedTime.toString();
-            const cleanedMerged = cleanMergedString(order.merged_tables);
-
-            const signals = [
-                order.reservation_id ? `res-${order.reservation_id}` : null,
-                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null
-            ].filter(Boolean);
-
-            // [WHY] Fallback to a unique signal per order if neither merged nor group reservation
-            if (signals.length === 0) {
-                signals.push(`order-${order.id}`);
-            }
+            const signals = computeSignals(order);
 
             let existingGroupId = null;
             for (const s of signals) {
@@ -59,18 +97,7 @@ export const useCashierHistory = (historyOrders = []) => {
 
         // [WHY] Step 3: Group orders and accumulate totals
         normalizedHistory.forEach(order => {
-            const roundedTime = Math.floor(new Date(order.updated_at).getTime() / 2000) * 2000;
-            const timeKey = roundedTime.toString();
-            const cleanedMerged = cleanMergedString(order.merged_tables);
-
-            const signals = [
-                order.reservation_id ? `res-${order.reservation_id}` : null,
-                cleanedMerged ? `merged-${cleanedMerged}-${timeKey}` : null
-            ].filter(Boolean);
-
-            if (signals.length === 0) {
-                signals.push(`order-${order.id}`);
-            }
+            const signals = computeSignals(order);
 
             let groupKey = null;
             for (const s of signals) {
@@ -108,13 +135,13 @@ export const useCashierHistory = (historyOrders = []) => {
                 });
 
                 // Track all table IDs involved
-                const cm = cleanMergedString(order.merged_tables);
-                if (cm) cm.split('-').forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
-                else if (order.table_id) groups[groupKey].allTableIds.add(parseInt(order.table_id));
-
-                if (order.reservation?.table_ids) {
-                    order.reservation.table_ids.forEach(id => groups[groupKey].allTableIds.add(parseInt(id)));
+                if (order.parsedMergedTableIds.length > 0) {
+                    order.parsedMergedTableIds.forEach(id => groups[groupKey].allTableIds.add(id));
+                } else if (order.table_id) {
+                    groups[groupKey].allTableIds.add(order.table_id);
                 }
+
+                order.reservationTableIds.forEach(id => groups[groupKey].allTableIds.add(id));
             } else {
                 const g = groups[groupKey];
                 g.allOrders.push(order);
@@ -134,61 +161,60 @@ export const useCashierHistory = (historyOrders = []) => {
                     }
                 });
 
-                // Inherit cashier note
-                if (order.cashier_note && !g.cashier_note) {
-                    g.cashier_note = order.cashier_note;
+                if (order.parsedMergedTableIds.length > 0) {
+                    order.parsedMergedTableIds.forEach(id => g.allTableIds.add(id));
+                } else if (order.table_id) {
+                    g.allTableIds.add(order.table_id);
                 }
 
-                // [WHY] Inherit reservation metadata if found in any related order
-                if (order.reservation && !g.reservation) {
-                    g.reservation = order.reservation;
-                    g.reservation_id = order.reservation_id;
-                    g.isGroup = true;
-                }
-
-                const cm = cleanMergedString(order.merged_tables);
-                if (cm) cm.split('-').forEach(id => g.allTableIds.add(parseInt(id)));
-                else if (order.table_id) g.allTableIds.add(parseInt(order.table_id));
-
-                if (order.reservation?.table_ids) {
-                    order.reservation.table_ids.forEach(id => g.allTableIds.add(parseInt(id)));
-                }
-
-                if (new Date(order.updated_at) > new Date(g.updated_at)) {
-                    g.updated_at = order.updated_at;
-                }
+                order.reservationTableIds.forEach(id => g.allTableIds.add(id));
             }
         });
 
         // [WHY] Step 4: Final pass to calculate synchronized totals for each group
         return Object.values(groups).map(g => {
-            const items = Object.values(g.itemsMap);
-            // [WHY] Find the primary order to get global discount settings
-            const primaryOrder = g.allOrders.find(o => o.discount_type) || g.allOrders[0];
+            const rawItems = Object.values(g.itemsMap);
             
-            const totals = calculateTotals(items, {
+            // [WHY] Get the deterministic primary order for inherited metadata
+            const primaryOrder = getPrimaryOrder(g.allOrders) || g.allOrders[0];
+            
+            const totals = calculateTotals(rawItems, {
                 type: primaryOrder.discount_type || 'fixed',
                 value: primaryOrder.discount_value || 0
             });
 
-            g.items = items;
-            g.total_price = totals.finalTotal;
-            g.discount_amount = totals.globalDiscountAmount;
-            g.itemDiscountsTotal = totals.itemDiscountsTotal;
-            g.subtotal = totals.grossTotal;
+            // [WHY] Ensure each item has a tableId for UI components immutably
+            const items = rawItems.map(item => ({
+                ...item,
+                tableId: item.tableId || g.table_id
+            }));
 
-            // [WHY] Ensure each item has a tableId for UI components
-            g.items.forEach(item => {
-                if (!item.tableId) item.tableId = g.table_id;
-            });
-
+            let mergedTablesRange = g.merged_tables;
             if (g.allTableIds.size > 1) {
-                const range = generateTableRange(g.allTableIds);
-                g.merged_tables = range;
-                g.mergedTables = range;
-                g.tableName = range;
+                mergedTablesRange = generateTableRange(g.allTableIds);
             }
-            return g;
+
+            // Find the latest updated_at across all related orders
+            const latestUpdatedAt = g.allOrders.reduce((latest, current) => {
+                return new Date(current.updated_at) > new Date(latest) ? current.updated_at : latest;
+            }, g.updated_at);
+
+            return {
+                ...g,
+                items,
+                cashier_note: primaryOrder.cashier_note || null,
+                reservation: primaryOrder.reservation || null,
+                reservation_id: primaryOrder.reservation_id || null,
+                isGroup: !!primaryOrder.reservation_id,
+                total_price: totals.finalTotal,
+                discount_amount: totals.globalDiscountAmount,
+                itemDiscountsTotal: totals.itemDiscountsTotal,
+                subtotal: totals.grossTotal,
+                merged_tables: mergedTablesRange,
+                mergedTables: mergedTablesRange,
+                tableName: mergedTablesRange,
+                updated_at: latestUpdatedAt
+            };
         }).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
     }, [historyOrders]);
 };

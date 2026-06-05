@@ -1,19 +1,24 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import toast from 'react-hot-toast';
+
+// Store & Hooks
+import { useAppDispatch } from '../store/hooks';
+import { optimisticallyCompleteOrder, fetchTables } from '../store/slices/tableSlice';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import { useCashierSegmentation } from '../hooks/useCashierSegmentation';
+import { useCashierHistory } from '../hooks/useCashierHistory';
+import { useCashierData } from '../hooks/useCashierData';
+
+// Services & Utils
+import orderApi from '../services/orderApi';
+import { formatLocalDate } from '../shared/utils/formatLocalDate';
+
+// Components
 import CashierIndividualLane from '../components/cashier/CashierIndividualLane';
 import CashierGroupLane from '../components/cashier/CashierGroupLane';
 import CashierHistoryLane from '../components/cashier/CashierHistoryLane';
-import orderApi from '../services/orderApi';
-import { useCashierHistory } from '../hooks/useCashierHistory';
-import { useCashierData } from '../hooks/useCashierData';
-import { useAppDispatch } from '../store/hooks';
-import { optimisticallyCompleteOrder, fetchTables } from '../store/slices/tableSlice';
-
-
 import CheckoutManager from '../components/cashier/CheckoutManager';
-
-import { formatLocalDate } from '../shared/utils/formatLocalDate';
+import ConfirmDialog from '../components/shared/ConfirmDialog';
 
 const COLLAPSE_ZONES = {
     INDIVIDUAL: 'individual',
@@ -21,11 +26,15 @@ const COLLAPSE_ZONES = {
     HISTORY: 'history'
 };
 
+// [WHY] Centralized date helper for history filtering
+const getTodayStr = () => {
+    return formatLocalDate(new Date());
+};
+
 const Cashier = () => {
     const dispatch = useAppDispatch();
     const {
         orders,
-        orderDict,
         currentTime,
         allTables,
         status,
@@ -35,19 +44,18 @@ const Cashier = () => {
     const [selectedTableId, setSelectedTableId] = useState(null);
     const [collapsedSection, setCollapsedSection] = useState(null); // Expand all by default
     const [isReopening, setIsReopening] = useState(null);
+    const [reopeningOrderId, setReopeningOrderId] = useState(null);
     const [editingHistoryOrder, setEditingHistoryOrder] = useState(null);
 
     // [WHY] Centralized date state for history filtering
-    const getTodayStr = () => {
-        return formatLocalDate(new Date());
-    };
-    const [selectedDate, setSelectedDate] = useState(getTodayStr());
+    const [selectedDate, setSelectedDate] = useState(() => getTodayStr());
 
     const {
         reservations,
         historyOrders,
         isLoadingRes,
-        refreshData
+        isLoadingHistory,
+        refreshAllData
     } = useCashierData(status, selectedDate);
 
     // [WHY] Segment orders into Group Reservations vs Individual Tables
@@ -86,9 +94,8 @@ const Cashier = () => {
 
     const handleHistoryPaymentSuccess = useCallback(() => {
         setEditingHistoryOrder(null);
-        refreshData();
-        dispatch(fetchTables());
-    }, [refreshData, dispatch]);
+        refreshAllData();
+    }, [refreshAllData]);
 
     const handleActivePaymentSuccess = useCallback((paidOrderId) => {
         setSelectedTableId(null);
@@ -99,21 +106,28 @@ const Cashier = () => {
         dispatch(fetchTables());
     }, [dispatch]);
 
-    const handleReopenOrder = useCallback(async (orderId) => {
-        if (!window.confirm("Are you sure you want to reopen this bill? This will move it back to active status.")) return;
+    const handleReopenOrder = useCallback((orderId) => {
+        setReopeningOrderId(orderId);
+    }, []);
+
+    const handleConfirmReopen = useCallback(async () => {
+        if (!reopeningOrderId) return;
+        const orderId = reopeningOrderId;
+        setReopeningOrderId(null);
 
         setIsReopening(orderId);
         try {
             await orderApi.reopen(orderId);
-            refreshData();
+            toast.success("Bill reopened successfully");
+            refreshAllData();
             dispatch(fetchTables());
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.message || "Failed to reopen order");
+            toast.error(err.response?.data?.message || "Failed to reopen order");
         } finally {
             setIsReopening(null);
         }
-    }, [refreshData, dispatch]);
+    }, [reopeningOrderId, refreshAllData, dispatch]);
 
     const handleEditHistoryOrder = useCallback((order) => {
         setEditingHistoryOrder(order);
@@ -121,26 +135,39 @@ const Cashier = () => {
 
     const consolidatedHistory = useCashierHistory(historyOrders);
 
-    const toggleHandlers = useMemo(() => {
-        return Object.values(COLLAPSE_ZONES).reduce((acc, zone) => {
-            acc[zone] = () => setCollapsedSection(prev => prev === zone ? null : zone);
-            return acc;
-        }, {});
+    const isIndividualCollapsed = collapsedSection === COLLAPSE_ZONES.INDIVIDUAL;
+    const isGroupCollapsed = collapsedSection === COLLAPSE_ZONES.GROUP;
+    const isHistoryCollapsed = collapsedSection === COLLAPSE_ZONES.HISTORY;
+
+    const handleToggleIndividual = useCallback(() => {
+        setCollapsedSection(prev => prev === COLLAPSE_ZONES.INDIVIDUAL ? null : COLLAPSE_ZONES.INDIVIDUAL);
+    }, []);
+
+    const handleToggleGroup = useCallback(() => {
+        setCollapsedSection(prev => prev === COLLAPSE_ZONES.GROUP ? null : COLLAPSE_ZONES.GROUP);
+    }, []);
+
+    const handleToggleHistory = useCallback(() => {
+        setCollapsedSection(prev => prev === COLLAPSE_ZONES.HISTORY ? null : COLLAPSE_ZONES.HISTORY);
     }, []);
 
     const laneClasses = useMemo(() => {
-        const getSplitLaneClass = (thisZone, otherZone) => {
-            if (collapsedSection === thisZone) return 'w-full lg:w-[20%] is-collapsed';
-            if (collapsedSection === otherZone) return 'w-full lg:w-[80%]';
-            return 'w-full lg:w-1/2';
-        };
-
         return {
-            [COLLAPSE_ZONES.INDIVIDUAL]: getSplitLaneClass(COLLAPSE_ZONES.INDIVIDUAL, COLLAPSE_ZONES.GROUP),
-            [COLLAPSE_ZONES.GROUP]: getSplitLaneClass(COLLAPSE_ZONES.GROUP, COLLAPSE_ZONES.INDIVIDUAL),
-            [COLLAPSE_ZONES.HISTORY]: collapsedSection === COLLAPSE_ZONES.HISTORY ? 'w-full !min-h-0' : 'w-full'
+            [COLLAPSE_ZONES.INDIVIDUAL]: isIndividualCollapsed
+                ? 'w-full lg:w-[20%] is-collapsed'
+                : isGroupCollapsed
+                    ? 'w-full lg:w-[80%]'
+                    : 'w-full lg:w-1/2',
+            [COLLAPSE_ZONES.GROUP]: isGroupCollapsed
+                ? 'w-full lg:w-[20%] is-collapsed'
+                : isIndividualCollapsed
+                    ? 'w-full lg:w-[80%]'
+                    : 'w-full lg:w-1/2',
+            [COLLAPSE_ZONES.HISTORY]: isHistoryCollapsed
+                ? 'w-full !min-h-0 is-collapsed'
+                : 'w-full'
         };
-    }, [collapsedSection]);
+    }, [isIndividualCollapsed, isGroupCollapsed, isHistoryCollapsed]);
 
     const handleCloseTable = useCallback(() => setSelectedTableId(null), []);
     const handleCloseHistory = useCallback(() => setEditingHistoryOrder(null), []);
@@ -163,37 +190,38 @@ const Cashier = () => {
                         <div className="flex flex-col lg:flex-row gap-4 relative items-start">
                             <CashierIndividualLane
                                 containerClassName={laneClasses[COLLAPSE_ZONES.INDIVIDUAL]}
-                                isCollapsed={collapsedSection === COLLAPSE_ZONES.INDIVIDUAL}
+                                isCollapsed={isIndividualCollapsed}
                                 individualTables={individualTables}
                                 individualOrders={individualOrders}
                                 currentTime={currentTime}
                                 onTableClick={handleActiveTableSelect}
-                                onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.INDIVIDUAL]}
+                                onToggleCollapse={handleToggleIndividual}
                             />
 
                             <CashierGroupLane
                                 containerClassName={laneClasses[COLLAPSE_ZONES.GROUP]}
-                                isCollapsed={collapsedSection === COLLAPSE_ZONES.GROUP}
+                                isCollapsed={isGroupCollapsed}
                                 groupTables={groupTables}
                                 groupOrders={groupOrders}
                                 currentTime={currentTime}
                                 onTableClick={handleActiveTableSelect}
-                                onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.GROUP]}
+                                onToggleCollapse={handleToggleGroup}
                             />
                         </div>
 
                         {/* Bottom Row: History Lane (Full Width) */}
                         <CashierHistoryLane
                             containerClassName={laneClasses[COLLAPSE_ZONES.HISTORY]}
-                            isCollapsed={collapsedSection === COLLAPSE_ZONES.HISTORY}
+                            isCollapsed={isHistoryCollapsed}
                             historyOrders={consolidatedHistory}
                             allTables={allTables}
-                            onToggleCollapse={toggleHandlers[COLLAPSE_ZONES.HISTORY]}
+                            onToggleCollapse={handleToggleHistory}
                             onEditOrder={handleEditHistoryOrder}
                             onReopenOrder={handleReopenOrder}
                             isReopening={isReopening}
                             selectedDate={selectedDate}
                             onDateChange={setSelectedDate}
+                            isLoading={isLoadingHistory}
                         />
                     </div>
                 </div>
@@ -209,6 +237,17 @@ const Cashier = () => {
                     onActivePaymentSuccess={handleActivePaymentSuccess}
                     onCloseTable={handleCloseTable}
                     onCloseHistory={handleCloseHistory}
+                />
+
+                <ConfirmDialog
+                    isOpen={!!reopeningOrderId}
+                    title="Reopen Bill?"
+                    message="Are you sure you want to reopen this bill? This will move it back to active status."
+                    confirmText="Reopen"
+                    cancelText="Cancel"
+                    type="warning"
+                    onConfirm={handleConfirmReopen}
+                    onCancel={() => setReopeningOrderId(null)}
                 />
             </div>
         </div>

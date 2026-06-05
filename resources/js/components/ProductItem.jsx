@@ -8,6 +8,7 @@ import Icon from './shared/Icon';
  */
 export default function ProductItem({
     item,
+    context,
     originalQuantity = 0,
     onUpdateQuantity,
     onUpdateNote,
@@ -15,6 +16,7 @@ export default function ProductItem({
     showNoteButton = false,
     isReadOnly = false
 }) {
+    const handlerId = context || item.id;
     const [showNote, setShowNote] = useState(false);
     const [showDiscount, setShowDiscount] = useState(false);
     const [noteValue, setNoteValue] = useState(item.note || '');
@@ -110,7 +112,7 @@ export default function ProductItem({
                 {!effectiveIsReadOnly && (
                     <div className="product-item__quantity flex items-center bg-gray-100 rounded-full p-1 border border-outline-variant/10 shadow-sm ml-auto">
                         <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => onUpdateQuantity(handlerId, item.quantity - 1)}
                             className="w-6 h-6 flex items-center justify-center rounded-full bg-white text-on-surface border-none active:scale-90 transition-all hover:bg-white/80 cursor-pointer shadow-sm"
                         >
                             <Icon name="minus" size={14} strokeWidth={2} />
@@ -124,7 +126,7 @@ export default function ProductItem({
                             )}
                         </span>
                         <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => onUpdateQuantity(handlerId, item.quantity + 1)}
                             className="btn-plus w-6 h-6 flex items-center justify-center rounded-full text-white shadow-md active:scale-90 transition-all hover:brightness-110 cursor-pointer bg-orange-500"
                         >
                             <Icon name="plus" size={14} strokeWidth={2.5} />
@@ -144,14 +146,14 @@ export default function ProductItem({
                             onChange={(e) => {
                                 const newValue = e.target.value;
                                 setNoteValue(newValue);
-                                if (onUpdateNote) onUpdateNote(item.id, newValue);
+                                if (onUpdateNote) onUpdateNote(handlerId, newValue);
                             }}
                             onBlur={() => {
-                                if (onUpdateNote) onUpdateNote(item.id, noteValue);
+                                if (onUpdateNote) onUpdateNote(handlerId, noteValue);
                             }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                    if (onUpdateNote) onUpdateNote(item.id, noteValue);
+                                    if (onUpdateNote) onUpdateNote(handlerId, noteValue);
                                     setShowNote(false);
                                 }
                             }}
@@ -197,7 +199,7 @@ export default function ProductItem({
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                        if (onUpdateDiscount) onUpdateDiscount(item.id, {
+                                        if (onUpdateDiscount) onUpdateDiscount(handlerId, {
                                             discount: Number(discountValue),
                                             discountType
                                         });
@@ -209,7 +211,7 @@ export default function ProductItem({
                             />
                             <button
                                 onClick={() => {
-                                    if (onUpdateDiscount) onUpdateDiscount(item.id, {
+                                    if (onUpdateDiscount) onUpdateDiscount(handlerId, {
                                         discount: Number(discountValue),
                                         discountType
                                     });
