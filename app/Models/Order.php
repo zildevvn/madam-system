@@ -9,6 +9,12 @@ class Order extends Model
 {
     use HasFactory;
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_PROCESSING = 'processing';
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+
     protected $fillable = [
         'table_id',
         'reservation_id',
@@ -64,5 +70,10 @@ class Order extends Model
     public function childOrders()
     {
         return $this->hasMany(Order::class, 'parent_order_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(OrderPayment::class);
     }
 }

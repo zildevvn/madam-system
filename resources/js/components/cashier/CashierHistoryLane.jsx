@@ -15,6 +15,25 @@ const SummaryCard = React.memo(({ title, value, colorClass }) => {
 });
 SummaryCard.displayName = 'SummaryCard';
 
+const PAYMENT_METHOD_LABELS = {
+    cash: 'Tiền mặt',
+    bank: 'Chuyển khoản',
+    card: 'Cà thẻ',
+    debt: 'Công nợ',
+    split: 'Hỗn hợp'
+};
+
+const getPaymentColorClass = (method) => {
+    switch ((method || '').toLowerCase()) {
+        case 'cash': return 'bg-green-400';
+        case 'bank': return 'bg-blue-400';
+        case 'card': return 'bg-purple-400';
+        case 'debt': return 'bg-orange-400';
+        case 'split': return 'bg-teal-400';
+        default: return 'bg-gray-400';
+    }
+};
+
 /**
  * CashierHistoryLane: Renders the payment history lane of the Cashier dashboard.
  * Allows viewing recently completed bills, editing payment details, or reopening orders.
@@ -46,16 +65,32 @@ const CashierHistoryLane = ({
         let debt = 0;
 
         historyOrders.forEach(order => {
-            const method = (order.payment_method || '').toLowerCase();
-            const total = Number(order.total_price) || 0;
-            if (method === 'cash') {
-                cash += total;
-            } else if (method === 'bank') {
-                bank += total;
-            } else if (method === 'card') {
-                card += total;
-            } else if (method === 'debt') {
-                debt += total;
+            if (order.payments && order.payments.length > 0) {
+                order.payments.forEach(p => {
+                    const method = (p.payment_method || '').toLowerCase();
+                    const amount = Number(p.amount) || 0;
+                    if (method === 'cash') {
+                        cash += amount;
+                    } else if (method === 'bank') {
+                        bank += amount;
+                    } else if (method === 'card') {
+                        card += amount;
+                    } else if (method === 'debt') {
+                        debt += amount;
+                    }
+                });
+            } else {
+                const method = (order.payment_method || '').toLowerCase();
+                const total = Number(order.total_price) || 0;
+                if (method === 'cash') {
+                    cash += total;
+                } else if (method === 'bank') {
+                    bank += total;
+                } else if (method === 'card') {
+                    card += total;
+                } else if (method === 'debt') {
+                    debt += total;
+                }
             }
         });
 
@@ -137,9 +172,7 @@ const CashierHistoryLane = ({
                             {formattedOrders.map(order => (
                                 <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-orange-200 transition-all group relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
                                     {/* Visual indicator of payment method */}
-                                    <div className={`absolute top-0 left-0 w-1 h-full ${order.payment_method === 'cash' ? 'bg-green-400' :
-                                        order.payment_method === 'bank' ? 'bg-blue-400' : 'bg-purple-400'
-                                        }`}></div>
+                                    <div className={`absolute top-0 left-0 w-1 h-full ${getPaymentColorClass(order.payment_method)}`}></div>
 
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
@@ -152,7 +185,7 @@ const CashierHistoryLane = ({
                                             <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wide flex items-center gap-1.5 mt-1">
                                                 <span>{order.formattedTime}</span>
                                                 <span>•</span>
-                                                <span>{order.payment_method}</span>
+                                                <span>{PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method}</span>
                                                 {order.guest_count > 0 && (
                                                     <>
                                                         <span>•</span>

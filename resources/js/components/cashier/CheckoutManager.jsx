@@ -22,16 +22,23 @@ const checkoutReducer = (state, action) => {
                     draftItems: action.payload.items,
                     serverItems: action.payload.items, // [FIX] Track server state to avoid local adjustment wipes
                     paymentMethod: 'cash',
+                    payments: [],
                     showExtras: false,
                     initializedOrderId: action.payload.orderId
                 }
             };
-        case 'INITIALIZE_HISTORY':
+        case 'INITIALIZE_HISTORY': {
+            const historyPayments = action.payload.order.payments || [];
+            const isSplitHistory = historyPayments.length > 1;
             return {
                 ...state,
                 [action.payload.lookupKey]: {
                     step: 2,
-                    paymentMethod: action.payload.order.payment_method || 'cash',
+                    paymentMethod: isSplitHistory ? 'split' : (action.payload.order.payment_method || 'cash'),
+                    payments: historyPayments.map(p => ({
+                        payment_method: p.payment_method,
+                        amount: Number(p.amount)
+                    })),
                     showExtras: true,
                     discountType: action.payload.order.discount_type || 'fixed',
                     discountValue: action.payload.order.discount_value || 0,
@@ -41,6 +48,7 @@ const checkoutReducer = (state, action) => {
                     initializedOrderId: action.payload.order.id
                 }
             };
+        }
         case 'UPDATE_FIELD': {
             const { lookupKey, updates } = action.payload;
             if (!state[lookupKey]) return state;
@@ -225,7 +233,8 @@ const CheckoutManager = ({
             onUpdateStep: (s) => updateContext(activeModalId, { step: s }),
             onUpdateCashierNote: (note) => updateContext(activeModalId, { cashierNote: note }),
             onUpdatePaymentMethod: (method) => updateContext(activeModalId, { paymentMethod: method }),
-            onUpdateShowExtras: (show) => updateContext(activeModalId, { showExtras: show })
+            onUpdateShowExtras: (show) => updateContext(activeModalId, { showExtras: show }),
+            onUpdatePayments: (payments) => updateContext(activeModalId, { payments: payments })
         };
     }, [activeModalId, updateContext]);
 
@@ -264,6 +273,7 @@ const CheckoutManager = ({
                 step={ctx?.step || 1}
                 cashierNote={ctx?.cashierNote || ''}
                 paymentMethod={ctx?.paymentMethod || 'cash'}
+                payments={ctx?.payments || []}
                 showExtras={ctx?.showExtras || false}
                 {...modalHandlers}
             />
@@ -275,6 +285,8 @@ const CheckoutManager = ({
                     allTables={allTables}
                     discountType={ctx?.discountType || 'fixed'}
                     discountValue={ctx?.discountValue || 0}
+                    paymentMethod={ctx?.paymentMethod || activeModal.order?.payment_method}
+                    payments={ctx?.payments || activeModal.order?.payments}
                 />,
                 document.body
             )}

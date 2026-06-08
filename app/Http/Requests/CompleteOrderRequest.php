@@ -16,7 +16,10 @@ class CompleteOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_method' => 'required|string|in:cash,bank,card,debt',
+            'payment_method' => 'required|string|in:cash,bank,card,debt,split',
+            'payments' => 'nullable|array',
+            'payments.*.payment_method' => 'required|string|in:cash,bank,card,debt',
+            'payments.*.amount' => 'required|integer|min:0',
             'discount_type' => 'nullable|string|in:fixed,percent',
             'discount_value' => 'nullable|numeric|min:0',
             'cashier_note' => 'nullable|string|max:255',

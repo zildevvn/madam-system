@@ -22,7 +22,9 @@ export const usePaymentLogic = ({
     cashierNote,
     isHistoryEdit = false,
     paymentMethod,
-    setPaymentMethod
+    setPaymentMethod,
+    payments = [],
+    setPayments
 }) => {
     const dispatch = useAppDispatch();
     // [WHY] Centralized table resolution logic to ensure consistent ID identification across all handlers.
@@ -75,6 +77,7 @@ export const usePaymentLogic = ({
                 // [WHY] History edit only updates payment details, no item checkout required
                 await orderApi.updatePayment(currentOrder.id, {
                     payment_method: paymentMethod,
+                    payments: paymentMethod === 'split' ? payments : [],
                     discount_type: discountType,
                     discount_value: discountValue,
                     cashier_note: cashierNote
@@ -111,6 +114,7 @@ export const usePaymentLogic = ({
                 const relatedIds = currentOrder.relatedOrderIds || [currentOrder.id];
                 await orderApi.complete(currentOrder.id, {
                     payment_method: paymentMethod,
+                    payments: paymentMethod === 'split' ? payments : [],
                     discount_type: discountType,
                     discount_value: discountValue,
                     cashier_note: cashierNote,
@@ -125,7 +129,7 @@ export const usePaymentLogic = ({
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, onPaymentSuccess, isHistoryEdit]);
+    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, payments, onPaymentSuccess, isHistoryEdit]);
 
     const handleCancelTable = useCallback(async () => {
         if (!currentOrder || isProcessing) return;

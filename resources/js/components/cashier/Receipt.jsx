@@ -5,7 +5,15 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
  * Receipt: Thermal-printer optimized layout for order printing.
  * Updated to support per-item discounts (Fixed or Percent).
  */
-const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discountValue = 0 }) => {
+const PAYMENT_METHOD_LABELS = {
+    cash: 'Tiền mặt',
+    bank: 'Chuyển khoản',
+    card: 'Cà thẻ',
+    debt: 'Công nợ',
+    split: 'Hỗn hợp'
+};
+
+const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discountValue = 0, paymentMethod, payments = [] }) => {
     const [printDate] = React.useState(new Date());
 
     const resolveTableLabel = (tid) => {
@@ -86,6 +94,10 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
     });
 
     const showTableHeaders = groupedItems.length > 1 || isGroupReservation;
+
+    // Ensure we resolve a readable payment method
+    const resolvedMethod = paymentMethod || order.payment_method;
+    const resolvedPayments = (payments && payments.length > 0) ? payments : (order.payments || []);
 
     return (
         <div id="receipt-print-area" className="receipt-print-only">
@@ -179,8 +191,8 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                         </tr>
                                     )}
                                     {Object.values(tableItems.reduce((grp, item) => {
-                                        const k = item.product_id 
-                                            ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}` 
+                                        const k = item.product_id
+                                            ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`
                                             : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`;
                                         if (!grp[k]) {
                                             grp[k] = { ...item, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
@@ -250,7 +262,7 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                 </table>
 
                 <div className="receipt-final">
-                    <span>TOTAL DUE</span>
+                    <span>TOTAL</span>
                     <span className="receipt-final-amount">{formatPrice(finalTotal)} VND</span>
                 </div>
 

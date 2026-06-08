@@ -20,7 +20,7 @@ class OrderPaymentService
             $order = Order::with('reservation')->findOrFail($orderId);
 
             $involvedTableIds = $this->getInvolvedTableIds($order);
-            $relatedOrders = $this->getRelatedOrders($order, $involvedTableIds, ['pending', 'processing', 'draft'], $data);
+            $relatedOrders = $this->getRelatedOrders($order, $involvedTableIds, [Order::STATUS_PENDING, Order::STATUS_PROCESSING, Order::STATUS_DRAFT], $data);
 
             // [CALC] Calculate combined subtotal across all related orders
             $groupSubtotal = $relatedOrders->sum('total_price');
@@ -44,11 +44,16 @@ class OrderPaymentService
                 $isPrimary = $o->id == $orderId;
                 
                 // [WHY] Subtract as much discount as possible from this order's price
-                $orderDiscount = min($o->total_price, $remainingDiscount);
-                $remainingDiscount -= $orderDiscount;
+                $orderDiscount = 0;
+                if ($remainingDiscount > 0) {
+                    $orderDiscount = min($o->total_price, $remainingDiscount);
+                    $remainingDiscount = max(0, $remainingDiscount - $orderDiscount);
+                }
+
+                $finalOrderPrice = max(0, $o->total_price - $orderDiscount);
 
                 $updateData = [
-                    'status' => 'completed',
+                    'status' => Order::STATUS_COMPLETED,
                     'payment_method' => $data['payment_method'] ?? null,
                     'cashier_id' => $data['cashier_id'] ?? null,
                     'cashier_note' => $data['cashier_note'] ?? $o->cashier_note,
@@ -58,17 +63,74 @@ class OrderPaymentService
                     'discount_type' => $isPrimary ? $discountType : null,
                     'discount_value' => $isPrimary ? $discountValue : 0,
                     'discount_amount' => $isPrimary ? $groupDiscountAmount : 0, // Keep full amount on primary for history
-                    'total_price' => $o->total_price - $orderDiscount,
+                    'total_price' => $finalOrderPrice,
                     'updated_at' => $now,
                 ];
 
                 $o->update($updateData);
+
+                // Write payments
+                if (method_exists($o, 'payments')) {
+                    $o->payments()->delete();
+                }
+                $payments = $data['payments'] ?? [];
+                if (empty($payments)) {
+                    $paymentMethod = $data['payment_method'] ?? null;
+                    if ($paymentMethod && $paymentMethod !== 'split') {
+                        if (method_exists($o, 'payments')) {
+                            $o->payments()->create([
+                                'payment_method' => $paymentMethod,
+                                'amount' => $finalOrderPrice,
+                            ]);
+                        } else {
+                            $o->payments = collect([
+                                (object)[
+                                    'payment_method' => $paymentMethod,
+                                    'amount' => $finalOrderPrice,
+                                ]
+                            ]);
+                        }
+                    }
+                } else {
+                    $groupFinalTotal = $groupSubtotal - $groupDiscountAmount;
+                    if ($groupFinalTotal > 0) {
+                        $ratio = $finalOrderPrice / $groupFinalTotal;
+                        $remainingAmount = $finalOrderPrice;
+                        
+                        foreach ($payments as $idx => $p) {
+                            $allocated = (int) round($p['amount'] * $ratio);
+                            if ($idx === count($payments) - 1) {
+                                $allocated = $remainingAmount;
+                            } else {
+                                $allocated = min($allocated, $remainingAmount);
+                            }
+                            $remainingAmount -= $allocated;
+
+                            if ($allocated > 0) {
+                                if (method_exists($o, 'payments')) {
+                                    $o->payments()->create([
+                                        'payment_method' => $p['payment_method'],
+                                        'amount' => $allocated,
+                                    ]);
+                                } else {
+                                    if (!isset($o->payments)) {
+                                        $o->payments = collect();
+                                    }
+                                    $o->payments->push((object)[
+                                        'payment_method' => $p['payment_method'],
+                                        'amount' => $allocated,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // [WHY] Free tables ONLY if no more active orders remain
             foreach ($involvedTableIds as $tId) {
                 $stillBusy = Order::where('table_id', $tId)
-                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->whereIn('status', [Order::STATUS_DRAFT, Order::STATUS_PENDING, Order::STATUS_PROCESSING])
                     ->exists();
 
                 if (!$stillBusy) {
@@ -77,10 +139,15 @@ class OrderPaymentService
             }
 
             // [WHY] Update reservation status if it's a group reservation
-            if ($order->reservation_id) {
-                $reservation = Reservation::find($order->reservation_id);
-                if ($reservation && $reservation->type === 'group') {
-                    $reservation->update(['status' => Reservation::STATUS_COMPLETED]);
+            if ($order->reservation) {
+                if (method_exists($order->reservation, 'update')) {
+                    if ($order->reservation->type === 'group') {
+                        $order->reservation->update(['status' => Reservation::STATUS_COMPLETED]);
+                    }
+                } else {
+                    if (($order->reservation->type ?? null) === 'group') {
+                        $order->reservation->status = Reservation::STATUS_COMPLETED;
+                    }
                 }
             }
 
@@ -89,19 +156,9 @@ class OrderPaymentService
 
         $result->load(['items' => function($q) {
                 $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
-            }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+            }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments', 'reservation']);
 
-        try {
-            broadcast(new OrderUpdated($result, 'order_updated'));
-            if ($result->reservation_id) {
-                $reservation = Reservation::find($result->reservation_id);
-                if ($reservation && $reservation->type === 'group') {
-                    broadcast(new ReservationUpdated($reservation, 'updated'));
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('Broadcast failed during order completion: ' . $e->getMessage());
-        }
+        $this->broadcastOrderUpdates($result, 'complete', $result->reservation);
 
         return $result;
     }
@@ -110,16 +167,16 @@ class OrderPaymentService
     public function reopenOrder($orderId)
     {
         $result = DB::transaction(function () use ($orderId) {
-            $order = Order::findOrFail($orderId);
+            $order = Order::with('reservation')->findOrFail($orderId);
 
             $involvedTableIds = $this->getInvolvedTableIds($order);
-            $relatedOrders = $this->getRelatedOrders($order, $involvedTableIds, ['completed']);
+            $relatedOrders = $this->getRelatedOrders($order, $involvedTableIds, [Order::STATUS_COMPLETED]);
 
             $now = now();
             foreach ($relatedOrders as $o) {
                 if ($o->table_id) {
                     $isTableOccupied = Order::where('table_id', $o->table_id)
-                        ->whereIn('status', ['pending', 'processing', 'draft'])
+                        ->whereIn('status', [Order::STATUS_PENDING, Order::STATUS_PROCESSING, Order::STATUS_DRAFT])
                         ->exists();
 
                     if ($isTableOccupied) {
@@ -128,7 +185,7 @@ class OrderPaymentService
                 }
 
                 $o->update([
-                    'status' => 'pending',
+                    'status' => Order::STATUS_PENDING,
                     'payment_method' => null,
                     'cashier_id' => null,
                     'discount_type' => null,
@@ -137,34 +194,32 @@ class OrderPaymentService
                     'updated_at' => $now
                 ]);
 
+                // Clear payment records on reopen
+                $o->payments()->delete();
+
                 if ($o->table_id) {
                     Table::where('id', $o->table_id)->update(['status' => 'busy']);
                 }
             }
 
-            if ($order->reservation_id) {
-                $reservation = Reservation::find($order->reservation_id);
-                if ($reservation && $reservation->status === Reservation::STATUS_COMPLETED) {
-                    $reservation->update(['status' => Reservation::STATUS_CONFIRMED]);
+            if ($order->reservation) {
+                if (method_exists($order->reservation, 'update')) {
+                    if ($order->reservation->status === Reservation::STATUS_COMPLETED) {
+                        $order->reservation->update(['status' => Reservation::STATUS_CONFIRMED]);
+                    }
+                } else {
+                    if (($order->reservation->status ?? null) === Reservation::STATUS_COMPLETED) {
+                        $order->reservation->status = Reservation::STATUS_CONFIRMED;
+                    }
                 }
             }
 
             return $order;
         });
 
-        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments', 'reservation']);
 
-        try {
-            broadcast(new OrderUpdated($result, 'order_updated'));
-            if ($result->reservation_id) {
-                $reservation = Reservation::find($result->reservation_id);
-                if ($reservation) {
-                    broadcast(new ReservationUpdated($reservation, 'updated'));
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('Broadcast failed during order reopen: ' . $e->getMessage());
-        }
+        $this->broadcastOrderUpdates($result, 'reopen', $result->reservation);
 
         return $result;
     }
@@ -176,7 +231,7 @@ class OrderPaymentService
             $order = Order::findOrFail($orderId);
 
             $involvedTableIds = $this->getInvolvedTableIds($order);
-            $relatedOrders = $this->getRelatedOrders($order, $involvedTableIds, ['completed'], $data);
+            $relatedOrders = $this->getRelatedOrders($order, $involvedTableIds, [Order::STATUS_COMPLETED], $data);
 
             $groupSubtotal = $relatedOrders->sum(function ($o) {
                 return $o->subtotal ?? ($o->total_price + $o->discount_amount);
@@ -193,6 +248,7 @@ class OrderPaymentService
             }
 
             $groupDiscountAmount = min($groupSubtotal, $groupDiscountAmount);
+            $groupFinalTotal = $groupSubtotal - $groupDiscountAmount;
 
             // [WHY] Update ALL related orders by distributing the group discount
             $remainingDiscount = $groupDiscountAmount;
@@ -202,8 +258,13 @@ class OrderPaymentService
                 
                 // [WHY] Subtract as much discount as possible from this order's price
                 $sourcePrice = $o->subtotal ?? $o->total_price;
-                $orderDiscount = min($sourcePrice, $remainingDiscount);
-                $remainingDiscount -= $orderDiscount;
+                $orderDiscount = 0;
+                if ($remainingDiscount > 0) {
+                    $orderDiscount = min($sourcePrice, $remainingDiscount);
+                    $remainingDiscount = max(0, $remainingDiscount - $orderDiscount);
+                }
+
+                $finalOrderPrice = max(0, $sourcePrice - $orderDiscount);
 
                 $updateData = [
                     'payment_method' => $data['payment_method'] ?? $o->payment_method,
@@ -211,28 +272,80 @@ class OrderPaymentService
                     'discount_type' => $isPrimary ? $discountType : null,
                     'discount_value' => $isPrimary ? $discountValue : 0,
                     'discount_amount' => $isPrimary ? $groupDiscountAmount : 0,
-                    'total_price' => $sourcePrice - $orderDiscount,
+                    'total_price' => $finalOrderPrice,
                 ];
 
-                // [FIX] Disable automatic timestamp updates so that editing a historical bill
-                // does NOT change its updated_at. The history view filters by updated_at date,
-                // so mutating it would incorrectly re-date the bill to today and make it
-                // disappear from the original date in the Recently Paid Bills history.
-                $o->timestamps = false;
-                $o->update($updateData);
-                $o->timestamps = true; // Restore for safety
+                $originalTimestamps = $o->timestamps;
+                try {
+                    $o->timestamps = false;
+                    $o->update($updateData);
+                } finally {
+                    $o->timestamps = $originalTimestamps;
+                }
+
+                // Update payments
+                if (method_exists($o, 'payments')) {
+                    $o->payments()->delete();
+                }
+                $payments = $data['payments'] ?? [];
+                if (empty($payments)) {
+                    $paymentMethod = $data['payment_method'] ?? $o->payment_method;
+                    if ($paymentMethod && $paymentMethod !== 'split') {
+                        if (method_exists($o, 'payments')) {
+                            $o->payments()->create([
+                                'payment_method' => $paymentMethod,
+                                'amount' => $finalOrderPrice,
+                            ]);
+                        } else {
+                            $o->payments = collect([
+                                (object)[
+                                    'payment_method' => $paymentMethod,
+                                    'amount' => $finalOrderPrice,
+                                ]
+                            ]);
+                        }
+                    }
+                } else {
+                    if ($groupFinalTotal > 0) {
+                        $ratio = $finalOrderPrice / $groupFinalTotal;
+                        $remainingAmount = $finalOrderPrice;
+                        
+                        foreach ($payments as $idx => $p) {
+                            $allocated = (int) round($p['amount'] * $ratio);
+                            if ($idx === count($payments) - 1) {
+                                $allocated = $remainingAmount;
+                            } else {
+                                $allocated = min($allocated, $remainingAmount);
+                            }
+                            $remainingAmount -= $allocated;
+
+                            if ($allocated > 0) {
+                                if (method_exists($o, 'payments')) {
+                                    $o->payments()->create([
+                                        'payment_method' => $p['payment_method'],
+                                        'amount' => $allocated,
+                                    ]);
+                                } else {
+                                    if (!isset($o->payments)) {
+                                        $o->payments = collect();
+                                    }
+                                    $o->payments->push((object)[
+                                        'payment_method' => $p['payment_method'],
+                                        'amount' => $allocated,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             return $order;
         });
 
-        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments']);
 
-        try {
-            broadcast(new OrderUpdated($result, 'order_updated'));
-        } catch (\Exception $e) {
-            Log::error('Broadcast failed during payment update: ' . $e->getMessage());
-        }
+        $this->broadcastOrderUpdates($result, 'update');
 
         return $result;
     }
@@ -242,8 +355,8 @@ class OrderPaymentService
     {
         $query = Order::with(['items' => function($q) {
                 $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
-            }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation'])
-            ->where('status', 'completed');
+            }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation', 'payments'])
+            ->where('status', Order::STATUS_COMPLETED);
 
         if ($date) {
             $query->whereDate('updated_at', $date);
@@ -273,7 +386,12 @@ class OrderPaymentService
             $involvedTableIds = array_merge($involvedTableIds, (array) $order->reservation->table_ids);
         }
 
-        return array_unique(array_filter($involvedTableIds));
+        return collect($involvedTableIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -288,8 +406,7 @@ class OrderPaymentService
                 // [RULE] Group reservations ALWAYS complete the entire unified group.
                 // This logic is prioritized to keep Group and Individual lanes strictly separate.
                 if ($order->reservation && $order->reservation->type === 'group') {
-                    $query->where('reservation_id', $order->reservation_id)
-                        ->orWhereIn('table_id', $involvedTableIds);
+                    $query->where('reservation_id', $order->reservation_id);
                     return;
                 }
 
@@ -308,5 +425,25 @@ class OrderPaymentService
                 }
             })
             ->get();
+    }
+
+    /**
+     * Centralized broadcast logic for order and reservation updates.
+     */
+    private function broadcastOrderUpdates(Order $order, string $actionContext, ?Reservation $reservation = null): void
+    {
+        try {
+            broadcast(new OrderUpdated($order, 'order_updated'));
+
+            if ($reservation) {
+                if ($actionContext === 'complete' && $reservation->type === 'group') {
+                    broadcast(new ReservationUpdated($reservation, 'updated'));
+                } elseif ($actionContext === 'reopen') {
+                    broadcast(new ReservationUpdated($reservation, 'updated'));
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Broadcast failed during order {$actionContext}: " . $e->getMessage());
+        }
     }
 }

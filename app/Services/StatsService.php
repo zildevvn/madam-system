@@ -44,12 +44,44 @@ class StatsService
                 break;
         }
 
+        $paymentsSub = \Illuminate\Support\Facades\DB::table('order_payments')
+            ->select('order_id')
+            ->selectRaw("SUM(CASE WHEN payment_method = 'cash' THEN amount ELSE 0 END) as cash_paid")
+            ->selectRaw("SUM(CASE WHEN payment_method = 'bank' THEN amount ELSE 0 END) as bank_paid")
+            ->selectRaw("SUM(CASE WHEN payment_method = 'card' THEN amount ELSE 0 END) as card_paid")
+            ->selectRaw("SUM(CASE WHEN payment_method = 'debt' THEN amount ELSE 0 END) as debt_paid")
+            ->groupBy('order_id');
+
+        $isSqlite = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite';
+
         $stats = $query->leftJoin('reservations', 'orders.reservation_id', '=', 'reservations.id')
+            ->leftJoinSub($paymentsSub, 'payments_agg', 'orders.id', '=', 'payments_agg.order_id')
             ->where(function($q) {
                 $q->whereNull('reservations.id')
                   ->orWhere('reservations.status', '!=', Reservation::STATUS_CANCELLED);
             })
-            ->selectRaw("
+            ->selectRaw($isSqlite ? "
+                COALESCE(SUM(orders.total_price), 0) as total_revenue,
+                
+                COUNT(DISTINCT CASE 
+                    WHEN reservations.type = 'group' THEN 'res_' || orders.reservation_id
+                    WHEN orders.merged_tables IS NOT NULL THEN 'merge_' || orders.merged_tables || '_' || strftime('%s', orders.updated_at)
+                    ELSE orders.id 
+                END) as total_orders,
+                
+                COUNT(DISTINCT CASE 
+                    WHEN orders.reservation_id IS NULL OR reservations.type = 'individual' THEN 
+                        CASE WHEN orders.merged_tables IS NOT NULL THEN 'merge_' || orders.merged_tables || '_' || strftime('%s', orders.updated_at)
+                        ELSE orders.id END
+                END) as individual_orders,
+                
+                COUNT(DISTINCT CASE WHEN reservations.type = 'group' THEN orders.reservation_id END) as group_orders,
+                
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.cash_paid ELSE (CASE WHEN orders.payment_method = 'cash' THEN orders.total_price ELSE 0 END) END), 0) as cash_revenue,
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.bank_paid ELSE (CASE WHEN orders.payment_method = 'bank' THEN orders.total_price ELSE 0 END) END), 0) as bank_revenue,
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.card_paid ELSE (CASE WHEN orders.payment_method = 'card' THEN orders.total_price ELSE 0 END) END), 0) as card_revenue,
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.debt_paid ELSE (CASE WHEN orders.payment_method = 'debt' THEN orders.total_price ELSE 0 END) END), 0) as debt_revenue
+            " : "
                 COALESCE(SUM(orders.total_price), 0) as total_revenue,
                 
                 COUNT(DISTINCT CASE 
@@ -66,10 +98,10 @@ class StatsService
                 
                 COUNT(DISTINCT CASE WHEN reservations.type = 'group' THEN orders.reservation_id END) as group_orders,
                 
-                COALESCE(SUM(CASE WHEN orders.payment_method = 'cash' THEN orders.total_price ELSE 0 END), 0) as cash_revenue,
-                COALESCE(SUM(CASE WHEN orders.payment_method = 'bank' THEN orders.total_price ELSE 0 END), 0) as bank_revenue,
-                COALESCE(SUM(CASE WHEN orders.payment_method = 'card' THEN orders.total_price ELSE 0 END), 0) as card_revenue,
-                COALESCE(SUM(CASE WHEN orders.payment_method = 'debt' THEN orders.total_price ELSE 0 END), 0) as debt_revenue
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.cash_paid ELSE (CASE WHEN orders.payment_method = 'cash' THEN orders.total_price ELSE 0 END) END), 0) as cash_revenue,
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.bank_paid ELSE (CASE WHEN orders.payment_method = 'bank' THEN orders.total_price ELSE 0 END) END), 0) as bank_revenue,
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.card_paid ELSE (CASE WHEN orders.payment_method = 'card' THEN orders.total_price ELSE 0 END) END), 0) as card_revenue,
+                COALESCE(SUM(CASE WHEN payments_agg.order_id IS NOT NULL THEN payments_agg.debt_paid ELSE (CASE WHEN orders.payment_method = 'debt' THEN orders.total_price ELSE 0 END) END), 0) as debt_revenue
             ")
             ->first();
 

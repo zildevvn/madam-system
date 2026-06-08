@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 import PaymentMethodSelector from './PaymentMethodSelector';
 import Icon from '../shared/Icon';
@@ -25,6 +25,8 @@ const PaymentModalFooter = ({
     onUpdateStep,
     paymentMethod,
     setPaymentMethod,
+    payments = [],
+    onUpdatePayments,
     isProcessing,
     handlePayment,
     isGroup,
@@ -37,6 +39,49 @@ const PaymentModalFooter = ({
     handlePrintInvoice
 }) => {
     const hasAnyDiscount = discountAmount > 0 || itemDiscountsTotal > 0;
+
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const remainingBalance = finalTotal - totalPaid;
+    const isSplitInvalid = paymentMethod === 'split' && totalPaid !== finalTotal;
+
+    const allOptions = useMemo(() => [
+        { value: 'cash', label: 'Tiền mặt' },
+        { value: 'bank', label: 'Chuyển khoản' },
+        { value: 'card', label: 'Cà thẻ' },
+        ...(isGroup ? [{ value: 'debt', label: 'Công nợ' }] : [])
+    ], [isGroup]);
+
+    const canAddPaymentEntry = remainingBalance !== 0 && payments.length < allOptions.length;
+
+    const handlePaymentMethodChange = (method) => {
+        setPaymentMethod(method);
+        if (method === 'split' && payments.length === 0) {
+            onUpdatePayments([{ payment_method: 'cash', amount: finalTotal }]);
+        }
+    };
+
+    const handleAddPaymentEntry = () => {
+        const remaining = Math.max(0, finalTotal - totalPaid);
+        const selectedMethods = payments.map(p => p.payment_method);
+        const firstAvailableOpt = allOptions.find(opt => !selectedMethods.includes(opt.value));
+        const method = firstAvailableOpt ? firstAvailableOpt.value : 'cash';
+        onUpdatePayments([...payments, { payment_method: method, amount: remaining }]);
+    };
+
+    const handleRemovePaymentEntry = (index) => {
+        const next = payments.filter((_, i) => i !== index);
+        onUpdatePayments(next);
+    };
+
+    const handleUpdatePaymentEntry = (index, field, value) => {
+        const next = payments.map((p, i) => {
+            if (i === index) {
+                return { ...p, [field]: value };
+            }
+            return p;
+        });
+        onUpdatePayments(next);
+    };
 
     return (
         <div className="shrink-0 border-t border-gray-100 bg-gray-50/50">
@@ -163,12 +208,90 @@ const PaymentModalFooter = ({
 
             {/* Payment Method (Step 2) */}
             {step === 2 && (
-                <PaymentMethodSelector
-                    paymentMethod={paymentMethod}
-                    onSelect={setPaymentMethod}
-                    isGroup={isGroup}
-                    isProcessing={isProcessing}
-                />
+                <>
+                    <PaymentMethodSelector
+                        paymentMethod={paymentMethod}
+                        onSelect={handlePaymentMethodChange}
+                        isGroup={isGroup}
+                        isProcessing={isProcessing}
+                    />
+
+                    {paymentMethod === 'split' && (
+                        <div className="px-6 pb-4 pt-2 border-t border-gray-100 bg-white space-y-3">
+                            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                <div>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase block text-left">Phương thức thanh toán</span>
+                                    <span className="text-sm font-black text-gray-700">{formatPrice(totalPaid)}đ</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase block">Còn lại</span>
+                                    <span className={`text-sm font-black ${remainingBalance === 0 ? 'text-green-500' : 'text-red-500 animate-pulse'}`}>
+                                        {formatPrice(remainingBalance)}đ
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1 list-payments">
+                                {payments.map((p, index) => (
+                                    <div key={index} className="flex items-center gap-2 bg-gray-50/50 p-2 rounded-xl border border-gray-100">
+                                        <select
+                                            disabled={isProcessing}
+                                            value={p.payment_method}
+                                            onChange={(e) => handleUpdatePaymentEntry(index, 'payment_method', e.target.value)}
+                                            className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold text-gray-700 outline-none focus:border-orange-300"
+                                        >
+                                            {allOptions
+                                                .filter(opt => !payments.some((entry, i) => i !== index && entry.payment_method === opt.value))
+                                                .map(opt => (
+                                                    <option key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </option>
+                                                ))
+                                            }
+                                        </select>
+
+                                        <div className="relative flex-1">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                disabled={isProcessing}
+                                                value={p.amount === 0 ? '' : formatPrice(p.amount)}
+                                                onChange={(e) => {
+                                                    const rawValue = e.target.value.replace(/\D/g, "");
+                                                    handleUpdatePaymentEntry(index, 'amount', rawValue ? parseInt(rawValue, 10) : 0);
+                                                }}
+                                                placeholder="Số tiền..."
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-1 text-xs font-bold text-gray-700 text-right outline-none focus:border-orange-300"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">đ</span>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            disabled={isProcessing}
+                                            onClick={() => handleRemovePaymentEntry(index)}
+                                            className="w-8 h-8 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors border-none cursor-pointer shrink-0"
+                                        >
+                                            <Icon name="trash" size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {canAddPaymentEntry && (
+                                <button
+                                    type="button"
+                                    disabled={isProcessing}
+                                    onClick={handleAddPaymentEntry}
+                                    className="w-full py-1.5 border border-dashed border-orange-200 text-orange-500 rounded-xl text-xs font-bold hover:bg-orange-50/50 transition-colors bg-white cursor-pointer flex justify-center items-center gap-1"
+                                >
+                                    <Icon name="plus" size={14} />
+                                    Thêm phương thức ({formatPrice(remainingBalance)}đ)
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Action Buttons */}
@@ -221,9 +344,9 @@ const PaymentModalFooter = ({
                                         <Icon name="chevronLeft" size={20} />
                                     </button>
                                     <button
-                                        disabled={draftItemsCount === 0 || !paymentMethod || isProcessing}
+                                        disabled={draftItemsCount === 0 || !paymentMethod || isProcessing || isSplitInvalid}
                                         onClick={handlePayment}
-                                        className={`flex-1 mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
+                                        className={`flex-1 mdt-btn cursor-pointer text-sm py-2.5 ${(draftItemsCount === 0 || !paymentMethod || isProcessing || isSplitInvalid) ? 'btn-confirm !bg-gray-200 !text-gray-400 shadow-none cursor-not-allowed' : ''}`}
                                     >
                                         {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (
                                             <div className="flex items-center gap-2">

@@ -12,6 +12,7 @@ const PaymentMethodSelector = ({ paymentMethod, onSelect, isGroup, isProcessing 
         { key: 'bank', label: 'Chuyển khoản', icon: 'qrCode' },
         { key: 'card', label: 'Cà thẻ', icon: 'creditCard' },
         ...(isGroup ? [{ key: 'debt', label: 'Công nợ', icon: 'clipboardList' }] : []),
+        { key: 'split', label: 'Hỗn hợp', icon: 'layoutGrid' }
     ], [isGroup]);
 
     return (

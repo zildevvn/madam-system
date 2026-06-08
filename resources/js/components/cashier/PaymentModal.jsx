@@ -28,6 +28,8 @@ const PaymentModal = ({
     onUpdateCashierNote,
     paymentMethod,
     onUpdatePaymentMethod,
+    payments = [],
+    onUpdatePayments,
     showExtras = false,
     onUpdateShowExtras,
     isHistoryEdit = false,
@@ -71,6 +73,8 @@ const PaymentModal = ({
         cashierNote,
         paymentMethod,
         setPaymentMethod: onUpdatePaymentMethod,
+        payments,
+        setPayments: onUpdatePayments,
         isHistoryEdit
     });
 
@@ -201,6 +205,8 @@ const PaymentModal = ({
                     onUpdateStep={onUpdateStep}
                     paymentMethod={paymentMethod}
                     setPaymentMethod={onUpdatePaymentMethod}
+                    payments={payments}
+                    onUpdatePayments={onUpdatePayments}
                     isProcessing={isProcessing}
                     handlePayment={handlePayment}
                     isGroup={!!currentOrder?.isGroup}
