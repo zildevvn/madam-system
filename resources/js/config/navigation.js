@@ -15,6 +15,7 @@ export const NAVIGATION_ITEMS = [
             { name: 'Quản Lý Bàn', href: '/admin/tables' },
             { name: 'Quản Lý Menu', href: '/admin/products' },
             { name: 'Hiệu Suất Nhân Viên', href: '/admin/performance' },
+            { name: 'Xuất Dữ Liệu', href: '/admin/order-export' },
         ]
     },
     { name: 'Chấm Công', href: '/attendance', roles: [ROLES.MANAGER] },
@@ -34,6 +35,7 @@ export const NAVIGATION_ITEMS = [
         ]
     },
     { name: 'Expense Management', href: '/expenses', roles: [ROLES.CASHIER] },
+    { name: 'Xuất Dữ Liệu', href: '/admin/order-export', roles: [ROLES.ACCOUNTANT] },
 ];
 
 /**

@@ -33,6 +33,7 @@ import EmployeeDetailPage from "./pages/admin/EmployeeDetailPage";
 import TableManagement from "./pages/admin/TableManagement";
 import ProductManagement from "./pages/admin/ProductManagement";
 import EmployeePerformancePage from "./pages/admin/EmployeePerformancePage";
+import OrderExportPage from "./pages/admin/OrderExportPage";
 import ReservationStatsPage from "./pages/reservations/ReservationStatsPage";
 import PartnerCompaniesPage from "./pages/reservations/PartnerCompaniesPage";
 import AttendanceManagementPage from "./pages/AttendanceManagementPage";
@@ -140,6 +141,7 @@ const ROLE_DEFAULT_ROUTES = {
     [ROLES.MANAGER]: { path: '/staff-order', label: 'Go to Order Page' },
     [ROLES.ORDER_STAFF]: { path: '/staff-order', label: 'Go to Order Page' },
     [ROLES.SELLER]: { path: '/staff-order', label: 'Go to Order Page' },
+    [ROLES.ACCOUNTANT]: { path: '/admin/order-export', label: 'Go to Order Export' },
 };
 
 const DEFAULT_REDIRECT = { path: '/', label: 'Go to Home' };
@@ -249,7 +251,11 @@ function App() {
                             <Route path="tables" element={<TableManagement />} />
                             <Route path="products" element={<ProductManagement />} />
                             <Route path="performance" element={<EmployeePerformancePage />} />
+                            <Route path="order-export" element={<OrderExportPage />} />
                         </Route>
+
+                        {/* Order Export: Accountant standalone access */}
+                        <Route path="/admin/order-export" element={<RoleProtectedRoute allowedRoles={[ROLES.ACCOUNTANT]}><DefaultLayout><OrderExportPage /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Kitchen and Bar: Access by admin, kitchen, bar */}
                         <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />

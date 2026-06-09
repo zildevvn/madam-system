@@ -11,5 +11,6 @@ export const ROLES = {
     KITCHEN: 'kitchen',
     BAR: 'bar',
     BILL: 'bill',
-    SELLER: 'seller'
+    SELLER: 'seller',
+    ACCOUNTANT: 'accountant'
 };
