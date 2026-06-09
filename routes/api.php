@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\TableController;
 use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\OrderExportController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\CategoryController;
@@ -103,3 +104,8 @@ Route::get('/stats/reservation-stats', [StatsController::class, 'reservationStat
 // System Settings
 Route::get('/system-settings', [SystemSettingController::class, 'index']);
 Route::put('/system-settings', [SystemSettingController::class, 'update']);
+
+// Order Export (Admin & Accountant only)
+Route::get('/order-export', [OrderExportController::class, 'index']);
+Route::get('/order-export/export', [OrderExportController::class, 'export']);
+Route::get('/order-export/cashiers', [OrderExportController::class, 'cashiers']);

@@ -13,6 +13,9 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_ACCOUNTANT = 'accountant';
+
     /**
      * The attributes that are mass assignable.
      *
