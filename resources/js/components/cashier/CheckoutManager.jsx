@@ -1,7 +1,8 @@
-import React, { useReducer, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useReducer, useEffect, useMemo, useCallback, useState } from 'react';
+import { createPortal, flushSync } from 'react-dom';
 import PaymentModal from './PaymentModal';
 import Receipt from './Receipt';
+import { resolveTableName } from '../../shared/utils/normalizeTableStrings';
 
 /**
  * [WHY] checkoutReducer handles all transitions for the checkout state.
@@ -21,16 +22,23 @@ const checkoutReducer = (state, action) => {
                     draftItems: action.payload.items,
                     serverItems: action.payload.items, // [FIX] Track server state to avoid local adjustment wipes
                     paymentMethod: 'cash',
+                    payments: [],
                     showExtras: false,
                     initializedOrderId: action.payload.orderId
                 }
             };
-        case 'INITIALIZE_HISTORY':
+        case 'INITIALIZE_HISTORY': {
+            const historyPayments = action.payload.order.payments || [];
+            const isSplitHistory = historyPayments.length > 1;
             return {
                 ...state,
                 [action.payload.lookupKey]: {
                     step: 2,
-                    paymentMethod: action.payload.order.payment_method || 'cash',
+                    paymentMethod: isSplitHistory ? 'split' : (action.payload.order.payment_method || 'cash'),
+                    payments: historyPayments.map(p => ({
+                        payment_method: p.payment_method,
+                        amount: Number(p.amount)
+                    })),
                     showExtras: true,
                     discountType: action.payload.order.discount_type || 'fixed',
                     discountValue: action.payload.order.discount_value || 0,
@@ -40,13 +48,15 @@ const checkoutReducer = (state, action) => {
                     initializedOrderId: action.payload.order.id
                 }
             };
-        case 'UPDATE_FIELD':
+        }
+        case 'UPDATE_FIELD': {
             const { lookupKey, updates } = action.payload;
             if (!state[lookupKey]) return state;
             return {
                 ...state,
                 [lookupKey]: { ...state[lookupKey], ...updates }
             };
+        }
         case 'REFRESH_ITEMS':
             if (!state[action.payload.lookupKey]) return state;
             return {
@@ -57,10 +67,11 @@ const checkoutReducer = (state, action) => {
                     serverItems: action.payload.items // [FIX] Sync server state tracker
                 }
             };
-        case 'CLEAR':
+        case 'CLEAR': {
             const next = { ...state };
             delete next[action.payload.lookupKey];
             return next;
+        }
         default:
             return state;
     }
@@ -84,6 +95,27 @@ const CheckoutManager = ({
     onCloseHistory
 }) => {
     const [contexts, dispatch] = useReducer(checkoutReducer, {});
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    // [WHY] Listen to browser beforeprint/afterprint events to mount/unmount the Receipt.
+    useEffect(() => {
+        const handleBeforePrint = () => {
+            flushSync(() => {
+                setIsPrinting(true);
+            });
+        };
+        const handleAfterPrint = () => {
+            setIsPrinting(false);
+        };
+
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        return () => {
+            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, []);
 
     const currentLookupKey = selectedTable ? (selectedTable.groupKey || selectedTable.id).toString() : null;
     const currentOrder = currentLookupKey ? (individualOrders[currentLookupKey] || groupOrders[currentLookupKey]) : null;
@@ -118,7 +150,7 @@ const CheckoutManager = ({
                 dispatch({ type: 'REFRESH_ITEMS', payload: { lookupKey, items: initialItems } });
             }
         }
-    }, [selectedTable, currentOrder, currentLookupKey]);
+    }, [selectedTable, currentOrder, currentLookupKey, contexts]);
 
     // [WHY] Auto-initialize context for history orders (History Flow)
     useEffect(() => {
@@ -127,7 +159,7 @@ const CheckoutManager = ({
         if (!contexts[lookupKey]) {
             dispatch({ type: 'INITIALIZE_HISTORY', payload: { lookupKey, order: editingHistoryOrder } });
         }
-    }, [editingHistoryOrder]);
+    }, [editingHistoryOrder, contexts]);
 
     let activeModal = null;
     if (selectedTable) {
@@ -151,28 +183,73 @@ const CheckoutManager = ({
         };
     }
 
-    let displayTableName = '';
-    if (activeModal) {
-        const name = activeModal.order?.tableName || activeModal.table?.name;
-        displayTableName = name ? `Bàn ${name.replace(/^Bàn\s+/i, '')}` : 'Mang đi';
-    }
+    const tableMap = useMemo(() => {
+        const map = {};
+        allTables.forEach(t => {
+            if (t?.id) {
+                map[t.id.toString()] = t;
+            }
+        });
+        return map;
+    }, [allTables]);
 
-    const updateContext = (id, updates) => dispatch({ type: 'UPDATE_FIELD', payload: { lookupKey: id, updates } });
+    const displayTableName = useMemo(() => {
+        if (!activeModal) return '';
+        const orderData = {
+            ...activeModal.order,
+            table: activeModal.order?.table || activeModal.table
+        };
+        return resolveTableName(orderData, allTables, tableMap);
+    }, [activeModal, allTables, tableMap]);
 
-    const handlePaymentSuccessProxy = (newOrder) => {
-        if (activeModal) {
-            const paidOrderId = activeModal.order?.id;
-            dispatch({ type: 'CLEAR', payload: { lookupKey: activeModal.id } });
+    const updateContext = useCallback((id, updates) => {
+        dispatch({ type: 'UPDATE_FIELD', payload: { lookupKey: id, updates } });
+    }, [dispatch]);
+
+    const activeModalId = activeModal?.id;
+    const activeOrderId = activeModal?.order?.id;
+    const isActiveHistory = activeModal?.isHistory;
+
+    const handlePaymentSuccessProxy = useCallback((newOrder) => {
+        if (activeModalId) {
+            dispatch({ type: 'CLEAR', payload: { lookupKey: activeModalId } });
 
             if (newOrder) {
                 onSplitSuccess(newOrder);
-            } else if (activeModal.isHistory) {
+            } else if (isActiveHistory) {
                 onHistoryPaymentSuccess();
             } else {
-                onActivePaymentSuccess(paidOrderId);
+                onActivePaymentSuccess(activeOrderId);
             }
         }
-    };
+    }, [activeModalId, activeOrderId, isActiveHistory, dispatch, onSplitSuccess, onHistoryPaymentSuccess, onActivePaymentSuccess]);
+
+    const modalHandlers = useMemo(() => {
+        if (!activeModalId) return {};
+        return {
+            onUpdateDraftItems: (items) => updateContext(activeModalId, { draftItems: items }),
+            onUpdateDiscountType: (type) => updateContext(activeModalId, { discountType: type }),
+            onUpdateDiscountValue: (val) => updateContext(activeModalId, { discountValue: val }),
+            onUpdateStep: (s) => updateContext(activeModalId, { step: s }),
+            onUpdateCashierNote: (note) => updateContext(activeModalId, { cashierNote: note }),
+            onUpdatePaymentMethod: (method) => updateContext(activeModalId, { paymentMethod: method }),
+            onUpdateShowExtras: (show) => updateContext(activeModalId, { showExtras: show }),
+            onUpdatePayments: (payments) => updateContext(activeModalId, { payments: payments })
+        };
+    }, [activeModalId, updateContext]);
+
+    const isGroup = !!activeModal?.order?.isGroup;
+    const currentMethod = activeModalId ? contexts[activeModalId]?.paymentMethod : null;
+
+    // [WHY] Automatically validate selected payment method when group status changes.
+    // Non-group orders cannot use the 'debt' method. If 'debt' is selected and isGroup is false,
+    // we default back to 'cash' to prevent invalid hidden states in the checkout.
+    useEffect(() => {
+        if (!activeModalId) return;
+        if (!isGroup && currentMethod === 'debt') {
+            updateContext(activeModalId, { paymentMethod: 'cash' });
+        }
+    }, [isGroup, activeModalId, currentMethod, updateContext]);
 
     if (!activeModal) return null;
 
@@ -191,28 +268,25 @@ const CheckoutManager = ({
 
                 // Controlled props from the isolated state
                 draftItems={ctx?.draftItems || []}
-                onUpdateDraftItems={(items) => updateContext(activeModal.id, { draftItems: items })}
                 discountType={ctx?.discountType || 'fixed'}
-                onUpdateDiscountType={(type) => updateContext(activeModal.id, { discountType: type })}
                 discountValue={ctx?.discountValue || 0}
-                onUpdateDiscountValue={(val) => updateContext(activeModal.id, { discountValue: val })}
                 step={ctx?.step || 1}
-                onUpdateStep={(s) => updateContext(activeModal.id, { step: s })}
                 cashierNote={ctx?.cashierNote || ''}
-                onUpdateCashierNote={(note) => updateContext(activeModal.id, { cashierNote: note })}
                 paymentMethod={ctx?.paymentMethod || 'cash'}
-                onUpdatePaymentMethod={(method) => updateContext(activeModal.id, { paymentMethod: method })}
+                payments={ctx?.payments || []}
                 showExtras={ctx?.showExtras || false}
-                onUpdateShowExtras={(show) => updateContext(activeModal.id, { showExtras: show })}
+                {...modalHandlers}
             />
 
-            {createPortal(
+            {isPrinting && createPortal(
                 <Receipt
                     order={{ ...activeModal.order, items: ctx?.draftItems || [] }}
                     tableName={displayTableName}
                     allTables={allTables}
                     discountType={ctx?.discountType || 'fixed'}
                     discountValue={ctx?.discountValue || 0}
+                    paymentMethod={ctx?.paymentMethod || activeModal.order?.payment_method}
+                    payments={ctx?.payments || activeModal.order?.payments}
                 />,
                 document.body
             )}

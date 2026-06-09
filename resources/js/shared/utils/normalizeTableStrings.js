@@ -36,3 +36,30 @@ export const generateTableRange = (tableIds) => {
     if (ids.length === 0) return null;
     return ids.join('-');
 };
+
+/**
+ * resolveTableName
+ * [WHY] Resolves a formatted display name for a table or order, handling merged tables.
+ * @param {Object} order - The order object
+ * @param {Array} allTables - List of all tables in system
+ * @param {Object} tableMap - Optional O(1) table lookup map
+ * @returns {string} - Formatted table name
+ */
+export const resolveTableName = (order, allTables = [], tableMap = null) => {
+    if (!order) return 'Mang đi';
+
+    if (order.merged_tables) {
+        const ids = order.merged_tables.split('-').filter(Boolean);
+        const names = ids.map(id => {
+            const t = tableMap ? tableMap[id.toString()] : allTables.find(tbl => tbl.id.toString() === id.toString());
+            return (t?.name || id).toString().replace(/^Bàn\s+/i, '');
+        });
+        return `Bàn ${names.join('-')}`;
+    }
+
+    const table = order.table || (tableMap ? tableMap[order.table_id?.toString()] : allTables.find(t => t.id === order.table_id));
+    if (!table) return 'Mang đi';
+
+    const name = (table.name || table.id).toString();
+    return name.startsWith('Bàn') ? name : `Bàn ${name}`;
+};

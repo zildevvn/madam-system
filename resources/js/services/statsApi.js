@@ -39,6 +39,15 @@ const statsApi = {
     getReservationStats: async (params) => {
         const response = await axios.get('/api/stats/reservation-stats', { params });
         return response.data;
+    },
+
+    /**
+     * getTodayRevenue
+     * [WHY] Fetches today's revenue stats.
+     */
+    getTodayRevenue: async (config = {}) => {
+        const response = await axios.get('/api/stats/today-revenue', config);
+        return response.data;
     }
 };
 

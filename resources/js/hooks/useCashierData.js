@@ -12,6 +12,7 @@ export const useCashierData = (status, selectedDate) => {
     const [reservations, setReservations] = useState([]);
     const [historyOrders, setHistoryOrders] = useState([]);
     const [isLoadingRes, setIsLoadingRes] = useState(false);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
     const lastRanRef = useRef(0);
     const throttleTimerRef = useRef(null);
@@ -26,7 +27,9 @@ export const useCashierData = (status, selectedDate) => {
 
         setIsLoadingRes(true);
         try {
-            const res = await reservationApi.getAll({}, {
+            const res = await reservationApi.getAll({
+                date: selectedDate
+            }, {
                 signal: controller.signal
             });
 
@@ -42,7 +45,7 @@ export const useCashierData = (status, selectedDate) => {
                 setIsLoadingRes(false);
             }
         }
-    }, []);
+    }, [selectedDate]);
 
     const loadHistory = useCallback(async () => {
         // [WHY] Ensure only the latest request updates the state
@@ -50,6 +53,7 @@ export const useCashierData = (status, selectedDate) => {
         const controller = new AbortController();
         historyAbortRef.current = controller;
 
+        setIsLoadingHistory(true);
         try {
             const res = await orderApi.fetchHistory(100, {
                 signal: controller.signal,
@@ -62,6 +66,10 @@ export const useCashierData = (status, selectedDate) => {
         } catch (err) {
             if (axios.isCancel(err)) return;
             console.error("Failed to fetch history:", err);
+        } finally {
+            if (!controller.signal.aborted) {
+                setIsLoadingHistory(false);
+            }
         }
     }, [selectedDate]);
     // [WHY] Shared refresh function for consistency and maintainability
@@ -96,12 +104,18 @@ export const useCashierData = (status, selectedDate) => {
         }
     }, [refreshAllData]);
 
+    // [RULE] Consolidate abort controllers and timers cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
+            if (reservationAbortRef.current) reservationAbortRef.current.abort();
+            if (historyAbortRef.current) historyAbortRef.current.abort();
+        };
+    }, []);
+
     // [WHY] Initial fetch and refresh on status change
     useEffect(() => {
         refreshAllData();
-        return () => {
-            if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
-        };
     }, [refreshAllData, status]);
 
     // [WHY] Real-time synchronization via Echo
@@ -125,12 +139,6 @@ export const useCashierData = (status, selectedDate) => {
                     .stopListening('.order_updated', handleUpdate)
                     .stopListening('.item_status_updated', handleUpdate)
                     .stopListening('.reservation_updated', handleUpdate);
-
-                if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
-
-                // [WHY] Abort all pending requests on unmount
-                if (reservationAbortRef.current) reservationAbortRef.current.abort();
-                if (historyAbortRef.current) historyAbortRef.current.abort();
             };
         }
     }, [throttledRefresh]);
@@ -139,6 +147,8 @@ export const useCashierData = (status, selectedDate) => {
         reservations,
         historyOrders,
         isLoadingRes,
-        refreshData: throttledRefresh
+        isLoadingHistory,
+        refreshData: throttledRefresh,
+        refreshAllData
     };
 };
