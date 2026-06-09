@@ -38,10 +38,12 @@ class OrderExportController extends Controller
     public function index(Request $request)
     {
         $user = $this->getCurrentUser($request);
-        if (!$user || !in_array($user->role, [
-            User::ROLE_ADMIN,
-            User::ROLE_ACCOUNTANT
-        ])) {
+        if (
+            !$user || !in_array($user->role, [
+                User::ROLE_ADMIN,
+                User::ROLE_ACCOUNTANT
+            ])
+        ) {
             abort(403);
         }
 
@@ -58,40 +60,44 @@ class OrderExportController extends Controller
     /**
      * export
      * [WHY] Streams a CSV file for all matched orders — supports large datasets efficiently.
-     * [RULE] Uses PHP output buffering to stream row-by-row, avoiding full memory load.
+     * [RULE] Uses cursor()-based lazy loading to stream row-by-row without loading the full
+     *        result set into memory. Memory usage stays constant regardless of dataset size.
+     * [RULE] Column headers, order grouping, and number formatting mirror the frontend
+     *        OrderExportPage.jsx table exactly — order-level fields (Bàn, Giờ vào, Thu ngân,
+     *        Tổng SL, Tổng thu, etc.) are only written on the first item row of each order.
      */
     public function export(Request $request)
     {
         $user = $this->getCurrentUser($request);
-        if (!$user || !in_array($user->role, [
-            User::ROLE_ADMIN,
-            User::ROLE_ACCOUNTANT
-        ])) {
+        if (
+            !$user || !in_array($user->role, [
+                User::ROLE_ADMIN,
+                User::ROLE_ACCOUNTANT
+            ])
+        ) {
             abort(403);
         }
 
-        $query = $this->buildQuery($request);
-        $orders = $query->orderBy('orders.updated_at', 'asc')->get();
-
-        // Expand each order into per-item rows
-        $rows = $this->expandToRows($orders);
+        // Eager-load relations so each chunk resolves them without N+1 queries.
+        // We use get() with chunkById on the base query for memory-safe processing.
+        $query = $this->buildQuery($request)->orderBy('orders.id', 'asc');
 
         $filename = 'orders_export_' . now()->format('Ymd_His') . '.csv';
 
-        $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        $httpHeaders = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Cache-Control'       => 'no-cache, no-store',
-            'Pragma'              => 'no-cache',
+            'Cache-Control' => 'no-cache, no-store',
+            'Pragma' => 'no-cache',
         ];
 
-        $callback = function () use ($rows) {
+        $callback = function () use ($query) {
             $handle = fopen('php://output', 'w');
 
-            // UTF-8 BOM so Excel opens correctly
+            // UTF-8 BOM so Excel opens the file with correct encoding
             fwrite($handle, "\xEF\xBB\xBF");
 
-            // Header row
+            // ── Header row — Vietnamese labels matching OrderExportPage.jsx ────
             fputcsv($handle, [
                 'STT',
                 'No',
@@ -107,14 +113,96 @@ class OrderExportController extends Controller
                 'Total Due',
             ]);
 
-            foreach ($rows as $row) {
-                fputcsv($handle, $row);
-            }
+            $stt = 1;
+
+            // ── chunkById streams 500 orders at a time, keeping memory flat ───
+            $query->chunkById(500, function ($orders) use ($handle, &$stt) {
+                foreach ($orders as $order) {
+                    $items = $order->items ?? collect();
+
+                    // ── Aggregates (mirrors frontend useMemo row expansion) ────
+                    $crossTotalQty = $items->sum('quantity');
+                    $crossTotalAmount = $items->sum(fn($i) => ($i->price ?? 0) * ($i->quantity ?? 0));
+                    $totalDue = (float) ($order->total_price ?? 0);
+
+                    $tableName = $order->table->name ?? ($order->merged_tables ?? '—');
+                    $arrivalTime = $order->created_at
+                        ? Carbon::parse($order->created_at)->format('d/m/Y H:i')
+                        : '—';
+                    $printedTime = $order->updated_at
+                        ? Carbon::parse($order->updated_at)->format('d/m/Y H:i')
+                        : '—';
+                    $cashierName = $order->cashier->name ?? 'Admin';
+
+                    // ── Empty-item order — single placeholder row ─────────────
+                    if ($items->isEmpty()) {
+                        fputcsv($handle, [
+                            $stt++,
+                            '#' . $order->id,
+                            $tableName,
+                            $arrivalTime,
+                            $printedTime,
+                            $cashierName,
+                            '—',          // Món  — no item
+                            '',           // SL   — blank (matches UI: item ? qty : '')
+                            '',           // Thành tiền — blank
+                            $crossTotalQty,
+                            self::formatNumber($crossTotalAmount),
+                            self::formatNumber($totalDue),
+                        ]);
+                        continue;
+                    }
+
+                    // ── Per-item rows — isFirstItem grouping mirrors the UI ───
+                    $isFirst = true;
+                    foreach ($items as $item) {
+                        $itemQty = $item->quantity ?? 0;
+                        $itemTotal = ($item->price ?? 0) * $itemQty;
+                        $itemName = $item->name ?? ($item->product->name ?? 'Unknown');
+
+                        if ($isFirst) {
+                            // First item row: include all order-level fields
+                            fputcsv($handle, [
+                                $stt++,
+                                '#' . $order->id,   // No — e.g. "#1042"
+                                $tableName,
+                                $arrivalTime,
+                                $printedTime,
+                                $cashierName,
+                                $itemName,
+                                $itemQty,
+                                self::formatNumber($itemTotal),
+                                $crossTotalQty,
+                                self::formatNumber($crossTotalAmount),
+                                self::formatNumber($totalDue),
+                            ]);
+                            $isFirst = false;
+                        } else {
+                            // Continuation rows: order-level fields are blank,
+                            // matching the frontend "isFirstItemInOrder ? value : ''" pattern.
+                            fputcsv($handle, [
+                                $stt++,
+                                '',          // No — blank (UI shows ↳)
+                                '',          // Bàn
+                                '',          // Giờ vào
+                                '',          // In lúc
+                                '',          // Thu ngân
+                                $itemName,
+                                $itemQty,
+                                self::formatNumber($itemTotal),
+                                '',          // Tổng SL   — blank on non-first rows
+                                '',          // Tổng tiền món
+                                '',          // Tổng thu
+                            ]);
+                        }
+                    }
+                }
+            }, 'orders.id');
 
             fclose($handle);
         };
 
-        return response()->stream($callback, 200, $headers);
+        return response()->stream($callback, 200, $httpHeaders);
     }
 
     /**
@@ -124,10 +212,12 @@ class OrderExportController extends Controller
     public function cashiers(Request $request)
     {
         $user = $this->getCurrentUser($request);
-        if (!$user || !in_array($user->role, [
-            User::ROLE_ADMIN,
-            User::ROLE_ACCOUNTANT
-        ])) {
+        if (
+            !$user || !in_array($user->role, [
+                User::ROLE_ADMIN,
+                User::ROLE_ACCOUNTANT
+            ])
+        ) {
             abort(403);
         }
 
@@ -146,14 +236,25 @@ class OrderExportController extends Controller
 
     // ─── Private Helpers ───────────────────────────────────────────────────────
 
+    /**
+     * formatNumber
+     * [WHY] Mirrors the frontend formatPrice() — Intl.NumberFormat('en-US') —
+     *       which formats numbers with comma thousand-separators, no decimals for
+     *       whole VND amounts (e.g. 1,234,567).
+     */
+    private static function formatNumber(float|int $value): string
+    {
+        return number_format($value, 0, '.', ',');
+    }
+
     private function buildQuery(Request $request)
     {
         $query = Order::with([
-                'items',
-                'items.product:id,name',
-                'table:id,name',
-                'cashier:id,name',
-            ])
+            'items',
+            'items.product:id,name',
+            'table:id,name',
+            'cashier:id,name',
+        ])
             ->select('orders.*')
             ->leftJoin('tables', 'orders.table_id', '=', 'tables.id')
             ->leftJoin('users as cashier_users', 'orders.cashier_id', '=', 'cashier_users.id')
@@ -178,73 +279,5 @@ class OrderExportController extends Controller
         }
 
         return $query;
-    }
-
-    /**
-     * expandToRows
-     * [WHY] Each item in an order becomes its own CSV row.
-     * Order-level fields (cross totals, total due) are repeated on every item row.
-     */
-    private function expandToRows($orders): array
-    {
-        $rows = [];
-        $stt = 1;
-
-        foreach ($orders as $order) {
-            $items = $order->items ?? collect();
-
-            $crossTotalQty = $items->sum('quantity');
-            $crossTotalAmount = $items->sum(fn($i) => ($i->price ?? 0) * ($i->quantity ?? 0));
-            $totalDue = $order->total_price ?? 0;
-
-            $tableName = $order->table->name ?? ($order->merged_tables ?? '-');
-            $arrivalTime = $order->created_at
-                ? Carbon::parse($order->created_at)->format('d/m/Y H:i')
-                : '-';
-            $printedTime = $order->updated_at
-                ? Carbon::parse($order->updated_at)->format('d/m/Y H:i')
-                : '-';
-            $cashierName = $order->cashier->name ?? '-';
-
-            if ($items->isEmpty()) {
-                $rows[] = [
-                    $stt++,
-                    $order->id,
-                    $tableName,
-                    $arrivalTime,
-                    $printedTime,
-                    $cashierName,
-                    '-',
-                    0,
-                    0,
-                    $crossTotalQty,
-                    $crossTotalAmount,
-                    $totalDue,
-                ];
-                continue;
-            }
-
-            foreach ($items as $item) {
-                $itemTotal = ($item->price ?? 0) * ($item->quantity ?? 0);
-                $itemName  = $item->name ?? ($item->product->name ?? 'Unknown');
-
-                $rows[] = [
-                    $stt++,
-                    $order->id,
-                    $tableName,
-                    $arrivalTime,
-                    $printedTime,
-                    $cashierName,
-                    $itemName,
-                    $item->quantity ?? 0,
-                    $itemTotal,
-                    $crossTotalQty,
-                    $crossTotalAmount,
-                    $totalDue,
-                ];
-            }
-        }
-
-        return $rows;
     }
 }

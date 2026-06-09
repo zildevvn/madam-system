@@ -162,7 +162,7 @@ export default function OrderExportPage() {
             const crossTotalAmount = items.reduce((s, i) => s + ((i.price || 0) * (i.quantity || 0)), 0);
             const totalDue = Number(order.total_price || 0);
             const tableName = order.table?.name || order.merged_tables || '—';
-            const cashierName = order.cashier?.name || '—';
+            const cashierName = order.cashier?.name || 'Admin';
 
             if (items.length === 0) {
                 result.push({
@@ -285,24 +285,6 @@ export default function OrderExportPage() {
             </div>
 
 
-
-            {/* ── Summary Cards ──────────────────────────────────────────────── */}
-            {fetched && !loading && (
-                <div className="grid grid-cols-3 gap-4">
-                    {[
-                        { label: 'Số hoá đơn', value: summary.orderCount.toLocaleString(), colorClass: 'bg-blue-400' },
-                        { label: 'Số dòng món', value: summary.itemCount.toLocaleString(), colorClass: 'bg-purple-400' },
-                        { label: 'Tổng thu (Total Due)', value: formatPrice(summary.totalDue) + 'đ', colorClass: 'bg-green-400' },
-                    ].map(card => (
-                        <div key={card.label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 relative overflow-hidden">
-                            <div className={`absolute top-0 left-0 w-full h-[3px] ${card.colorClass}`} />
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{card.label}</p>
-                            <p className="text-lg font-black text-slate-900">{card.value}</p>
-                        </div>
-                    ))}
-                </div>
-            )}
-
             {/* ── Error ──────────────────────────────────────────────────────── */}
             {error && (
                 <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-sm text-red-600 font-medium flex items-center gap-2">
@@ -323,17 +305,6 @@ export default function OrderExportPage() {
             {fetched && !loading && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center">
-                                <Icon name="list" size={14} className="text-slate-500" />
-                            </div>
-                            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">
-                                Dữ liệu đơn hàng
-                            </h2>
-                            <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
-                                {summary.orderCount} hoá đơn / {summary.itemCount} dòng
-                            </span>
-                        </div>
                         {orders.length >= 200 && (
                             <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 font-bold">
                                 Xem trước: tối đa 200 đơn. Nhấn Xuất Excel để lấy toàn bộ.
@@ -352,11 +323,11 @@ export default function OrderExportPage() {
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         {[
-                                            'STT', 'No', 'Bàn', 'Giờ vào', 'In lúc',
-                                            'Thu ngân', 'Món', 'SL', 'Thành tiền',
-                                            'Tổng SL', 'Tổng tiền món', 'Tổng thu'
+                                            'STT', 'No', 'Table', 'Arrival Time', 'Printed',
+                                            'Cashier', 'Items', 'QTY', 'Total',
+                                            'Cross Total QTY', 'Cross Total Amount', 'Total Due'
                                         ].map(h => (
-                                            <th key={h} className="px-3 py-3 text-left font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                            <th key={h} className="px-3 py-3 text-left font-black text-slate-800 tracking-wider whitespace-nowrap">
                                                 {h}
                                             </th>
                                         ))}
@@ -438,14 +409,10 @@ export default function OrderExportPage() {
             {/* ── Empty initial state ─────────────────────────────────────────── */}
             {!fetched && !loading && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-16 flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center">
-                        <Icon name="download" size={28} className="text-orange-400" />
-                    </div>
                     <div className="text-center">
-                        <p className="text-sm font-black text-slate-700 mb-1">Sẵn sàng xuất dữ liệu</p>
-                        <p className="text-xs text-slate-400 font-medium">
-                            Chọn bộ lọc phù hợp rồi nhấn <strong>"Xem Dữ Liệu"</strong> để xem trước,
-                            sau đó nhấn <strong>"Xuất Excel"</strong> để tải file.
+
+                        <p className="text-slate-800 ">
+                            Chưa có Data
                         </p>
                     </div>
                 </div>
