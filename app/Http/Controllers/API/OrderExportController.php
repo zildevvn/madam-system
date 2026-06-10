@@ -20,33 +20,11 @@ class OrderExportController extends Controller
     use \App\Traits\ApiResponse;
 
     /**
-     * Helper to retrieve active user context from request headers securely verified against DB.
-     */
-    private function getCurrentUser(Request $request)
-    {
-        $userId = $request->header('X-User-Id');
-        if (!$userId) {
-            return null;
-        }
-        return User::find($userId);
-    }
-
-    /**
      * index
      * [WHY] Returns a paginated/filtered JSON list of orders for the preview table.
      */
     public function index(Request $request)
     {
-        $user = $this->getCurrentUser($request);
-        if (
-            !$user || !in_array($user->role, [
-                User::ROLE_ADMIN,
-                User::ROLE_ACCOUNTANT
-            ])
-        ) {
-            abort(403);
-        }
-
         $query = $this->buildQuery($request);
 
         $orders = $query
@@ -68,16 +46,6 @@ class OrderExportController extends Controller
      */
     public function export(Request $request)
     {
-        $user = $this->getCurrentUser($request);
-        if (
-            !$user || !in_array($user->role, [
-                User::ROLE_ADMIN,
-                User::ROLE_ACCOUNTANT
-            ])
-        ) {
-            abort(403);
-        }
-
         // Eager-load relations so each chunk resolves them without N+1 queries.
         // We use get() with chunkById on the base query for memory-safe processing.
         $query = $this->buildQuery($request)->orderBy('orders.id', 'asc');
@@ -117,8 +85,15 @@ class OrderExportController extends Controller
 
             // ── chunkById streams 500 orders at a time, keeping memory flat ───
             $query->chunkById(500, function ($orders) use ($handle, &$stt) {
+                $orders->loadMissing([
+                    'items.product:id,name',
+                    'table:id,name',
+                    'cashier:id,name',
+                ]);
+
                 foreach ($orders as $order) {
                     $items = $order->items ?? collect();
+
 
                     // ── Aggregates (mirrors frontend useMemo row expansion) ────
                     $crossTotalQty = $items->sum('quantity');
@@ -197,7 +172,8 @@ class OrderExportController extends Controller
                         }
                     }
                 }
-            }, 'orders.id');
+            }, 'orders.id', 'id');
+
 
             fclose($handle);
         };
@@ -211,28 +187,16 @@ class OrderExportController extends Controller
      */
     public function cashiers(Request $request)
     {
-        $user = $this->getCurrentUser($request);
-        if (
-            !$user || !in_array($user->role, [
-                User::ROLE_ADMIN,
-                User::ROLE_ACCOUNTANT
-            ])
-        ) {
-            abort(403);
-        }
-
-        $cashierIds = Order::where('status', 'completed')
-            ->whereNotNull('cashier_id')
+        $cashiers = User::select('users.id', 'users.name')
+            ->join('orders', 'orders.cashier_id', '=', 'users.id')
+            ->where('orders.status', 'completed')
             ->distinct()
-            ->pluck('cashier_id');
-
-        $cashiers = User::whereIn('id', $cashierIds)
-            ->select('id', 'name')
-            ->orderBy('name')
+            ->orderBy('users.name')
             ->get();
 
         return $this->success($cashiers);
     }
+
 
     // ─── Private Helpers ───────────────────────────────────────────────────────
 
