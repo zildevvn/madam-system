@@ -106,6 +106,8 @@ Route::get('/system-settings', [SystemSettingController::class, 'index']);
 Route::put('/system-settings', [SystemSettingController::class, 'update']);
 
 // Order Export (Admin & Accountant only)
-Route::get('/order-export', [OrderExportController::class, 'index']);
-Route::get('/order-export/export', [OrderExportController::class, 'export']);
-Route::get('/order-export/cashiers', [OrderExportController::class, 'cashiers']);
+Route::middleware('order.export.auth')->group(function () {
+    Route::get('/order-export', [OrderExportController::class, 'index']);
+    Route::get('/order-export/export', [OrderExportController::class, 'export']);
+    Route::get('/order-export/cashiers', [OrderExportController::class, 'cashiers']);
+});

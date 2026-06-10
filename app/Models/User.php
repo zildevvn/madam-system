@@ -17,6 +17,17 @@ class User extends Authenticatable
     public const ROLE_ACCOUNTANT = 'accountant';
 
     /**
+     * Determine if the user is authorized to access and export order data.
+     */
+    public function canExportOrders(): bool
+    {
+        return in_array($this->role, [
+            self::ROLE_ADMIN,
+            self::ROLE_ACCOUNTANT
+        ]);
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
