@@ -109,10 +109,13 @@ class OrderExportController extends Controller
                         : '—';
                     $cashierName = $order->cashier->name ?? 'Admin';
 
+                    // ── STT increments once per order ────────────────────────
+                    $orderStt = $stt++;
+
                     // ── Empty-item order — single placeholder row ─────────────
                     if ($items->isEmpty()) {
                         fputcsv($handle, [
-                            $stt++,
+                            $orderStt,
                             '#' . $order->id,
                             $tableName,
                             $arrivalTime,
@@ -138,7 +141,7 @@ class OrderExportController extends Controller
                         if ($isFirst) {
                             // First item row: include all order-level fields
                             fputcsv($handle, [
-                                $stt++,
+                                $orderStt,
                                 '#' . $order->id,   // No — e.g. "#1042"
                                 $tableName,
                                 $arrivalTime,
@@ -156,7 +159,7 @@ class OrderExportController extends Controller
                             // Continuation rows: order-level fields are blank,
                             // matching the frontend "isFirstItemInOrder ? value : ''" pattern.
                             fputcsv($handle, [
-                                $stt++,
+                                $orderStt,
                                 '',          // No — blank (UI shows ↳)
                                 '',          // Bàn
                                 '',          // Giờ vào

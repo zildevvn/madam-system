@@ -117,6 +117,12 @@ export default function OrderExportPage() {
         }
     }, [dateRange]);
 
+    // Automatically load data on initial page load
+    useEffect(() => {
+        handleFetch();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // ── Export ─────────────────────────────────────────────────────────────────
     const handleExport = useCallback(async () => {
         setExporting(true);
@@ -164,9 +170,11 @@ export default function OrderExportPage() {
             const tableName = order.table?.name || order.merged_tables || '—';
             const cashierName = order.cashier?.name || 'Admin';
 
+            const orderStt = stt++;
+
             if (items.length === 0) {
                 result.push({
-                    stt: stt++,
+                    stt: orderStt,
                     order,
                     item: null,
                     crossTotalQty,
@@ -180,7 +188,7 @@ export default function OrderExportPage() {
             }
             items.forEach((item, itemIdx) => {
                 result.push({
-                    stt: stt++,
+                    stt: orderStt,
                     order,
                     item,
                     crossTotalQty,
@@ -318,22 +326,22 @@ export default function OrderExportPage() {
                             <p className="text-sm font-medium">Không có dữ liệu trong khoảng thời gian đã chọn.</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto overflow-y-auto">
                             <table className="w-full text-xs" id="order-export-table">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                    <tr className="bg-[#f3f4f6] text-[#111827] border-b border-[#e5e7eb]">
                                         {[
                                             'STT', 'No', 'Table', 'Arrival Time', 'Printed',
                                             'Cashier', 'Items', 'QTY', 'Total',
                                             'Cross Total QTY', 'Cross Total Amount', 'Total Due'
                                         ].map(h => (
-                                            <th key={h} className="px-3 py-3 text-left font-black text-slate-800 tracking-wider whitespace-nowrap">
+                                            <th key={h} className="sticky top-0 z-10 px-3 py-3 text-left font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap">
                                                 {h}
                                             </th>
                                         ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
+                                <tbody className="divide-y divide-[#e5e7eb]">
                                     {rows.map((row, idx) => {
                                         const { stt, order, item, crossTotalQty, crossTotalAmount, totalDue, tableName, cashierName } = row;
                                         const itemName = item?.name || item?.product?.name || '—';
@@ -341,59 +349,62 @@ export default function OrderExportPage() {
                                         const itemTotal = (item?.price ?? 0) * qty;
                                         const isFirstItemInOrder = row.isFirstItem;
 
+                                        // Soft Zebra stripe by order (STT)
+                                        const rowBg = stt % 2 === 0 ? 'bg-[#f1f5f9]' : 'bg-white';
+
                                         return (
                                             <tr
                                                 key={item ? `${order.id}-item-${item.id}` : `${order.id}-empty`}
-                                                className={`hover:bg-orange-50/30 transition-colors ${isFirstItemInOrder ? 'border-t-2 border-slate-100' : ''}`}
+                                                className={`transition-colors ${rowBg} hover:bg-[#eef6ff] ${isFirstItemInOrder ? 'border-t border-[#e5e7eb]' : ''}`}
                                             >
                                                 {/* STT */}
-                                                <td className="px-3 py-2.5 text-slate-400 font-bold">{stt}</td>
+                                                <td className="px-3 py-2.5 text-[#1f2937] font-semibold">{stt}</td>
                                                 {/* No */}
                                                 <td className="px-3 py-2.5">
                                                     {isFirstItemInOrder ? (
-                                                        <span className="font-black text-slate-800">#{order.id}</span>
+                                                        <span className="font-bold text-[#1f2937]">#{order.id}</span>
                                                     ) : (
-                                                        <span className="text-slate-300">↳</span>
+                                                        <span className="text-[#4b5563]/50">↳</span>
                                                     )}
                                                 </td>
                                                 {/* Table */}
-                                                <td className="px-3 py-2.5 font-semibold text-slate-700 whitespace-nowrap">
+                                                <td className="px-3 py-2.5 font-medium text-[#4b5563] whitespace-nowrap">
                                                     {isFirstItemInOrder ? tableName : ''}
                                                 </td>
                                                 {/* Arrival */}
-                                                <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">
+                                                <td className="px-3 py-2.5 text-[#4b5563] whitespace-nowrap">
                                                     {isFirstItemInOrder ? formatDatetime(order.created_at) : ''}
                                                 </td>
                                                 {/* Printed */}
-                                                <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">
+                                                <td className="px-3 py-2.5 text-[#4b5563] whitespace-nowrap">
                                                     {isFirstItemInOrder ? formatDatetime(order.updated_at) : ''}
                                                 </td>
                                                 {/* Cashier */}
-                                                <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">
+                                                <td className="px-3 py-2.5 text-[#4b5563] whitespace-nowrap">
                                                     {isFirstItemInOrder ? cashierName : ''}
                                                 </td>
                                                 {/* Item name */}
-                                                <td className="px-3 py-2.5 text-slate-800 font-medium max-w-[160px] truncate">
-                                                    {item ? itemName : <span className="text-slate-300 italic">—</span>}
+                                                <td className="px-3 py-2.5 text-[#1f2937] font-medium max-w-[160px] truncate">
+                                                    {item ? itemName : <span className="text-[#4b5563]/40 italic">—</span>}
                                                 </td>
                                                 {/* QTY */}
-                                                <td className="px-3 py-2.5 text-center font-bold text-slate-700">
+                                                <td className="px-3 py-2.5 text-center text-[#4b5563]">
                                                     {item ? qty : ''}
                                                 </td>
                                                 {/* Line total */}
-                                                <td className="px-3 py-2.5 text-right font-bold text-slate-800">
+                                                <td className="px-3 py-2.5 text-right font-medium text-[#1f2937]">
                                                     {item ? formatPrice(itemTotal) : ''}
                                                 </td>
                                                 {/* Cross Total QTY */}
-                                                <td className="px-3 py-2.5 text-center font-black text-blue-600">
+                                                <td className="px-3 py-2.5 text-center font-bold text-blue-600">
                                                     {isFirstItemInOrder ? crossTotalQty : ''}
                                                 </td>
                                                 {/* Cross Total Amount */}
-                                                <td className="px-3 py-2.5 text-right font-black text-blue-600">
+                                                <td className="px-3 py-2.5 text-right font-bold text-blue-600">
                                                     {isFirstItemInOrder ? formatPrice(crossTotalAmount) : ''}
                                                 </td>
                                                 {/* Total Due */}
-                                                <td className="px-3 py-2.5 text-right font-black text-orange-600">
+                                                <td className="px-3 py-2.5 text-right font-bold text-orange-600">
                                                     {isFirstItemInOrder ? formatPrice(totalDue) : ''}
                                                 </td>
                                             </tr>

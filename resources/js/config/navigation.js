@@ -29,12 +29,12 @@ export const NAVIGATION_ITEMS = [
         roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER],
         children: [
             { name: 'Danh Sách Đặt Chỗ', href: '/reservations', roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER] },
-            { name: 'Thống Kê Đặt Chỗ', href: '/reservations/stats', roles: [ROLES.ADMIN] },
-            { name: 'Đối Tác', href: '/reservations/partner-companies', roles: [ROLES.ADMIN] },
+            { name: 'Thống Kê Đặt Chỗ', href: '/reservations/stats', roles: [ROLES.ADMIN, ROLES.SELLER] },
+            { name: 'Đối Tác', href: '/reservations/partner-companies', roles: [ROLES.ADMIN, ROLES.SELLER] },
         ]
     },
     { name: 'Expense Management', href: '/expenses', roles: [ROLES.CASHIER] },
-    { name: 'Xuất Dữ Liệu', href: '/admin/order-export', roles: [ROLES.ACCOUNTANT] },
+    { name: 'Accountant', href: '/admin/order-export', roles: [ROLES.ACCOUNTANT] },
 ];
 
 /**
