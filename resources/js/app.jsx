@@ -80,7 +80,7 @@ const RouteLayoutHandler = () => {
 
         // 2. Synchronize body classes non-destructively for existing SCSS selectors
         const newPageClass = `page-${pageType}`;
-        
+
         // Safely remove any stale page-* classes
         const classesToRemove = Array.from(document.body.classList).filter(c => c.startsWith('page-'));
         classesToRemove.forEach(c => {
@@ -221,7 +221,7 @@ function App() {
                             <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><Checkout /></RoleProtectedRoute>} />
 
                             {/* Reservations: Access by admin, manager, order_staff, seller */}
-                            <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER, ROLES.ACCOUNTANT]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
                             <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
                             {/* [WHY] ReservationCreate handles both create and edit flows. The ReservationEdit alias is used to document this intent. */}
                             <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationEdit /></DefaultLayout></RoleProtectedRoute>} />
@@ -230,16 +230,16 @@ function App() {
                         </Route>
 
                         {/* Cashier page: Access by admin, cashier */}
-                        <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER, ROLES.ACCOUNTANT]}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Expenses: Access by admin, cashier */}
-                        <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER, ROLES.ACCOUNTANT]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Bill page: Access by admin, bill */}
                         <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Attendance page: Access by admin, manager */}
-                        <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ACCOUNTANT]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Admin Dashboard */}
                         <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
