@@ -26,6 +26,9 @@ export default function Home() {
                 case 'admin':
                     navigate("/admin");
                     break;
+                case 'accountant':
+                    navigate("/admin/order-export");
+                    break;
                 case 'kitchen':
                     navigate("/kitchen");
                     break;

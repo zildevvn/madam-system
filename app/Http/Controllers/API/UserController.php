@@ -122,7 +122,7 @@ class UserController extends Controller
         }
 
         $validated = $request->validate([
-            'role' => 'required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller'
+            'role' => 'required|string|in:admin,accountant,manager,order_staff,kitchen,bar,cashier,bill,seller'
         ]);
 
         $user = $this->userService->updateRole($id, $validated['role']);
@@ -150,7 +150,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role' => 'required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+            'role' => 'required|string|in:admin,accountant,manager,order_staff,kitchen,bar,cashier,bill,seller',
             'join_date' => 'required|date',
             'date_of_birth' => 'required|date',
             'work_shift' => 'required|string|max:255',
@@ -203,7 +203,7 @@ class UserController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $id,
             'password' => 'sometimes|nullable|string|min:6',
-            'role' => 'sometimes|required|string|in:admin,manager,order_staff,kitchen,bar,cashier,bill,seller',
+            'role' => 'sometimes|required|string|in:admin,accountant,manager,order_staff,kitchen,bar,cashier,bill,seller',
             'join_date' => 'sometimes|required|date',
             'date_of_birth' => 'sometimes|required|date',
             'work_shift' => 'sometimes|required|string|max:255',

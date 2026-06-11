@@ -251,7 +251,6 @@ function App() {
                             <Route path="tables" element={<TableManagement />} />
                             <Route path="products" element={<ProductManagement />} />
                             <Route path="performance" element={<EmployeePerformancePage />} />
-                            <Route path="order-export" element={<OrderExportPage />} />
                         </Route>
 
                         {/* Order Export: Accountant standalone access */}
