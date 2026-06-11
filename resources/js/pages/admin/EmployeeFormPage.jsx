@@ -54,6 +54,7 @@ const EmployeeFormPage = () => {
 
     const roles = [
         { value: 'admin', label: 'Quản trị viên (Admin)' },
+        { value: 'accountant', label: 'Kế toán (Accountant)' },
         { value: 'manager', label: 'Quản lý (Manager)' },
         { value: 'order_staff', label: 'Nhân viên Order' },
         { value: 'kitchen', label: 'Bếp (Kitchen)' },
