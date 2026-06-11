@@ -228,7 +228,7 @@ export default function OrderExportPage() {
 
             {/* ── Page Header ────────────────────────────────────────────────── */}
             <div className="bg-white border-b border-slate-100 p-4 lg:px-6 lg:py-4 sticky top-15 md:top-20 z-[10] -mx-4 lg:-mx-6">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="container-order-export mx-auto w-full max-w-7xl flex items-center justify-between gap-4 flex-wrap">
                     <h5 className=" text-slate-900  tracking-tight">
                         Xuất Dữ Liệu Đơn Hàng
                     </h5>
