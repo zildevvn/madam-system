@@ -78,15 +78,16 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm max-h-screen">
-            <div className="bg-white rounded-[16px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-[16px] w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
                 <div className="px-3 py-2 lg:px-6 lg:py-4 border-b border-gray-50 flex items-center justify-between flex-shrink-0">
-                    <h4 className="text-gray-900 mb-0 font-black text-sm lg:text-base">
+                    <h5 className="text-gray-900 mb-0 font-black">
                         {product ? 'Chỉnh sửa món' : 'Thêm món mới'}
-                    </h4>
+                    </h5>
+
                     <button
                         onClick={onClose}
                         disabled={processing || isCompressing}
-                        className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                         type="button"
                     >
                         <Icon name="close" className="w-6 h-6" size={24} />
@@ -106,44 +107,46 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit(onFormSubmit)} className="px-3 py-2 lg:px-6 lg:py-4 space-y-3 lg:space-y-4 overflow-y-auto custom-scrollbar h-full">
-                        {serverError && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-3 duration-300">
-                                <Icon name="alert" className="w-4 h-4 flex-shrink-0" size={16} />
-                                <span>{serverError}</span>
-                            </div>
-                        )}
+                    <form onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col h-full min-h-0">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2 lg:px-6 lg:py-4 space-y-2 lg:space-y-3">
+                            {serverError && (
+                                <div className="bg-red-50 text-red-600 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-100 flex items-center gap-3 duration-300">
+                                    <Icon name="alert" className="w-4 h-4 flex-shrink-0" size={16} />
+                                    <span>{serverError}</span>
+                                </div>
+                            )}
 
-                        <ProductImageInput
-                            preview={preview}
-                            setPreview={setPreview}
-                            setValue={setValue}
-                            imageError={imageError}
-                            setImageError={setImageError}
-                            isCompressing={isCompressing}
-                            setIsCompressing={setIsCompressing}
-                        />
+                            <ProductImageInput
+                                preview={preview}
+                                setPreview={setPreview}
+                                setValue={setValue}
+                                imageError={imageError}
+                                setImageError={setImageError}
+                                isCompressing={isCompressing}
+                                setIsCompressing={setIsCompressing}
+                            />
 
-                        <ProductFormFields
-                            register={register}
-                            errors={errors}
-                            watchedPrice={watchedPrice}
-                            categories={categories}
-                        />
+                            <ProductFormFields
+                                register={register}
+                                errors={errors}
+                                watchedPrice={watchedPrice}
+                                categories={categories}
+                            />
+                        </div>
 
-                        <div className="pt-4 flex items-center gap-4">
+                        <div className="px-3 py-3 lg:px-6 lg:py-4 border-t border-gray-50 flex-shrink-0 flex items-center gap-4 bg-white z-10">
                             <button
                                 type="button"
                                 onClick={onClose}
                                 disabled={processing || isCompressing}
-                                className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50"
+                                className="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                             >
                                 Hủy
                             </button>
                             <button
                                 type="submit"
                                 disabled={processing || isCompressing || isSubmitting}
-                                className="btn-submit flex-1 py-3 bg-orange-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/25 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2"
+                                className="btn-submit flex-1 py-3 bg-orange-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/25 disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 {processing || isCompressing || isSubmitting ? (
                                     <>

@@ -10,7 +10,7 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
     return (
         <>
             <div>
-                <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Tên món</label>
+                <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Tên món</label>
                 <input
                     {...register('name', {
                         required: 'Tên món không được để trống',
@@ -21,14 +21,14 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
                     placeholder="Vd: Phở Bò Chín"
                 />
                 {errors.name && (
-                    <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                    <span className="text-[10px] text-red-500 font-bold  tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
                         {errors.name.message}
                     </span>
                 )}
             </div>
 
             <div>
-                <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Tên món tiếng Việt</label>
+                <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Tên món tiếng Việt</label>
                 <input
                     {...register('name_vi')}
                     type="text"
@@ -39,7 +39,7 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
 
             <div className="grid grid-cols-2 gap-5">
                 <div className="relative">
-                    <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Giá (VND)</label>
+                    <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Giá (VND)</label>
                     <div className="relative">
                         <input
                             {...register('price', {
@@ -53,20 +53,20 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
                         />
                         {watchedPrice > 0 && !errors.price && (
                             <div className="mt-1.5 px-1 flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-300">
-                                <span className="text-[11px] font-black text-orange-500 uppercase tracking-widest">
+                                <span className="text-[11px] font-black text-orange-500  tracking-widest">
                                     {formatPrice(watchedPrice)}đ
                                 </span>
                             </div>
                         )}
                         {errors.price && (
-                            <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                            <span className="text-[10px] text-red-500 font-bold  tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
                                 {errors.price.message}
                             </span>
                         )}
                     </div>
                 </div>
                 <div>
-                    <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Loại</label>
+                    <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Loại</label>
                     <div className="relative">
                         <select
                             {...register('type')}
@@ -84,7 +84,7 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
             </div>
 
             <div>
-                <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Danh mục</label>
+                <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Danh mục</label>
                 <div className="relative">
                     <select
                         {...register('category_id', { required: 'Vui lòng chọn danh mục' })}
@@ -100,7 +100,7 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
                     </div>
                 </div>
                 {errors.category_id && (
-                    <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                    <span className="text-[10px] text-red-500 font-bold  tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
                         {errors.category_id.message}
                     </span>
                 )}

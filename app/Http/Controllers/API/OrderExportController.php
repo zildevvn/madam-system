@@ -136,7 +136,8 @@ class OrderExportController extends Controller
                     foreach ($items as $item) {
                         $itemQty = $item->quantity ?? 0;
                         $itemTotal = ($item->price ?? 0) * $itemQty;
-                        $itemName = $item->name ?? ($item->product->name ?? 'Unknown');
+                        $nameVi = $item->product->name_vi ?? $item->name_vi ?? null;
+                        $itemName = $nameVi ?: ($item->name ?? ($item->product->name ?? 'Unknown'));
 
                         if ($isFirst) {
                             // First item row: include all order-level fields

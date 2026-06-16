@@ -344,7 +344,8 @@ export default function OrderExportPage() {
                                 <tbody className="divide-y divide-[#e5e7eb]">
                                     {rows.map((row, idx) => {
                                         const { stt, order, item, crossTotalQty, crossTotalAmount, totalDue, tableName, cashierName } = row;
-                                        const itemName = item?.name || item?.product?.name || '—';
+                                        const nameVi = item?.product?.name_vi || item?.name_vi;
+                                        const itemName = nameVi ? nameVi : (item?.name || item?.product?.name || '—');
                                         const qty = item?.quantity ?? 0;
                                         const itemTotal = (item?.price ?? 0) * qty;
                                         const isFirstItemInOrder = row.isFirstItem;
