@@ -29,21 +29,40 @@ export default function ProductItem({
 
     // Per-item discount state
     const [discountValue, setDiscountValue] = useState(item.discount || 0);
-    const [discountType, setDiscountType] = useState(item.discountType || 'fixed');
+    const [discountType, setDiscountType] = useState(item.discountType || item.discount_type || 'fixed');
+
+    // Debounce effect for automatic discount update
+    useEffect(() => {
+        // Skip if values match props exactly to prevent initial render fire
+        if (Number(discountValue) === Number(item.discount || 0) && discountType === (item.discountType || item.discount_type || 'fixed')) {
+            return;
+        }
+
+        const handler = setTimeout(() => {
+            if (onUpdateDiscount) {
+                onUpdateDiscount(handlerId, {
+                    discount: Number(discountValue),
+                    discountType
+                });
+            }
+        }, 300);
+
+        return () => clearTimeout(handler);
+    }, [discountValue, discountType, item.discount, item.discountType, handlerId, onUpdateDiscount]);
 
     const hasDiscount = Number(item.discount) > 0;
 
     const calculatedItemDiscount = (() => {
         const val = Number(item.discount || 0);
         const itemGross = item.price * item.quantity;
-        if (item.discountType === 'percent') {
+        if ((item.discountType || item.discount_type) === 'percent') {
             return (itemGross * val / 100);
         }
         return val * item.quantity;
     })();
 
     const itemTotal = (item.price * item.quantity) - calculatedItemDiscount;
-    
+
     const addedQuantity = Math.max(0, item.quantity - originalQuantity);
 
     return (
@@ -64,7 +83,7 @@ export default function ProductItem({
                         </p>
                         {hasDiscount && (
                             <p className="text-[13px] text-red-500 m-0 font-medium">
-                                Giảm: -{item.discountType === 'percent' ? `${item.discount}%` : `${formatPrice(item.discount)}đ`}/món
+                                Giảm: -{(item.discountType || item.discount_type) === 'percent' ? `${item.discount}%` : `${formatPrice(item.discount)}đ`}/món
                             </p>
                         )}
                     </div>
@@ -199,28 +218,12 @@ export default function ProductItem({
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
-                                        if (onUpdateDiscount) onUpdateDiscount(handlerId, {
-                                            discount: Number(discountValue),
-                                            discountType
-                                        });
                                         setShowDiscount(false);
                                     }
                                 }}
-                                className="w-full text-sm pl-3 pr-10 py-2 bg-red-50 border border-red-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500/30 focus:border-red-500 transition-all text-red-700 placeholder-red-300 font-bold"
+                                className="w-full text-sm px-3 py-2 bg-red-50 border border-red-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500/30 focus:border-red-500 transition-all text-red-700 placeholder-red-300 font-bold"
                                 autoFocus
                             />
-                            <button
-                                onClick={() => {
-                                    if (onUpdateDiscount) onUpdateDiscount(handlerId, {
-                                        discount: Number(discountValue),
-                                        discountType
-                                    });
-                                    setShowDiscount(false);
-                                }}
-                                className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-red-500 hover:bg-red-100/50 rounded-md transition-colors border-none bg-transparent cursor-pointer"
-                            >
-                                <Icon name="save" size={14} strokeWidth={3} />
-                            </button>
                         </div>
                     </div>
                 </div>

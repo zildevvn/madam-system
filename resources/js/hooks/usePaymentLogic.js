@@ -60,9 +60,9 @@ export const usePaymentLogic = ({
     }, []);
 
     const {
-        draftTotal,
+        grossTotal: draftTotal,
         itemDiscountsTotal,
-        discountAmount,
+        globalDiscountAmount: discountAmount,
         finalTotal
     } = useMemo(() => {
         return calculateTotals(draftItems, { type: discountType, value: discountValue });
@@ -177,9 +177,7 @@ export const usePaymentLogic = ({
             const isMatch = ((i.product_id || i.id) === productId) && 
                             ((i.tableId || fallbackTId) === tId) && 
                             ((i.note || '') === origNote) &&
-                            (Number(i.price || 0) === Number(prc)) &&
-                            (Number(i.discount || 0) === Number(disc)) &&
-                            ((i.discountType || 'fixed') === discType);
+                            (Number(i.price || 0) === Number(prc));
             
             if (isMatch) {
                 matchingIndices.push(idx);
@@ -240,9 +238,7 @@ export const usePaymentLogic = ({
             const isMatch = ((i.product_id || i.id) === productId) && 
                             ((i.tableId || fallbackTId) === tId) && 
                             ((i.note || '') === origNote) &&
-                            (Number(i.price || 0) === Number(prc)) &&
-                            (Number(i.discount || 0) === Number(disc)) &&
-                            ((i.discountType || 'fixed') === discType);
+                            (Number(i.price || 0) === Number(prc));
             return isMatch ? { ...i, note: newNote } : i;
         });
         onUpdateDraftItems(newItems);
@@ -272,9 +268,7 @@ export const usePaymentLogic = ({
             const isMatch = ((i.product_id || i.id) === productId) && 
                             ((i.tableId || fallbackTId) === tId) && 
                             ((i.note || '') === origNote) &&
-                            (Number(i.price || 0) === Number(prc)) &&
-                            (Number(i.discount || 0) === Number(disc)) &&
-                            ((i.discountType || 'fixed') === discType);
+                            (Number(i.price || 0) === Number(prc));
             return isMatch ? { ...i, ...newUpdates } : i;
         });
         onUpdateDraftItems(newItems);
