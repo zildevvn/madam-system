@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Services\UserService;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Traits\AuthenticatesStatelessUser;
 
 class UserController extends Controller
 {
+    use AuthenticatesStatelessUser;
     protected $userService;
 
     public function __construct(UserService $userService)
@@ -16,17 +18,7 @@ class UserController extends Controller
         $this->userService = $userService;
     }
 
-    /**
-     * Helper to retrieve active user context from request headers securely verified against DB.
-     */
-    private function getCurrentUser(Request $request)
-    {
-        $userId = $request->header('X-User-Id');
-        if (!$userId) {
-            return null;
-        }
-        return User::find($userId);
-    }
+
 
     /**
      * Display a listing of the users.
@@ -36,8 +28,8 @@ class UserController extends Controller
         $currentUser = $this->getCurrentUser($request);
         if (!$currentUser) {
             return response()->json([
-                'message' => 'Forbidden'
-            ], 403);
+                'message' => 'Unauthorized'
+            ], 401);
         }
 
         $users = $this->userService->getAllUsers();

@@ -37,6 +37,7 @@ class User extends Authenticatable
         'email',
         'password',
         'plain_password',
+        'session_token',
         'role',
         'join_date',
         'date_of_birth',

@@ -4,7 +4,6 @@ window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.withCredentials = true;
 
-// Stateless authorization: send current user ID in the headers
 window.axios.interceptors.request.use((config) => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -12,6 +11,9 @@ window.axios.interceptors.request.use((config) => {
             const user = JSON.parse(storedUser);
             if (user && user.id) {
                 config.headers['X-User-Id'] = user.id;
+                if (user.session_token) {
+                    config.headers['X-Session-Token'] = user.session_token;
+                }
             }
         } catch (e) {
             console.error('Failed to parse user from localStorage', e);
@@ -19,6 +21,24 @@ window.axios.interceptors.request.use((config) => {
     }
     return config;
 });
+
+// Automatically logout when backend rejects the session token (password changed elsewhere)
+window.axios.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser && window.location.pathname !== '/login') {
+                localStorage.removeItem('user');
+                if (window.Echo) {
+                    window.Echo.disconnect();
+                }
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';

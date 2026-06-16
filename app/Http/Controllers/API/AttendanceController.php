@@ -8,17 +8,12 @@ use App\Models\User;
 use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use App\Traits\AuthenticatesStatelessUser;
 
 class AttendanceController extends Controller
 {
-    private function getCurrentUser(Request $request)
-    {
-        $userId = $request->header('X-User-Id');
-        if (!$userId) {
-            return null;
-        }
-        return User::find($userId);
-    }
+    use AuthenticatesStatelessUser;
 
     /**
      * Display a listing of employee attendance records by date.

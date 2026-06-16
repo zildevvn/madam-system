@@ -4,19 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
-use App\Models\User;
 use Illuminate\Http\Request;
+use App\Traits\AuthenticatesStatelessUser;
 
 class SystemSettingController extends Controller
 {
-    private function getCurrentUser(Request $request)
-    {
-        $userId = $request->header('X-User-Id');
-        if (!$userId) {
-            return null;
-        }
-        return User::find($userId);
-    }
+    use AuthenticatesStatelessUser;
 
     /**
      * Display a listing of system settings.

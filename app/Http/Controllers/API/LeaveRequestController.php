@@ -6,20 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Traits\AuthenticatesStatelessUser;
 
 class LeaveRequestController extends Controller
 {
-    /**
-     * Helper to retrieve active user context from request headers securely verified against DB.
-     */
-    private function getCurrentUser(Request $request)
-    {
-        $userId = $request->header('X-User-Id');
-        if (!$userId) {
-            return null;
-        }
-        return User::find($userId);
-    }
+    use AuthenticatesStatelessUser;
+
 
     /**
      * Display a listing of day off requests.
