@@ -467,9 +467,9 @@ const EmployeeFormPage = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Ca làm việc <span className="text-red-500">*</span></label>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Ca làm việc</label>
                                 <input
-                                    {...register('work_shift', { required: 'Ca làm việc là bắt buộc' })}
+                                    {...register('work_shift')}
                                     type="text"
                                     className={`text-sm w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-medium placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all ${errors.work_shift ? 'ring-2 ring-red-500/20' : ''}`}
                                     placeholder="Vd: Ca sáng (6:00 - 14:00)"
@@ -478,9 +478,9 @@ const EmployeeFormPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Ngày vào làm <span className="text-red-500">*</span></label>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Ngày vào làm</label>
                                 <input
-                                    {...register('join_date', { required: 'Ngày bắt đầu làm việc là bắt buộc' })}
+                                    {...register('join_date')}
                                     type="date"
                                     className={`text-sm w-full bg-slate-50 border-none rounded-xl p-3 text-slate-900 font-medium focus:ring-4 focus:ring-orange-500/10 transition-all ${errors.join_date ? 'ring-2 ring-red-500/20' : ''}`}
                                 />
@@ -488,7 +488,7 @@ const EmployeeFormPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Mức lương cơ bản (VND/tháng) <span className="text-red-500">*</span></label>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Mức lương cơ bản (VND/tháng)</label>
                                 <input
                                     type="text"
                                     value={salary ? Number(salary).toLocaleString('vi-VN') : ''}
@@ -500,14 +500,13 @@ const EmployeeFormPage = () => {
                                     placeholder="Vd: 8.000.000"
                                 />
                                 <input type="hidden" {...register('salary', { 
-                                    required: 'Mức lương cơ bản là bắt buộc',
                                     min: { value: 0, message: 'Lương không được dưới 0' }
                                 })} />
                                 {errors.salary && <span className="text-[10px] text-red-500 mt-1 font-bold block">{errors.salary.message}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Thưởng cố định (VND/tháng) <span className="text-red-500">*</span></label>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-1.5">Thưởng cố định (VND/tháng)</label>
                                 <input
                                     type="text"
                                     value={bonus || bonus === 0 ? Number(bonus).toLocaleString('vi-VN') : ''}
@@ -519,7 +518,6 @@ const EmployeeFormPage = () => {
                                     placeholder="Vd: 500.000"
                                 />
                                 <input type="hidden" {...register('bonus', { 
-                                    required: 'Mức thưởng là bắt buộc',
                                     min: { value: 0, message: 'Thưởng không được dưới 0' }
                                 })} />
                                 {errors.bonus && <span className="text-[10px] text-red-500 mt-1 font-bold block">{errors.bonus.message}</span>}
