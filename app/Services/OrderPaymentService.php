@@ -156,7 +156,7 @@ class OrderPaymentService
 
         $result->load(['items' => function($q) {
                 $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
-            }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments', 'reservation']);
+            }, 'items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments', 'reservation']);
 
         $this->broadcastOrderUpdates($result, 'complete', $result->reservation);
 
@@ -217,7 +217,7 @@ class OrderPaymentService
             return $order;
         });
 
-        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments', 'reservation']);
+        $result->load(['items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments', 'reservation']);
 
         $this->broadcastOrderUpdates($result, 'reopen', $result->reservation);
 
@@ -343,7 +343,7 @@ class OrderPaymentService
             return $order;
         });
 
-        $result->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments']);
+        $result->load(['items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'payments']);
 
         $this->broadcastOrderUpdates($result, 'update');
 
@@ -355,7 +355,7 @@ class OrderPaymentService
     {
         $query = Order::with(['items' => function($q) {
                 $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
-            }, 'items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation', 'payments'])
+            }, 'items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation', 'payments'])
             ->where('status', Order::STATUS_COMPLETED);
 
         if ($date) {

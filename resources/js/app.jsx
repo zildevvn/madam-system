@@ -236,7 +236,7 @@ function App() {
                         <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER, ROLES.ACCOUNTANT]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Bill page: Access by admin, bill */}
-                        <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout hideHeader={true}><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout><Bills /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Attendance page: Access by admin, manager */}
                         <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ACCOUNTANT]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
@@ -258,7 +258,7 @@ function App() {
 
                         {/* Kitchen and Bar: Access by admin, kitchen, bar */}
                         <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />
-                        <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout hideHeader={true}><Bar /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/bar" element={<RoleProtectedRoute allowedRoles={[ROLES.BAR]}><DefaultLayout><Bar /></DefaultLayout></RoleProtectedRoute>} />
                     </Route>
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

@@ -40,10 +40,10 @@ class OrderService
             })
             ->with([
                 'items.product' => function ($query) {
-                    $query->select('id', 'name', 'price', 'type');
+                    $query->select('id', 'name', 'name_vi', 'price', 'type');
                 },
                 'childOrders.items.product' => function ($query) {
-                    $query->select('id', 'name', 'price', 'type');
+                    $query->select('id', 'name', 'name_vi', 'price', 'type');
                 },
                 'table:id,name',
                 'server:id,name',
@@ -63,10 +63,10 @@ class OrderService
                 })
                 ->with([
                     'items.product' => function ($query) {
-                        $query->select('id', 'name', 'price', 'type');
+                        $query->select('id', 'name', 'name_vi', 'price', 'type');
                     },
                     'childOrders.items.product' => function ($query) {
-                        $query->select('id', 'name', 'price', 'type');
+                        $query->select('id', 'name', 'name_vi', 'price', 'type');
                     },
                     'table:id,name',
                     'server:id,name',
@@ -84,13 +84,13 @@ class OrderService
     {
         return Order::with([
             'items.product' => function ($query) {
-                $query->select('id', 'name', 'price', 'type');
+                $query->select('id', 'name', 'name_vi', 'price', 'type');
             },
             'childOrders.items.product' => function ($query) {
-                $query->select('id', 'name', 'price', 'type');
+                $query->select('id', 'name', 'name_vi', 'price', 'type');
             },
             'parentOrder.items.product' => function ($query) {
-                $query->select('id', 'name', 'price', 'type');
+                $query->select('id', 'name', 'name_vi', 'price', 'type');
             },
             'table:id,name',
             'server:id,name',
@@ -176,7 +176,7 @@ class OrderService
         $order->save();
 
         return $order->load([
-            'items.product:id,name,price',
+            'items.product:id,name,name_vi,price',
             'table:id,name',
             'server:id,name',
             'cashier:id,name'
@@ -393,7 +393,7 @@ class OrderService
 
         try {
             $orderObj = $result['order'];
-            $orderObj->load(['items.product:id,name,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
+            $orderObj->load(['items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
         } catch (\Exception $e) {
             Log::error('Broadcast failed during checkout: ' . $e->getMessage());
@@ -432,7 +432,7 @@ class OrderService
 
         $order = $item->order;
         $order->load([
-            'items.product:id,name,price',
+            'items.product:id,name,name_vi,price',
             'table:id,name',
             'server:id,name',
             'cashier:id,name'
@@ -455,7 +455,7 @@ class OrderService
         $order->save();
 
         $order->load([
-            'items.product:id,name,price,type',
+            'items.product:id,name,name_vi,price,type',
             'table:id,name',
             'server:id,name',
             'cashier:id,name'
@@ -477,7 +477,7 @@ class OrderService
         $order->save();
 
         $order->load([
-            'items.product:id,name,price,type',
+            'items.product:id,name,name_vi,price,type',
             'table:id,name',
             'server:id,name',
             'cashier:id,name'
@@ -539,7 +539,7 @@ class OrderService
 
         $order = Order::findOrFail($orderId);
         $order->load([
-            'items.product:id,name,price,type',
+            'items.product:id,name,name_vi,price,type',
             'table:id,name',
             'server:id,name',
             'cashier:id,name'

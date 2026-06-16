@@ -31,6 +31,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
+            'name_vi' => 'nullable|string|max:255',
             'price' => 'required|integer|min:0',
             'type' => 'required|in:food,drink,packaged_drink',
             'image' => 'nullable|image|max:1024'
@@ -50,6 +51,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
+            'name_vi' => 'nullable|string|max:255',
             'price' => 'required|integer|min:0',
             'type' => 'required|in:food,drink,packaged_drink',
             'image' => 'nullable|image|max:1024'

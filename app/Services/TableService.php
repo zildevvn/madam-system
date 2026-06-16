@@ -32,7 +32,7 @@ class TableService
                 }
             },
             'activeOrders.items.product' => function($query) {
-                $query->select('id', 'name', 'price', 'type');
+                $query->select('id', 'name', 'name_vi', 'price', 'type');
             }
         ])->get();
     }

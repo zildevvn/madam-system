@@ -98,6 +98,7 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     allIds: [item.id],
                     rawItems: [{ id: item.id, quantity: item.quantity }],
                     name: item.product?.name || item.name || 'Unknown',
+                    name_vi: item.product?.name_vi || '',
                     quantity: item.quantity,
                     price: item.price || item.product?.price || 0,
                     status: item.status || 'pending',

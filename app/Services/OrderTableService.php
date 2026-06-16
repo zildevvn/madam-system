@@ -164,7 +164,7 @@ class OrderTableService
             }
         });
 
-        $result->load(['items.product:id,name,price,type', 'table:id,name']);
+        $result->load(['items.product:id,name,name_vi,price,type', 'table:id,name']);
 
         try {
             broadcast(new OrderUpdated($result, 'order_updated'));

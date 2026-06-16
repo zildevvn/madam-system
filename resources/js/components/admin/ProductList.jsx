@@ -55,7 +55,11 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                                             )}
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-base font-black text-slate-900 group-hover:text-orange-600 transition-colors uppercase tracking-tight">{product.name}</span>
+                                            <span className="text-base font-black text-slate-900 group-hover:text-orange-600 transition-colors tracking-tight">
+                                                {product.name}
+                                                {product.name_vi && ` - ${product.name_vi}`}
+                                            </span>
+
                                             <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${product.type === 'food' ? 'text-blue-500' : 'text-green-500'}`}>
                                                 {product.type === 'food' ? 'Kitchen Item' : 'Bar Item'}
                                             </span>
@@ -109,7 +113,10 @@ const ProductList = ({ filteredProducts, handleEditProduct, deleteProduct }) => 
                                 )}
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-[13px] font-black text-slate-900 truncate uppercase tracking-tight leading-tight">{product.name}</span>
+                                <span className="text-[13px] font-black text-slate-900 truncate uppercase tracking-tight leading-tight">
+                                    {product.name}
+                                    {product.name_vi && ` - ${product.name_vi}`}
+                                </span>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{product.category?.name || 'Uncategorized'}</span>
                                 </div>
