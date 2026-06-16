@@ -95,8 +95,8 @@ const PaymentItemEditor = ({
 
             const consolidatedMap = tableItems.reduce((grp, item) => {
                 const k = item.product_id 
-                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}` 
-                    : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`;
+                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}` 
+                    : `custom-${item.name}-${item.note || ''}-${item.price}`;
                 if (!grp[k]) {
                     grp[k] = { ...item, mergeKey: k, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
                 } else {
@@ -216,8 +216,8 @@ const PaymentItemEditor = ({
                                         tableId: parseInt(actualTableId),
                                         note: item.note || '',
                                         price: item.price,
-                                        discount: item.discount,
-                                        discountType: item.discountType,
+                                        discount: item.discount || 0,
+                                        discountType: item.discountType || item.discount_type || 'fixed',
                                     };
 
                                     return (
