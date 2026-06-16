@@ -164,11 +164,14 @@ const Order = () => {
                                                         <p className='-mt-[10px] z-[9] relative text-center text-[12px] md:text-[14px] bg-white rounded-[0px_10px_0px_10px] p-2'>
                                                             {new Intl.NumberFormat('vi-VN').format(product.price)}đ
                                                         </p>
-                                                        <h3 className='mb-0 pt-1 pb-1 text-center px-2 text-[12px] md:text-[14px] font-medium text-gray-700 leading-snug min-h-[40px] flex items-center justify-center'>
-                                                            <span className="line-clamp-2">
-                                                                {product.name}
-                                                                {product.name_vi && ` - ${product.name_vi}`}
-                                                            </span>
+                                                        <h3 className='mb-0 pt-1 pb-1 text-center px-2 text-[11px] md:text-[13px] font-medium text-gray-700 leading-snug min-h-[40px] flex items-center justify-center flex-wrap'>
+                                                            {product.name}
+
+                                                            {product.name_vi && (
+                                                                <span className="mt-1 line-clamp-2 w-full flex items-center justify-center text-[9px] md:text-[11px]">
+                                                                    {` ${product.name_vi}`}
+                                                                </span>
+                                                            )}
                                                         </h3>
                                                     </div>
                                                 </div>
