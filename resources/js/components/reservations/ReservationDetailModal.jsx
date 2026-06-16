@@ -41,7 +41,19 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
 
     const isGroup = reservation.type === 'group';
 
-    const subtotal = reservation.dishes ? reservation.dishes.reduce((sum, dish) => sum + (dish.price || 0) * (dish.quantity || 1), 0) : 0;
+    const processedDishes = (reservation.dishes || []).map(dish => {
+        let basePrice = dish.price || 0;
+        if (reservation.apply_vat) {
+            const vatRate = 1 + ((reservation.vat_percentage || 0) / 100);
+            basePrice = Math.round(basePrice / vatRate);
+        }
+        return {
+            ...dish,
+            basePrice
+        };
+    });
+
+    const subtotal = processedDishes.reduce((sum, dish) => sum + dish.basePrice * (dish.quantity || 1), 0);
     const vatAmount = reservation.apply_vat ? subtotal * ((reservation.vat_percentage || 0) / 100) : 0;
     const totalAmount = subtotal + vatAmount;
 
@@ -171,14 +183,14 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subtotal</span>
                                 </div>
                                 <div className="divide-y divide-gray-50">
-                                    {reservation.dishes.map((dish, i) => (
+                                    {processedDishes.map((dish, i) => (
                                         <div key={i} className="px-4 py-3 flex justify-between items-center hover:bg-gray-50/30 transition-colors">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-800">{dish.name}</span>
-                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity > 1 ? `${dish.quantity}x ` : ''}{formatPrice(dish.price || 0)}đ</span>
+                                                <span className="text-[11px] text-gray-400 font-medium">{dish.quantity > 1 ? `${dish.quantity}x ` : ''}{formatPrice(dish.basePrice)}đ</span>
                                             </div>
                                             <span className="text-sm font-black text-orange-600">
-                                                {formatPrice((dish.price || 0) * (dish.quantity || 1))}đ
+                                                {formatPrice(dish.basePrice * (dish.quantity || 1))}đ
                                             </span>
                                         </div>
                                     ))}
@@ -187,12 +199,12 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
 
                             {/* Mobile/Tablet Card View */}
                             <div className="lg:hidden space-y-2">
-                                {reservation.dishes.map((dish, i) => (
+                                {processedDishes.map((dish, i) => (
                                     <div key={i} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-1">
                                         <div className="flex justify-between items-start">
                                             <span className="text-[13px] font-bold text-gray-800 flex-1">{dish.name}</span>
                                             <span className="text-[13px] font-black text-orange-600 ml-2">
-                                                {formatPrice((dish.price || 0) * (dish.quantity || 1))}đ
+                                                {formatPrice(dish.basePrice * (dish.quantity || 1))}đ
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
@@ -202,7 +214,7 @@ const ReservationDetailModal = ({ reservation, tables, onClose }) => {
                                                     <span>•</span>
                                                 </>
                                             )}
-                                            <span>{formatPrice(dish.price || 0)}đ</span>
+                                            <span>{formatPrice(dish.basePrice)}đ</span>
                                         </div>
                                     </div>
                                 ))}
