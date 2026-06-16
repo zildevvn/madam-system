@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
+        $middleware->api(prepend: [
+            \App\Http\Middleware\CheckSessionToken::class,
+        ]);
         $middleware->alias([
             'order.export.auth' => \App\Http\Middleware\AuthorizeOrderExport::class,
         ]);

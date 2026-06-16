@@ -21,6 +21,12 @@ class AuthorizeOrderExport
         $userId = $request->header('X-User-Id');
         $user = $userId ? User::find($userId) : null;
 
+        if ($user && $user->session_token) {
+            if ($request->header('X-Session-Token') !== $user->session_token) {
+                $user = null;
+            }
+        }
+
         if (!$user || !$user->canExportOrders()) {
             return response()->json([
                 'message' => 'Forbidden'
