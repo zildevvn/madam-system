@@ -215,7 +215,10 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                         return (
                                             <tr key={idx}>
                                                 <td align="left" width="60%" className="align-left receipt-col-name">
-                                                    <div className="receipt-item-name">{item.name || item.product?.name || 'Product'}</div>
+                                                    <div className="receipt-item-name">
+                                                        {item.name || item.product?.name || 'Product'}
+                                                        {(item.name_vi || item.product?.name_vi) ? ` - ${item.name_vi || item.product?.name_vi}` : ''}
+                                                    </div>
                                                     <div className="receipt-item-price">
                                                         {formatPrice(item.price || 0)}
                                                         {val > 0 && <span style={{ fontWeight: 'bold' }}> (-{type === 'percent' ? `${val}%` : formatPrice(val)})</span>}

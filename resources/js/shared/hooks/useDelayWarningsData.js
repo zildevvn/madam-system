@@ -80,6 +80,7 @@ export const useDelayWarningsData = (orders, tables, currentTime, filterType, is
                 if (!bucket[itemName]) {
                     bucket[itemName] = {
                         name: itemName,
+                        name_vi: item.product?.name_vi || item.name_vi || '',
                         totalQuantity: item.quantity,
                         tables: [tableInfo],
                         maxDiff: diff,

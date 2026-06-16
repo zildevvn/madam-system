@@ -18,6 +18,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
         defaultValues: {
             name: '',
+            name_vi: '',
             price: 0,
             type: 'food',
             category_id: '',
@@ -34,12 +35,14 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
             setImageError(null);
             reset(product ? {
                 name: product.name || '',
+                name_vi: product.name_vi || '',
                 price: product.price || 0,
                 type: product.type || 'food',
                 category_id: product.category_id || '',
                 image: null
             } : {
                 name: '',
+                name_vi: '',
                 price: 0,
                 type: 'food',
                 category_id: categories.length > 0 ? categories[0].id : '',
@@ -53,6 +56,9 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, categories, product = nul
         try {
             const formData = new FormData();
             formData.append('name', data.name);
+            if (data.name_vi !== null && data.name_vi !== undefined) {
+                formData.append('name_vi', data.name_vi);
+            }
             formData.append('price', data.price);
             formData.append('type', data.type);
             formData.append('category_id', data.category_id);

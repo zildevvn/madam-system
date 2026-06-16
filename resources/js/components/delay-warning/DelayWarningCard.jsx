@@ -19,10 +19,15 @@ const DelayWarningCard = React.memo(({
             className={`item-food p-3 rounded-2xl border-2 transition-all bg-white cursor-pointer group ${config.border}`}
             onClick={() => onCardClick(item)}
         >
+
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <span className="text-[14px] font-black text-gray-800 leading-none">{item.name}</span>
+                    <span className="text-[14px] font-black text-gray-800 leading-none">
+                        {item.name}
+                        {item.name_vi && ` - ${item.name_vi}`}
+                    </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg text-white shadow-sm transition-all duration-300 ${config.bg}`}>
                         {item.maxDiff}P

@@ -70,7 +70,10 @@ export default function ProductItem({
             <div className="flex justify-between items-start gap-2">
                 <div className="space-y-1">
                     <div className="flex items-center flex-wrap gap-2">
-                        <h3 className="font-medium">{item.name}</h3>
+                        <h3 className="font-medium">
+                            {item.name}
+                            {item.name_vi && ` - ${item.name_vi}`}
+                        </h3>
                         {item.isSplit && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200 animate-in fade-in zoom-in-50 duration-200">
                                 Đã tách ({item.splitOrderName})

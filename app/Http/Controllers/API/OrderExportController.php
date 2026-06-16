@@ -86,7 +86,7 @@ class OrderExportController extends Controller
             // ── chunkById streams 500 orders at a time, keeping memory flat ───
             $query->chunkById(500, function ($orders) use ($handle, &$stt) {
                 $orders->loadMissing([
-                    'items.product:id,name',
+                    'items.product:id,name,name_vi',
                     'table:id,name',
                     'cashier:id,name',
                 ]);
@@ -218,7 +218,7 @@ class OrderExportController extends Controller
     {
         $query = Order::with([
             'items',
-            'items.product:id,name',
+            'items.product:id,name,name_vi',
             'table:id,name',
             'cashier:id,name',
         ])

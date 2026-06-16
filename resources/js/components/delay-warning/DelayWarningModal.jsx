@@ -51,8 +51,11 @@ const DelayWarningModal = ({
             <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                 <div className="p-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h5 className="label-table">{item.name}</h5>
-                        <p className="text-[12px] font-bold text-gray-500 mt-1">
+                        <h5 className="label-table mb-0">
+                            {item.name}
+                            {item.name_vi && ` - ${item.name_vi}`}
+                        </h5>
+                        <p className="text-[12px] font-bold text-gray-500 mt-1 mb-0">
                             Tổng cộng: {item.totalQuantity} phần đang chờ
                         </p>
                     </div>

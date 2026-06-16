@@ -27,6 +27,16 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
                 )}
             </div>
 
+            <div>
+                <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Tên món tiếng Việt</label>
+                <input
+                    {...register('name_vi')}
+                    type="text"
+                    className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans`}
+                    placeholder="Vd: Phở Bò Chín"
+                />
+            </div>
+
             <div className="grid grid-cols-2 gap-5">
                 <div className="relative">
                     <label className="block text-[11px] font-black text-gray-600 uppercase tracking-[0.2em] mb-2">Giá (VND)</label>
