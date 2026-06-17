@@ -12,10 +12,7 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
             <div>
                 <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Tên món</label>
                 <input
-                    {...register('name', {
-                        required: 'Tên món không được để trống',
-                        minLength: { value: 2, message: 'Tên món quá ngắn' }
-                    })}
+                    {...register('name')}
                     type="text"
                     className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.name ? 'ring-2 ring-red-500/20 bg-red-50/30' : ''}`}
                     placeholder="Vd: Phở Bò Chín"
