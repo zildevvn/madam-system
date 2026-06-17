@@ -5,6 +5,7 @@ import CategoryFormModal from '../../components/admin/CategoryFormModal';
 import ProductList from '../../components/admin/ProductList';
 import CategoryList from '../../components/admin/CategoryList';
 import Icon from '../../components/shared/Icon';
+import { normalizeString } from '../../shared/utils/stringUtils';
 
 // [WHY] Component to manage products and categories in the admin dashboard.
 // [RULE] Delegated UI for lists to sub-components.
@@ -79,13 +80,13 @@ const ProductManagement = () => {
 
     const filteredProducts = products.filter(p => {
         const matchesType = filterType === 'all' || p.type === filterType;
-        const q = searchTerm.toLowerCase();
-        const matchesSearch = (p.name?.toLowerCase() || '').includes(q) || (p.name_vi?.toLowerCase() || '').includes(q);
+        const q = normalizeString(searchTerm);
+        const matchesSearch = normalizeString(p.name).includes(q) || normalizeString(p.name_vi).includes(q);
         return matchesType && matchesSearch;
     });
 
     const filteredCategories = categories.filter(c =>
-        (c.name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+        normalizeString(c.name).includes(normalizeString(searchTerm))
     );
 
     if (loading && products.length === 0 && categories.length === 0) {

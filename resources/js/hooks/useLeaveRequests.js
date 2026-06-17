@@ -37,6 +37,11 @@ export const useLeaveRequests = (user, leaves, fetchProfileAndLeaves) => {
             return;
         }
 
+        if (!reason || !reason.trim()) {
+            toast.error('Vui lòng nhập lý do nghỉ phép');
+            return;
+        }
+
         setSubmittingLeave(true);
         try {
             await createLeaveRequestApi({

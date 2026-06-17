@@ -93,6 +93,11 @@ const EmployeeDetailPage = () => {
             return;
         }
 
+        if (!reason || !reason.trim()) {
+            toast.error('Vui lòng nhập lý do nghỉ phép');
+            return;
+        }
+
         setSubmittingLeave(true);
         try {
             await createLeaveRequestApi({
@@ -380,7 +385,7 @@ const EmployeeDetailPage = () => {
                     {/* Section: Leave Requests (Xin Nghỉ phép) */}
                     <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 space-y-4">
                         <div className="flex items-center justify-between gap-4 pb-2 border-b border-slate-50">
-                            <h6 className="uppercase tracking-[0.01em] pb-2 border-b border-slate-300">
+                            <h6 className="tracking-[0.01em] pb-2 border-b border-slate-300">
                                 Đăng ký & Lịch sử nghỉ phép
                             </h6>
 
@@ -547,8 +552,8 @@ const EmployeeDetailPage = () => {
             {/* Lightbox */}
             {lightboxImage && (
                 <div
-                     onClick={() => setLightboxImage(null)}
-                     className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
+                    onClick={() => setLightboxImage(null)}
+                    className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
                 >
                     <div className="max-w-4xl max-h-[90vh] relative">
                         <img src={lightboxImage} alt="Zoomed Document" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
