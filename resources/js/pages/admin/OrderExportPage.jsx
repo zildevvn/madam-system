@@ -332,7 +332,7 @@ export default function OrderExportPage() {
                                     <tr className="bg-[#f3f4f6] text-[#111827] border-b border-[#e5e7eb]">
                                         {[
                                             'STT', 'No', 'Table', 'Arrival Time', 'Printed',
-                                            'Cashier', 'Items', 'QTY', 'Total',
+                                            'Cashier', 'Items', 'Name VI', 'Name', 'QTY', 'Total',
                                             'Cross Total QTY', 'Cross Total Amount', 'Total Due'
                                         ].map(h => (
                                             <th key={h} className="sticky top-0 z-10 px-3 py-3 text-left font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap">
@@ -345,7 +345,8 @@ export default function OrderExportPage() {
                                     {rows.map((row, idx) => {
                                         const { stt, order, item, crossTotalQty, crossTotalAmount, totalDue, tableName, cashierName } = row;
                                         const nameVi = item?.product?.name_vi || item?.name_vi;
-                                        const itemName = nameVi ? nameVi : (item?.name || item?.product?.name || '—');
+                                        const defaultName = item?.name || item?.product?.name || '—';
+                                        const itemName = nameVi ? `${nameVi} - ${defaultName}` : defaultName;
                                         const qty = item?.quantity ?? 0;
                                         const itemTotal = (item?.price ?? 0) * qty;
                                         const isFirstItemInOrder = row.isFirstItem;
@@ -387,6 +388,14 @@ export default function OrderExportPage() {
                                                 {/* Item name */}
                                                 <td className="px-3 py-2.5 text-[#1f2937] font-medium max-w-[160px] truncate">
                                                     {item ? itemName : <span className="text-[#4b5563]/40 italic">—</span>}
+                                                </td>
+                                                {/* Name VI */}
+                                                <td className="px-3 py-2.5 text-[#4b5563] max-w-[140px] truncate">
+                                                    {item ? (nameVi || '') : ''}
+                                                </td>
+                                                {/* Name */}
+                                                <td className="px-3 py-2.5 text-[#4b5563] max-w-[140px] truncate">
+                                                    {item ? defaultName : ''}
                                                 </td>
                                                 {/* QTY */}
                                                 <td className="px-3 py-2.5 text-center text-[#4b5563]">

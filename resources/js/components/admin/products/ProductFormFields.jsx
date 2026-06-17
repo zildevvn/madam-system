@@ -12,7 +12,10 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
             <div>
                 <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Tên món</label>
                 <input
-                    {...register('name')}
+                    {...register('name', {
+                        required: 'Tên món không được để trống',
+                        minLength: { value: 2, message: 'Tên món quá ngắn' }
+                    })}
                     type="text"
                     className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.name ? 'ring-2 ring-red-500/20 bg-red-50/30' : ''}`}
                     placeholder="Vd: Phở Bò Chín"
@@ -27,11 +30,19 @@ const ProductFormFields = ({ register, errors, watchedPrice, categories }) => {
             <div>
                 <label className="block text-[11px] font-black text-gray-600  tracking-[0.2em] mb-2">Tên món tiếng Việt</label>
                 <input
-                    {...register('name_vi')}
+                    {...register('name_vi', {
+                        required: 'Tên món tiếng Việt không được để trống',
+                        minLength: { value: 2, message: 'Tên món tiếng Việt quá ngắn' }
+                    })}
                     type="text"
-                    className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans`}
+                    className={`text-[16px] w-full bg-slate-50 border-none rounded-xl p-2 lg:p-3 text-slate-900 font-normal placeholder:text-slate-300 focus:ring-4 focus:ring-orange-500/10 transition-all font-sans ${errors.name_vi ? 'ring-2 ring-red-500/20 bg-red-50/30' : ''}`}
                     placeholder="Vd: Phở Bò Chín"
                 />
+                {errors.name_vi && (
+                    <span className="text-[10px] text-red-500 font-bold  tracking-wider mt-1 block px-1 animate-in fade-in duration-300">
+                        {errors.name_vi.message}
+                    </span>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-5">
