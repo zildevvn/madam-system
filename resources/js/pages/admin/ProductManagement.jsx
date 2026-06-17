@@ -79,7 +79,8 @@ const ProductManagement = () => {
 
     const filteredProducts = products.filter(p => {
         const matchesType = filterType === 'all' || p.type === filterType;
-        const matchesSearch = (p.name?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+        const q = searchTerm.toLowerCase();
+        const matchesSearch = (p.name?.toLowerCase() || '').includes(q) || (p.name_vi?.toLowerCase() || '').includes(q);
         return matchesType && matchesSearch;
     });
 

@@ -307,7 +307,10 @@ export const usePaymentLogic = ({
     const filteredProducts = useMemo(() => {
         if (!searchQuery) return [];
         const query = searchQuery.toLowerCase();
-        return allProducts.filter(p => p.name.toLowerCase().includes(query)).slice(0, 5);
+        return allProducts.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            (p.name_vi && p.name_vi.toLowerCase().includes(query))
+        ).slice(0, 5);
     }, [allProducts, searchQuery]);
 
     const handleSplitOrder = useCallback(async () => {
