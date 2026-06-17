@@ -5,13 +5,13 @@ export const formatPrice = (price) => {
     if (price === undefined || price === null || price === '') return '';
     const num = Number(price);
     if (isNaN(num)) return '0';
-    return new Intl.NumberFormat('en-US').format(num);
+    return new Intl.NumberFormat('vi-VN').format(num);
 };
 
 export const formatCurrency = (amount) => {
     const num = Number(amount);
     if (isNaN(num)) return '0 VND';
-    return new Intl.NumberFormat('en-US').format(num) + ' VND';
+    return new Intl.NumberFormat('vi-VN').format(num) + ' VND';
 };
 
 export const capitalizeWords = (str) => {

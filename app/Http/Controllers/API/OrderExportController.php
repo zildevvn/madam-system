@@ -74,6 +74,8 @@ class OrderExportController extends Controller
                 'Printed',
                 'Cashier',
                 'Items',
+                'Name VI',
+                'Name',
                 'QTY',
                 'Total',
                 'Cross Total QTY',
@@ -122,6 +124,8 @@ class OrderExportController extends Controller
                             $printedTime,
                             $cashierName,
                             '—',          // Món  — no item
+                            '',           // Name VI
+                            '',           // Name
                             '',           // SL   — blank (matches UI: item ? qty : '')
                             '',           // Thành tiền — blank
                             $crossTotalQty,
@@ -137,7 +141,8 @@ class OrderExportController extends Controller
                         $itemQty = $item->quantity ?? 0;
                         $itemTotal = ($item->price ?? 0) * $itemQty;
                         $nameVi = $item->product->name_vi ?? $item->name_vi ?? null;
-                        $itemName = $nameVi ?: ($item->name ?? ($item->product->name ?? 'Unknown'));
+                        $defaultName = $item->name ?? ($item->product->name ?? 'Unknown');
+                        $itemName = $nameVi ? "{$nameVi} - {$defaultName}" : $defaultName;
 
                         if ($isFirst) {
                             // First item row: include all order-level fields
@@ -149,6 +154,8 @@ class OrderExportController extends Controller
                                 $printedTime,
                                 $cashierName,
                                 $itemName,
+                                $nameVi ?: '',
+                                $defaultName,
                                 $itemQty,
                                 self::formatNumber($itemTotal),
                                 $crossTotalQty,
@@ -167,6 +174,8 @@ class OrderExportController extends Controller
                                 '',          // In lúc
                                 '',          // Thu ngân
                                 $itemName,
+                                $nameVi ?: '',
+                                $defaultName,
                                 $itemQty,
                                 self::formatNumber($itemTotal),
                                 '',          // Tổng SL   — blank on non-first rows
@@ -206,13 +215,13 @@ class OrderExportController extends Controller
 
     /**
      * formatNumber
-     * [WHY] Mirrors the frontend formatPrice() — Intl.NumberFormat('en-US') —
-     *       which formats numbers with comma thousand-separators, no decimals for
-     *       whole VND amounts (e.g. 1,234,567).
+     * [RULE] Shared formatting logic guarantees exact parity with formatPrice()
+     *       which formats numbers with dot thousand-separators, no decimals for
+     *       whole VND amounts (e.g. 1.234.567).
      */
     private static function formatNumber(float|int $value): string
     {
-        return number_format($value, 0, '.', ',');
+        return number_format($value, 0, ',', '.');
     }
 
     private function buildQuery(Request $request)

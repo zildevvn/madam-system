@@ -59,16 +59,16 @@
 
             h3 {
                 color: #fff;
-                font-size: 14px;
+                // font-size: 14px;
                 font-weight: 700;
-                text-transform: uppercase;
+                // text-transform: uppercase;
 
-                @media (max-width: 767.98px) {
-                    font-size: 12px;
-                }
+                // @media (max-width: 767.98px) {
+                //     font-size: 12px;
+                // }
 
                 @media (max-width: 389.98px) {
-                    font-size: 11px;
+                    font-size: 12px !important;
                 }
             }
         }
