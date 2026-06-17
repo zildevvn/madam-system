@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-export const getLeaveRequestsApi = async (userId = null) => {
+export const getLeaveRequestsApi = async (userId = null, options = {}) => {
     const url = userId ? `/api/leave-requests?user_id=${userId}` : '/api/leave-requests';
-    const response = await axios.get(url);
+    const response = await axios.get(url, { signal: options.signal });
     return response.data;
 };
 

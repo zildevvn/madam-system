@@ -4,6 +4,7 @@ import { getUsersApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi, updateLeaveStatusApi, deleteLeaveRequestApi } from '../../services/leaveService';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 import Icon from '../shared/Icon';
+import ConfirmDialog from '../shared/ConfirmDialog';
 
 const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propSetRequests }) => {
     const [localRequests, setLocalRequests] = useState([]);
@@ -13,6 +14,14 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    
+    // Track active request to prevent race conditions
+    const abortControllerRef = React.useRef(null);
+    const debounceTimerRef = React.useRef(null);
+    
+    // Dialog state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteId, setDeleteId] = useState(null);
 
     // Form states
     const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
@@ -22,13 +31,33 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
     const [reason, setReason] = useState('');
 
     // Fetch day off requests and list of active employees
-    const fetchData = async (silent = false) => {
+    const fetchData = (silent = false) => {
+        // Clear existing debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(async () => {
+            // Cancel previous request if any
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        
+        // Create new controller for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+        const options = { signal: abortController.signal };
+
         if (!silent) setLoading(true);
         try {
             const [reqRes, empRes] = await Promise.all([
-                getLeaveRequestsApi(),
-                getUsersApi()
+                getLeaveRequestsApi(null, options),
+                getUsersApi(options)
             ]);
+            
+            // Do not update state if request was aborted
+            if (abortController.signal.aborted) return;
+
             setRequests(reqRes.data);
 
             // Only active users
@@ -39,11 +68,18 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                 setSelectedEmployeeId(activeEmps[0].id);
             }
         } catch (err) {
+            if (err.name === 'CanceledError' || err.message === 'canceled') {
+                return; // Ignore aborted requests
+            }
             console.error('Failed to load leave data:', err);
             toast.error('Không thể tải danh sách dữ liệu');
         } finally {
-            if (!silent) setLoading(false);
-        }
+                // Only update loading state if this is still the latest request
+                if (abortControllerRef.current === abortController) {
+                    if (!silent) setLoading(false);
+                }
+            }
+        }, 300); // 300ms debounce
     };
 
     useEffect(() => {
@@ -54,6 +90,18 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
         setStartDate(today);
         setEndDate(today);
 
+        // Cleanup on unmount
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);    
+
+    useEffect(() => {
         if (window.Echo) {
             const channel = window.Echo.channel('orders');
             const handleLeaveUpdate = () => {
@@ -117,20 +165,29 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
             fetchData();
         } catch (err) {
             console.error('Failed to update leave status:', err);
-            toast.error('Có lỗi xảy ra khi xử lý yêu cầu');
+            const errMsg = err.response?.data?.message || 'Có lỗi xảy ra khi xử lý yêu cầu';
+            toast.error(errMsg);
         }
     };
 
-    const handleDeleteRequest = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn hủy yêu cầu nghỉ phép này?')) return;
+    const handleDeleteRequest = (id) => {
+        setDeleteId(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const executeDeleteRequest = async () => {
+        if (!deleteId) return;
 
         try {
-            await deleteLeaveRequestApi(id);
+            await deleteLeaveRequestApi(deleteId);
             toast.success('Hủy yêu cầu nghỉ phép thành công!');
             fetchData();
         } catch (err) {
             console.error('Failed to delete request:', err);
             toast.error('Có lỗi xảy ra khi hủy yêu cầu');
+        } finally {
+            setShowDeleteConfirm(false);
+            setDeleteId(null);
         }
     };
 
@@ -520,6 +577,19 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                 </div>
             )}
 
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Hủy yêu cầu nghỉ phép"
+                message="Bạn có chắc chắn muốn hủy yêu cầu nghỉ phép này?"
+                confirmText="Xác nhận hủy"
+                cancelText="Quay lại"
+                type="danger"
+                onConfirm={executeDeleteRequest}
+                onCancel={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteId(null);
+                }}
+            />
         </div>
     );
 };

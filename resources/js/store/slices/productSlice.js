@@ -140,7 +140,10 @@ export const selectFilteredProducts = createSelector(
   (products, searchQuery) => {
     if (!searchQuery) return products;
     const query = searchQuery.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(query));
+    return products.filter(p => 
+      p.name.toLowerCase().includes(query) || 
+      (p.name_vi && p.name_vi.toLowerCase().includes(query))
+    );
   }
 );
 

@@ -53,7 +53,8 @@ export const useLeaveRequests = (user, leaves, fetchProfileAndLeaves) => {
             fetchProfileAndLeaves();
         } catch (err) {
             console.error('Failed to submit leave request:', err);
-            toast.error('Có lỗi xảy ra khi gửi yêu cầu');
+            const msg = err.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu';
+            toast.error(msg);
         } finally {
             setSubmittingLeave(false);
         }
