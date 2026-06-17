@@ -127,6 +127,11 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
             return;
         }
 
+        if (!reason || !reason.trim()) {
+            toast.error('Vui lòng nhập lý do nghỉ phép');
+            return;
+        }
+
         setSubmitting(true);
         try {
             await createLeaveRequestApi({

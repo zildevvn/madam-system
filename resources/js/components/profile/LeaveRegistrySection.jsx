@@ -38,7 +38,7 @@ const LeaveRegistrySection = ({
     return (
         <div className="bg-white rounded-[24px] px-2 py-3 md:p-6 border border-slate-100 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-55">
-                <h5 className="text-slate-400 uppercase tracking-widest text-[10px] sm:text-xs font-black">
+                <h5 className="text-slate-400 tracking-widest text-[10px] sm:text-xs font-black">
                     Đăng ký & Lịch sử nghỉ phép
                 </h5>
                 <button

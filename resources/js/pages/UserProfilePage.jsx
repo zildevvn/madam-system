@@ -63,7 +63,7 @@ const UserProfilePage = () => {
 
     return (
         <div className="space-y-4 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-            <h3 className="text-base font-bold text-slate-900 tracking-tight uppercase">Trang cá nhân</h3>
+            <h4 className="text-base font-bold text-slate-900 tracking-tight">Trang cá nhân</h4>
 
             {/* Profile Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -142,7 +142,7 @@ const UserProfilePage = () => {
 
                     {/* Settings Form */}
                     <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 space-y-6">
-                        <h5 className="text-orange-500 uppercase tracking-widest pb-2 border-b border-orange-50">
+                        <h5 className="text-orange-500 tracking-widest pb-2 border-b border-orange-50">
                             Cập nhật thông tin cá nhân
                         </h5>
 
@@ -205,8 +205,8 @@ const UserProfilePage = () => {
                                         type="button"
                                         onClick={() => setRegistrationMode('fixed')}
                                         className={`px-3.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border-none cursor-pointer ${registrationMode === 'fixed'
-                                                ? 'bg-white text-orange-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700 bg-transparent'
+                                            ? 'bg-white text-orange-600 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700 bg-transparent'
                                             }`}
                                     >
                                         Ca cố định
@@ -215,8 +215,8 @@ const UserProfilePage = () => {
                                         type="button"
                                         onClick={() => setRegistrationMode('flexible')}
                                         className={`px-3.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border-none cursor-pointer ${registrationMode === 'flexible'
-                                                ? 'bg-white text-orange-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700 bg-transparent'
+                                            ? 'bg-white text-orange-600 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700 bg-transparent'
                                             }`}
                                     >
                                         Ca linh hoạt
@@ -229,8 +229,8 @@ const UserProfilePage = () => {
                                             type="button"
                                             onClick={() => setWorkShift('Ca sáng')}
                                             className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center text-center transition-all ${workShift === 'Ca sáng'
-                                                    ? 'border-orange-500 bg-orange-50/30 text-orange-600 shadow-sm'
-                                                    : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
+                                                ? 'border-orange-500 bg-orange-50/30 text-orange-600 shadow-sm'
+                                                : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
                                                 }`}
                                         >
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors flex-shrink-0 ${workShift === 'Ca sáng' ? 'bg-orange-100 text-orange-500' : 'bg-slate-100 text-slate-400'
@@ -244,8 +244,8 @@ const UserProfilePage = () => {
                                             type="button"
                                             onClick={() => setWorkShift('Ca tối')}
                                             className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center text-center transition-all ${workShift === 'Ca tối'
-                                                    ? 'border-orange-500 bg-orange-50/30 text-orange-600 shadow-sm'
-                                                    : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
+                                                ? 'border-orange-500 bg-orange-50/30 text-orange-600 shadow-sm'
+                                                : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
                                                 }`}
                                         >
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors flex-shrink-0 ${workShift === 'Ca tối' ? 'bg-indigo-100 text-indigo-500' : 'bg-slate-100 text-slate-400'
@@ -259,8 +259,8 @@ const UserProfilePage = () => {
                                             type="button"
                                             onClick={() => setWorkShift('Ca full time')}
                                             className={`p-4 rounded-xl border-2 cursor-pointer flex flex-col items-center justify-center text-center transition-all ${workShift === 'Ca full time'
-                                                    ? 'border-orange-500 bg-orange-50/30 text-orange-600 shadow-sm'
-                                                    : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
+                                                ? 'border-orange-500 bg-orange-50/30 text-orange-600 shadow-sm'
+                                                : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50 text-slate-500 hover:border-slate-200'
                                                 }`}
                                         >
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-colors flex-shrink-0 ${workShift === 'Ca full time' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'

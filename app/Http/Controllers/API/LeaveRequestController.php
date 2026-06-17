@@ -66,7 +66,7 @@ class LeaveRequestController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'leave_type' => 'required|string|in:paid,unpaid,sick,other',
-            'reason' => 'nullable|string'
+            'reason' => 'required|string'
         ]);
 
         // Strict security checks: Regular employees can only request leave for themselves
@@ -78,50 +78,11 @@ class LeaveRequestController extends Controller
 
         $targetUser = User::find($validated['user_id']);
         $shift = $targetUser->work_shift;
-        $shiftLimits = [
-            'Ca sáng' => 3,
-            'Ca tối' => 5,
-        ];
-
-        $lock = null;
-        if ($shift && isset($shiftLimits[$shift])) {
-            $limit = $shiftLimits[$shift];
-            $startDate = \Carbon\Carbon::parse($validated['start_date']);
-            $endDate = \Carbon\Carbon::parse($validated['end_date']);
-            
-            // Acquire a lock to prevent race conditions per shift
-            $lock = \Illuminate\Support\Facades\Cache::lock("leave_request_shift_{$shift}", 10);
-            
-            if (!$lock->get()) {
-                return response()->json([
-                    'message' => 'Hệ thống đang xử lý yêu cầu khác, vui lòng thử lại sau.'
-                ], 429);
-            }
-
-            try {
-                for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                    $dateStr = $date->format('Y-m-d');
-                    
-                    $count = LeaveRequest::whereHas('user', function($q) use ($shift) {
-                            $q->where('work_shift', $shift);
-                        })
-                        ->where('start_date', '<=', $dateStr)
-                        ->where('end_date', '>=', $dateStr)
-                        ->whereIn('status', ['pending', 'approved'])
-                        ->count();
-                        
-                    if ($count >= $limit) {
-                        $lock->release();
-                        return response()->json([
-                            'message' => "Đã hết số lượng nghỉ phép cho {$shift} trong ngày " . $date->format('d/m/Y') . "."
-                        ], 422);
-                    }
-                }
-            } catch (\Exception $e) {
-                $lock->release();
-                throw $e;
-            }
+        $validationResult = $this->validateShiftLimit($shift, $validated['start_date'], $validated['end_date']);
+        if ($validationResult instanceof \Illuminate\Http\JsonResponse) {
+            return $validationResult;
         }
+        $lock = $validationResult;
 
         $leave = LeaveRequest::create([
             'user_id' => $validated['user_id'],
@@ -171,52 +132,14 @@ class LeaveRequestController extends Controller
 
         $leave = LeaveRequest::findOrFail($id);
         
-        if ($validated['status'] === 'approved' && !in_array($leave->status, ['pending', 'approved'])) {
+        if ($validated['status'] === 'approved' && $leave->status !== 'approved') {
             $targetUser = $leave->user;
             $shift = $targetUser->work_shift;
-            $shiftLimits = [
-                'Ca sáng' => 3,
-                'Ca tối' => 5,
-            ];
-            
-            $lock = null;
-            if ($shift && isset($shiftLimits[$shift])) {
-                $limit = $shiftLimits[$shift];
-                $startDate = \Carbon\Carbon::parse($leave->start_date);
-                $endDate = \Carbon\Carbon::parse($leave->end_date);
-                
-                $lock = \Illuminate\Support\Facades\Cache::lock("leave_request_shift_{$shift}", 10);
-                
-                if (!$lock->get()) {
-                    return response()->json([
-                        'message' => 'Hệ thống đang xử lý yêu cầu khác, vui lòng thử lại sau.'
-                    ], 429);
-                }
-
-                try {
-                    for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                        $dateStr = $date->format('Y-m-d');
-                        
-                        $count = LeaveRequest::whereHas('user', function($q) use ($shift) {
-                                $q->where('work_shift', $shift);
-                            })
-                            ->where('start_date', '<=', $dateStr)
-                            ->where('end_date', '>=', $dateStr)
-                            ->whereIn('status', ['pending', 'approved'])
-                            ->count();
-                            
-                        if ($count >= $limit) {
-                            $lock->release();
-                            return response()->json([
-                                'message' => "Không thể duyệt: Đã hết số lượng nghỉ phép cho {$shift} trong ngày " . $date->format('d/m/Y') . "."
-                            ], 422);
-                        }
-                    }
-                } catch (\Exception $e) {
-                    $lock->release();
-                    throw $e;
-                }
+            $validationResult = $this->validateShiftLimit($shift, $leave->start_date, $leave->end_date, $leave->id, 'Không thể duyệt: ');
+            if ($validationResult instanceof \Illuminate\Http\JsonResponse) {
+                return $validationResult;
             }
+            $lock = $validationResult;
         }
 
         $leave->status = $validated['status'];
@@ -305,5 +228,66 @@ class LeaveRequestController extends Controller
             'message' => 'Day off request cancelled successfully',
             'errors' => null
         ]);
+    }
+
+    /**
+     * Shared method to validate if a user's shift allows for a leave request on the given dates.
+     */
+    private function validateShiftLimit($shift, $startDateStr, $endDateStr, $excludeLeaveId = null, $errorPrefix = '')
+    {
+        $shiftLimits = [
+            'Ca sáng' => 3,
+            'Ca tối' => 5,
+        ];
+
+        if (!$shift || !isset($shiftLimits[$shift])) {
+            return response()->json([
+                'message' => $errorPrefix . 'Nhân viên chưa được phân ca làm việc hợp lệ hoặc ca làm việc không hỗ trợ nghỉ phép.'
+            ], 422);
+        }
+
+        $limit = $shiftLimits[$shift];
+        $startDate = \Carbon\Carbon::parse($startDateStr);
+        $endDate = \Carbon\Carbon::parse($endDateStr);
+        
+        // Acquire a lock to prevent race conditions per shift
+        $lock = \Illuminate\Support\Facades\Cache::lock("leave_request_shift_{$shift}", 10);
+        
+        if (!$lock->get()) {
+            return response()->json([
+                'message' => 'Hệ thống đang xử lý yêu cầu khác, vui lòng thử lại sau.'
+            ], 429);
+        }
+
+        try {
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $dateStr = $date->format('Y-m-d');
+                
+                $query = LeaveRequest::whereHas('user', function($q) use ($shift) {
+                        $q->where('work_shift', $shift);
+                    })
+                    ->where('start_date', '<=', $dateStr)
+                    ->where('end_date', '>=', $dateStr)
+                    ->whereIn('status', ['pending', 'approved']);
+
+                if ($excludeLeaveId) {
+                    $query->where('id', '!=', $excludeLeaveId);
+                }
+
+                $count = $query->count();
+                    
+                if ($count >= $limit) {
+                    $lock->release();
+                    return response()->json([
+                        'message' => $errorPrefix . "Đã hết số lượng nghỉ phép cho {$shift} trong ngày " . $date->format('d/m/Y') . "."
+                    ], 422);
+                }
+            }
+        } catch (\Exception $e) {
+            $lock->release();
+            throw $e;
+        }
+
+        return $lock; // Return the lock so the caller can release it after saving
     }
 }
