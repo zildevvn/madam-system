@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import { normalizeString } from '../../shared/utils/stringUtils';
 
 // Thunks for fetching data from API
 export const fetchProducts = createAsyncThunk(
@@ -139,10 +140,10 @@ export const selectFilteredProducts = createSelector(
   [selectAllProducts, selectSearchQuery],
   (products, searchQuery) => {
     if (!searchQuery) return products;
-    const query = searchQuery.toLowerCase();
+    const query = normalizeString(searchQuery);
     return products.filter(p => 
-      p.name.toLowerCase().includes(query) || 
-      (p.name_vi && p.name_vi.toLowerCase().includes(query))
+      normalizeString(p.name).includes(query) || 
+      (p.name_vi && normalizeString(p.name_vi).includes(query))
     );
   }
 );

@@ -4,6 +4,7 @@ import orderApi from '../services/orderApi';
 import { calculateTotals } from '../shared/utils/priceCalculations';
 import { useAppDispatch } from '../store/hooks';
 import { markOrderAsPrinted } from '../store/slices/tableSlice';
+import { normalizeString } from '../shared/utils/stringUtils';
 
 /**
  * usePaymentLogic: Encapsulates all payment-related state and handlers for the Cashier modal.
@@ -306,10 +307,10 @@ export const usePaymentLogic = ({
 
     const filteredProducts = useMemo(() => {
         if (!searchQuery) return [];
-        const query = searchQuery.toLowerCase();
+        const query = normalizeString(searchQuery);
         return allProducts.filter(p => 
-            p.name.toLowerCase().includes(query) || 
-            (p.name_vi && p.name_vi.toLowerCase().includes(query))
+            normalizeString(p.name).includes(query) || 
+            (p.name_vi && normalizeString(p.name_vi).includes(query))
         ).slice(0, 5);
     }, [allProducts, searchQuery]);
 
