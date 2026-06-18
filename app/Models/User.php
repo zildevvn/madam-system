@@ -15,6 +15,7 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
     public const ROLE_ACCOUNTANT = 'accountant';
+    public const ROLE_CASHIER = 'cashier';
 
     /**
      * Determine if the user is authorized to access and export order data.
@@ -23,7 +24,8 @@ class User extends Authenticatable
     {
         return in_array($this->role, [
             self::ROLE_ADMIN,
-            self::ROLE_ACCOUNTANT
+            self::ROLE_ACCOUNTANT,
+            self::ROLE_CASHIER
         ]);
     }
 

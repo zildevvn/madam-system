@@ -101,9 +101,7 @@ class UserAccountantRoleTest extends TestCase
         $response->assertStatus(422);
     }
 
-    // ── Permission helper ────────────────────────────────────────────────────────
-
-    public function test_accountant_user_can_export_orders()
+    public function test_accountant_and_cashier_user_can_export_orders()
     {
         $accountant = User::create([
             'name'     => 'Kế Toán',
@@ -113,11 +111,20 @@ class UserAccountantRoleTest extends TestCase
         ]);
 
         $this->assertTrue($accountant->canExportOrders());
+
+        $cashier = User::create([
+            'name'     => 'Thu Ngân',
+            'email'    => 'tn@example.com',
+            'password' => bcrypt('password'),
+            'role'     => 'cashier',
+        ]);
+
+        $this->assertTrue($cashier->canExportOrders());
     }
 
     public function test_non_privileged_roles_cannot_export_orders()
     {
-        foreach (['manager', 'order_staff', 'kitchen', 'bar', 'cashier', 'bill', 'seller'] as $role) {
+        foreach (['manager', 'order_staff', 'kitchen', 'bar', 'bill', 'seller'] as $role) {
             $user = User::create([
                 'name'     => "User $role",
                 'email'    => "$role@example.com",

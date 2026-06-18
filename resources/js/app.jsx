@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 
 // 3. Shared/constants
 import { ROLES } from "./shared/constants/roles";
+import { NAVIGATION_ITEMS } from "./config/navigation";
 
 // 5. Hooks / Store Hooks
 import { useAppDispatch, useAppSelector } from "./store/hooks";
@@ -179,6 +180,28 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
     return children ? children : <Outlet />;
 };
 
+const AdminIndexRedirect = () => {
+    const user = useAppSelector(state => state.auth.user);
+    if (!user) return <Navigate to="/" replace />;
+
+    if (user.role === ROLES.ADMIN) {
+        return <AdminContent />;
+    }
+
+    // Find the first allowed child under 'Admin' item in NAVIGATION_ITEMS
+    const adminItem = NAVIGATION_ITEMS.find(item => item.name === 'Admin');
+    if (adminItem && adminItem.children) {
+        const allowedChild = adminItem.children.find(child => !child.roles || child.roles.includes(user.role));
+        if (allowedChild) {
+            return <Navigate to={allowedChild.href} replace />;
+        }
+    }
+
+    // Fallback if no allowed child is found
+    const redirect = ROLE_DEFAULT_ROUTES[user.role] || DEFAULT_REDIRECT;
+    return <Navigate to={redirect.path} replace />;
+};
+
 function App() {
     const dispatch = useAppDispatch();
     const { user } = useAppSelector(state => state.auth);
@@ -216,17 +239,17 @@ function App() {
                         {/* Order & Reservation pages: guarded by attendance checks only for ORDER_STAFF role */}
                         <Route element={<OrderStaffRoute />}>
                             {/* Order page: Access by admin, manager, order_staff, seller */}
-                            <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
+                            <Route path="/staff-order" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER, ROLES.CASHIER]}><StaffOrderLayout><StaffOrder /></StaffOrderLayout></RoleProtectedRoute>} />
                             <Route path="/order/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><OrderLayout><Order /></OrderLayout></RoleProtectedRoute>} />
                             <Route path="/checkout/:tableId" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><Checkout /></RoleProtectedRoute>} />
 
                             {/* Reservations: Access by admin, manager, order_staff, seller */}
-                            <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER, ROLES.ACCOUNTANT]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER, ROLES.ACCOUNTANT, ROLES.CASHIER]}><DefaultLayout><ReservationList /></DefaultLayout></RoleProtectedRoute>} />
                             <Route path="/reservations/create" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationCreate /></DefaultLayout></RoleProtectedRoute>} />
                             {/* [WHY] ReservationCreate handles both create and edit flows. The ReservationEdit alias is used to document this intent. */}
-                            <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER]}><DefaultLayout><ReservationEdit /></DefaultLayout></RoleProtectedRoute>} />
-                            <Route path="/reservations/stats" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><ReservationStatsPage /></DefaultLayout></RoleProtectedRoute>} />
-                            <Route path="/reservations/partner-companies" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><PartnerCompaniesPage /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER, ROLES.CASHIER]}><DefaultLayout><ReservationEdit /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/stats" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CASHIER]}><DefaultLayout><ReservationStatsPage /></DefaultLayout></RoleProtectedRoute>} />
+                            <Route path="/reservations/partner-companies" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CASHIER]}><DefaultLayout><PartnerCompaniesPage /></DefaultLayout></RoleProtectedRoute>} />
                         </Route>
 
                         {/* Cashier page: Access by admin, cashier */}
@@ -235,26 +258,26 @@ function App() {
                         {/* Expenses: Access by admin, cashier */}
                         <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER, ROLES.ACCOUNTANT]}><DefaultLayout><ExpenseManagement /></DefaultLayout></RoleProtectedRoute>} />
 
-                        {/* Bill page: Access by admin, bill */}
-                        <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL]}><DefaultLayout><Bills /></DefaultLayout></RoleProtectedRoute>} />
+                        {/* Bill page: Access by admin, bill, cashier */}
+                        <Route path="/bills" element={<RoleProtectedRoute allowedRoles={[ROLES.BILL, ROLES.CASHIER]}><DefaultLayout><Bills /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Attendance page: Access by admin, manager */}
-                        <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ACCOUNTANT]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/attendance" element={<RoleProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.ACCOUNTANT, ROLES.CASHIER]}><DefaultLayout><AttendanceManagementPage /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Admin Dashboard */}
-                        <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
-                            <Route index element={<AdminContent />} />
-                            <Route path="personnel" element={<PersonnelPage />} />
-                            <Route path="personnel/create" element={<EmployeeFormPage />} />
-                            <Route path="personnel/edit/:id" element={<EmployeeFormPage />} />
-                            <Route path="personnel/:id" element={<EmployeeDetailPage />} />
-                            <Route path="tables" element={<TableManagement />} />
-                            <Route path="products" element={<ProductManagement />} />
-                            <Route path="performance" element={<EmployeePerformancePage />} />
+                        <Route path="/admin" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT, ROLES.CASHIER]}><DefaultLayout><Admin /></DefaultLayout></RoleProtectedRoute>}>
+                            <Route index element={<AdminIndexRedirect />} />
+                            <Route path="personnel" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT, ROLES.CASHIER]}><PersonnelPage /></RoleProtectedRoute>} />
+                            <Route path="personnel/create" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT, ROLES.CASHIER]}><EmployeeFormPage /></RoleProtectedRoute>} />
+                            <Route path="personnel/edit/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT, ROLES.CASHIER]}><EmployeeFormPage /></RoleProtectedRoute>} />
+                            <Route path="personnel/:id" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT, ROLES.CASHIER]}><EmployeeDetailPage /></RoleProtectedRoute>} />
+                            <Route path="tables" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT, ROLES.CASHIER]}><TableManagement /></RoleProtectedRoute>} />
+                            <Route path="products" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CASHIER]}><ProductManagement /></RoleProtectedRoute>} />
+                            <Route path="performance" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CASHIER]}><EmployeePerformancePage /></RoleProtectedRoute>} />
                         </Route>
 
                         {/* Order Export: Accountant standalone access */}
-                        <Route path="/admin/order-export" element={<RoleProtectedRoute allowedRoles={[ROLES.ACCOUNTANT]}><DefaultLayout><OrderExportPage /></DefaultLayout></RoleProtectedRoute>} />
+                        <Route path="/admin/order-export" element={<RoleProtectedRoute allowedRoles={[ROLES.ACCOUNTANT, ROLES.CASHIER]}><DefaultLayout><OrderExportPage /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Kitchen and Bar: Access by admin, kitchen, bar */}
                         <Route path="/kitchen" element={<RoleProtectedRoute allowedRoles={[ROLES.KITCHEN]}><DefaultLayout><Kitchen mode="kitchen" /></DefaultLayout></RoleProtectedRoute>} />

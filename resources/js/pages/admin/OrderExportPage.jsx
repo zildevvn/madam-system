@@ -209,14 +209,14 @@ export default function OrderExportPage() {
         totalDue: orders.reduce((s, o) => s + Number(o.total_price || 0), 0),
     }), [orders, rows]);
 
-    // Guard: only admin / accountant
-    if (!user || (user.role !== ROLES.ADMIN && user.role !== ROLES.ACCOUNTANT)) {
+    // Guard: only admin / accountant / cashier
+    if (!user || (user.role !== ROLES.ADMIN && user.role !== ROLES.ACCOUNTANT && user.role !== ROLES.CASHIER)) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="bg-red-50 border border-red-100 rounded-2xl p-8 text-center max-w-sm">
                     <Icon name="close" size={32} className="text-red-400 mx-auto mb-3" />
                     <h3 className="font-black text-red-800 text-lg mb-2">Không có quyền truy cập</h3>
-                    <p className="text-red-500 text-sm">Chỉ Admin và Kế toán mới có thể truy cập trang này.</p>
+                    <p className="text-red-500 text-sm">Chỉ Admin, Kế toán và Thu ngân mới có thể truy cập trang này.</p>
                 </div>
             </div>
         );

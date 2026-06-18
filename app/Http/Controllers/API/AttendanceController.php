@@ -282,7 +282,7 @@ class AttendanceController extends Controller
             $attendance->status = 'working';
             $msg = 'Đã duyệt yêu cầu check-in';
         }
-        
+
         $attendance->save();
 
         return response()->json([
@@ -313,7 +313,7 @@ class AttendanceController extends Controller
             $attendance->status = 'rejected';
             $msg = 'Đã từ chối yêu cầu check-in';
         }
-        
+
         $attendance->save();
 
         return response()->json([
