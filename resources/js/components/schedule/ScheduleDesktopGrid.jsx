@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 /**
  * ScheduleDesktopGrid Component
@@ -78,7 +79,9 @@ export default function ScheduleDesktopGrid({
                                         <div className={`mx-auto p-0.5 sm:p-1.5 rounded-lg border transition-all flex flex-col items-center justify-center gap-0.5 sm:gap-1 w-[50px] sm:w-[85px] h-[48px] sm:h-[58px] ${styles.bg} ${isDayToday ? 'ring-2 ring-orange-400 border-orange-400/50 scale-[1.02] shadow-md shadow-orange-500/5' : ''
                                             }`}>
                                             <div className="scale-75 sm:scale-100 flex-shrink-0">
-                                                {styles.icon}
+                                                <span className={styles.iconClass}>
+                                                    <Icon name={styles.iconName} className="w-3 h-3" size={12} strokeWidth={2.5} />
+                                                </span>
                                             </div>
                                             <span className="text-[7.5px] sm:text-[9px] font-black tracking-tight uppercase block leading-none w-full truncate text-center">
                                                 {day.status.replace('Ca ', '')}

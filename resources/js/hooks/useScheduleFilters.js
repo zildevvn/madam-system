@@ -29,15 +29,29 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
         return map;
     }, [leaves]);
 
-    // [WHY] Filters employees array based on active role tab selector (All / Seller / Restaurant).
+    // Filter out inactive employees first
+    const activeEmployees = useMemo(() => {
+        return employees.filter(emp => emp.status === 'active');
+    }, [employees]);
+
+    // [WHY] Filters employees array based on active role tab selector.
     const roleFilteredEmployees = useMemo(() => {
-        return employees.filter(emp => {
+        return activeEmployees.filter(emp => {
             if (roleTab === 'all') return true;
-            if (roleTab === 'seller') return emp.role === 'seller';
-            if (roleTab === 'restaurant') return emp.role !== 'seller';
-            return true;
+            return emp.role === roleTab;
         });
-    }, [employees, roleTab]);
+    }, [activeEmployees, roleTab]);
+
+    // [WHY] Compiles count of active employees in each role.
+    const roleCounts = useMemo(() => {
+        const counts = { all: activeEmployees.length };
+        activeEmployees.forEach(emp => {
+            if (emp.role) {
+                counts[emp.role] = (counts[emp.role] || 0) + 1;
+            }
+        });
+        return counts;
+    }, [activeEmployees]);
 
     // [WHY] Processed weekly schedule grid for the active role selection.
     // [RULE] Uses indexed leavesByEmployee hash lookup to achieve O(N * 7) linear scale performance.
@@ -107,6 +121,8 @@ export default function useScheduleFilters(employees, leaves, weekDates) {
         setRoleTab,
         leavesByEmployee,
         roleFilteredEmployees,
-        filteredSchedules
+        filteredSchedules,
+        activeEmployees,
+        roleCounts
     };
 }

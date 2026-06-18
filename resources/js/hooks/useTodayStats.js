@@ -14,6 +14,8 @@ export default function useTodayStats(roleFilteredEmployees, leavesByEmployee) {
         let eveningCount = 0;
         let fullTimeCount = 0;
         let offCount = 0;
+        let morningOffCount = 0;
+        let eveningOffCount = 0;
 
         roleFilteredEmployees.forEach(emp => {
             const empLeaves = leavesByEmployee[emp.id] || [];
@@ -21,6 +23,11 @@ export default function useTodayStats(roleFilteredEmployees, leavesByEmployee) {
 
             if (isOnLeave) {
                 offCount++;
+                if (emp.work_shift === 'Ca sáng') {
+                    morningOffCount++;
+                } else if (emp.work_shift === 'Ca tối') {
+                    eveningOffCount++;
+                }
             } else {
                 let shift = emp.work_shift || 'Ca sáng';
                 if (emp.flexible_shifts && typeof emp.flexible_shifts === 'object') {
@@ -35,6 +42,13 @@ export default function useTodayStats(roleFilteredEmployees, leavesByEmployee) {
             }
         });
 
-        return { morning: morningCount, evening: eveningCount, fullTime: fullTimeCount, off: offCount };
+        return {
+            morning: morningCount,
+            evening: eveningCount,
+            fullTime: fullTimeCount,
+            off: offCount,
+            morningOff: morningOffCount,
+            eveningOff: eveningOffCount
+        };
     }, [roleFilteredEmployees, leavesByEmployee]);
 }

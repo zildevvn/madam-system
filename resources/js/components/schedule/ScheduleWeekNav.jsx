@@ -1,6 +1,19 @@
 import React from 'react';
 import Icon from '../shared/Icon';
 
+const ROLE_LABELS = {
+    all: 'Tất cả',
+    admin: 'Admin',
+    manager: 'Quản lý',
+    order_staff: 'Nhân viên Order',
+    cashier: 'Thu ngân',
+    kitchen: 'Bếp',
+    bar: 'Bar',
+    bill: 'Đọc Bill',
+    seller: 'Seller',
+    accountant: 'Kế toán'
+};
+
 /**
  * ScheduleWeekNav Component
  * [WHY] Segregates control filters, navigation controls, and role-tabs.
@@ -10,8 +23,7 @@ export default function ScheduleWeekNav({
     roleTab,
     setRoleTab,
     employeesCount,
-    sellerCount,
-    restaurantCount,
+    roleCounts = {},
     handlePrevWeek,
     handleCurrentWeek,
     handleNextWeek,
@@ -25,33 +37,24 @@ export default function ScheduleWeekNav({
         <div className="bg-white rounded-xl p-2 shadow-sm border border-slate-100 space-y-2">
             {/* Role Filter Tabs */}
             <div className="flex border-b border-slate-100 overflow-x-auto no-scrollbar scroll-smooth">
-                <button
-                    onClick={() => setRoleTab('all')}
-                    className={`px-4 py-2 font-black text-[11px] md:text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${roleTab === 'all'
-                        ? 'border-orange-500 text-orange-600 font-extrabold'
-                        : 'border-transparent text-slate-400 hover:text-slate-600 font-bold'
-                        }`}
-                >
-                    Tất cả ({employeesCount})
-                </button>
-                <button
-                    onClick={() => setRoleTab('seller')}
-                    className={`px-4 py-2 font-black text-[11px] md:text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${roleTab === 'seller'
-                        ? 'border-orange-500 text-orange-600 font-extrabold'
-                        : 'border-transparent text-slate-400 hover:text-slate-600 font-bold'
-                        }`}
-                >
-                    Seller ({sellerCount})
-                </button>
-                <button
-                    onClick={() => setRoleTab('restaurant')}
-                    className={`px-4 py-2 font-black text-[11px] md:text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${roleTab === 'restaurant'
-                        ? 'border-orange-500 text-orange-600 font-extrabold'
-                        : 'border-transparent text-slate-400 hover:text-slate-600 font-bold'
-                        }`}
-                >
-                    Nhà hàng ({restaurantCount})
-                </button>
+                {Object.entries(ROLE_LABELS).map(([roleKey, roleLabel]) => {
+                    const count = roleKey === 'all' ? employeesCount : (roleCounts[roleKey] || 0);
+                    // Only show tabs that have active employees (or show 'all' always)
+                    if (roleKey !== 'all' && count === 0) return null;
+
+                    return (
+                        <button
+                            key={roleKey}
+                            onClick={() => setRoleTab(roleKey)}
+                            className={`px-4 py-2 font-black text-[11px] md:text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer whitespace-nowrap ${roleTab === roleKey
+                                ? 'border-orange-500 text-orange-600 font-extrabold'
+                                : 'border-transparent text-slate-400 hover:text-slate-600 font-bold'
+                                }`}
+                        >
+                            {roleLabel} ({count})
+                        </button>
+                    );
+                })}
             </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
