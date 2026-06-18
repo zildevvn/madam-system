@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../shared/Icon';
 
 /**
  * ScheduleMobileStack Component
@@ -80,7 +81,9 @@ export default function ScheduleMobileStack({
 
                             {/* Shift badge */}
                             <div className={`px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 flex-shrink-0 shadow-sm ${styles.bg}`}>
-                                {styles.icon}
+                                <span className={styles.iconClass}>
+                                    <Icon name={styles.iconName} className="w-3 h-3" size={12} strokeWidth={2.5} />
+                                </span>
                                 <span className="text-[9px] font-black tracking-tight uppercase leading-none">
                                     {daySchedule.status}
                                 </span>
