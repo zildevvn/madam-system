@@ -99,3 +99,46 @@ export const getMonthWeekdayPadding = (dateInput = new Date()) => {
     const dayOfWeek = firstDay.day(); // 0 is Sunday, 1 is Monday, etc.
     return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 };
+
+/**
+ * Formats a datetime string/object strictly into the Asia/Ho_Chi_Minh system timezone.
+ * Returns: 'HH:mm:ss DD/MM/YYYY'
+ */
+export const formatDateTimeToSystemTimezone = (dateVal) => {
+    if (!dateVal) return '';
+    try {
+        let cleanStr = dateVal;
+        if (typeof dateVal === 'string' && !dateVal.includes('T') && dateVal.includes(' ')) {
+            if (!dateVal.includes('+') && !dateVal.endsWith('Z')) {
+                cleanStr = dateVal.replace(' ', 'T') + '+07:00';
+            } else {
+                cleanStr = dateVal.replace(' ', 'T');
+            }
+        }
+        
+        const date = new Date(cleanStr);
+        if (isNaN(date.getTime())) return dateVal.toString();
+
+        const formatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        
+        const parts = formatter.formatToParts(date);
+        const partObj = {};
+        parts.forEach(p => {
+            partObj[p.type] = p.value;
+        });
+        
+        return `${partObj.hour}:${partObj.minute}:${partObj.second} ${partObj.day}/${partObj.month}/${partObj.year}`;
+    } catch (e) {
+        return dateVal.toString();
+    }
+};
+

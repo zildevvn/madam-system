@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getUserByIdApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi } from '../../services/leaveService';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
+import { formatDateTimeToSystemTimezone } from '../../shared/utils/dateUtils';
 import Icon from '../../components/shared/Icon';
 
 const EmployeeDetailPage = () => {
@@ -523,6 +524,9 @@ const EmployeeDetailPage = () => {
                                                     </div>
                                                     <p className="text-xs text-slate-600 font-medium truncate max-w-[200px] sm:max-w-xs" title={leave.reason}>
                                                         Lý do: <span className="text-slate-500 italic">{leave.reason || 'Không ghi lý do'}</span>
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 font-semibold" title="Thời gian gửi yêu cầu">
+                                                        Gửi lúc: <span className="font-bold text-slate-500">{formatDateTimeToSystemTimezone(leave.created_at)}</span>
                                                     </p>
                                                 </div>
                                             </div>
