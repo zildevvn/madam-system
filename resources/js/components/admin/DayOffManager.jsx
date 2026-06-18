@@ -3,22 +3,42 @@ import toast from 'react-hot-toast';
 import { getUsersApi } from '../../services/userService';
 import { getLeaveRequestsApi, createLeaveRequestApi, updateLeaveStatusApi, deleteLeaveRequestApi } from '../../services/leaveService';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
+import { formatDateTimeToSystemTimezone } from '../../shared/utils/dateUtils';
 import Icon from '../shared/Icon';
 import ConfirmDialog from '../shared/ConfirmDialog';
+
+const getStatusRank = (status) => {
+    switch (status) {
+        case 'pending':
+        case 'pending_cancel':
+            return 1;
+        default:
+            return 2;
+    }
+};
 
 const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propSetRequests }) => {
     const [localRequests, setLocalRequests] = useState([]);
     const requests = propRequests !== undefined ? propRequests : localRequests;
     const setRequests = propSetRequests !== undefined ? propSetRequests : setLocalRequests;
+    
+    const sortedRequests = [...requests].sort((a, b) => {
+        const rankA = getStatusRank(a.status);
+        const rankB = getStatusRank(b.status);
+        if (rankA !== rankB) {
+            return rankA - rankB;
+        }
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    
+
     // Track active request to prevent race conditions
     const abortControllerRef = React.useRef(null);
     const debounceTimerRef = React.useRef(null);
-    
+
     // Dialog state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
@@ -39,41 +59,41 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
 
         debounceTimerRef.current = setTimeout(async () => {
             // Cancel previous request if any
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        
-        // Create new controller for this request
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-        const options = { signal: abortController.signal };
-
-        if (!silent) setLoading(true);
-        try {
-            const [reqRes, empRes] = await Promise.all([
-                getLeaveRequestsApi(null, options),
-                getUsersApi(options)
-            ]);
-            
-            // Do not update state if request was aborted
-            if (abortController.signal.aborted) return;
-
-            setRequests(reqRes.data);
-
-            // Only active users
-            const activeEmps = empRes.data.filter(u => u.status !== 'inactive');
-            setEmployees(activeEmps);
-
-            if (activeEmps.length > 0 && !selectedEmployeeId) {
-                setSelectedEmployeeId(activeEmps[0].id);
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
             }
-        } catch (err) {
-            if (err.name === 'CanceledError' || err.message === 'canceled') {
-                return; // Ignore aborted requests
-            }
-            console.error('Failed to load leave data:', err);
-            toast.error('Không thể tải danh sách dữ liệu');
-        } finally {
+
+            // Create new controller for this request
+            const abortController = new AbortController();
+            abortControllerRef.current = abortController;
+            const options = { signal: abortController.signal };
+
+            if (!silent) setLoading(true);
+            try {
+                const [reqRes, empRes] = await Promise.all([
+                    getLeaveRequestsApi(null, options),
+                    getUsersApi(options)
+                ]);
+
+                // Do not update state if request was aborted
+                if (abortController.signal.aborted) return;
+
+                setRequests(reqRes.data);
+
+                // Only active users
+                const activeEmps = empRes.data.filter(u => u.status !== 'inactive');
+                setEmployees(activeEmps);
+
+                if (activeEmps.length > 0 && !selectedEmployeeId) {
+                    setSelectedEmployeeId(activeEmps[0].id);
+                }
+            } catch (err) {
+                if (err.name === 'CanceledError' || err.message === 'canceled') {
+                    return; // Ignore aborted requests
+                }
+                console.error('Failed to load leave data:', err);
+                toast.error('Không thể tải danh sách dữ liệu');
+            } finally {
                 // Only update loading state if this is still the latest request
                 if (abortControllerRef.current === abortController) {
                     if (!silent) setLoading(false);
@@ -99,7 +119,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                 abortControllerRef.current.abort();
             }
         };
-    }, []);    
+    }, []);
 
     useEffect(() => {
         if (window.Echo) {
@@ -372,7 +392,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
             ) : (
                 <div className="space-y-4">
                     {/* Desktop Table View */}
-                    <div className="hidden md:block bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="table-list-off hidden md:block bg-white rounded-[24px] shadow-sm border border-slate-100 overflow-hidden">
                         <div className="overflow-x-auto custom-scrollbar">
                             <table className="w-full text-left min-w-[700px]">
                                 <thead>
@@ -385,7 +405,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                    {requests.map((req) => (
+                                    {sortedRequests.map((req) => (
                                         <tr key={req.id} className="group hover:bg-slate-50/40 transition-all">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-3">
@@ -397,8 +417,10 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                                                         )}
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
-                                                        <span className="text-xs font-black text-slate-900 uppercase truncate max-w-[150px]">{req.user?.name}</span>
-                                                        <span className="text-[9px] text-slate-400 font-bold">{req.user?.email}</span>
+                                                        <span className="text-xs font-black text-slate-900 truncate max-w-[150px]">{req.user?.name}</span>
+                                                        <span className="text-[12px] text-slate-700 font-semibold mt-0.5" title="Thời gian gửi yêu cầu">
+                                                            Gửi lúc: {formatDateTimeToSystemTimezone(req.created_at)}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -477,7 +499,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
 
                     {/* Mobile Card Grid View */}
                     <div className="md:hidden space-y-3">
-                        {requests.map((req) => {
+                        {sortedRequests.map((req) => {
                             const daysCount = calculateDays(req.start_date, req.end_date);
                             return (
                                 <div key={req.id} className="bg-white px-2 py-3 rounded-md border border-slate-100 flex flex-col gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -505,6 +527,12 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                                             <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider">Thời gian</span>
                                             <span className="text-[11px] font-bold text-slate-800">
                                                 {formatDateStr(req.start_date)} - {formatDateStr(req.end_date)} ({daysCount} ngày)
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider">Thời gian gửi</span>
+                                            <span className="text-[11px] text-slate-600 font-semibold">
+                                                {formatDateTimeToSystemTimezone(req.created_at)}
                                             </span>
                                         </div>
                                         <div className="flex items-start justify-between gap-4">
@@ -571,7 +599,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
                         })}
                     </div>
 
-                    {requests.length === 0 && (
+                    {sortedRequests.length === 0 && (
                         <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 py-20 flex flex-col items-center justify-center text-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-4">
                                 <Icon name="calendar" size={32} strokeWidth={2.5} className="w-8 h-8 text-slate-200" />
