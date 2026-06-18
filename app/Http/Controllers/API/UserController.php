@@ -34,8 +34,8 @@ class UserController extends Controller
 
         $users = $this->userService->getAllUsers();
 
-        // Security filter: If not admin/manager, strip sensitive details
-        if ($currentUser->role !== 'admin' && $currentUser->role !== 'manager') {
+        // Security filter: If not admin/manager/accountant/cashier, strip sensitive details
+        if ($currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier') {
             $users = $users->map(function($u) {
                 return [
                     'id' => $u->id,
@@ -62,7 +62,7 @@ class UserController extends Controller
         $currentUser = $this->getCurrentUser($request);
         
         // Proper authorization check: regular users can only fetch their own profile details
-        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->id != $id) {
+        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier' && $currentUser->id != $id) {
             return response()->json([
                 'message' => 'Forbidden'
             ], 403);
@@ -107,7 +107,7 @@ class UserController extends Controller
     public function updateRole(Request $request, $id)
     {
         $currentUser = $this->getCurrentUser($request);
-        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier')) {
             return response()->json([
                 'message' => 'Forbidden'
             ], 403);
@@ -132,7 +132,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $currentUser = $this->getCurrentUser($request);
-        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier')) {
             return response()->json([
                 'message' => 'Forbidden'
             ], 403);
@@ -178,7 +178,7 @@ class UserController extends Controller
         $currentUser = $this->getCurrentUser($request);
         
         // Proper authorization check: regular users can only edit their own profile
-        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->id != $id) {
+        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier' && $currentUser->id != $id) {
             return response()->json([
                 'message' => 'Forbidden'
             ], 403);
@@ -212,8 +212,8 @@ class UserController extends Controller
             'remove_contract_image' => 'nullable|boolean',
         ]);
 
-        // Security check: If not admin/manager, strip administrative parameters from being changed
-        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager') {
+        // Security check: If not admin/manager/accountant/cashier, strip administrative parameters from being changed
+        if ($currentUser && $currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier') {
             unset($validated['role']);
             unset($validated['salary']);
             unset($validated['bonus']);
@@ -253,7 +253,7 @@ class UserController extends Controller
     public function destroy(Request $request, $id)
     {
         $currentUser = $this->getCurrentUser($request);
-        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager')) {
+        if (!$currentUser || ($currentUser->role !== 'admin' && $currentUser->role !== 'manager' && $currentUser->role !== 'accountant' && $currentUser->role !== 'cashier')) {
             return response()->json([
                 'message' => 'Forbidden'
             ], 403);

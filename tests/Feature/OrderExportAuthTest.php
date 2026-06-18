@@ -29,7 +29,7 @@ class OrderExportAuthTest extends TestCase
 
     public function test_non_privileged_roles_cannot_access_order_export_endpoints()
     {
-        $roles = ['order_staff', 'kitchen', 'bar', 'cashier', 'bill', 'seller', 'manager'];
+        $roles = ['order_staff', 'kitchen', 'bar', 'bill', 'seller', 'manager'];
 
         foreach ($roles as $role) {
             $user = User::create([
@@ -56,9 +56,9 @@ class OrderExportAuthTest extends TestCase
         }
     }
 
-    public function test_admin_and_accountant_can_access_order_export_endpoints()
+    public function test_admin_accountant_and_cashier_can_access_order_export_endpoints()
     {
-        $privilegedRoles = ['admin', 'accountant'];
+        $privilegedRoles = ['admin', 'accountant', 'cashier'];
 
         foreach ($privilegedRoles as $role) {
             $user = User::create([
