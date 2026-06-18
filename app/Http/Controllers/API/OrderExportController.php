@@ -221,7 +221,7 @@ class OrderExportController extends Controller
      */
     private static function formatNumber(float|int $value): string
     {
-        return number_format($value, 0, ',', '.');
+        return '="' . number_format($value, 0, ',', '.') . '"';
     }
 
     private function buildQuery(Request $request)
