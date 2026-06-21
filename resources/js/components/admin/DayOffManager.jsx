@@ -21,7 +21,7 @@ const DayOffManager = ({ currentUser, requests: propRequests, setRequests: propS
     const [localRequests, setLocalRequests] = useState([]);
     const requests = propRequests !== undefined ? propRequests : localRequests;
     const setRequests = propSetRequests !== undefined ? propSetRequests : setLocalRequests;
-    
+
     const sortedRequests = [...requests].sort((a, b) => {
         const rankA = getStatusRank(a.status);
         const rankB = getStatusRank(b.status);
