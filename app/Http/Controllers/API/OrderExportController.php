@@ -81,6 +81,30 @@ class OrderExportController extends Controller
                 'Cross Total QTY',
                 'Cross Total Amount',
                 'Total Due',
+                'PHƯƠNG THỨC THANH TOÁN',
+                '',
+                '',
+                '',
+            ]);
+            fputcsv($handle, [
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'CN',
+                'TM',
+                'CK',
+                'CT',
             ]);
 
             $stt = 1;
@@ -91,6 +115,7 @@ class OrderExportController extends Controller
                     'items.product:id,name,name_vi',
                     'table:id,name',
                     'cashier:id,name',
+                    'payments',
                 ]);
 
                 foreach ($orders as $order) {
@@ -110,6 +135,7 @@ class OrderExportController extends Controller
                         ? Carbon::parse($order->updated_at)->format('d/m/Y H:i')
                         : '—';
                     $cashierName = $order->cashier->name ?? 'Admin';
+                    $paymentMethodStr = self::formatPaymentMethod($order);
 
                     // ── STT increments once per order ────────────────────────
                     $orderStt = $stt++;
@@ -131,6 +157,10 @@ class OrderExportController extends Controller
                             $crossTotalQty,
                             self::formatNumber($crossTotalAmount),
                             self::formatNumber($totalDue),
+                            self::hasPaymentMethod($order, 'debt') ? 'X' : '',
+                            self::hasPaymentMethod($order, 'cash') ? 'X' : '',
+                            self::hasPaymentMethod($order, 'bank') ? 'X' : '',
+                            self::hasPaymentMethod($order, 'card') ? 'X' : '',
                         ]);
                         continue;
                     }
@@ -161,6 +191,10 @@ class OrderExportController extends Controller
                                 $crossTotalQty,
                                 self::formatNumber($crossTotalAmount),
                                 self::formatNumber($totalDue),
+                                self::hasPaymentMethod($order, 'debt') ? 'X' : '',
+                                self::hasPaymentMethod($order, 'cash') ? 'X' : '',
+                                self::hasPaymentMethod($order, 'bank') ? 'X' : '',
+                                self::hasPaymentMethod($order, 'card') ? 'X' : '',
                             ]);
                             $isFirst = false;
                         } else {
@@ -181,6 +215,10 @@ class OrderExportController extends Controller
                                 '',          // Tổng SL   — blank on non-first rows
                                 '',          // Tổng tiền món
                                 '',          // Tổng thu
+                                '',          // CN — blank
+                                '',          // TM — blank
+                                '',          // CK — blank
+                                '',          // CT — blank
                             ]);
                         }
                     }
@@ -224,6 +262,70 @@ class OrderExportController extends Controller
         return '="' . number_format($value, 0, ',', '.') . '"';
     }
 
+    private static function formatPaymentMethod($order): string
+    {
+        if (!$order) {
+            return '—';
+        }
+
+        $payments = $order->payments ?? collect();
+        
+        if ($payments->isNotEmpty()) {
+            if ($payments->count() === 1) {
+                $p = $payments->first();
+                return self::getPaymentMethodLabel($p->payment_method);
+            }
+            
+            $parts = [];
+            foreach ($payments as $p) {
+                $label = self::getPaymentMethodLabel($p->payment_method);
+                $amount = number_format($p->amount, 0, ',', '.') . 'đ';
+                $parts[] = "{$label} ({$amount})";
+            }
+            return implode(' + ', $parts);
+        }
+
+        $method = $order->payment_method;
+        if ($method === 'split') {
+            return 'Hỗn hợp';
+        }
+        return self::getPaymentMethodLabel($method);
+    }
+
+    private static function getPaymentMethodLabel(?string $method): string
+    {
+        switch (strtolower($method ?? '')) {
+            case 'cash':
+                return 'Tiền mặt';
+            case 'bank':
+                return 'Chuyển khoản';
+            case 'card':
+                return 'Cà thẻ';
+            case 'debt':
+                return 'Công nợ';
+            case 'split':
+                return 'Hỗn hợp';
+            default:
+                return $method ?? '—';
+        }
+    }
+
+    private static function hasPaymentMethod($order, string $method): bool
+    {
+        if (!$order) {
+            return false;
+        }
+
+        $payments = $order->payments ?? collect();
+        if ($payments->isNotEmpty()) {
+            return $payments->contains(function ($payment) use ($method) {
+                return strtolower($payment->payment_method ?? '') === strtolower($method);
+            });
+        }
+
+        return strtolower($order->payment_method ?? '') === strtolower($method);
+    }
+
     private function buildQuery(Request $request)
     {
         $query = Order::with([
@@ -231,6 +333,7 @@ class OrderExportController extends Controller
             'items.product:id,name,name_vi',
             'table:id,name',
             'cashier:id,name',
+            'payments',
         ])
             ->select('orders.*')
             ->leftJoin('tables', 'orders.table_id', '=', 'tables.id')
