@@ -34,6 +34,28 @@ const getPaymentColorClass = (method) => {
     }
 };
 
+const formatPaymentMethod = (order) => {
+    if (!order) return '—';
+    const payments = order.payments || [];
+    if (payments.length > 0) {
+        if (payments.length === 1) {
+            const p = payments[0];
+            return PAYMENT_METHOD_LABELS[p.payment_method] || p.payment_method || '—';
+        }
+        const parts = payments.map(p => {
+            const label = PAYMENT_METHOD_LABELS[p.payment_method] || p.payment_method;
+            const amount = formatPrice(p.amount);
+            return `${label} (${amount}đ)`;
+        });
+        return parts.join(' + ');
+    }
+    const method = order.payment_method;
+    if (method === 'split') {
+        return 'Hỗn hợp';
+    }
+    return PAYMENT_METHOD_LABELS[method] || method || '—';
+};
+
 /**
  * CashierHistoryLane: Renders the payment history lane of the Cashier dashboard.
  * Allows viewing recently completed bills, editing payment details, or reopening orders.
@@ -185,7 +207,7 @@ const CashierHistoryLane = ({
                                             <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wide flex items-center gap-1.5 mt-1">
                                                 <span>{order.formattedTime}</span>
                                                 <span>•</span>
-                                                <span>{PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method}</span>
+                                                <span>{formatPaymentMethod(order)}</span>
                                                 {order.guest_count > 0 && (
                                                     <>
                                                         <span>•</span>

@@ -153,6 +153,88 @@ class OrderExportAuthTest extends TestCase
         // Print queries or assert
         $this->assertLessThanOrEqual(8, count($queries), "Too many queries executed (potential N+1 issue)");
     }
+
+    public function test_export_contains_payment_method()
+    {
+        $admin = User::create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin'
+        ]);
+
+        $cashier = User::create([
+            'name' => 'Cashier',
+            'email' => 'cashier@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'cashier'
+        ]);
+
+        $table = \App\Models\Table::create(['name' => 'Table 1', 'status' => 'empty']);
+
+        $category = \App\Models\Category::create([
+            'name' => 'Cat',
+            'type' => 'drink'
+        ]);
+
+        $product = \App\Models\Product::create([
+            'name' => 'Product 1',
+            'price' => 10000,
+            'type' => 'drink',
+            'category_id' => $category->id
+        ]);
+
+        // Order 1: single payment (cash)
+        $order1 = \App\Models\Order::create([
+            'table_id' => $table->id,
+            'cashier_id' => $cashier->id,
+            'status' => 'completed',
+            'total_price' => 20000,
+            'payment_method' => 'cash'
+        ]);
+        $order1->payments()->create(['payment_method' => 'cash', 'amount' => 20000]);
+
+        \App\Models\OrderItem::create([
+            'order_id' => $order1->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'price' => 10000,
+            'name' => 'Product 1'
+        ]);
+
+        // Order 2: split payment (cash + bank)
+        $order2 = \App\Models\Order::create([
+            'table_id' => $table->id,
+            'cashier_id' => $cashier->id,
+            'status' => 'completed',
+            'total_price' => 50000,
+            'payment_method' => 'split'
+        ]);
+        $order2->payments()->create(['payment_method' => 'cash', 'amount' => 20000]);
+        $order2->payments()->create(['payment_method' => 'bank', 'amount' => 30000]);
+
+        \App\Models\OrderItem::create([
+            'order_id' => $order2->id,
+            'product_id' => $product->id,
+            'quantity' => 5,
+            'price' => 10000,
+            'name' => 'Product 1'
+        ]);
+
+        $response = $this->getJson('/api/order-export/export', [
+            'X-User-Id' => $admin->id
+        ]);
+        $response->assertStatus(200);
+
+        ob_start();
+        $response->sendContent();
+        $content = ob_get_clean();
+
+        $this->assertStringContainsString('PHƯƠNG THỨC THANH TOÁN', $content);
+        $this->assertStringContainsString('CN,TM,CK,CT', $content);
+        $this->assertStringContainsString('"=""20.000""",,X,,', $content);
+        $this->assertStringContainsString('"=""50.000""",,X,X,', $content);
+    }
 }
 
 
