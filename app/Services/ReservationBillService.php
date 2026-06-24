@@ -31,6 +31,7 @@ class ReservationBillService
 
         // 2. Process and route each item into its correct display bucket
         foreach ($orders as $order) {
+            $isCancelled = $order->status === 'cancelled';
             $tableName = $order->table ? $order->table->name : 'Unknown Table';
             
             $tableData = [
@@ -41,7 +42,8 @@ class ReservationBillService
             foreach ($order->items as $item) {
                 // Determine item name securely
                 $itemName = $item->product ? $item->product->name : ($item->name ?? 'Unknown Product');
-                $itemTotal = $item->price * $item->quantity;
+                $itemTotal = $isCancelled ? 0 : ($item->price * $item->quantity);
+                $itemQty = $isCancelled ? 0 : $item->quantity;
 
                 // Add to the global reservation grand total
                 $billData['total_amount'] += $itemTotal;
@@ -52,7 +54,7 @@ class ReservationBillService
                     $billData['pre_ordered_items'][] = [
                         'id' => $item->id,
                         'name' => $itemName,
-                        'quantity' => $item->quantity,
+                        'quantity' => $itemQty,
                         'price' => $item->price,
                         'total' => $itemTotal
                     ];
@@ -62,7 +64,7 @@ class ReservationBillService
                     $tableData['items'][] = [
                         'id' => $item->id,
                         'name' => $itemName,
-                        'quantity' => $item->quantity,
+                        'quantity' => $itemQty,
                         'price' => $item->price,
                         'total' => $itemTotal
                     ];

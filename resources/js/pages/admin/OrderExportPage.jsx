@@ -180,16 +180,17 @@ export default function OrderExportPage() {
         const result = [];
         let stt = 1;
         orders.forEach(order => {
+            const isCancelled = order.status === 'cancelled';
             const items = order.items || [];
-            const crossTotalQty = items.reduce((s, i) => s + (i.quantity || 0), 0);
-            const crossTotalAmount = items.reduce((s, i) => s + ((i.price || 0) * (i.quantity || 0)), 0);
-            const totalDue = Number(order.total_price || 0);
+            const crossTotalQty = isCancelled ? 0 : items.reduce((s, i) => s + (i.quantity || 0), 0);
+            const crossTotalAmount = isCancelled ? 0 : items.reduce((s, i) => s + ((i.price || 0) * (i.quantity || 0)), 0);
+            const totalDue = isCancelled ? 0 : Number(order.total_price || 0);
             const tableName = order.table?.name || order.merged_tables || '—';
             const cashierName = order.cashier?.name || 'Admin';
 
             const orderStt = stt++;
 
-            if (items.length === 0) {
+            if (isCancelled || items.length === 0) {
                 result.push({
                     stt: orderStt,
                     order,
@@ -223,7 +224,7 @@ export default function OrderExportPage() {
     const summary = useMemo(() => ({
         orderCount: orders.length,
         itemCount: rows.length,
-        totalDue: orders.reduce((s, o) => s + Number(o.total_price || 0), 0),
+        totalDue: orders.reduce((s, o) => s + (o.status === 'cancelled' ? 0 : Number(o.total_price || 0)), 0),
     }), [orders, rows]);
 
     // Guard: only admin / accountant / cashier
@@ -375,7 +376,7 @@ export default function OrderExportPage() {
                                         const defaultName = item?.name || item?.product?.name || '—';
                                         const itemName = nameVi ? `${nameVi} - ${defaultName}` : defaultName;
                                         const qty = item?.quantity ?? 0;
-                                        const itemTotal = (item?.price ?? 0) * qty;
+                                        const itemTotal = order.status === 'cancelled' ? 0 : ((item?.price ?? 0) * qty);
                                         const isFirstItemInOrder = row.isFirstItem;
 
                                         // Soft Zebra stripe by order (STT)
@@ -414,7 +415,7 @@ export default function OrderExportPage() {
                                                 </td>
                                                 {/* Item name */}
                                                 <td className="px-3 py-2.5 text-[#1f2937] font-medium max-w-[160px] truncate">
-                                                    {item ? itemName : <span className="text-[#4b5563]/40 italic">—</span>}
+                                                    {order.status === 'cancelled' ? '' : (item ? itemName : <span className="text-[#4b5563]/40 italic">—</span>)}
                                                 </td>
                                                 {/* Name VI */}
                                                 <td className="px-3 py-2.5 text-[#4b5563] max-w-[140px] truncate">
@@ -430,7 +431,7 @@ export default function OrderExportPage() {
                                                 </td>
                                                 {/* Line total */}
                                                 <td className="px-3 py-2.5 text-right font-medium text-[#1f2937]">
-                                                    {item ? formatPrice(itemTotal) : ''}
+                                                    {order.status === 'cancelled' ? formatPrice(0) : (item ? formatPrice(itemTotal) : '')}
                                                 </td>
                                                 {/* Cross Total QTY */}
                                                 <td className="px-3 py-2.5 text-center font-bold text-blue-600">

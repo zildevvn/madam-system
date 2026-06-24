@@ -87,6 +87,7 @@ const CashierHistoryLane = ({
         let debt = 0;
 
         historyOrders.forEach(order => {
+            if (order.status === 'cancelled') return;
             if (order.payments && order.payments.length > 0) {
                 order.payments.forEach(p => {
                     const method = (p.payment_method || '').toLowerCase();
@@ -220,8 +221,8 @@ const CashierHistoryLane = ({
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-[16px] font-black text-gray-900 leading-none mb-1">{formatPrice(order.total_price)}đ</div>
-                                            {order.discount_amount > 0 && (
+                                            <div className="text-[16px] font-black text-gray-900 leading-none mb-1">{formatPrice(order.status === 'cancelled' ? 0 : order.total_price)}đ</div>
+                                            {order.status !== 'cancelled' && order.discount_amount > 0 && (
                                                 <div className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">-{formatPrice(order.discount_amount)}đ</div>
                                             )}
                                         </div>

@@ -235,6 +235,77 @@ class OrderExportAuthTest extends TestCase
         $this->assertStringContainsString('"=""20.000""",,X,,', $content);
         $this->assertStringContainsString('"=""50.000""",,X,X,', $content);
     }
+
+    public function test_export_contains_cancelled_orders_with_zero_totals()
+    {
+        $admin = User::create([
+            'name' => 'Admin',
+            'email' => 'admin_new@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin'
+        ]);
+
+        $cashier = User::create([
+            'name' => 'Cashier',
+            'email' => 'cashier_new@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'cashier'
+        ]);
+
+        $table = \App\Models\Table::create(['name' => 'Table 2', 'status' => 'empty']);
+
+        $category = \App\Models\Category::create([
+            'name' => 'Cat 2',
+            'type' => 'drink'
+        ]);
+
+        $product = \App\Models\Product::create([
+            'name' => 'Product 2',
+            'price' => 15000,
+            'type' => 'drink',
+            'category_id' => $category->id
+        ]);
+
+        // Cancelled Order
+        $order = \App\Models\Order::create([
+            'table_id' => $table->id,
+            'cashier_id' => $cashier->id,
+            'status' => 'cancelled',
+            'total_price' => 15000,
+            'payment_method' => 'cash'
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price' => 15000,
+            'name' => 'Product 2'
+        ]);
+
+        // Preview Index Request
+        $indexResponse = $this->getJson('/api/order-export', [
+            'X-User-Id' => $admin->id
+        ]);
+        $indexResponse->assertStatus(200);
+        $indexResponse->assertJsonFragment(['status' => 'cancelled']);
+
+        // CSV Export Request
+        $response = $this->getJson('/api/order-export/export', [
+            'X-User-Id' => $admin->id
+        ]);
+        $response->assertStatus(200);
+
+        ob_start();
+        $response->sendContent();
+        $content = ob_get_clean();
+
+        // Cancelled order should be in the export
+        $this->assertStringContainsString('#' . $order->id, $content);
+        // Cancelled order total, cross totals, total due must be 0, and item details must be empty
+        // Which formats as: ,,,,"=""0""",0,"=""0""","=""0"""
+        $this->assertStringContainsString(',,,,"=""0""",0,"=""0""","=""0"""', $content);
+    }
 }
 
 

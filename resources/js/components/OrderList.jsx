@@ -19,7 +19,7 @@ const OrderList = ({ tables, allTables, onTableClick }) => {
             {tables.map((table) => {
                 const originalIndex = allTables.findIndex(t => t.id === table.id);
                 const startTime = table.active_order?.created_at;
-                const totalPrice = table.active_order?.total_price || 0;
+                const totalPrice = table.active_order?.status === 'cancelled' ? 0 : (table.active_order?.total_price || 0);
 
                 return (
                     <div
