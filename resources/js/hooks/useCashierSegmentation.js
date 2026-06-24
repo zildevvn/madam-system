@@ -203,7 +203,14 @@ export const useCashierSegmentation = (orders, allTables) => {
             reservation_id: order.reservation_id,
             groupKey: order.id.toString(),
             groupColorIndex: 0
-        }));
+        })).sort((a, b) => {
+            const aNum = Number(a.id);
+            const bNum = Number(b.id);
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return aNum - bNum;
+            }
+            return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+        });
 
         // [OPT] Build an O(1) lookup dictionary for all tables to prevent linear scans
         const tableDict = {};
@@ -221,9 +228,9 @@ export const useCashierSegmentation = (orders, allTables) => {
                 const aNum = Number(a.id);
                 const bNum = Number(b.id);
                 if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return bNum - aNum;
+                    return aNum - bNum;
                 }
-                return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
+                return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
             }),
             groupTables,
             tableDict

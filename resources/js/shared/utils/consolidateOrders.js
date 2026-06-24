@@ -223,7 +223,9 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
         return true;
     });
 
-    const orders = Object.values(consolidatedGroups).filter(o => o.items.length > 0 || (o.orders && o.orders.length > 0));
+    const orders = Object.values(consolidatedGroups)
+        .filter(o => o.items.length > 0 || (o.orders && o.orders.length > 0))
+        .sort((a, b) => a.id - b.id);
 
     return {
         orders,

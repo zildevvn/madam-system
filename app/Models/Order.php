@@ -69,7 +69,7 @@ class Order extends Model
 
     public function childOrders()
     {
-        return $this->hasMany(Order::class, 'parent_order_id');
+        return $this->hasMany(Order::class, 'parent_order_id')->orderBy('id', 'asc');
     }
 
     public function payments()

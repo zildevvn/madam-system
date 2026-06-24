@@ -322,6 +322,10 @@ export const selectBusyTables = createSelector(
         return { ...t, tableName: labels.join('-') };
       }
       return { ...t, tableName: t.name?.replace(/[^0-9]/g, '') || t.id.toString() };
+    }).sort((a, b) => {
+      const orderAId = a.active_order?.id || 0;
+      const orderBId = b.active_order?.id || 0;
+      return orderAId - orderBId;
     });
   }
 );

@@ -28,7 +28,7 @@ class OrderExportController extends Controller
         $query = $this->buildQuery($request);
 
         $orders = $query
-            ->orderBy('orders.updated_at', 'desc')
+            ->orderBy('orders.id', 'asc')
             ->limit(200) // preview cap to keep response fast
             ->get();
 
@@ -120,12 +120,12 @@ class OrderExportController extends Controller
 
                 foreach ($orders as $order) {
                     $items = $order->items ?? collect();
-
+                    $isCancelled = strtolower($order->status ?? '') === 'cancelled';
 
                     // ── Aggregates (mirrors frontend useMemo row expansion) ────
-                    $crossTotalQty = $items->sum('quantity');
-                    $crossTotalAmount = $items->sum(fn($i) => ($i->price ?? 0) * ($i->quantity ?? 0));
-                    $totalDue = (float) ($order->total_price ?? 0);
+                    $crossTotalQty = $isCancelled ? 0 : $items->sum('quantity');
+                    $crossTotalAmount = $isCancelled ? 0 : $items->sum(fn($i) => ($i->price ?? 0) * ($i->quantity ?? 0));
+                    $totalDue = $isCancelled ? 0.0 : (float) ($order->total_price ?? 0);
 
                     $tableName = $order->table->name ?? ($order->merged_tables ?? '—');
                     $arrivalTime = $order->created_at
@@ -139,6 +139,31 @@ class OrderExportController extends Controller
 
                     // ── STT increments once per order ────────────────────────
                     $orderStt = $stt++;
+
+                    // ── Cancelled order — single placeholder row ──────────────
+                    if ($isCancelled) {
+                        fputcsv($handle, [
+                            $orderStt,
+                            '#' . $order->id,
+                            $tableName,
+                            $arrivalTime,
+                            $printedTime,
+                            $cashierName,
+                            '',           // Món  — completely empty
+                            '',           // Name VI
+                            '',           // Name
+                            '',           // SL   — blank
+                            self::formatNumber(0), // Thành tiền — 0
+                            $crossTotalQty,
+                            self::formatNumber($crossTotalAmount),
+                            self::formatNumber($totalDue),
+                            self::hasPaymentMethod($order, 'debt') ? 'X' : '',
+                            self::hasPaymentMethod($order, 'cash') ? 'X' : '',
+                            self::hasPaymentMethod($order, 'bank') ? 'X' : '',
+                            self::hasPaymentMethod($order, 'card') ? 'X' : '',
+                        ]);
+                        continue;
+                    }
 
                     // ── Empty-item order — single placeholder row ─────────────
                     if ($items->isEmpty()) {
@@ -169,7 +194,7 @@ class OrderExportController extends Controller
                     $isFirst = true;
                     foreach ($items as $item) {
                         $itemQty = $item->quantity ?? 0;
-                        $itemTotal = ($item->price ?? 0) * $itemQty;
+                        $itemTotal = $isCancelled ? 0 : (($item->price ?? 0) * $itemQty);
                         $nameVi = $item->product->name_vi ?? $item->name_vi ?? null;
                         $defaultName = $item->name ?? ($item->product->name ?? 'Unknown');
                         $itemName = $nameVi ? "{$nameVi} - {$defaultName}" : $defaultName;
@@ -234,13 +259,13 @@ class OrderExportController extends Controller
 
     /**
      * cashiers
-     * [WHY] Returns list of cashiers (users who have completed at least one order).
+     * [WHY] Returns list of cashiers (users who have completed/cancelled at least one order).
      */
     public function cashiers(Request $request)
     {
         $cashiers = User::select('users.id', 'users.name')
             ->join('orders', 'orders.cashier_id', '=', 'users.id')
-            ->where('orders.status', 'completed')
+            ->whereIn('orders.status', ['completed', 'cancelled'])
             ->distinct()
             ->orderBy('users.name')
             ->get();
@@ -338,7 +363,7 @@ class OrderExportController extends Controller
             ->select('orders.*')
             ->leftJoin('tables', 'orders.table_id', '=', 'tables.id')
             ->leftJoin('users as cashier_users', 'orders.cashier_id', '=', 'cashier_users.id')
-            ->where('orders.status', 'completed');
+            ->whereIn('orders.status', ['completed', 'cancelled']);
 
         // Date range filter
         if ($request->filled('date_from')) {

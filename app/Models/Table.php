@@ -20,6 +20,6 @@ class Table extends Model
 
     public function activeOrders()
     {
-        return $this->hasMany(Order::class)->whereIn('status', ['draft', 'pending', 'processing']);
+        return $this->hasMany(Order::class)->whereIn('status', ['draft', 'pending', 'processing'])->orderBy('id', 'asc');
     }
 }
