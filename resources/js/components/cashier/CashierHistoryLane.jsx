@@ -75,7 +75,9 @@ const CashierHistoryLane = ({
     isReopening,
     selectedDate,
     onDateChange,
-    isLoading = false
+    isLoading = false,
+    hideHeader = false,
+    hideSummary = false
 }) => {
     const currentUser = useCurrentUser();
     const todayStr = useMemo(() => formatLocalDate(new Date()), []);
@@ -146,42 +148,44 @@ const CashierHistoryLane = ({
     return (
         <div className={`transition-all duration-500 ease-[cubic-bezier(0.23, 1, 0.32, 1)] mt-8 ${containerClassName}`}>
             <div className={`py-3 md:py-6 ${!isCollapsed ? 'px-3 md:px-6' : 'px-1 md:px-2'} flex flex-col gap-3 md:gap-6 bg-white rounded-[12px] shadow-sm border border-gray-100 overflow-hidden min-h-[100px]`}>
-                <div className="flex items-center justify-between px-2 flex-wrap gap-3">
-                    <div className="flex flex-col">
-                        <h5 className={`mb-0 text-gray-900 font-black uppercase tracking-tight ${!isCollapsed ? 'text-[15px]' : 'text-[12px]'}`}>
-                            {!isCollapsed ? 'Lịch Sử Thanh Toán' : 'Lịch Sử'}
-                        </h5>
-                        {!isCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Recently Paid Bills</span>}
-                    </div>
-
-                    {!isCollapsed && (
-                        <div className="filter-date-wrapper flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-1.5 bg-gray-50 p-1.5 sm:p-1 rounded-xl border border-gray-100 shadow-inner w-full md:w-auto">
-                            <div className="flex items-center gap-1 w-full sm:w-auto">
-                                <button
-                                    onClick={() => onDateChange(todayStr)}
-                                    className={`flex-1 sm:flex-none whitespace-nowrap px-3 py-2 sm:py-1.5 text-[11px] border-none font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-white shadow-sm text-orange-600' : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
-                                >
-                                    Hôm nay
-                                </button>
-                                <button
-                                    onClick={() => onDateChange(yesterdayStr)}
-                                    className={`flex-1 sm:flex-none whitespace-nowrap px-3 py-2 sm:py-1.5 text-[11px] border-none font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${selectedDate === yesterdayStr ? 'bg-white shadow-sm text-orange-600' : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
-                                >
-                                    Hôm qua
-                                </button>
-                            </div>
-                            <div className="hidden sm:block w-px h-4 bg-gray-200 mx-1"></div>
-                            <input
-                                type="date"
-                                value={selectedDate}
-                                onChange={(e) => onDateChange(e.target.value)}
-                                className="w-full sm:w-auto bg-white sm:bg-transparent text-[11px] font-bold uppercase tracking-wider text-gray-600 border border-gray-200 sm:border-none outline-none cursor-pointer px-3 sm:px-2 py-2 sm:py-1 rounded-lg sm:rounded-none hover:text-orange-600 transition-colors shadow-sm sm:shadow-none"
-                            />
+                {!hideHeader && (
+                    <div className="flex items-center justify-between px-2 flex-wrap gap-3">
+                        <div className="flex flex-col">
+                            <h5 className={`mb-0 text-gray-900 font-black uppercase tracking-tight ${!isCollapsed ? 'text-[15px]' : 'text-[12px]'}`}>
+                                {!isCollapsed ? 'Lịch Sử Thanh Toán' : 'Lịch Sử'}
+                            </h5>
+                            {!isCollapsed && <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Recently Paid Bills</span>}
                         </div>
-                    )}
-                </div>
 
-                {!isCollapsed && (
+                        {!isCollapsed && (
+                            <div className="filter-date-wrapper flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-1.5 bg-gray-50 p-1.5 sm:p-1 rounded-xl border border-gray-100 shadow-inner w-full md:w-auto">
+                                <div className="flex items-center gap-1 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => onDateChange && onDateChange(todayStr)}
+                                        className={`flex-1 sm:flex-none whitespace-nowrap px-3 py-2 sm:py-1.5 text-[11px] border-none font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-white shadow-sm text-orange-600' : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
+                                    >
+                                        Hôm nay
+                                    </button>
+                                    <button
+                                        onClick={() => onDateChange && onDateChange(yesterdayStr)}
+                                        className={`flex-1 sm:flex-none whitespace-nowrap px-3 py-2 sm:py-1.5 text-[11px] border-none font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${selectedDate === yesterdayStr ? 'bg-white shadow-sm text-orange-600' : 'bg-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'}`}
+                                    >
+                                        Hôm qua
+                                    </button>
+                                </div>
+                                <div className="hidden sm:block w-px h-4 bg-gray-200 mx-1"></div>
+                                <input
+                                    type="date"
+                                    value={selectedDate || ''}
+                                    onChange={(e) => onDateChange && onDateChange(e.target.value)}
+                                    className="w-full sm:w-auto bg-white sm:bg-transparent text-[11px] font-bold uppercase tracking-wider text-gray-600 border border-gray-200 sm:border-none outline-none cursor-pointer px-3 sm:px-2 py-2 sm:py-1 rounded-lg sm:rounded-none hover:text-orange-600 transition-colors shadow-sm sm:shadow-none"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {!isCollapsed && !hideSummary && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2 py-3 bg-gray-50/50 rounded-2xl border border-gray-100/50">
                         <SummaryCard title="Tiền mặt (Cash)" value={totals.cash} colorClass="bg-green-400" />
                         <SummaryCard title="Chuyển khoản (Bank)" value={totals.bank} colorClass="bg-blue-400" />

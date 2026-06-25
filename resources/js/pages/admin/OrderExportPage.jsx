@@ -8,6 +8,8 @@ import orderExportApi from '../../services/orderExportApi';
 import Icon from '../../components/shared/Icon';
 import AdminPeriodSelector from '../../components/admin/shared/AdminPeriodSelector';
 import AdminDateFilters from '../../components/admin/shared/AdminDateFilters';
+import CashierHistoryLane from '../../components/cashier/CashierHistoryLane';
+import CheckoutManager from '../../components/cashier/CheckoutManager';
 
 /**
  * OrderExportPage
@@ -138,6 +140,14 @@ export default function OrderExportPage() {
     useEffect(() => {
         handleFetch();
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ── Edit Payment State ─────────────────────────────────────────────────────
+    const [editingHistoryOrder, setEditingHistoryOrder] = useState(null);
+    const [isReopening, setIsReopening] = useState(null);
+
+    const handleEditHistoryOrder = useCallback((order) => {
+        setEditingHistoryOrder(order);
     }, []);
 
     // ── Export ─────────────────────────────────────────────────────────────────
@@ -327,6 +337,34 @@ export default function OrderExportPage() {
                 </div>
             )}
 
+            {/* ── Cashier History Lane Section ────────────────────────────────── */}
+            {fetched && !loading && orders.length > 0 && (
+                <div className="bg-[#f8fafc] -mx-4 lg:-mx-6 -mb-20 px-4 lg:px-6 pb-20 pt-8">
+                    <CashierHistoryLane
+                        containerClassName="!mt-0"
+                        isCollapsed={false}
+                        historyOrders={orders}
+                        onEditOrder={handleEditHistoryOrder}
+                        isReopening={isReopening}
+                        hideHeader={true}
+                        hideSummary={true}
+                    />
+                </div>
+            )}
+
+            <CheckoutManager
+                selectedTable={null}
+                editingHistoryOrder={editingHistoryOrder}
+                individualOrders={[]}
+                groupOrders={[]}
+                allTables={[]}
+                onHistoryPaymentSuccess={() => {
+                    handleFetch();
+                    setEditingHistoryOrder(null);
+                }}
+                onCloseHistory={() => setEditingHistoryOrder(null)}
+            />
+
             {/* ── Data Table ─────────────────────────────────────────────────── */}
             {fetched && !loading && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -470,6 +508,8 @@ export default function OrderExportPage() {
                     )}
                 </div>
             )}
+
+
 
             {/* ── Empty initial state ─────────────────────────────────────────── */}
             {!fetched && !loading && (
