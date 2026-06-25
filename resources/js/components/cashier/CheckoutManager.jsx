@@ -3,6 +3,9 @@ import { createPortal, flushSync } from 'react-dom';
 import PaymentModal from './PaymentModal';
 import Receipt from './Receipt';
 import { resolveTableName } from '../../shared/utils/normalizeTableStrings';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import Icon from '../shared/Icon';
+import { getPaymentEditPermission } from '../../shared/utils/paymentPermissions';
 
 /**
  * [WHY] checkoutReducer handles all transitions for the checkout state.
@@ -96,6 +99,7 @@ const CheckoutManager = ({
 }) => {
     const [contexts, dispatch] = useReducer(checkoutReducer, {});
     const [isPrinting, setIsPrinting] = useState(false);
+    const currentUser = useCurrentUser();
 
     // [WHY] Listen to browser beforeprint/afterprint events to mount/unmount the Receipt.
     useEffect(() => {
@@ -251,7 +255,34 @@ const CheckoutManager = ({
         }
     }, [isGroup, activeModalId, currentMethod, updateContext]);
 
+    const permissionResult = useMemo(() => {
+        if (!activeModal || !activeModal.isHistory) return { allowed: true };
+        return getPaymentEditPermission(activeModal.order, currentUser);
+    }, [activeModal, currentUser]);
+
     if (!activeModal) return null;
+
+    if (activeModal.isHistory && !permissionResult.allowed) {
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="bg-white rounded-[24px] w-full max-w-md p-6 shadow-2xl flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                        <Icon name="lock" className="w-8 h-8 text-red-500" size={32} />
+                    </div>
+                    <h3 className="text-lg font-black text-gray-900 mb-2 uppercase tracking-wide">Access Denied</h3>
+                    <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                        {permissionResult.reason || 'You do not have permission to edit this payment history record.'}
+                    </p>
+                    <button
+                        onClick={activeModal.onClose}
+                        className="w-full py-3 bg-gray-950 hover:bg-gray-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors cursor-pointer"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const ctx = activeModal.context;
 

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 class OrderController extends Controller
 {
     use \App\Traits\ApiResponse;
+    use \App\Traits\AuthenticatesStatelessUser;
 
     protected $orderService;
     protected $printService;
@@ -39,7 +40,9 @@ class OrderController extends Controller
         $validated = $request->validated();
         // [WHY] Auth session is stateless for this app (no Auth::login on the login endpoint).
         // The frontend sends the logged-in user's ID explicitly in the request body.
-        $userId = $request->user()?->id ?: ($validated['user_id'] ?? null);
+        $currentUser = $this->getCurrentUser($request);
+        $userId = $currentUser ? $currentUser->id : ($validated['user_id'] ?? $request->header('X-User-Id'));
+        
         $data = array_merge($validated, ['user_id' => $userId]);
         $order = $this->orderService->createOrder($data);
 
@@ -54,7 +57,11 @@ class OrderController extends Controller
     public function complete(\App\Http\Requests\CompleteOrderRequest $request, $id)
     {
         $validated = $request->validated();
-        $data = array_merge($validated, ['cashier_id' => $request->user()?->id]);
+        
+        $currentUser = $this->getCurrentUser($request);
+        $cashierId = $currentUser ? $currentUser->id : $request->header('X-User-Id');
+        
+        $data = array_merge($validated, ['cashier_id' => $cashierId]);
         $order = $this->orderService->completeOrder($id, $data);
 
         return $this->success($order, 'Order completed successfully');
@@ -65,7 +72,9 @@ class OrderController extends Controller
         $validated = $request->validated();
         // [WHY] Auth session is stateless for this app (no Auth::login on the login endpoint).
         // The frontend sends the logged-in user's ID explicitly in the request body.
-        $userId = $request->user()?->id ?: ($validated['user_id'] ?? null);
+        $currentUser = $this->getCurrentUser($request);
+        $userId = $currentUser ? $currentUser->id : ($validated['user_id'] ?? $request->header('X-User-Id'));
+        
         $order = $this->orderService->checkoutOrder(
             $id,
             $validated['items'],
@@ -154,11 +163,36 @@ class OrderController extends Controller
      */
     public function updatePayment(\App\Http\Requests\UpdatePaymentRequest $request, $id)
     {
-        $validated = $request->validated();
-        $order = $this->orderService->updatePayment($id, $validated);
+        $currentUser = $this->getCurrentUser($request);
+        if (!$currentUser) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
 
-        return $this->success($order, 'Payment updated successfully');
+        $order = Order::with('payments')->findOrFail($id);
+
+        if ($currentUser->role !== 'admin' && $currentUser->role !== 'accountant') {
+            if ($currentUser->role === 'cashier') {
+                if ($order->cashier_id != $currentUser->id) {
+                    return response()->json([
+                        'message' => 'You can only edit payment records for bills originally paid by you.'
+                    ], 403);
+                }
+            } else {
+                return response()->json([
+                    'message' => 'You do not have permission to edit payment records.'
+                ], 403);
+            }
+        }
+
+        $validated = $request->validated();
+
+        // Capture previous values
+        $updatedOrder = $this->orderService->updatePayment($id, $validated);
+        $updatedOrder->load('payments');
+
+        return $this->success($updatedOrder, 'Payment updated successfully');
     }
+
 
     public function printDrinkBill(Request $request, $id)
     {
