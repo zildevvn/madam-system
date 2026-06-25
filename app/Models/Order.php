@@ -35,6 +35,11 @@ class Order extends Model
         'order_note',
         'guest_count',
         'parent_order_id',
+        'completed_at',
+    ];
+
+    protected $casts = [
+        'completed_at' => 'datetime',
     ];
 
     public function server()

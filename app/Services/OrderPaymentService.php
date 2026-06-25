@@ -65,6 +65,7 @@ class OrderPaymentService
                     'discount_amount' => $isPrimary ? $groupDiscountAmount : 0, // Keep full amount on primary for history
                     'total_price' => $finalOrderPrice,
                     'updated_at' => $now,
+                    'completed_at' => $o->completed_at ?? $now,
                 ];
 
                 $o->update($updateData);

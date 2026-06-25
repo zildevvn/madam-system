@@ -3,6 +3,8 @@ import { formatPrice } from '../../shared/utils/formatCurrency';
 import { formatLocalDate } from '../../shared/utils/formatLocalDate';
 import { resolveTableName } from '../../shared/utils/normalizeTableStrings';
 import Icon from '../shared/Icon';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { getPaymentEditPermission } from '../../shared/utils/paymentPermissions';
 
 const SummaryCard = React.memo(({ title, value, colorClass }) => {
     return (
@@ -56,6 +58,8 @@ const formatPaymentMethod = (order) => {
     return PAYMENT_METHOD_LABELS[method] || method || '—';
 };
 
+
+
 /**
  * CashierHistoryLane: Renders the payment history lane of the Cashier dashboard.
  * Allows viewing recently completed bills, editing payment details, or reopening orders.
@@ -73,6 +77,7 @@ const CashierHistoryLane = ({
     onDateChange,
     isLoading = false
 }) => {
+    const currentUser = useCurrentUser();
     const todayStr = useMemo(() => formatLocalDate(new Date()), []);
     const yesterdayStr = useMemo(() => {
         const d = new Date();
@@ -192,62 +197,76 @@ const CashierHistoryLane = ({
                 ) : (
                     <>
                         <div className={`grid ${!isCollapsed ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1'} gap-6 overflow-y-auto max-h-[400px] px-2 custom-scrollbar`}>
-                            {formattedOrders.map(order => (
-                                <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-orange-200 transition-all group relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
-                                    {/* Visual indicator of payment method */}
-                                    <div className={`absolute top-0 left-0 w-1 h-full ${getPaymentColorClass(order.payment_method)}`}></div>
+                            {formattedOrders.map(order => {
+                                const permission = getPaymentEditPermission(order, currentUser);
+                                return (
+                                    <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-orange-200 transition-all group relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
+                                        {/* Visual indicator of payment method */}
+                                        <div className={`absolute top-0 left-0 w-1 h-full ${getPaymentColorClass(order.payment_method)}`}></div>
 
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[13px] font-black text-gray-900 uppercase">
-                                                    {order.displayName}
-                                                </span>
-                                                <span className="text-[10px] bg-gray-50 text-gray-400 px-2 py-0.5 rounded-full font-bold">#{order.id}</span>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-[13px] font-black text-gray-900 uppercase">
+                                                        {order.displayName}
+                                                    </span>
+                                                    <span className="text-[10px] bg-gray-50 text-gray-400 px-2 py-0.5 rounded-full font-bold">#{order.id}</span>
+                                                </div>
+                                                <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wide flex items-center gap-1.5 mt-1">
+                                                    <span>{order.formattedTime}</span>
+                                                    <span>•</span>
+                                                    <span>{formatPaymentMethod(order)}</span>
+                                                    {order.guest_count > 0 && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="flex items-center gap-1 text-orange-500">
+                                                                <Icon name="users" className="w-3.5 h-3.5" size={14} />
+                                                                {order.guest_count}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wide flex items-center gap-1.5 mt-1">
-                                                <span>{order.formattedTime}</span>
-                                                <span>•</span>
-                                                <span>{formatPaymentMethod(order)}</span>
-                                                {order.guest_count > 0 && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span className="flex items-center gap-1 text-orange-500">
-                                                            <Icon name="users" className="w-3.5 h-3.5" size={14} />
-                                                            {order.guest_count}
-                                                        </span>
-                                                    </>
+                                            <div className="text-right">
+                                                <div className="text-[16px] font-black text-gray-950 leading-none mb-1">{formatPrice(order.status === 'cancelled' ? 0 : order.total_price)}đ</div>
+                                                {order.status !== 'cancelled' && order.discount_amount > 0 && (
+                                                    <div className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">-{formatPrice(order.discount_amount)}đ</div>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <div className="text-[16px] font-black text-gray-900 leading-none mb-1">{formatPrice(order.status === 'cancelled' ? 0 : order.total_price)}đ</div>
-                                            {order.status !== 'cancelled' && order.discount_amount > 0 && (
-                                                <div className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">-{formatPrice(order.discount_amount)}đ</div>
+
+                                        {order.cashier_note && (
+                                            <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100 italic text-[11px] text-gray-500 leading-relaxed relative flex gap-2">
+                                                <Icon name="message" className="shrink-0 mt-0.5" size={12} />
+                                                <span>{order.cashier_note}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Action Buttons - Visible on hover */}
+                                        <div className="flex flex-col gap-1.5 pt-3 border-t border-gray-50 mt-auto">
+                                            <div className="flex gap-2 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => onEditOrder(order)}
+                                                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${permission.allowed
+                                                        ? 'bg-gray-50 hover:bg-gray-100 text-gray-600'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                    disabled={!permission.allowed || isReopening === order.id}
+                                                    title={permission.reason || ''}
+                                                >
+                                                    <Icon name={permission.allowed ? "pencil" : "lock"} className="w-3 h-3" size={12} />
+                                                    Edit
+                                                </button>
+                                            </div>
+                                            {!permission.allowed && permission.reason && (
+                                                <div className="text-[10px] text-red-500 font-bold italic mt-1 leading-normal">
+                                                    * {permission.reason}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
-
-                                    {order.cashier_note && (
-                                        <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100 italic text-[11px] text-gray-500 leading-relaxed relative flex gap-2">
-                                            <Icon name="message" className="shrink-0 mt-0.5" size={12} />
-                                            <span>{order.cashier_note}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Action Buttons - Visible on hover */}
-                                    <div className="flex gap-2 lg:opacity-0 group-hover:opacity-100 transition-opacity pt-3 border-t border-gray-50 mt-auto">
-                                        <button
-                                            onClick={() => onEditOrder(order)}
-                                            className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
-                                            disabled={isReopening === order.id}
-                                        >
-                                            <Icon name="pencil" className="w-3 h-3" size={12} />
-                                            Edit
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {historyOrders.length === 0 && (
