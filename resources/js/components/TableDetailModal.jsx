@@ -122,7 +122,7 @@ const TableDetailModal = ({
                                     className={`flex justify-between items-start p-2 rounded-lg border transition-all duration-300 ${isOriginalDone ? 'bg-gray-50 border-gray-100 opacity-60 cursor-default' : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 group'}`}
                                 >
                                     <div className="flex items-center gap-4 flex-1">
-                                        <div 
+                                        <div
                                             onClick={() => {
                                                 if (isOriginalDone) return;
                                                 // Toggle full remaining quantity
@@ -138,7 +138,7 @@ const TableDetailModal = ({
                                             <div className="flex items-center justify-between flex-wrap gap-2">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`text-[14px] font-bold transition-all duration-300 ${isFullyDone ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                                                        {item.name}
+                                                        {item.name_vi ? item.name_vi : item.name}
                                                     </span>
                                                     {item.totalQuantity > 1 && (
                                                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg transition-all duration-300 ${isFullyDone ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-500'}`}>
@@ -151,7 +151,7 @@ const TableDetailModal = ({
                                                         </span>
                                                     )}
                                                 </div>
-                                                
+
                                                 {!isOriginalDone && item.totalQuantity > 1 && (
                                                     <div className="flex items-center bg-gray-50 rounded-full p-0.5 border border-gray-200 shadow-sm">
                                                         <button
