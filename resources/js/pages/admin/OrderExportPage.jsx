@@ -267,12 +267,11 @@ export default function OrderExportPage() {
         );
     }
 
-    // ── Render ─────────────────────────────────────────────────────────────────
     return (
-        <div className="flex flex-col gap-6 pb-20">
+        <div className="flex flex-col gap-6 pb-20 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0 overflow-x-hidden">
 
             {/* ── Page Header ────────────────────────────────────────────────── */}
-            <div className="bg-white border-b border-slate-100 p-4 lg:px-6 lg:py-4 sticky top-15 md:top-20 z-[10] -mx-4 lg:-mx-6">
+            <div className="bg-white p-4 lg:px-6 lg:py-4 sticky top:0 z-[10] rounded-[10px] border border-slate-100">
                 <div className="container-order-export mx-auto w-full max-w-7xl flex items-center justify-between gap-4 flex-wrap">
                     <h5 className=" text-slate-900  tracking-tight">
                         Xuất Dữ Liệu Đơn Hàng
@@ -356,7 +355,7 @@ export default function OrderExportPage() {
 
             {/* ── Cashier History Lane Section ────────────────────────────────── */}
             {fetched && !loading && orders.length > 0 && (
-                <div className="bg-[#f8fafc] -mx-4 lg:-mx-6 -mb-20 px-4 lg:px-6 pb-20 pt-8">
+                <div className="lg:-mx-6 -mb-20 px-4 lg:px-6 pb-20 pt-8">
                     <CashierHistoryLane
                         containerClassName="!mt-0"
                         isCollapsed={false}
