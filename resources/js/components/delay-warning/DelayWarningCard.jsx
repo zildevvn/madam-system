@@ -23,7 +23,7 @@ const DelayWarningCard = React.memo(({
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <span className="text-[14px] font-black text-gray-800 leading-none">
-                        {item.name_vi ? `${item.name_vi} - ${item.name}` : item.name}
+                        {item.name_vi ? item.name_vi : item.name}
                     </span>
                 </div>
 
