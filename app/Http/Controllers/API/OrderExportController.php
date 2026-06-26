@@ -81,26 +81,6 @@ class OrderExportController extends Controller
                 'Cross Total QTY',
                 'Cross Total Amount',
                 'Total Due',
-                'PHƯƠNG THỨC THANH TOÁN',
-                '',
-                '',
-                '',
-            ]);
-            fputcsv($handle, [
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
-                '',
                 'CN',
                 'TM',
                 'CK',
@@ -157,10 +137,10 @@ class OrderExportController extends Controller
                             $crossTotalQty,
                             self::formatNumber($crossTotalAmount),
                             self::formatNumber($totalDue),
-                            self::hasPaymentMethod($order, 'debt') ? 'X' : '',
-                            self::hasPaymentMethod($order, 'cash') ? 'X' : '',
-                            self::hasPaymentMethod($order, 'bank') ? 'X' : '',
-                            self::hasPaymentMethod($order, 'card') ? 'X' : '',
+                            self::getPaymentAmount($order, 'debt'),
+                            self::getPaymentAmount($order, 'cash'),
+                            self::getPaymentAmount($order, 'bank'),
+                            self::getPaymentAmount($order, 'card'),
                         ]);
                         continue;
                     }
@@ -182,10 +162,10 @@ class OrderExportController extends Controller
                             $crossTotalQty,
                             self::formatNumber($crossTotalAmount),
                             self::formatNumber($totalDue),
-                            self::hasPaymentMethod($order, 'debt') ? 'X' : '',
-                            self::hasPaymentMethod($order, 'cash') ? 'X' : '',
-                            self::hasPaymentMethod($order, 'bank') ? 'X' : '',
-                            self::hasPaymentMethod($order, 'card') ? 'X' : '',
+                            self::getPaymentAmount($order, 'debt'),
+                            self::getPaymentAmount($order, 'cash'),
+                            self::getPaymentAmount($order, 'bank'),
+                            self::getPaymentAmount($order, 'card'),
                         ]);
                         continue;
                     }
@@ -216,10 +196,10 @@ class OrderExportController extends Controller
                                 $crossTotalQty,
                                 self::formatNumber($crossTotalAmount),
                                 self::formatNumber($totalDue),
-                                self::hasPaymentMethod($order, 'debt') ? 'X' : '',
-                                self::hasPaymentMethod($order, 'cash') ? 'X' : '',
-                                self::hasPaymentMethod($order, 'bank') ? 'X' : '',
-                                self::hasPaymentMethod($order, 'card') ? 'X' : '',
+                                self::getPaymentAmount($order, 'debt'),
+                                self::getPaymentAmount($order, 'cash'),
+                                self::getPaymentAmount($order, 'bank'),
+                                self::getPaymentAmount($order, 'card'),
                             ]);
                             $isFirst = false;
                         } else {
@@ -294,13 +274,13 @@ class OrderExportController extends Controller
         }
 
         $payments = $order->payments ?? collect();
-        
+
         if ($payments->isNotEmpty()) {
             if ($payments->count() === 1) {
                 $p = $payments->first();
                 return self::getPaymentMethodLabel($p->payment_method);
             }
-            
+
             $parts = [];
             foreach ($payments as $p) {
                 $label = self::getPaymentMethodLabel($p->payment_method);
@@ -349,6 +329,32 @@ class OrderExportController extends Controller
         }
 
         return strtolower($order->payment_method ?? '') === strtolower($method);
+    }
+
+    private static function getPaymentAmount($order, string $method): string
+    {
+        if (!$order || strtolower($order->status ?? '') === 'cancelled') {
+            return '';
+        }
+
+        $payments = $order->payments ?? collect();
+        if ($payments->isNotEmpty()) {
+            $matching = $payments->filter(function ($payment) use ($method) {
+                return strtolower($payment->payment_method ?? '') === strtolower($method);
+            });
+            if ($matching->isEmpty()) {
+                return '';
+            }
+            $sum = $matching->sum('amount');
+            return $sum > 0 ? self::formatNumber($sum) : '';
+        }
+
+        if (strtolower($order->payment_method ?? '') === strtolower($method)) {
+            $total = (float) ($order->total_price ?? 0);
+            return $total > 0 ? self::formatNumber($total) : '';
+        }
+
+        return '';
     }
 
     private function buildQuery(Request $request)

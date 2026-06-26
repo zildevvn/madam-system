@@ -47,6 +47,23 @@ const hasPaymentMethod = (order, methodKey) => {
     return order.payment_method === methodKey;
 };
 
+const getPaymentAmount = (order, methodKey) => {
+    if (!order) return '';
+    if (order.status === 'cancelled') return '';
+    const payments = order.payments || [];
+    if (payments.length > 0) {
+        const matchingPayments = payments.filter(p => p.payment_method === methodKey);
+        if (matchingPayments.length === 0) return '';
+        const sum = matchingPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        return sum > 0 ? formatPrice(sum) : '';
+    }
+    if (order.payment_method === methodKey) {
+        const total = Number(order.total_price) || 0;
+        return total > 0 ? formatPrice(total) : '';
+    }
+    return '';
+};
+
 const PERIODS = [
     { id: 'day', label: 'Ngày' },
     { id: 'week', label: 'Tuần' },
@@ -347,7 +364,7 @@ export default function OrderExportPage() {
                         onEditOrder={handleEditHistoryOrder}
                         isReopening={isReopening}
                         hideHeader={true}
-                        hideSummary={true}
+                        hideSummary={false}
                     />
                 </div>
             )}
@@ -389,19 +406,9 @@ export default function OrderExportPage() {
                                         {[
                                             'STT', 'No', 'Table', 'Arrival Time', 'Printed',
                                             'Cashier', 'Items', 'Name VI', 'Name', 'QTY', 'Total',
-                                            'Cross Total QTY', 'Cross Total Amount', 'Total Due'
+                                            'Cross Total QTY', 'Cross Total Amount', 'Total Due', 'CN', 'TM', 'CK', 'CT'
                                         ].map(h => (
-                                            <th key={h} rowSpan={2} className="sticky top-0 z-10 px-3 py-3 text-left font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap align-middle">
-                                                {h}
-                                            </th>
-                                        ))}
-                                        <th colSpan={4} className="sticky top-0 z-10 px-3 py-1.5 text-center font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap">
-                                            PHƯƠNG THỨC THANH TOÁN
-                                        </th>
-                                    </tr>
-                                    <tr className="bg-[#f3f4f6] text-[#111827] border-b border-[#e5e7eb]">
-                                        {['CN', 'TM', 'CK', 'CT'].map(h => (
-                                            <th key={h} className="sticky top-[38px] z-10 px-3 py-1.5 text-center font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap">
+                                            <th key={h} className="sticky top-0 z-10 px-3 py-3 text-left font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap align-middle">
                                                 {h}
                                             </th>
                                         ))}
@@ -485,19 +492,19 @@ export default function OrderExportPage() {
                                                 </td>
                                                 {/* CN */}
                                                 <td className="px-3 py-2.5 text-center font-bold text-[#1f2937] whitespace-nowrap">
-                                                    {isFirstItemInOrder && hasPaymentMethod(order, 'debt') ? 'X' : ''}
+                                                    {isFirstItemInOrder ? getPaymentAmount(order, 'debt') : ''}
                                                 </td>
                                                 {/* TM */}
                                                 <td className="px-3 py-2.5 text-center font-bold text-[#1f2937] whitespace-nowrap">
-                                                    {isFirstItemInOrder && hasPaymentMethod(order, 'cash') ? 'X' : ''}
+                                                    {isFirstItemInOrder ? getPaymentAmount(order, 'cash') : ''}
                                                 </td>
                                                 {/* CK */}
                                                 <td className="px-3 py-2.5 text-center font-bold text-[#1f2937] whitespace-nowrap">
-                                                    {isFirstItemInOrder && hasPaymentMethod(order, 'bank') ? 'X' : ''}
+                                                    {isFirstItemInOrder ? getPaymentAmount(order, 'bank') : ''}
                                                 </td>
                                                 {/* CT */}
                                                 <td className="px-3 py-2.5 text-center font-bold text-[#1f2937] whitespace-nowrap">
-                                                    {isFirstItemInOrder && hasPaymentMethod(order, 'card') ? 'X' : ''}
+                                                    {isFirstItemInOrder ? getPaymentAmount(order, 'card') : ''}
                                                 </td>
                                             </tr>
                                         );

@@ -8,7 +8,7 @@ import { getPaymentEditPermission } from '../../shared/utils/paymentPermissions'
 
 const SummaryCard = React.memo(({ title, value, colorClass }) => {
     return (
-        <div className="flex flex-col bg-white p-3 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col bg-white p-3 rounded-sm shadow-sm border border-gray-100 relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-full h-[3px] ${colorClass}`}></div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{title}</span>
             <span className="text-[14px] font-black text-gray-900 mt-1">{formatPrice(value)}đ</span>
@@ -29,10 +29,10 @@ const getPaymentColorClass = (method) => {
     switch ((method || '').toLowerCase()) {
         case 'cash': return 'bg-green-400';
         case 'bank': return 'bg-blue-400';
-        case 'card': return 'bg-purple-400';
+        case 'card': return 'bg-emerald-500';
         case 'debt': return 'bg-orange-400';
-        case 'split': return 'bg-teal-400';
-        default: return 'bg-gray-400';
+        case 'split': return 'bg-red-400';
+        default: return 'bg-red-500';
     }
 };
 
@@ -185,11 +185,12 @@ const CashierHistoryLane = ({
                     </div>
                 )}
 
+
                 {!isCollapsed && !hideSummary && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2 py-3 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                        <SummaryCard title="Tiền mặt (Cash)" value={totals.cash} colorClass="bg-green-400" />
-                        <SummaryCard title="Chuyển khoản (Bank)" value={totals.bank} colorClass="bg-blue-400" />
-                        <SummaryCard title="Cà thẻ (Card)" value={totals.card} colorClass="bg-purple-400" />
+                        <SummaryCard title="Tiền mặt (Cash)" value={totals.cash} colorClass="bg-green-500" />
+                        <SummaryCard title="Chuyển khoản (Bank)" value={totals.bank} colorClass="bg-blue-500" />
+                        <SummaryCard title="Cà thẻ (Card)" value={totals.card} colorClass="bg-emerald-500" />
                         <SummaryCard title="Ghi nợ (Debt)" value={totals.debt} colorClass="bg-orange-400" />
                     </div>
                 )}
@@ -204,7 +205,7 @@ const CashierHistoryLane = ({
                             {formattedOrders.map(order => {
                                 const permission = getPaymentEditPermission(order, currentUser);
                                 return (
-                                    <div key={order.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:border-orange-200 transition-all group relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
+                                    <div key={order.id} className="bg-white rounded-sm border border-gray-100 p-5 shadow-sm hover:border-orange-200 transition-all group relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
                                         {/* Visual indicator of payment method */}
                                         <div className={`absolute top-0 left-0 w-1 h-full ${getPaymentColorClass(order.payment_method)}`}></div>
 
