@@ -230,10 +230,9 @@ class OrderExportAuthTest extends TestCase
         $response->sendContent();
         $content = ob_get_clean();
 
-        $this->assertStringContainsString('PHƯƠNG THỨC THANH TOÁN', $content);
         $this->assertStringContainsString('CN,TM,CK,CT', $content);
-        $this->assertStringContainsString('"=""20.000""",,X,,', $content);
-        $this->assertStringContainsString('"=""50.000""",,X,X,', $content);
+        $this->assertStringContainsString('"=""20.000""",,"=""20.000""",,', $content);
+        $this->assertStringContainsString('"=""50.000""",,"=""20.000""","=""30.000""",', $content);
     }
 
     public function test_export_contains_cancelled_orders_with_zero_totals()

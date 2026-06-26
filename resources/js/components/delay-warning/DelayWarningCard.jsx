@@ -1,5 +1,4 @@
 import React from 'react';
-import { safeParseDate } from '../../shared/utils/dateUtils';
 import { ADDITIONAL_ITEM_THRESHOLD_MS, NEW_ORDER_PULSING_TIMEOUT_S } from '../../shared/constants/orderThresholds';
 import Icon from '../shared/Icon';
 
