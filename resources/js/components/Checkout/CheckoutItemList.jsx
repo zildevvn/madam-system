@@ -21,10 +21,10 @@ const CheckoutItemList = ({
         const groups = {};
         selectedItems.forEach(item => {
             // Group by split status, product_id, and note.
-            const groupKey = item.isSplit 
-                ? `split-${item.id}` 
+            const groupKey = item.isSplit
+                ? `split-${item.id}`
                 : (item.product_id ? `prod-${item.product_id}-${item.note || ''}` : `custom-${item.name}-${item.note || ''}`);
-            
+
             const itemKey = item.order_item_id || item.id;
             const originalQty = originalItems[itemKey]?.quantity || 0;
 
@@ -71,7 +71,7 @@ const CheckoutItemList = ({
                 const id = group.originalIds[i];
                 const item = selectedItems.find(it => it.id === id);
                 if (!item) continue;
-                
+
                 if (item.quantity > remainingDiff) {
                     handleUpdateQuantity(id, item.quantity - remainingDiff);
                     break;
@@ -112,7 +112,7 @@ const CheckoutItemList = ({
                             const isSelected = !!splitItem;
 
                             return (
-                                <div key={group.groupKey || index} className="flex items-start gap-3">
+                                <div key={group.originalIds[0]} className="flex items-start gap-3">
                                     {isSplitMode && !group.isSplit && group.order_item_id && (
                                         <div className="flex flex-col items-center gap-2 pt-4">
                                             <input
@@ -133,11 +133,11 @@ const CheckoutItemList = ({
                                                     >
                                                         <Icon name="minus" className="w-3 h-3" size={12} />
                                                     </button>
- 
+
                                                     <span className="px-2 font-black text-gray-800 text-[10px] min-w-[18px] text-center">
                                                         {splitItem.quantity}
                                                     </span>
- 
+
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
