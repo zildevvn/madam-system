@@ -66,8 +66,27 @@ export const usePaymentLogic = ({
         globalDiscountAmount: discountAmount,
         finalTotal
     } = useMemo(() => {
+        if (isHistoryEdit && currentOrder) {
+            // [BUGFIX] For historical orders, DO NOT recalculate totals based on draftItems.
+            // draftItems may only contain a partial list of items (e.g. for merged tables),
+            // which causes the recalculated global discount and final total to be incorrect.
+            // Always use the exact values saved by the backend.
+            const calculatedItemDiscounts = draftItems.reduce((sum, item) => {
+                const type = item.discountType || item.discount_type || 'fixed';
+                const val = Number(item.discount || 0);
+                if (type === 'percent') return sum + (item.price * item.quantity * val / 100);
+                return sum + (val * item.quantity);
+            }, 0);
+            
+            return {
+                grossTotal: Number(currentOrder.subtotal) + calculatedItemDiscounts, 
+                itemDiscountsTotal: calculatedItemDiscounts,
+                globalDiscountAmount: Number(currentOrder.discount_amount || 0),
+                finalTotal: Number(currentOrder.total_price || 0)
+            };
+        }
         return calculateTotals(draftItems, { type: discountType, value: discountValue });
-    }, [draftItems, discountType, discountValue]);
+    }, [draftItems, discountType, discountValue, isHistoryEdit, currentOrder]);
 
     const handlePayment = useCallback(async () => {
         if (!currentOrder || !paymentMethod || isProcessing) return;

@@ -26,10 +26,26 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
 
     const orderItems = order.items || [];
 
+    const formatReceiptDate = (date) => {
+        if (!date) return '-';
+        return new Intl.DateTimeFormat('vi-VN', {
+            hour: '2-digit', minute: '2-digit',
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        }).format(new Date(date)).replace(',', '');
+    };
+
+    // [BUGFIX] For completed historical orders, we MUST use the exact totals saved by the backend.
+    // Recalculating from items can be incorrect if the order is part of a merged table
+    // (where items might be on sibling orders) or due to rounding differences.
+    const isCompleted = order.status === 'completed';
+
+    const grossTotal = orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const totalQuantity = orderItems.reduce((total, item) => total + item.quantity, 0);
+
     // [WHY] Per-item discounts must be summed separately from global discount
     const itemDiscountsTotal = orderItems.reduce((sum, i) => {
         const val = Number(i.discount || 0);
-        const type = i.discountType || 'fixed';
+        const type = i.discountType || i.discount_type || 'fixed'; // [FIX] Support snake_case from DB
         const itemGross = i.price * i.quantity;
 
         if (type === 'percent') {
@@ -38,24 +54,26 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
         return sum + (val * i.quantity);
     }, 0);
 
-    const grossTotal = orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const totalQuantity = orderItems.reduce((total, item) => total + item.quantity, 0);
-
-    // [WHY] Global discount applies to the total AFTER item discounts
+    // Calculate dynamic values for active orders
     const remainingAfterItemDiscounts = Math.max(0, grossTotal - itemDiscountsTotal);
-    const globalDiscountAmount = discountType === 'percent'
+    const calculatedGlobalDiscount = discountType === 'percent'
         ? Math.min(remainingAfterItemDiscounts, (remainingAfterItemDiscounts * discountValue) / 100)
         : Math.min(remainingAfterItemDiscounts, discountValue);
 
-    const finalTotal = Math.max(0, remainingAfterItemDiscounts - globalDiscountAmount);
+    // Use saved DB values for completed orders to ensure 100% accuracy, otherwise fallback to calculated
+    const globalDiscountAmount = isCompleted && order.discount_amount !== undefined
+        ? Number(order.discount_amount)
+        : calculatedGlobalDiscount;
 
-    const formatReceiptDate = (date) => {
-        if (!date) return '-';
-        return new Intl.DateTimeFormat('vi-VN', {
-            hour: '2-digit', minute: '2-digit',
-            day: '2-digit', month: '2-digit', year: 'numeric'
-        }).format(new Date(date)).replace(',', '');
-    };
+    const finalTotal = isCompleted && order.total_price !== undefined
+        ? Number(order.total_price)
+        : Math.max(0, remainingAfterItemDiscounts - globalDiscountAmount);
+
+    // [FIX] For merged tables, the grossTotal calculated from items might be incomplete.
+    // We reverse-engineer the true gross total from the saved subtotal + item discounts.
+    const displayGrossTotal = isCompleted && order.subtotal !== undefined
+        ? Number(order.subtotal) + itemDiscountsTotal
+        : grossTotal;
 
     // ─── LOGIC: Table & Group Info ───
     const isGroupReservation = order.reservation && order.reservation.type === 'group';
@@ -168,7 +186,7 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                             const sectionGross = tableItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
                             const sectionDiscount = tableItems.reduce((sum, i) => {
                                 const val = Number(i.discount || 0);
-                                const type = i.discountType || 'fixed';
+                                const type = i.discountType || i.discount_type || 'fixed';
                                 if (type === 'percent') return sum + (i.price * i.quantity * val / 100);
                                 return sum + (val * i.quantity);
                             }, 0);
@@ -192,8 +210,8 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                     )}
                                     {Object.values(tableItems.reduce((grp, item) => {
                                         const k = item.product_id
-                                            ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`
-                                            : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || 'fixed'}`;
+                                            ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || item.discount_type || 'fixed'}`
+                                            : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discountType || item.discount_type || 'fixed'}`;
                                         if (!grp[k]) {
                                             grp[k] = { ...item, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
                                         } else {
@@ -203,7 +221,7 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                                         return grp;
                                     }, {})).map((item, idx) => {
                                         const val = Number(item.discount || 0);
-                                        const type = item.discountType || 'fixed';
+                                        const type = item.discountType || item.discount_type || 'fixed';
                                         let itemDiscount;
                                         if (type === 'percent') {
                                             itemDiscount = (item.price * val / 100);
