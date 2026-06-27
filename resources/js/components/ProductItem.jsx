@@ -80,14 +80,16 @@ export default function ProductItem({
 
     const addedQuantity = Math.max(0, item.quantity - originalQuantity);
 
+
     return (
         <div className="product-item bg-surface-container-lowest py-3 border-b border-gray-100 last:border-0 flex flex-col gap-2">
             <div className="flex justify-between items-start gap-2">
                 <div className="space-y-1">
                     <div className="flex items-center flex-wrap gap-2">
                         <h3 className="font-medium">
-                            {item.name_vi ? `${item.name_vi} - ${item.name}` : item.name}
+                            {(item.name_vi || item.product?.name_vi) ? `${item.name_vi || item.product?.name_vi} - ${item.name || item.product?.name}` : (item.name || item.product?.name || 'Product')}
                         </h3>
+
                         {item.isSplit && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200 animate-in fade-in zoom-in-50 duration-200">
                                 Đã tách ({item.splitOrderName})

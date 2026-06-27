@@ -94,8 +94,8 @@ const PaymentItemEditor = ({
             const sectionReadOnly = isSharedSection && isUnifiedGroup;
 
             const consolidatedMap = tableItems.reduce((grp, item) => {
-                const k = item.product_id 
-                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}` 
+                const k = item.product_id
+                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}`
                     : `custom-${item.name}-${item.note || ''}-${item.price}`;
                 if (!grp[k]) {
                     grp[k] = { ...item, mergeKey: k, originalIds: [item.id || item.order_item_id], quantity: item.quantity };
