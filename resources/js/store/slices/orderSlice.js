@@ -198,56 +198,62 @@ const orderSlice = createSlice({
         state.orderType = order.order_type;
         state.tableId = order.table_id;
         state.mergedTables = order.merged_tables;
-        state.orderNote = order.order_note || '';
-        state.guestCount = order.guest_count || 1;
-        state.isModified = false;
         
-        // Surgical items update
-        state.items.byId = {};
-        state.items.allIds = [];
-        state.originalItems = {};
-        
-        if (order.items) {
-          order.items.forEach(orderItem => {
-            const product = orderItem.product;
-            const uniqueKey = `item-${orderItem.id}`;
-            const itemData = product
-              ? { 
-                  ...product, 
-                  id: uniqueKey,
-                  product_id: product.id,
-                  order_item_id: orderItem.id,
-                  quantity: Number(orderItem.quantity), 
-                  note: orderItem.note || '',
-                  discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
-                }
-              : {
-                  id: uniqueKey,
-                  product_id: null,
-                  order_item_id: orderItem.id,
-                  name: orderItem.name || 'Custom Item',
-                  price: Number(orderItem.price),
-                  type: orderItem.type || 'food',
-                  quantity: Number(orderItem.quantity),
-                  note: orderItem.note || '',
-                  discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed',
-                  isCustom: true
-                };
-            state.items.byId[uniqueKey] = itemData;
-            state.originalItems[uniqueKey] = { 
-              quantity: Number(orderItem.quantity), 
-              note: orderItem.note || '', 
-              type: product ? product.type : (orderItem.type || 'food')
-            };
-            if (!state.items.allIds.includes(uniqueKey)) {
-              state.items.allIds.push(uniqueKey);
-            }
-          });
-        }
+        // [BUGFIX] If the user has local unsaved modifications (like new items or typing a note),
+        // we must NOT overwrite the state with the backend payload. Overwriting here
+        // would wipe out newly added items when the debounced note-update triggers a socket event.
+        if (!state.isModified) {
+          state.orderNote = order.order_note || '';
+          state.guestCount = order.guest_count || 1;
+          state.isModified = false;
+          
+          // Surgical items update
+          state.items.byId = {};
+          state.items.allIds = [];
+          state.originalItems = {};
+          
+          if (order.items) {
+            order.items.forEach(orderItem => {
+              const product = orderItem.product;
+              const uniqueKey = `item-${orderItem.id}`;
+              const itemData = product
+                ? { 
+                    ...product, 
+                    id: uniqueKey,
+                    product_id: product.id,
+                    order_item_id: orderItem.id,
+                    quantity: Number(orderItem.quantity), 
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed'
+                  }
+                : {
+                    id: uniqueKey,
+                    product_id: null,
+                    order_item_id: orderItem.id,
+                    name: orderItem.name || 'Custom Item',
+                    price: Number(orderItem.price),
+                    type: orderItem.type || 'food',
+                    quantity: Number(orderItem.quantity),
+                    note: orderItem.note || '',
+                    discount: orderItem.discount || 0,
+                    discountType: orderItem.discount_type || 'fixed',
+                    isCustom: true
+                  };
+              state.items.byId[uniqueKey] = itemData;
+              state.originalItems[uniqueKey] = { 
+                quantity: Number(orderItem.quantity), 
+                note: orderItem.note || '', 
+                type: product ? product.type : (orderItem.type || 'food')
+              };
+              if (!state.items.allIds.includes(uniqueKey)) {
+                state.items.allIds.push(uniqueKey);
+              }
+            });
+          }
 
-        processChildOrders(state, order);
+          processChildOrders(state, order);
+        }
       }
     },
   },

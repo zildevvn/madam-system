@@ -35,15 +35,17 @@ const CheckoutOrderNote = ({ orderNote, onUpdateOrderNote }) => {
                     <Icon name="pencil" className="w-3.5 h-3.5 text-orange-400 shrink-0" size={14} />
                     Ghi chú bàn
                 </label>
+
                 <textarea
                     id="order-note"
                     rows={2}
                     value={localNote}
                     onChange={handleChange}
                     placeholder="Thêm ghi chú cho bàn này..."
-                    className="w-full text-sm text-gray-700 placeholder-gray-300 border border-gray-100 rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all"
+                    className="w-full text-[16px] text-gray-700 placeholder-gray-300 border border-gray-100 rounded-xl px-3 py-2 resize-none transition-all"
                     maxLength={500}
                 />
+
                 {localNote.length > 400 && (
                     <p className="text-right text-xs text-gray-400 mt-1">{localNote.length}/500</p>
                 )}
