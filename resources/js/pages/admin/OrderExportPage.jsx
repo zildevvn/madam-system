@@ -210,7 +210,19 @@ export default function OrderExportPage() {
             const isCancelled = order.status === 'cancelled';
             const items = order.items || [];
             const crossTotalQty = isCancelled ? 0 : items.reduce((s, i) => s + (i.quantity || 0), 0);
-            const crossTotalAmount = isCancelled ? 0 : items.reduce((s, i) => s + ((i.price || 0) * (i.quantity || 0)), 0);
+            const crossTotalAmount = isCancelled ? 0 : items.reduce((s, i) => {
+                const qty = i.quantity || 0;
+                const price = i.price || 0;
+                const disc = Number(i.discount || 0);
+                const type = i.discount_type || i.discountType || 'fixed';
+                let itemDisc = 0;
+                if (type === 'percent') {
+                    itemDisc = (price * disc / 100);
+                } else {
+                    itemDisc = disc;
+                }
+                return s + ((price * qty) - (itemDisc * qty));
+            }, 0);
             const totalDue = isCancelled ? 0 : Number(order.total_price || 0);
             const tableName = order.table?.name || order.merged_tables || '—';
             const cashierName = order.cashier?.name || 'Admin';
@@ -231,7 +243,21 @@ export default function OrderExportPage() {
                 });
                 return;
             }
-            items.forEach((item, itemIdx) => {
+            const groupedItems = Object.values(items.reduce((grp, item) => {
+                const type = item.discount_type || item.discountType || 'fixed';
+                const k = item.product_id
+                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${type}`
+                    : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${type}`;
+                if (!grp[k]) {
+                    grp[k] = { ...item, originalIds: [item.id || item.order_item_id], quantity: item.quantity || 0 };
+                } else {
+                    grp[k].originalIds.push(item.id || item.order_item_id);
+                    grp[k].quantity += (item.quantity || 0);
+                }
+                return grp;
+            }, {}));
+
+            groupedItems.forEach((item, itemIdx) => {
                 result.push({
                     stt: orderStt,
                     order,
@@ -420,7 +446,19 @@ export default function OrderExportPage() {
                                         const defaultName = item?.name || item?.product?.name || '—';
                                         const itemName = nameVi ? `${nameVi} - ${defaultName}` : defaultName;
                                         const qty = item?.quantity ?? 0;
-                                        const itemTotal = order.status === 'cancelled' ? 0 : ((item?.price ?? 0) * qty);
+                                        let itemTotal = 0;
+                                        if (order.status !== 'cancelled' && item) {
+                                            const price = item.price || 0;
+                                            const disc = Number(item.discount || 0);
+                                            const type = item.discount_type || item.discountType || 'fixed';
+                                            let itemDisc = 0;
+                                            if (type === 'percent') {
+                                                itemDisc = (price * disc / 100);
+                                            } else {
+                                                itemDisc = disc;
+                                            }
+                                            itemTotal = (price * qty) - (itemDisc * qty);
+                                        }
                                         const isFirstItemInOrder = row.isFirstItem;
 
                                         // Soft Zebra stripe by order (STT)

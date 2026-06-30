@@ -104,7 +104,19 @@ class OrderExportController extends Controller
 
                     // ── Aggregates (mirrors frontend useMemo row expansion) ────
                     $crossTotalQty = $isCancelled ? 0 : $items->sum('quantity');
-                    $crossTotalAmount = $isCancelled ? 0 : $items->sum(fn($i) => ($i->price ?? 0) * ($i->quantity ?? 0));
+                    $crossTotalAmount = $isCancelled ? 0 : $items->sum(function($i) {
+                        $qty = $i->quantity ?? 0;
+                        $price = $i->price ?? 0;
+                        $disc = $i->discount ?? 0;
+                        $type = $i->discount_type ?? 'fixed';
+                        $itemDisc = 0;
+                        if ($type === 'percent') {
+                            $itemDisc = ($price * $disc / 100);
+                        } else {
+                            $itemDisc = $disc;
+                        }
+                        return ($price * $qty) - ($itemDisc * $qty);
+                    });
                     $totalDue = $isCancelled ? 0.0 : (float) ($order->total_price ?? 0);
 
                     $tableName = $order->table->name ?? ($order->merged_tables ?? '—');
@@ -171,10 +183,46 @@ class OrderExportController extends Controller
                     }
 
                     // ── Per-item rows — isFirstItem grouping mirrors the UI ───
-                    $isFirst = true;
+                    $groupedItems = [];
                     foreach ($items as $item) {
+                        $type = $item->discount_type ?? 'fixed';
+                        $discount = $item->discount ?? 0;
+                        $price = $item->price ?? 0;
+                        $note = $item->note ?? '';
+                        
+                        if ($item->product_id) {
+                            $k = "prod-{$item->product_id}-{$note}-{$price}-{$discount}-{$type}";
+                        } else {
+                            $name = $item->name ?? '';
+                            $k = "custom-{$name}-{$note}-{$price}-{$discount}-{$type}";
+                        }
+                        
+                        if (!isset($groupedItems[$k])) {
+                            // Clone to avoid modifying the original model instance
+                            $clonedItem = clone $item;
+                            $clonedItem->quantity = $item->quantity ?? 0;
+                            $groupedItems[$k] = $clonedItem;
+                        } else {
+                            $groupedItems[$k]->quantity += ($item->quantity ?? 0);
+                        }
+                    }
+
+                    $isFirst = true;
+                    foreach ($groupedItems as $item) {
                         $itemQty = $item->quantity ?? 0;
-                        $itemTotal = $isCancelled ? 0 : (($item->price ?? 0) * $itemQty);
+                        $itemTotal = 0;
+                        if (!$isCancelled) {
+                            $price = $item->price ?? 0;
+                            $disc = $item->discount ?? 0;
+                            $type = $item->discount_type ?? 'fixed';
+                            $itemDisc = 0;
+                            if ($type === 'percent') {
+                                $itemDisc = ($price * $disc / 100);
+                            } else {
+                                $itemDisc = $disc;
+                            }
+                            $itemTotal = ($price * $itemQty) - ($itemDisc * $itemQty);
+                        }
                         $nameVi = $item->product->name_vi ?? $item->name_vi ?? null;
                         $defaultName = $item->name ?? ($item->product->name ?? 'Unknown');
                         $itemName = $nameVi ? "{$nameVi} - {$defaultName}" : $defaultName;

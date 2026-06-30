@@ -29,7 +29,7 @@ const getPaymentColorClass = (method) => {
     switch ((method || '').toLowerCase()) {
         case 'cash': return 'bg-green-400';
         case 'bank': return 'bg-blue-400';
-        case 'card': return 'bg-emerald-500';
+        case 'card': return 'bg-violet-800';
         case 'debt': return 'bg-orange-400';
         case 'split': return 'bg-red-400';
         default: return 'bg-red-500';
@@ -190,7 +190,7 @@ const CashierHistoryLane = ({
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-2 py-3 bg-gray-50/50 rounded-2xl border border-gray-100/50">
                         <SummaryCard title="Tiền mặt (Cash)" value={totals.cash} colorClass="bg-green-500" />
                         <SummaryCard title="Chuyển khoản (Bank)" value={totals.bank} colorClass="bg-blue-500" />
-                        <SummaryCard title="Cà thẻ (Card)" value={totals.card} colorClass="bg-emerald-500" />
+                        <SummaryCard title="Cà thẻ (Card)" value={totals.card} colorClass="bg-violet-800" />
                         <SummaryCard title="Ghi nợ (Debt)" value={totals.debt} colorClass="bg-orange-400" />
                     </div>
                 )}
