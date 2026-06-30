@@ -79,6 +79,9 @@ export const useCashierSegmentation = (orders, allTables) => {
                 }
                 parentGroup.is_printed = parentGroup.is_printed || order.is_printed;
                 parentGroup.print_count = Math.max(parentGroup.print_count || 0, Number(order.print_count || 0));
+                const printedAts = [parentGroup.printed_at, parentGroup.printedAt, order.printed_at, order.printedAt].filter(Boolean);
+                parentGroup.printed_at = printedAts.sort().reverse()[0] || null;
+                parentGroup.printedAt = parentGroup.printed_at;
                 // Return early so this order doesn't show up in Individual Lane
                 return;
             }
@@ -121,6 +124,8 @@ export const useCashierSegmentation = (orders, allTables) => {
                     items: order.items.filter(i => mainOrderIds.includes(i.order_id)),
                     is_printed: mainOrders.some(o => o.is_printed),
                     print_count: Math.max(0, ...mainOrders.map(o => Number(o.print_count || 0))),
+                    printed_at: mainOrders.map(o => o.printed_at || o.printedAt).filter(Boolean).sort().reverse()[0] || null,
+                    printedAt: mainOrders.map(o => o.printed_at || o.printedAt).filter(Boolean).sort().reverse()[0] || null,
                     hasUnpaidSplits: true
                 };
 
@@ -146,6 +151,8 @@ export const useCashierSegmentation = (orders, allTables) => {
                         items: order.items.filter(i => i.order_id === subOrder.id),
                         is_printed: subOrder.is_printed,
                         print_count: Number(subOrder.print_count || 0),
+                        printed_at: subOrder.printed_at || subOrder.printedAt || null,
+                        printedAt: subOrder.printed_at || subOrder.printedAt || null,
                         hasUnpaidSplits: true
                     };
 

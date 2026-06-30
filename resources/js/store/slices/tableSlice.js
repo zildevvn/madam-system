@@ -92,12 +92,16 @@ const tableSlice = createSlice({
         if (table?.active_order && allTargetIds.includes(table.active_order.id)) {
           table.active_order.is_printed = true;
           table.active_order.print_count = (Number(table.active_order.print_count) || 0) + 1;
+          table.active_order.printed_at = new Date().toISOString();
+          table.active_order.printedAt = table.active_order.printed_at;
         }
         if (table?.active_orders) {
           table.active_orders.forEach(o => {
             if (allTargetIds.includes(o.id)) {
               o.is_printed = true;
               o.print_count = (Number(o.print_count) || 0) + 1;
+              o.printed_at = new Date().toISOString();
+              o.printedAt = o.printed_at;
             }
           });
         }

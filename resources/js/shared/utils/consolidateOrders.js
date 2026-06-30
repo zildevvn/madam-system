@@ -202,6 +202,9 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
             group.relatedOrderIds = group.orders.map(o => o.id);
             group.is_printed = group.orders.some(o => o.is_printed || o.is_printed === 1 || o.is_printed === '1');
             group.print_count = Math.max(0, ...group.orders.map(o => Number(o.print_count || 0)));
+            const printedAts = group.orders.map(o => o.printed_at || o.printedAt).filter(Boolean);
+            group.printed_at = printedAts.length > 0 ? printedAts.sort().reverse()[0] : null;
+            group.printedAt = group.printed_at;
 
             // [WHY] Only use the real `server` relationship from the database.
             // [RULE] Never fall back to localStorage user — that identity belongs to the current

@@ -533,7 +533,10 @@ class OrderService
             // updated_at. The history view filters by whereDate('updated_at', $date), so any
             // Eloquent update/increment would re-date historical bills to today, causing them
             // to disappear from their original date when printing an old invoice.
-            DB::table('orders')->whereIn('id', $orderIds)->update(['is_printed' => true]);
+            DB::table('orders')->whereIn('id', $orderIds)->update([
+                'is_printed' => true,
+                'printed_at' => now()
+            ]);
             DB::table('orders')->whereIn('id', $orderIds)->increment('print_count');
         });
 

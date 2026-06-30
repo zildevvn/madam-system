@@ -24,6 +24,7 @@ class Order extends Model
         'order_type',
         'status',
         'is_printed',
+        'printed_at',
         'print_count',
         'subtotal',
         'total_price',
@@ -40,6 +41,7 @@ class Order extends Model
 
     protected $casts = [
         'completed_at' => 'datetime',
+        'printed_at' => 'datetime',
     ];
 
     public function server()

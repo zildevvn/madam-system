@@ -21,7 +21,30 @@ export const calculateTableStatus = (order, currentTimeTs, options = {}) => {
     // [WHY] Printed state is only meaningful on the Cashier page.
     // [RULE] showPrintedState must be explicitly true — never apply globally.
     if (showPrintedState && (order.is_printed || order.isPrinted)) {
-        return { statusClass: "mdt-bg-red !text-white", duration: showSimpleView ? "Đã in" : "ĐÃ IN BILL", isNewOrder: false };
+        let printedDuration = showSimpleView ? "Đã in" : "ĐÃ IN BILL";
+        const printedAt = order.printed_at || order.printedAt;
+        
+        if (printedAt) {
+            const printedTs = new Date(printedAt).getTime();
+            if (!isNaN(printedTs)) {
+                const diffMs = Math.max(0, currentTimeTs - printedTs);
+                const diffMins = Math.floor(diffMs / 60000);
+                
+                if (diffMins < 1) {
+                    printedDuration = "Vừa xong";
+                } else {
+                    const hours = Math.floor(diffMins / 60);
+                    const mins = diffMins % 60;
+                    if (hours > 0) {
+                        printedDuration = mins > 0 ? `${hours} giờ ${mins} phút` : `${hours} giờ`;
+                    } else {
+                        printedDuration = `${mins} phút`;
+                    }
+                }
+            }
+        }
+        
+        return { statusClass: "mdt-bg-red !text-white", duration: printedDuration, isNewOrder: false };
     }
 
     if (showSimpleView) return { statusClass: "is-busy", duration: "", isNewOrder: false };
