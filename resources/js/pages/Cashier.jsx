@@ -14,10 +14,10 @@ import orderApi from '../services/orderApi';
 import { formatLocalDate } from '../shared/utils/formatLocalDate';
 
 // Components
-import CashierIndividualLane from '../components/Cashier/CashierIndividualLane';
-import CashierGroupLane from '../components/Cashier/CashierGroupLane';
-import CashierHistoryLane from '../components/Cashier/CashierHistoryLane';
-import CheckoutManager from '../components/Cashier/CheckoutManager';
+import CashierIndividualLane from '../components/cashier/CashierIndividualLane';
+import CashierGroupLane from '../components/cashier/CashierGroupLane';
+import CashierHistoryLane from '../components/cashier/CashierHistoryLane';
+import CheckoutManager from '../components/cashier/CheckoutManager';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 
 const COLLAPSE_ZONES = {

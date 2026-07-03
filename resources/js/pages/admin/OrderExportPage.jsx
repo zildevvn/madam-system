@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { selectAllTables, fetchTables } from '../../store/slices/tableSlice';
 import { ROLES } from '../../shared/constants/roles';
 import { formatPrice } from '../../shared/utils/formatCurrency';
 import orderExportApi from '../../services/orderExportApi';
@@ -74,7 +75,9 @@ const PERIODS = [
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function OrderExportPage() {
+    const dispatch = useAppDispatch();
     const user = useAppSelector(state => state.auth.user);
+    const allTables = useAppSelector(selectAllTables);
 
     // ── State ──────────────────────────────────────────────────────────────────
     // Period selector (mirrors Financial Management pattern)
@@ -156,6 +159,13 @@ export default function OrderExportPage() {
     // Automatically load data on initial page load
     useEffect(() => {
         handleFetch();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (allTables.length === 0) {
+            dispatch(fetchTables());
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -393,6 +403,7 @@ export default function OrderExportPage() {
                         isReopening={isReopening}
                         hideHeader={true}
                         hideSummary={false}
+                        allTables={allTables}
                     />
                 </div>
             )}

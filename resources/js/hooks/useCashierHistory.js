@@ -199,6 +199,21 @@ export const useCashierHistory = (historyOrders = []) => {
                 return new Date(current.updated_at) > new Date(latest) ? current.updated_at : latest;
             }, g.updated_at);
 
+            // [WHY] Aggregate all payments across split bills in the group
+            const mergedPaymentsMap = g.allOrders.reduce((acc, currentOrder) => {
+                const payments = currentOrder.payments || [];
+                payments.forEach(p => {
+                    const method = p.payment_method;
+                    if (!acc[method]) {
+                        acc[method] = { payment_method: method, amount: 0 };
+                    }
+                    acc[method].amount += Number(p.amount) || 0;
+                });
+                return acc;
+            }, {});
+
+            const mergedPayments = Object.values(mergedPaymentsMap);
+
             return {
                 ...g,
                 items,
@@ -213,6 +228,7 @@ export const useCashierHistory = (historyOrders = []) => {
                 merged_tables: mergedTablesRange,
                 mergedTables: mergedTablesRange,
                 tableName: mergedTablesRange,
+                payments: mergedPayments.length > 0 ? mergedPayments : g.payments,
                 updated_at: latestUpdatedAt
             };
         }).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
