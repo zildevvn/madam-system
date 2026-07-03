@@ -226,6 +226,7 @@ export default function OrderExportPage() {
             const totalDue = isCancelled ? 0 : Number(order.total_price || 0);
             const tableName = order.table?.name || order.merged_tables || '—';
             const cashierName = order.cashier?.name || 'Admin';
+            const serverName = order.server?.name || '—';
 
             const orderStt = stt++;
 
@@ -239,6 +240,7 @@ export default function OrderExportPage() {
                     totalDue,
                     tableName,
                     cashierName,
+                    serverName,
                     isFirstItem: true
                 });
                 return;
@@ -267,6 +269,7 @@ export default function OrderExportPage() {
                     totalDue,
                     tableName,
                     cashierName,
+                    serverName,
                     isFirstItem: itemIdx === 0
                 });
             });
@@ -430,7 +433,7 @@ export default function OrderExportPage() {
                                     <tr className="bg-[#f3f4f6] text-[#111827] border-b border-[#e5e7eb]">
                                         {[
                                             'STT', 'No', 'Table', 'Arrival Time', 'Printed',
-                                            'Cashier', 'Items', 'Name VI', 'Name', 'QTY', 'Total',
+                                            'Cashier', 'Order Staff', 'Items', 'Name VI', 'Name', 'QTY', 'Total',
                                             'Cross Total QTY', 'Cross Total Amount', 'Total Due', 'CN', 'TM', 'CK', 'CT'
                                         ].map(h => (
                                             <th key={h} className="sticky top-0 z-10 px-3 py-3 text-left font-bold text-[#111827] bg-[#f3f4f6] border-b border-[#e5e7eb] tracking-wider whitespace-nowrap align-middle">
@@ -441,7 +444,7 @@ export default function OrderExportPage() {
                                 </thead>
                                 <tbody className="divide-y divide-[#e5e7eb]">
                                     {rows.map((row, idx) => {
-                                        const { stt, order, item, crossTotalQty, crossTotalAmount, totalDue, tableName, cashierName } = row;
+                                        const { stt, order, item, crossTotalQty, crossTotalAmount, totalDue, tableName, cashierName, serverName } = row;
                                         const nameVi = item?.product?.name_vi || item?.name_vi;
                                         const defaultName = item?.name || item?.product?.name || '—';
                                         const itemName = nameVi ? `${nameVi} - ${defaultName}` : defaultName;
@@ -494,6 +497,10 @@ export default function OrderExportPage() {
                                                 {/* Cashier */}
                                                 <td className="px-3 py-2.5 text-[#4b5563] whitespace-nowrap">
                                                     {isFirstItemInOrder ? cashierName : ''}
+                                                </td>
+                                                {/* Order Staff */}
+                                                <td className="px-3 py-2.5 text-[#4b5563] whitespace-nowrap">
+                                                    {isFirstItemInOrder ? serverName : ''}
                                                 </td>
                                                 {/* Item name */}
                                                 <td className="px-3 py-2.5 text-[#1f2937] font-medium max-w-[160px] truncate">

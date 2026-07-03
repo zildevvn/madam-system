@@ -165,6 +165,13 @@ const Receipt = ({ order, tableName, allTables, discountType = 'fixed', discount
                         <span>{order.cashier?.name || 'Staff'}</span>
                     </div>
 
+                    {(order.server?.name || order.staffName) && (
+                        <div className="receipt-meta-row">
+                            <span>Order Staff:</span>
+                            <span>{order.server?.name || order.staffName}</span>
+                        </div>
+                    )}
+
                     {(order.cashier_note || order.note) && (
                         <div className="receipt-note-block">
                             <span style={{ fontWeight: 'bold' }}>* Note: </span>

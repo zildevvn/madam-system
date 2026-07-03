@@ -73,6 +73,7 @@ class OrderExportController extends Controller
                 'Arrival Time',
                 'Printed',
                 'Cashier',
+                'Order Staff',
                 'Items',
                 'Name VI',
                 'Name',
@@ -95,6 +96,7 @@ class OrderExportController extends Controller
                     'items.product:id,name,name_vi',
                     'table:id,name',
                     'cashier:id,name',
+                    'server:id,name',
                     'payments',
                 ]);
 
@@ -127,6 +129,7 @@ class OrderExportController extends Controller
                         ? Carbon::parse($order->updated_at)->format('d/m/Y H:i')
                         : '—';
                     $cashierName = $order->cashier->name ?? 'Admin';
+                    $serverName = $order->server->name ?? '—';
                     $paymentMethodStr = self::formatPaymentMethod($order);
 
                     // ── STT increments once per order ────────────────────────
@@ -141,6 +144,7 @@ class OrderExportController extends Controller
                             $arrivalTime,
                             $printedTime,
                             $cashierName,
+                            $serverName,
                             '',           // Món  — completely empty
                             '',           // Name VI
                             '',           // Name
@@ -166,6 +170,7 @@ class OrderExportController extends Controller
                             $arrivalTime,
                             $printedTime,
                             $cashierName,
+                            $serverName,
                             '—',          // Món  — no item
                             '',           // Name VI
                             '',           // Name
@@ -236,6 +241,7 @@ class OrderExportController extends Controller
                                 $arrivalTime,
                                 $printedTime,
                                 $cashierName,
+                                $serverName,
                                 $itemName,
                                 $nameVi ?: '',
                                 $defaultName,
@@ -260,6 +266,7 @@ class OrderExportController extends Controller
                                 '',          // Giờ vào
                                 '',          // In lúc
                                 '',          // Thu ngân
+                                '',          // Order Staff
                                 $itemName,
                                 $nameVi ?: '',
                                 $defaultName,
@@ -412,11 +419,13 @@ class OrderExportController extends Controller
             'items.product:id,name,name_vi',
             'table:id,name',
             'cashier:id,name',
+            'server:id,name',
             'payments',
         ])
             ->select('orders.*')
             ->leftJoin('tables', 'orders.table_id', '=', 'tables.id')
             ->leftJoin('users as cashier_users', 'orders.cashier_id', '=', 'cashier_users.id')
+            ->leftJoin('users as server_users', 'orders.user_id', '=', 'server_users.id')
             ->whereIn('orders.status', ['completed', 'cancelled']);
 
         // Date range filter
