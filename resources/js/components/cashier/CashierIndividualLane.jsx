@@ -14,7 +14,8 @@ const CashierIndividualLane = ({
     individualOrders,
     currentTime,
     onTableClick,
-    onToggleCollapse
+    onToggleCollapse,
+    onMergeBack
 }) => {
     // [WHY] Sort tables strictly on the Cashier page to ensure 1 -> 2 -> 3 natural order
     const sortedIndividualTables = React.useMemo(() => {
@@ -41,6 +42,7 @@ const CashierIndividualLane = ({
                 orders={individualOrders}
                 currentTime={currentTime}
                 onTableClick={onTableClick}
+                onMergeBack={onMergeBack}
                 showSimpleView={true}
                 showPrintedState={true}
             />

@@ -44,6 +44,11 @@ const orderApi = {
         return response.data;
     },
 
+    mergeBack: async (orderId) => {
+        const response = await axios.post(`/api/orders/${orderId}/merge-back`);
+        return response.data;
+    },
+
     // --- FIELD UPDATES ---
     updateTable: async (orderId, tableId) => {
         const response = await axios.put(`/api/orders/${orderId}/table`, { table_id: tableId });

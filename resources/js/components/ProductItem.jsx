@@ -113,7 +113,7 @@ export default function ProductItem({
                     )}
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                    <span className={`font-bold text-[14px] ${hasDiscount ? 'text-red-600' : 'text-on-surface'}`}>
+                    <span className={`font-bold text-[13px] md:text-[14px] ${hasDiscount ? 'text-red-600' : 'text-on-surface'}`}>
                         {formatPrice(itemTotal)}đ
                     </span>
                     {effectiveIsReadOnly && item.quantity > 1 && (

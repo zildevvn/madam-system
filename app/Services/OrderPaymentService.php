@@ -404,18 +404,19 @@ class OrderPaymentService
     {
         return Order::whereIn('status', $statuses)
             ->where(function ($query) use ($order, $involvedTableIds, $data) {
-                // [RULE] Group reservations ALWAYS complete the entire unified group.
-                // This logic is prioritized to keep Group and Individual lanes strictly separate.
-                if ($order->reservation && $order->reservation->type === 'group') {
-                    $query->where('reservation_id', $order->reservation_id);
-                    return;
-                }
-
-                // [WHY] For individual/merged/split tables, if explicit sibling IDs are provided, 
-                // we MUST isolate to that set to support independent split-bill payments.
+                // [WHY] Explicit sibling IDs from the frontend MUST override implicit merge/reservation logic
+                // to support independent split-bill payments.
                 if (!empty($data['sibling_order_ids'])) {
                     $ids = array_unique(array_merge([$order->id], (array) $data['sibling_order_ids']));
                     $query->whereIn('id', $ids);
+                    return;
+                }
+
+                // [RULE] Group reservations ALWAYS complete the entire unified group.
+                // This logic is prioritized to keep Group and Individual lanes strictly separate
+                // unless explicitly overridden by sibling_order_ids above.
+                if ($order->reservation && $order->reservation->type === 'group') {
+                    $query->where('reservation_id', $order->reservation_id);
                     return;
                 }
 

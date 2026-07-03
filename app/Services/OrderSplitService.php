@@ -130,4 +130,57 @@ class OrderSplitService
             Log::error('Broadcast failed during order split: ' . $e->getMessage());
         }
     }
+
+    /**
+     * mergeBack
+     * [WHY] Reverts a split order by moving all its items back to its parent order.
+     */
+    public function mergeBack($splitOrderId)
+    {
+        $resultData = DB::transaction(function () use ($splitOrderId) {
+            $splitOrder = Order::with('items')->findOrFail($splitOrderId);
+
+            if (!in_array($splitOrder->status, ['draft', 'pending', 'processing'])) {
+                throw new \Exception("Cannot merge an order that is " . $splitOrder->status);
+            }
+
+            if (!$splitOrder->parent_order_id) {
+                throw new \Exception("Cannot merge a main order. Only split orders can be merged back.");
+            }
+
+            $originalOrder = Order::findOrFail($splitOrder->parent_order_id);
+
+            if (!in_array($originalOrder->status, ['draft', 'pending', 'processing'])) {
+                throw new \Exception("Cannot merge back into an order that is " . $originalOrder->status);
+            }
+
+            // Move all items
+            foreach ($splitOrder->items as $item) {
+                $item->update(['order_id' => $originalOrder->id]);
+            }
+
+            // Mark split order as merged
+            $splitOrder->update(['status' => 'merged', 'total_price' => 0]);
+
+            $this->recalculateOrderTotal($originalOrder);
+
+            return [
+                'splitOrder' => $splitOrder,
+                'originalOrder' => $originalOrder
+            ];
+        });
+
+        // Broadcast the updates
+        $this->broadcastUpdate($resultData['originalOrder'], 'order_updated');
+        
+        // Broadcast the removal of the split order
+        // Use 'order_updated' or 'order_deleted' depending on frontend expectation,
+        // but 'order_updated' with 'merged' status should be handled safely or optimistically removed.
+        $this->broadcastUpdate($resultData['splitOrder'], 'order_updated');
+
+        return [
+            'merged_order' => $resultData['splitOrder']->fresh(),
+            'original_order' => $resultData['originalOrder']->fresh(['items.product', 'childOrders.items.product'])
+        ];
+    }
 }

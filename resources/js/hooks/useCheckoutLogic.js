@@ -14,6 +14,7 @@ import {
     setGuestCount,
     updateGuestCountAsync,
     splitOrderAsync,
+    mergeBackAsync,
     addToCart,
     addCustomToCart
 } from '../store/slices/orderSlice';
@@ -37,7 +38,7 @@ export const useCheckoutLogic = () => {
         guestCount,
         orderNote,
         setWarningTitle, setWarningMessage, setSuccessMessage, setShowSuccessPopup,
-        allTables, currentUser
+        allTables, currentUser, undoSplitData, setUndoSplitData
     } = state;
 
     const [isSaving, setIsSaving] = useState(false);
@@ -281,12 +282,18 @@ export const useCheckoutLogic = () => {
         isProcessing.current = true;
         setIsSaving(true);
         try {
-            await dispatch(splitOrderAsync({
+            const result = await dispatch(splitOrderAsync({
                 orderId: activeOrderId,
                 items: itemsToSplit
             })).unwrap();
 
             dispatch(fetchTables()); // [NEW] Refresh global table state to reflect the new split order
+
+            // Provide 8 second window to undo
+            setUndoSplitData({ orderId: result.new_order.id });
+            safeSetTimeout(() => {
+                setUndoSplitData(prev => prev?.orderId === result.new_order.id ? null : prev);
+            }, 8000);
 
             setSuccessMessage('Đã tách đơn hàng thành công.');
             setShowSuccessPopup(true);
@@ -300,7 +307,31 @@ export const useCheckoutLogic = () => {
             isProcessing.current = false;
             setIsSaving(false);
         }
-    }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningTitle, setWarningMessage, setShowWarningPopup]);
+    }, [activeOrderId, dispatch, setSuccessMessage, setShowSuccessPopup, setWarningTitle, setWarningMessage, setShowWarningPopup, safeSetTimeout, setUndoSplitData]);
+
+    const handleUndoSplit = useCallback(async () => {
+        if (isProcessing.current || !undoSplitData?.orderId) return;
+        isProcessing.current = true;
+        setIsSaving(true);
+        try {
+            await dispatch(mergeBackAsync(undoSplitData.orderId)).unwrap();
+            
+            dispatch(fetchTables());
+            setUndoSplitData(null);
+            
+            setSuccessMessage('Đã hoàn tác tách đơn thành công.');
+            setShowSuccessPopup(true);
+            safeSetTimeout(() => setShowSuccessPopup(false), 2000);
+        } catch (error) {
+            console.error(error);
+            setWarningTitle('Hoàn tác thất bại!');
+            setWarningMessage('Không thể hoàn tác tách đơn, vui lòng kiểm tra lại!');
+            setShowWarningPopup(true);
+        } finally {
+            isProcessing.current = false;
+            setIsSaving(false);
+        }
+    }, [undoSplitData, dispatch, setShowSuccessPopup, setSuccessMessage, setWarningMessage, setWarningTitle, setShowWarningPopup, safeSetTimeout, setUndoSplitData]);
 
     const toggleSplitMode = useCallback(() => {
         setIsSplitMode(prev => !prev);
@@ -397,6 +428,7 @@ export const useCheckoutLogic = () => {
         selectedSplitItems,
         toggleSplitItem,
         handleUpdateSplitQuantity,
-        onConfirmSplit
+        onConfirmSplit,
+        handleUndoSplit
     };
 };
