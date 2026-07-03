@@ -14,10 +14,10 @@ import orderApi from '../services/orderApi';
 import { formatLocalDate } from '../shared/utils/formatLocalDate';
 
 // Components
-import CashierIndividualLane from '../components/cashier/CashierIndividualLane';
-import CashierGroupLane from '../components/cashier/CashierGroupLane';
-import CashierHistoryLane from '../components/cashier/CashierHistoryLane';
-import CheckoutManager from '../components/cashier/CheckoutManager';
+import CashierIndividualLane from '../components/Cashier/CashierIndividualLane';
+import CashierGroupLane from '../components/Cashier/CashierGroupLane';
+import CashierHistoryLane from '../components/Cashier/CashierHistoryLane';
+import CheckoutManager from '../components/Cashier/CheckoutManager';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 
 const COLLAPSE_ZONES = {
@@ -133,6 +133,17 @@ const Cashier = () => {
         setEditingHistoryOrder(order);
     }, []);
 
+    const handleMergeBack = useCallback(async (orderId) => {
+        try {
+            await orderApi.mergeBack(orderId);
+            toast.success("Đã gộp đơn hàng thành công");
+            dispatch(fetchTables());
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || "Gộp đơn thất bại");
+        }
+    }, [dispatch]);
+
     const consolidatedHistory = useCashierHistory(historyOrders);
 
     const isIndividualCollapsed = collapsedSection === COLLAPSE_ZONES.INDIVIDUAL;
@@ -196,6 +207,7 @@ const Cashier = () => {
                                 currentTime={currentTime}
                                 onTableClick={handleActiveTableSelect}
                                 onToggleCollapse={handleToggleIndividual}
+                                onMergeBack={handleMergeBack}
                             />
 
                             <CashierGroupLane

@@ -25,13 +25,12 @@ class OrderService
         $this->splitService = $splitService;
     }
 
-    // [WHY] Get active order to display on tablet/pos
+    // [WHY] Get active orders to display on tablet/pos
     // [RULE] Eager load only required fields for performance
     public function getActiveOrder($tableId)
     {
-        $order = Order::where('table_id', $tableId)
+        $orders = Order::where('table_id', $tableId)
             ->whereIn('status', ['draft', 'pending', 'processing'])
-            ->whereNull('parent_order_id')
             ->where(function ($query) {
                 $query->whereDoesntHave('reservation')
                     ->orWhereHas('reservation', function ($q) {
@@ -49,34 +48,10 @@ class OrderService
                 'server:id,name',
                 'cashier:id,name'
             ])
-            ->first();
+            ->orderByRaw('parent_order_id IS NOT NULL, id ASC')
+            ->get();
 
-        if (!$order) {
-            // Fallback: If no active parent order exists, fetch the oldest active order on this table
-            $order = Order::where('table_id', $tableId)
-                ->whereIn('status', ['draft', 'pending', 'processing'])
-                ->where(function ($query) {
-                    $query->whereDoesntHave('reservation')
-                        ->orWhereHas('reservation', function ($q) {
-                            $q->where('type', '!=', 'group');
-                        });
-                })
-                ->with([
-                    'items.product' => function ($query) {
-                        $query->select('id', 'name', 'name_vi', 'price', 'type');
-                    },
-                    'childOrders.items.product' => function ($query) {
-                        $query->select('id', 'name', 'name_vi', 'price', 'type');
-                    },
-                    'table:id,name',
-                    'server:id,name',
-                    'cashier:id,name'
-                ])
-                ->oldest()
-                ->first();
-        }
-
-        return $order;
+        return $orders;
     }
 
     // [WHY] Fetch full details for a specific order

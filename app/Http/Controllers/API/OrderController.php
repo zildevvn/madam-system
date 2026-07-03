@@ -259,4 +259,18 @@ class OrderController extends Controller
 
         return $this->success($order, 'Order marked as printed successfully');
     }
+
+    public function mergeBack($id)
+    {
+        try {
+            $result = app(\App\Services\OrderSplitService::class)->mergeBack($id);
+            return $this->success($result, 'Order merged back successfully');
+        } catch (\Exception $e) {
+            return $this->error(
+                message: $e->getMessage(),
+                errors: 'Merge back failed',
+                status: 400
+            );
+        }
+    }
 }

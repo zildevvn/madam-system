@@ -52,6 +52,11 @@ export const splitOrderAsync = createAsyncThunk('order/split', async ({ orderId,
   return data.data;
 });
 
+export const mergeBackAsync = createAsyncThunk('order/mergeBack', async (orderId) => {
+  const data = await orderApi.mergeBack(orderId);
+  return data.data;
+});
+
 const processChildOrders = (state, order) => {
   const childOrders = order.child_orders || order.childOrders;
   if (childOrders) {
@@ -62,33 +67,33 @@ const processChildOrders = (state, order) => {
           const product = orderItem.product;
           const uniqueKey = `split-${orderItem.id}`;
           const itemData = product
-            ? { 
-                ...product, 
-                id: uniqueKey,
-                product_id: product.id,
-                order_item_id: orderItem.id,
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '',
-                discount: orderItem.discount || 0,
-                discountType: orderItem.discount_type || 'fixed',
-                isSplit: true,
-                splitOrderName: `Đơn #${childOrder.id}`
-              }
+            ? {
+              ...product,
+              id: uniqueKey,
+              product_id: product.id,
+              order_item_id: orderItem.id,
+              quantity: Number(orderItem.quantity),
+              note: orderItem.note || '',
+              discount: orderItem.discount || 0,
+              discountType: orderItem.discount_type || 'fixed',
+              isSplit: true,
+              splitOrderName: `Đơn #${childOrder.id}`
+            }
             : {
-                id: uniqueKey,
-                product_id: null,
-                order_item_id: orderItem.id,
-                name: orderItem.name || 'Custom Item',
-                price: Number(orderItem.price),
-                type: orderItem.type || 'food',
-                quantity: Number(orderItem.quantity),
-                note: orderItem.note || '',
-                discount: orderItem.discount || 0,
-                discountType: orderItem.discount_type || 'fixed',
-                isCustom: true,
-                isSplit: true,
-                splitOrderName: `Đơn #${childOrder.id}`
-              };
+              id: uniqueKey,
+              product_id: null,
+              order_item_id: orderItem.id,
+              name: orderItem.name || 'Custom Item',
+              price: Number(orderItem.price),
+              type: orderItem.type || 'food',
+              quantity: Number(orderItem.quantity),
+              note: orderItem.note || '',
+              discount: orderItem.discount || 0,
+              discountType: orderItem.discount_type || 'fixed',
+              isCustom: true,
+              isSplit: true,
+              splitOrderName: `Đơn #${childOrder.id}`
+            };
           state.items.byId[uniqueKey] = itemData;
           if (!state.items.allIds.includes(uniqueKey)) {
             state.items.allIds.push(uniqueKey);
@@ -198,7 +203,7 @@ const orderSlice = createSlice({
         state.orderType = order.order_type;
         state.tableId = order.table_id;
         state.mergedTables = order.merged_tables;
-        
+
         // [BUGFIX] If the user has local unsaved modifications (like new items or typing a note),
         // we must NOT overwrite the state with the backend payload. Overwriting here
         // would wipe out newly added items when the debounced note-update triggers a socket event.
@@ -206,44 +211,44 @@ const orderSlice = createSlice({
           state.orderNote = order.order_note || '';
           state.guestCount = order.guest_count || 1;
           state.isModified = false;
-          
+
           // Surgical items update
           state.items.byId = {};
           state.items.allIds = [];
           state.originalItems = {};
-          
+
           if (order.items) {
             order.items.forEach(orderItem => {
               const product = orderItem.product;
               const uniqueKey = `item-${orderItem.id}`;
               const itemData = product
-                ? { 
-                    ...product, 
-                    id: uniqueKey,
-                    product_id: product.id,
-                    order_item_id: orderItem.id,
-                    quantity: Number(orderItem.quantity), 
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed'
-                  }
+                ? {
+                  ...product,
+                  id: uniqueKey,
+                  product_id: product.id,
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
+                }
                 : {
-                    id: uniqueKey,
-                    product_id: null,
-                    order_item_id: orderItem.id,
-                    name: orderItem.name || 'Custom Item',
-                    price: Number(orderItem.price),
-                    type: orderItem.type || 'food',
-                    quantity: Number(orderItem.quantity),
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed',
-                    isCustom: true
-                  };
+                  id: uniqueKey,
+                  product_id: null,
+                  order_item_id: orderItem.id,
+                  name: orderItem.name || 'Custom Item',
+                  price: Number(orderItem.price),
+                  type: orderItem.type || 'food',
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed',
+                  isCustom: true
+                };
               state.items.byId[uniqueKey] = itemData;
-              state.originalItems[uniqueKey] = { 
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '', 
+              state.originalItems[uniqueKey] = {
+                quantity: Number(orderItem.quantity),
+                note: orderItem.note || '',
                 type: product ? product.type : (orderItem.type || 'food')
               };
               if (!state.items.allIds.includes(uniqueKey)) {
@@ -256,76 +261,79 @@ const orderSlice = createSlice({
         }
       }
     },
+    setActiveOrder: (state, action) => {
+      const order = action.payload;
+      if (order) {
+        state.activeOrderId = order.id;
+        state.orderStatus = order.status;
+        state.orderType = order.order_type;
+        state.tableId = order.table_id;
+        state.mergedTables = order.merged_tables;
+        state.orderNote = order.order_note || '';
+        state.guestCount = order.guest_count || 1;
+        state.isModified = false;
+        state.items.byId = {};
+        state.items.allIds = [];
+        state.originalItems = {};
+
+        if (order.items) {
+          order.items.forEach(orderItem => {
+            const product = orderItem.product;
+            const uniqueKey = `item-${orderItem.id}`;
+            const itemData = product
+              ? {
+                ...product,
+                id: uniqueKey,
+                product_id: product.id,
+                order_item_id: orderItem.id,
+                quantity: Number(orderItem.quantity),
+                note: orderItem.note || '',
+                discount: orderItem.discount || 0,
+                discountType: orderItem.discount_type || 'fixed'
+              }
+              : {
+                id: uniqueKey,
+                product_id: null,
+                order_item_id: orderItem.id,
+                name: orderItem.name || 'Custom Item',
+                price: Number(orderItem.price),
+                type: orderItem.type || 'food',
+                quantity: Number(orderItem.quantity),
+                note: orderItem.note || '',
+                discount: orderItem.discount || 0,
+                discountType: orderItem.discount_type || 'fixed',
+                isCustom: true
+              };
+
+            state.items.byId[uniqueKey] = itemData;
+            state.originalItems[uniqueKey] = {
+              quantity: Number(orderItem.quantity),
+              note: orderItem.note || '',
+              type: product ? product.type : (orderItem.type || 'food')
+            };
+            if (!state.items.allIds.includes(uniqueKey)) {
+              state.items.allIds.push(uniqueKey);
+            }
+          });
+        }
+
+        processChildOrders(state, order);
+      } else {
+        state.activeOrderId = null;
+        state.orderNote = '';
+        state.guestCount = 1;
+        state.isModified = false;
+        state.items = { byId: {}, allIds: [] };
+        state.originalItems = {};
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchActiveOrderAsync.fulfilled, (state, action) => {
-        const order = action.payload;
-        if (order) {
-          state.activeOrderId = order.id;
-          state.orderStatus = order.status;
-          state.orderType = order.order_type;
-          state.tableId = order.table_id;
-          state.mergedTables = order.merged_tables;
-          state.orderNote = order.order_note || '';
-          state.guestCount = order.guest_count || 1;
-          state.isModified = false;
-          state.items.byId = {};
-          state.items.allIds = [];
-          state.originalItems = {}; // Reset original items
-          
-          if (order.items) {
-            order.items.forEach(orderItem => {
-              const product = orderItem.product;
-              const uniqueKey = `item-${orderItem.id}`;
-              const itemData = product
-                ? { 
-                    ...product, 
-                    id: uniqueKey,
-                    product_id: product.id,
-                    order_item_id: orderItem.id,
-                    quantity: Number(orderItem.quantity), 
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed'
-                  }
-                : {
-                    id: uniqueKey,
-                    product_id: null,
-                    order_item_id: orderItem.id,
-                    name: orderItem.name || 'Custom Item',
-                    price: Number(orderItem.price),
-                    type: orderItem.type || 'food',
-                    quantity: Number(orderItem.quantity),
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed',
-                    isCustom: true
-                  };
-              
-              state.items.byId[uniqueKey] = itemData;
-              state.originalItems[uniqueKey] = { 
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '', 
-                type: product ? product.type : (orderItem.type || 'food')
-              };
-              if (!state.items.allIds.includes(uniqueKey)) {
-                state.items.allIds.push(uniqueKey);
-              }
-            });
-          }
-
-          processChildOrders(state, order);
-
-        } else {
-          // No active order found for table
-          state.activeOrderId = null;
-          state.orderNote = '';
-          state.guestCount = 1;
-          state.isModified = false;
-          state.items = { byId: {}, allIds: [] };
-          state.originalItems = {};
-        }
+        // Now returns an array. We don't auto-set the active order here anymore.
+        // useStaffOrderController will handle the array, prompt the user if needed,
+        // and then explicitly call setActiveOrder with the chosen order object.
       })
       .addCase(createOrderAsync.fulfilled, (state, action) => {
         const order = action.payload;
@@ -369,33 +377,33 @@ const orderSlice = createSlice({
               const product = orderItem.product;
               const uniqueKey = `item-${orderItem.id}`;
               const itemData = product
-                ? { 
-                    ...product, 
-                    id: uniqueKey,
-                    product_id: product.id,
-                    order_item_id: orderItem.id,
-                    quantity: Number(orderItem.quantity), 
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed'
-                  }
+                ? {
+                  ...product,
+                  id: uniqueKey,
+                  product_id: product.id,
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
+                }
                 : {
-                    id: uniqueKey,
-                    product_id: null,
-                    order_item_id: orderItem.id,
-                    name: orderItem.name || 'Custom Item',
-                    price: Number(orderItem.price),
-                    type: orderItem.type || 'food',
-                    quantity: Number(orderItem.quantity),
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed',
-                    isCustom: true
-                  };
+                  id: uniqueKey,
+                  product_id: null,
+                  order_item_id: orderItem.id,
+                  name: orderItem.name || 'Custom Item',
+                  price: Number(orderItem.price),
+                  type: orderItem.type || 'food',
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed',
+                  isCustom: true
+                };
               state.items.byId[uniqueKey] = itemData;
-              state.originalItems[uniqueKey] = { 
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '', 
+              state.originalItems[uniqueKey] = {
+                quantity: Number(orderItem.quantity),
+                note: orderItem.note || '',
                 type: product ? product.type : (orderItem.type || 'food')
               };
               if (!state.items.allIds.includes(uniqueKey)) {
@@ -422,33 +430,33 @@ const orderSlice = createSlice({
               const product = orderItem.product;
               const uniqueKey = `item-${orderItem.id}`;
               const itemData = product
-                ? { 
-                    ...product, 
-                    id: uniqueKey,
-                    product_id: product.id,
-                    order_item_id: orderItem.id,
-                    quantity: Number(orderItem.quantity), 
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed'
-                  }
+                ? {
+                  ...product,
+                  id: uniqueKey,
+                  product_id: product.id,
+                  order_item_id: orderItem.id,
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed'
+                }
                 : {
-                    id: uniqueKey,
-                    product_id: null,
-                    order_item_id: orderItem.id,
-                    name: orderItem.name || 'Custom Item',
-                    price: Number(orderItem.price),
-                    type: orderItem.type || 'food',
-                    quantity: Number(orderItem.quantity),
-                    note: orderItem.note || '',
-                    discount: orderItem.discount || 0,
-                    discountType: orderItem.discount_type || 'fixed',
-                    isCustom: true
-                  };
+                  id: uniqueKey,
+                  product_id: null,
+                  order_item_id: orderItem.id,
+                  name: orderItem.name || 'Custom Item',
+                  price: Number(orderItem.price),
+                  type: orderItem.type || 'food',
+                  quantity: Number(orderItem.quantity),
+                  note: orderItem.note || '',
+                  discount: orderItem.discount || 0,
+                  discountType: orderItem.discount_type || 'fixed',
+                  isCustom: true
+                };
               state.items.byId[uniqueKey] = itemData;
-              state.originalItems[uniqueKey] = { 
-                quantity: Number(orderItem.quantity), 
-                note: orderItem.note || '', 
+              state.originalItems[uniqueKey] = {
+                quantity: Number(orderItem.quantity),
+                note: orderItem.note || '',
                 type: product ? product.type : (orderItem.type || 'food')
               };
               if (!state.items.allIds.includes(uniqueKey)) {
@@ -475,7 +483,8 @@ export const {
   setGuestCount,
   clearCart,
   startNewOrder,
-  updateOrderFromSocket
+  updateOrderFromSocket,
+  setActiveOrder
 } = orderSlice.actions;
 
 // Selectors

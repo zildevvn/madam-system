@@ -206,7 +206,31 @@ const tableSlice = createSlice({
       .addMatcher(
         isAnyOf(checkoutOrderAsync.fulfilled, fetchActiveOrderAsync.fulfilled),
         (state, action) => {
-          const order = action.payload;
+          const payload = action.payload;
+          
+          if (action.type === fetchActiveOrderAsync.fulfilled.type) {
+            // payload is now an array of active orders for the table
+            if (payload && Array.isArray(payload) && payload.length > 0) {
+              const tableId = payload[0].table_id;
+              if (tableId && state.byId[tableId]) {
+                const table = state.byId[tableId];
+                table.active_orders = payload;
+                // fallback active_order to the main order or the first one
+                const mainOrder = payload.find(o => !o.parent_order_id) || payload[0];
+                table.active_order = mainOrder;
+              }
+            } else if (action.meta?.arg) {
+               // payload is empty array, meaning no active orders.
+               const tableId = action.meta.arg;
+               if (state.byId[tableId]) {
+                   state.byId[tableId].active_order = null;
+                   state.byId[tableId].active_orders = [];
+               }
+            }
+            return;
+          }
+
+          const order = payload;
           if (order && order.table_id && state.byId[order.table_id]) {
             const table = state.byId[order.table_id];
             table.active_order = order;

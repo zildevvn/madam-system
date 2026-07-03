@@ -17,6 +17,7 @@ const ActiveOrderTableCard = React.memo(({
     order,
     currentTimeTs,
     onTableClick,
+    onMergeBack,
     options = {}
 }) => {
     const { statusClass, duration, isNewOrder } = calculateTableStatus(order, currentTimeTs, options);
@@ -110,6 +111,18 @@ const ActiveOrderTableCard = React.memo(({
                         {duration}
                     </span>
                 </>
+            )}
+            
+            {table.isSplit && onMergeBack && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onMergeBack(order.id);
+                    }}
+                    className="absolute -bottom-2 px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[9px] font-bold rounded-full shadow-sm z-20 uppercase whitespace-nowrap transition-colors"
+                >
+                    Gộp lại
+                </button>
             )}
         </div>
     );

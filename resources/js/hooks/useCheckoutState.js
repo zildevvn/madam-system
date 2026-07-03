@@ -54,6 +54,7 @@ export const useCheckoutState = () => {
     const [warningTitle, setWarningTitle] = useState('Lỗi in Bill Bar!');
     const [warningMessage, setWarningMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
+    const [undoSplitData, setUndoSplitData] = useState(null);
 
     const isTableChanged = useMemo(() => selectedTableId !== tableId, [selectedTableId, tableId]);
 
@@ -109,6 +110,8 @@ export const useCheckoutState = () => {
         total,
         totalQuantity,
         orderNote,
-        guestCount: useAppSelector(state => state.order.guestCount)
+        guestCount: useAppSelector(state => state.order.guestCount),
+        undoSplitData,
+        setUndoSplitData
     };
 };

@@ -19,14 +19,14 @@ const CheckoutHeader = ({
     return (
         <div className="w-full sticky top-0 z-50 bg-white">
             <div className="flex items-center justify-between px-2 py-4 w-full">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 md:gap-2">
                     <button
                         onClick={() => isConfirmed ? navigate('/staff-order') : navigate(`/order/${tableId}`)}
-                        className="mdt-btn-back p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
+                        className="mdt-btn-back p-1 md:p-2 hover:bg-gray-100 rounded-full transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
                     >
-                        <Icon name="arrowLeft" className="w-6 h-6 text-slate-800" size={24} />
+                        <Icon name="arrowLeft" className="w-5 h-5 md:w-6 md:h-6 text-slate-800" size={24} />
                     </button>
-                    <h1 className="h6">{isConfirmed ? 'Chi tiết hóa đơn' : 'Tạo hóa đơn'}</h1>
+                    <h1 className="!text-[11px] !md:text-[14px]">{isConfirmed ? 'Chi tiết hóa đơn' : 'Tạo hóa đơn'}</h1>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -35,7 +35,7 @@ const CheckoutHeader = ({
                         <select
                             value={selectedTableId}
                             onChange={(e) => setSelectedTableId(e.target.value)}
-                            className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-4 pr-8 py-1.5 rounded-full text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
+                            className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-2 pr-4 md:pl-4 md:pr-8 py-1.5 rounded-full text-[11px] md:text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
                         >
                             <option value={tableId}>
                                 {allTables.find(t => t.id.toString() === tableId?.toString())?.name || `Bàn ${tableId.toString().replace(/^Bàn\s+/i, '')}`}

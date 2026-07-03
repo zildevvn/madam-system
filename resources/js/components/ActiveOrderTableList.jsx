@@ -9,6 +9,7 @@ const ActiveOrderTableList = ({
     orders,
     currentTime,
     onTableClick,
+    onMergeBack,
     title = "Danh sách bàn",
     className = "",
     filterType = null, // 'food' or 'drink'
@@ -64,6 +65,7 @@ const ActiveOrderTableList = ({
                                     order={tableOrderMap[table.id.toString()]}
                                     currentTimeTs={currentTimeTs}
                                     onTableClick={onTableClick}
+                                    onMergeBack={onMergeBack}
                                     options={cardOptions}
                                 />
                             )}

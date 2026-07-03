@@ -229,4 +229,43 @@ class SplitPaymentTest extends TestCase
         $this->assertCount(1, $order->payments);
         $this->assertEquals(0, $order->payments[0]->amount);
     }
+
+    public function test_sibling_order_ids_overrides_group_reservation()
+    {
+        $reservation = \App\Models\Reservation::create([
+            'lead_name' => 'Group Res',
+            'type' => 'group',
+            'status' => 'confirmed',
+            'reservation_date' => today()->toDateString(),
+            'reservation_time' => '18:00:00',
+            'phone' => '0123456789',
+            'guest_count' => 5
+        ]);
+
+        $order1 = Order::create([
+            'table_id' => $this->table1->id,
+            'status' => 'pending',
+            'total_price' => 300000,
+            'reservation_id' => $reservation->id
+        ]);
+
+        $order2 = Order::create([
+            'table_id' => $this->table2->id,
+            'status' => 'pending',
+            'total_price' => 200000,
+            'reservation_id' => $reservation->id
+        ]);
+
+        $this->paymentService->completeOrder($order1->id, [
+            'payment_method' => 'cash',
+            'cashier_id' => $this->cashier->id,
+            'sibling_order_ids' => [$order1->id]
+        ]);
+
+        $order1->refresh();
+        $order2->refresh();
+
+        $this->assertEquals('completed', $order1->status);
+        $this->assertEquals('pending', $order2->status);
+    }
 }
