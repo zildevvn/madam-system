@@ -55,7 +55,7 @@ export const useCashierData = (status, selectedDate) => {
 
         setIsLoadingHistory(true);
         try {
-            const res = await orderApi.fetchHistory(100, {
+            const res = await orderApi.fetchHistory(1000, {
                 signal: controller.signal,
                 params: { date: selectedDate }
             });
