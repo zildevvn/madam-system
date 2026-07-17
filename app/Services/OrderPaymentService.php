@@ -357,7 +357,7 @@ class OrderPaymentService
         $query = Order::with(['items' => function($q) {
                 $q->select('id', 'order_id', 'product_id', 'name', 'type', 'quantity', 'price', 'discount', 'discount_type', 'note', 'status', 'table_id', 'reservation_item_id');
             }, 'items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name', 'reservation', 'payments'])
-            ->where('status', Order::STATUS_COMPLETED);
+            ->whereIn('status', ['completed', 'cancelled']);
 
         if ($date) {
             $query->whereDate('updated_at', $date);

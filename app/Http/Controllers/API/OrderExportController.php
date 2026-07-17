@@ -29,7 +29,6 @@ class OrderExportController extends Controller
 
         $orders = $query
             ->orderBy('orders.id', 'asc')
-            ->limit(200) // preview cap to keep response fast
             ->get();
 
         return $this->success($orders);
