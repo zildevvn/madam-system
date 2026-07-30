@@ -48,8 +48,8 @@ const PaymentModalFooter = ({
         { value: 'cash', label: 'Tiền mặt' },
         { value: 'bank', label: 'Chuyển khoản' },
         { value: 'card', label: 'Cà thẻ' },
-        ...(isGroup ? [{ value: 'debt', label: 'Công nợ' }] : [])
-    ], [isGroup]);
+        { value: 'debt', label: 'Công nợ' }
+    ], []);
 
     const canAddPaymentEntry = remainingBalance !== 0 && payments.length < allOptions.length;
 

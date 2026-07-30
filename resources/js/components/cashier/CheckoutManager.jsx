@@ -246,14 +246,7 @@ const CheckoutManager = ({
     const currentMethod = activeModalId ? contexts[activeModalId]?.paymentMethod : null;
 
     // [WHY] Automatically validate selected payment method when group status changes.
-    // Non-group orders cannot use the 'debt' method. If 'debt' is selected and isGroup is false,
-    // we default back to 'cash' to prevent invalid hidden states in the checkout.
-    useEffect(() => {
-        if (!activeModalId) return;
-        if (!isGroup && currentMethod === 'debt') {
-            updateContext(activeModalId, { paymentMethod: 'cash' });
-        }
-    }, [isGroup, activeModalId, currentMethod, updateContext]);
+    // We no longer restrict 'debt' for non-group orders, so this validation is removed.
 
     const permissionResult = useMemo(() => {
         if (!activeModal || !activeModal.isHistory) return { allowed: true };
