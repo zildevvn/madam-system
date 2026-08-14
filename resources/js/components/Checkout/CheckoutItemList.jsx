@@ -20,10 +20,12 @@ const CheckoutItemList = ({
     const groupedSelectedItems = useMemo(() => {
         const groups = {};
         selectedItems.forEach(item => {
-            // Group by split status, product_id, and note.
+            // Group by split status, product_id, note, price, and discount.
             const groupKey = item.isSplit
                 ? `split-${item.id}`
-                : (item.product_id ? `prod-${item.product_id}-${item.note || ''}` : `custom-${item.name}-${item.note || ''}`);
+                : (item.product_id 
+                    ? `prod-${item.product_id}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discount_type || ''}` 
+                    : `custom-${item.name}-${item.note || ''}-${item.price}-${item.discount || 0}-${item.discount_type || ''}`);
 
             const itemKey = item.order_item_id || item.id;
             const originalQty = originalItems[itemKey]?.quantity || 0;

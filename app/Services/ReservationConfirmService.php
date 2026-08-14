@@ -78,6 +78,7 @@ class ReservationConfirmService
                 return !in_array($item->id, $existingReservationItemIds);
             });
 
+            $sortIndex = 1;
             foreach ($newItems as $resItem) {
                 $orderItemsToInsert[] = [
                     'order_id' => $mainOrder->id,
@@ -91,7 +92,8 @@ class ReservationConfirmService
                     'source' => 'reservation',
                     'reservation_item_id' => $resItem->id,
                     'created_at' => $now,
-                    'updated_at' => $now
+                    'updated_at' => $now,
+                    'sort_order' => $sortIndex++
                 ];
             }
 

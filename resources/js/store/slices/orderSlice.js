@@ -76,6 +76,7 @@ const processChildOrders = (state, order) => {
               note: orderItem.note || '',
               discount: orderItem.discount || 0,
               discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
               isSplit: true,
               splitOrderName: `Đơn #${childOrder.id}`
             }
@@ -90,6 +91,7 @@ const processChildOrders = (state, order) => {
               note: orderItem.note || '',
               discount: orderItem.discount || 0,
               discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
               isCustom: true,
               isSplit: true,
               splitOrderName: `Đơn #${childOrder.id}`
@@ -102,8 +104,14 @@ const processChildOrders = (state, order) => {
       }
     });
   }
-};
 
+  // Sort all items (parent + child) by sort_order to ensure consistent display order
+  state.items.allIds.sort((idA, idB) => {
+    const itemA = state.items.byId[idA];
+    const itemB = state.items.byId[idB];
+    return (itemA?.sort_order ?? 0) - (itemB?.sort_order ?? 0);
+  });
+};
 const initialState = {
   items: {
     byId: {},
@@ -230,7 +238,9 @@ const orderSlice = createSlice({
                   quantity: Number(orderItem.quantity),
                   note: orderItem.note || '',
                   discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
+                  discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
+                  sort_order: orderItem.sort_order || 0
                 }
                 : {
                   id: uniqueKey,
@@ -243,6 +253,7 @@ const orderSlice = createSlice({
                   note: orderItem.note || '',
                   discount: orderItem.discount || 0,
                   discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
                   isCustom: true
                 };
               state.items.byId[uniqueKey] = itemData;
@@ -289,7 +300,9 @@ const orderSlice = createSlice({
                 quantity: Number(orderItem.quantity),
                 note: orderItem.note || '',
                 discount: orderItem.discount || 0,
-                discountType: orderItem.discount_type || 'fixed'
+                discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
+                  sort_order: orderItem.sort_order || 0
               }
               : {
                 id: uniqueKey,
@@ -302,6 +315,7 @@ const orderSlice = createSlice({
                 note: orderItem.note || '',
                 discount: orderItem.discount || 0,
                 discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
                 isCustom: true
               };
 
@@ -385,7 +399,9 @@ const orderSlice = createSlice({
                   quantity: Number(orderItem.quantity),
                   note: orderItem.note || '',
                   discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
+                  discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
+                  sort_order: orderItem.sort_order || 0
                 }
                 : {
                   id: uniqueKey,
@@ -398,6 +414,7 @@ const orderSlice = createSlice({
                   note: orderItem.note || '',
                   discount: orderItem.discount || 0,
                   discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
                   isCustom: true
                 };
               state.items.byId[uniqueKey] = itemData;
@@ -438,7 +455,9 @@ const orderSlice = createSlice({
                   quantity: Number(orderItem.quantity),
                   note: orderItem.note || '',
                   discount: orderItem.discount || 0,
-                  discountType: orderItem.discount_type || 'fixed'
+                  discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
+                  sort_order: orderItem.sort_order || 0
                 }
                 : {
                   id: uniqueKey,
@@ -451,6 +470,7 @@ const orderSlice = createSlice({
                   note: orderItem.note || '',
                   discount: orderItem.discount || 0,
                   discountType: orderItem.discount_type || 'fixed',
+                  sort_order: orderItem.sort_order || 0,
                   isCustom: true
                 };
               state.items.byId[uniqueKey] = itemData;

@@ -372,9 +372,17 @@ export const useCheckoutLogic = () => {
             // Find all matching items in cart (same product/note or custom name/note)
             const matchingItems = selectedItems.filter(it => {
                 if (repItem.product_id) {
-                    return it.product_id === repItem.product_id && (it.note || '') === (repItem.note || '');
+                    return it.product_id === repItem.product_id
+                        && (it.note || '') === (repItem.note || '')
+                        && Number(it.price) === Number(repItem.price)
+                        && Number(it.discount || 0) === Number(repItem.discount || 0)
+                        && (it.discount_type || it.discountType || '') === (repItem.discount_type || repItem.discountType || '');
                 } else {
-                    return it.name === repItem.name && (it.note || '') === (repItem.note || '');
+                    return it.name === repItem.name
+                        && (it.note || '') === (repItem.note || '')
+                        && Number(it.price) === Number(repItem.price)
+                        && Number(it.discount || 0) === Number(repItem.discount || 0)
+                        && (it.discount_type || it.discountType || '') === (repItem.discount_type || repItem.discountType || '');
                 }
             });
 

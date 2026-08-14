@@ -22,7 +22,8 @@ class OrderItem extends Model
         'note',
         'status',
         'source',
-        'reservation_item_id'
+        'reservation_item_id',
+        'sort_order'
     ];
 
     public function order()

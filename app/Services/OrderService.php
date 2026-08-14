@@ -194,7 +194,7 @@ class OrderService
                 }
             }
 
-            $existingItems = OrderItem::whereIn('order_id', $involvedOrderIds)->get();
+            $existingItems = OrderItem::whereIn('order_id', $involvedOrderIds)->orderBy('sort_order')->get();
             $existingItemsById = $existingItems->keyBy('id');
             $existingItemsByProduct = $existingItems->groupBy('product_id');
 
@@ -293,6 +293,7 @@ class OrderService
                     }
                 } else {
                     $product = $productId ? Product::find($productId) : null;
+                    $maxSortOrder = OrderItem::where('order_id', $orderId)->max('sort_order') ?? 0;
                     $orderItem = OrderItem::create([
                         'order_id' => $orderId,
                         'product_id' => $productId,
@@ -302,7 +303,8 @@ class OrderService
                         'quantity' => $itemData['quantity'],
                         'price' => $itemData['price'],
                         'note' => $itemData['note'] ?? null,
-                        'status' => 'pending'
+                        'status' => 'pending',
+                        'sort_order' => $maxSortOrder + 1
                     ]);
                     $handledItemIds[] = $orderItem->id;
                 }

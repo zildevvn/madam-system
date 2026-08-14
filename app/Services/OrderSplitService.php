@@ -62,10 +62,13 @@ class OrderSplitService
                     // [WHY] Move the entire item record to the new order
                     $sourceItem->update(['order_id' => $newOrder->id]);
                 } else {
+                    // Pre-split values for conservation check
+                    $originalQuantity = $sourceItem->quantity;
+
                     // [WHY] Partial split: Reduce source quantity and create new record
                     $sourceItem->decrement('quantity', $quantityToMove);
 
-                    OrderItem::create([
+                    $newOrderItem = OrderItem::create([
                         'order_id' => $newOrder->id,
                         'product_id' => $sourceItem->product_id,
                         'name' => $sourceItem->name,
@@ -76,7 +79,28 @@ class OrderSplitService
                         'note' => $sourceItem->note,
                         'status' => $sourceItem->status,
                         'source' => $sourceItem->source,
+                        'discount' => $sourceItem->discount,
+                        'discount_type' => $sourceItem->discount_type,
+                        'reservation_item_id' => $sourceItem->reservation_item_id,
+                        'sort_order' => $sourceItem->sort_order,
                     ]);
+
+                    // Data conservation check
+                    $originalValue = $this->calculateItemNetPrice($originalQuantity, $sourceItem->price, $sourceItem->discount, $sourceItem->discount_type);
+                    $remainingValue = $this->calculateItemNetPrice($sourceItem->quantity, $sourceItem->price, $sourceItem->discount, $sourceItem->discount_type);
+                    $splitValue = $this->calculateItemNetPrice($newOrderItem->quantity, $newOrderItem->price, $newOrderItem->discount, $newOrderItem->discount_type);
+
+                    if (abs($originalValue - ($remainingValue + $splitValue)) > 0.01) {
+                        Log::warning('Data conservation mismatch during partial item split.', [
+                            'order_id' => $sourceOrderId,
+                            'new_order_id' => $newOrder->id,
+                            'source_item_id' => $sourceItem->id,
+                            'new_item_id' => $newOrderItem->id,
+                            'expected_value' => $originalValue,
+                            'actual_value' => $remainingValue + $splitValue,
+                            'difference' => $originalValue - ($remainingValue + $splitValue),
+                        ]);
+                    }
                 }
             }
 
@@ -182,5 +206,19 @@ class OrderSplitService
             'merged_order' => $resultData['splitOrder']->fresh(),
             'original_order' => $resultData['originalOrder']->fresh(['items.product', 'childOrders.items.product'])
         ];
+    }
+
+    private function calculateItemNetPrice($quantity, $price, $discount, $discountType)
+    {
+        $gross = $quantity * $price;
+        $discountAmount = 0;
+        if ($discount > 0) {
+            if ($discountType === 'percent') {
+                $discountAmount = ($gross * $discount) / 100;
+            } else {
+                $discountAmount = $discount * $quantity;
+            }
+        }
+        return $gross - $discountAmount;
     }
 }
