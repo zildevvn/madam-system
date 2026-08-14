@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useMemo, useCallback, useState } from 'react';
+import React, { useReducer, useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import PaymentModal from './PaymentModal';
 import Receipt from './Receipt';
@@ -6,6 +6,8 @@ import { resolveTableName } from '../../shared/utils/normalizeTableStrings';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import Icon from '../shared/Icon';
 import { getPaymentEditPermission } from '../../shared/utils/paymentPermissions';
+import orderApi from '../../services/orderApi';
+import toast from 'react-hot-toast';
 
 /**
  * [WHY] checkoutReducer handles all transitions for the checkout state.
@@ -19,8 +21,10 @@ const checkoutReducer = (state, action) => {
                 ...state,
                 [action.payload.lookupKey]: {
                     step: 1,
-                    discountType: 'fixed',
-                    discountValue: 0,
+                    discountType: action.payload.order?.discount_type || 'fixed',
+                    discountValue: Number(action.payload.order?.discount_value) || 0,
+                    serverDiscountType: action.payload.order?.discount_type || 'fixed',
+                    serverDiscountValue: Number(action.payload.order?.discount_value) || 0,
                     cashierNote: '',
                     draftItems: action.payload.items,
                     serverItems: action.payload.items, // [FIX] Track server state to avoid local adjustment wipes
@@ -67,7 +71,11 @@ const checkoutReducer = (state, action) => {
                 [action.payload.lookupKey]: {
                     ...state[action.payload.lookupKey],
                     draftItems: action.payload.items,
-                    serverItems: action.payload.items // [FIX] Sync server state tracker
+                    serverItems: action.payload.items, // [FIX] Sync server state tracker
+                    discountType: action.payload.order?.discount_type || 'fixed',
+                    discountValue: Number(action.payload.order?.discount_value) || 0,
+                    serverDiscountType: action.payload.order?.discount_type || 'fixed',
+                    serverDiscountValue: Number(action.payload.order?.discount_value) || 0,
                 }
             };
         case 'CLEAR': {
@@ -100,6 +108,7 @@ const CheckoutManager = ({
     const [contexts, dispatch] = useReducer(checkoutReducer, {});
     const [isPrinting, setIsPrinting] = useState(false);
     const currentUser = useCurrentUser();
+    const previousGlobalDiscountRef = useRef({});
 
     // [WHY] Listen to browser beforeprint/afterprint events to mount/unmount the Receipt.
     useEffect(() => {
@@ -142,16 +151,20 @@ const CheckoutManager = ({
         // contains local adjustments which would trigger a false-positive refresh and wipe those adjustments.
         const serverItemsChanged = existing && existing.step === 1 &&
             JSON.stringify(existing.serverItems) !== JSON.stringify(initialItems);
+            
+        const serverDiscountChanged = existing && existing.step === 1 &&
+            (existing.serverDiscountType !== (currentOrder.discount_type || 'fixed') ||
+             existing.serverDiscountValue !== (Number(currentOrder.discount_value) || 0));
 
         if (!existing || isOrderSwitched) {
-            dispatch({ type: 'INITIALIZE_TABLE', payload: { lookupKey, items: initialItems, orderId: currentOrder.id } });
-        } else if (serverItemsChanged) {
+            dispatch({ type: 'INITIALIZE_TABLE', payload: { lookupKey, items: initialItems, orderId: currentOrder.id, order: currentOrder } });
+        } else if (serverItemsChanged || serverDiscountChanged) {
             // [FIX] Defensive guard: never wipe existing draftItems with an empty server list.
             // This prevents transient fetchTables states (during payment/broadcast) from clearing
             // items that are correctly in the parent order but temporarily missing from the payload.
             const wouldClearItems = initialItems.length === 0 && (existing.draftItems || []).length > 0;
             if (!wouldClearItems) {
-                dispatch({ type: 'REFRESH_ITEMS', payload: { lookupKey, items: initialItems } });
+                dispatch({ type: 'REFRESH_ITEMS', payload: { lookupKey, items: initialItems, order: currentOrder } });
             }
         }
     }, [selectedTable, currentOrder, currentLookupKey, contexts]);
@@ -205,6 +218,45 @@ const CheckoutManager = ({
         };
         return resolveTableName(orderData, allTables, tableMap);
     }, [activeModal, allTables, tableMap]);
+
+    // [WHY] Debounce global discount updates to the API
+    useEffect(() => {
+        if (!activeModal || activeModal.isHistory || !activeModal.order?.id) return;
+        
+        const activeModalId = activeModal.id;
+        const activeOrderId = activeModal.order.id;
+        const ctx = contexts[activeModalId];
+        
+        if (!ctx) return;
+
+        const currentType = ctx.discountType || 'fixed';
+        const currentValue = Number(ctx.discountValue) || 0;
+
+        // Skip first render/initialization
+        if (previousGlobalDiscountRef.current[activeModalId] === undefined) {
+            previousGlobalDiscountRef.current[activeModalId] = { type: currentType, value: currentValue };
+            return;
+        }
+
+        const prev = previousGlobalDiscountRef.current[activeModalId];
+        if (prev.type === currentType && prev.value === currentValue) return;
+
+        previousGlobalDiscountRef.current[activeModalId] = { type: currentType, value: currentValue };
+
+        const timer = setTimeout(async () => {
+            try {
+                await orderApi.updateOrderDiscount(activeOrderId, { 
+                    discount_type: currentType, 
+                    discount_value: currentValue 
+                });
+            } catch (error) {
+                console.error("Failed to update global discount", error);
+                toast.error('Lỗi khi lưu giảm giá tổng đơn!');
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [activeModal?.id, activeModal?.isHistory, activeModal?.order?.id, contexts]);
 
     const updateContext = useCallback((id, updates) => {
         dispatch({ type: 'UPDATE_FIELD', payload: { lookupKey: id, updates } });

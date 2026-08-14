@@ -7,12 +7,17 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Table;
 use App\Models\Reservation;
+use App\Services\OrderTableService;
+use App\Services\OrderSplitService;
 use App\Events\OrderUpdated;
+use App\Traits\PriceCalculator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
+    use PriceCalculator;
+
     protected $paymentService;
     protected $tableService;
     protected $splitService;
@@ -311,16 +316,10 @@ class OrderService
 
                 $discount = $itemData['discount'] ?? 0;
                 $discountType = $itemData['discount_type'] ?? 'fixed';
-                $itemGross = $orderItem->price * $orderItem->quantity;
-                $itemDiscountAmount = 0;
 
-                if ($discount > 0) {
-                    if ($discountType === 'percent') {
-                        $itemDiscountAmount = ($itemGross * $discount) / 100;
-                    } else {
-                        $itemDiscountAmount = $discount * $orderItem->quantity;
-                    }
-                }
+                $itemNetPrice = $this->calculateItemNetPrice($orderItem->quantity, $orderItem->price, $discount, $discountType);
+                $itemGross = $orderItem->price * $orderItem->quantity;
+                $itemDiscountAmount = $itemGross - $itemNetPrice;
 
                 $orderItem->discount = $discount;
                 $orderItem->discount_type = $discountType;
@@ -467,6 +466,71 @@ class OrderService
         }
 
         return $order;
+    }
+
+    public function updateOrderDiscount($orderId, array $data)
+    {
+        $order = Order::findOrFail($orderId);
+        if (!in_array($order->status, ['draft', 'pending', 'processing'])) {
+            throw new \Exception('Cannot update discount for a completed or cancelled order.');
+        }
+
+        $order->discount_type = $data['discount_type'];
+        $order->discount_value = $data['discount_value'];
+        $order->save();
+
+        $order->load([
+            'items.product:id,name,name_vi,price,type',
+            'table:id,name',
+            'server:id,name',
+            'cashier:id,name'
+        ]);
+
+        try {
+            broadcast(new OrderUpdated($order, 'order_updated'));
+        } catch (\Exception $e) {
+            Log::error('Broadcast failed during order discount update: ' . $e->getMessage());
+        }
+
+        return $order;
+    }
+
+    public function updateItemDiscount($itemId, array $data)
+    {
+        $item = OrderItem::with('order')->findOrFail($itemId);
+        $order = $item->order;
+        if (!$order || !in_array($order->status, ['draft', 'pending', 'processing'])) {
+            throw new \Exception('Cannot update discount for an item in a completed or cancelled order.');
+        }
+
+        $item->discount_type = $data['discount_type'];
+        $item->discount = $data['discount'];
+        $item->save();
+
+        // Recalculate order total price
+        $totalPrice = 0;
+        foreach ($order->items as $orderItem) {
+            $itemNetPrice = $this->calculateItemNetPrice($orderItem->quantity, $orderItem->price, $orderItem->discount, $orderItem->discount_type);
+            $totalPrice += $itemNetPrice;
+        }
+        $order->total_price = $totalPrice;
+        $order->save();
+
+        $order->load([
+            'items.product:id,name,name_vi,price,type',
+            'table:id,name',
+            'server:id,name',
+            'cashier:id,name'
+        ]);
+
+        try {
+            // [WHY] Broadcast order_updated to trigger frontend refresh, keeping UI synced
+            broadcast(new OrderUpdated($order, 'order_updated'));
+        } catch (\Exception $e) {
+            Log::error('Broadcast failed during item discount update: ' . $e->getMessage());
+        }
+
+        return $item;
     }
 
     // --- Delegated Methods ---

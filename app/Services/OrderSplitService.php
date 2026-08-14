@@ -7,9 +7,12 @@ use App\Models\OrderItem;
 use App\Events\OrderUpdated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Traits\PriceCalculator;
 
 class OrderSplitService
 {
+    use PriceCalculator;
+
     /**
      * splitItems
      * [WHY] Splits specific items from a source order into a new "sibling" order.
@@ -208,17 +211,5 @@ class OrderSplitService
         ];
     }
 
-    private function calculateItemNetPrice($quantity, $price, $discount, $discountType)
-    {
-        $gross = $quantity * $price;
-        $discountAmount = 0;
-        if ($discount > 0) {
-            if ($discountType === 'percent') {
-                $discountAmount = ($gross * $discount) / 100;
-            } else {
-                $discountAmount = $discount * $quantity;
-            }
-        }
-        return $gross - $discountAmount;
-    }
+    // calculateItemNetPrice is now provided by App\Traits\PriceCalculator
 }

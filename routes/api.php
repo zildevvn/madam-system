@@ -36,11 +36,13 @@ Route::middleware('web')->group(function () {
     Route::put('/orders/{id}/table', [OrderController::class, 'updateTable']);
     Route::patch('/orders/{id}/note', [OrderController::class, 'updateOrderNote']);
     Route::patch('/orders/{id}/guest-count', [OrderController::class, 'updateGuestCount']);
+    Route::patch('/orders/{id}/discount', [OrderController::class, 'updateOrderDiscount'])->name('order.discount.update');
     Route::post('/orders/{id}/split', [OrderController::class, 'split']);
     Route::post('/orders/{id}/merge-back', [OrderController::class, 'mergeBack']);
     Route::post('/orders/{id}/print-drinks', [OrderController::class, 'printDrinkBill']);
     Route::post('/orders/{id}/mark-printed', [OrderController::class, 'markPrinted']);
     Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
+    Route::patch('/order-items/{itemId}/discount', [OrderController::class, 'updateItemDiscount'])->name('order-item.discount.update');
 });
 
 // Accounts management

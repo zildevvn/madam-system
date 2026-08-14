@@ -114,6 +114,36 @@ class OrderController extends Controller
         return $this->success($order, 'Table updated successfully');
     }
 
+    public function updateOrderDiscount(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'discount_type' => 'required|in:percent,fixed',
+            'discount_value' => 'required|numeric|min:0'
+        ]);
+        if ($validated['discount_type'] === 'percent' && $validated['discount_value'] > 100) {
+            return $this->error(message: 'Percent discount cannot exceed 100', status: 422);
+        }
+
+        $order = $this->orderService->updateOrderDiscount($id, $validated);
+
+        return $this->success($order, 'Order discount updated successfully');
+    }
+
+    public function updateItemDiscount(Request $request, $itemId)
+    {
+        $validated = $request->validate([
+            'discount_type' => 'required|in:percent,fixed',
+            'discount' => 'required|numeric|min:0'
+        ]);
+        if ($validated['discount_type'] === 'percent' && $validated['discount'] > 100) {
+            return $this->error(message: 'Percent discount cannot exceed 100', status: 422);
+        }
+
+        $item = $this->orderService->updateItemDiscount($itemId, $validated);
+
+        return $this->success($item, 'Item discount updated successfully');
+    }
+
     public function destroy(Request $request, $id)
     {
         // \Illuminate\Support\Facades\Gate::authorize('cancel', Order::findOrFail($id));

@@ -46,24 +46,20 @@ export default function ProductItem({
     const [discountValue, setDiscountValue] = useState(item.discount || 0);
     const [discountType, setDiscountType] = useState(item.discountType || item.discount_type || 'fixed');
 
-    // Debounce effect for automatic discount update
+    // Call onUpdateDiscount immediately for local state sync
     useEffect(() => {
         // Skip if values match props exactly to prevent initial render fire
         if (Number(discountValue) === Number(item.discount || 0) && discountType === (item.discountType || item.discount_type || 'fixed')) {
             return;
         }
 
-        const handler = setTimeout(() => {
-            if (onUpdateDiscount) {
-                onUpdateDiscount(handlerId, {
-                    discount: Number(discountValue),
-                    discountType
-                });
-            }
-        }, 300);
-
-        return () => clearTimeout(handler);
-    }, [discountValue, discountType, item.discount, item.discountType, handlerId, onUpdateDiscount]);
+        if (onUpdateDiscount) {
+            onUpdateDiscount(handlerId, {
+                discount: Number(discountValue),
+                discountType
+            }, item.note, item.price, item.discount, item.discount_type);
+        }
+    }, [discountValue, discountType, item.discount, item.discountType, handlerId, onUpdateDiscount, item.note, item.price, item.discount_type]);
 
     const hasDiscount = Number(item.discount) > 0;
 

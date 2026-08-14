@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import productService from '../services/productService';
 import orderApi from '../services/orderApi';
 import { calculateTotals } from '../shared/utils/priceCalculations';
 import { useAppDispatch } from '../store/hooks';
 import { markOrderAsPrinted } from '../store/slices/tableSlice';
 import { normalizeString } from '../shared/utils/stringUtils';
+import toast from 'react-hot-toast';
 
 /**
  * usePaymentLogic: Encapsulates all payment-related state and handlers for the Cashier modal.
@@ -28,6 +29,7 @@ export const usePaymentLogic = ({
     setPayments
 }) => {
     const dispatch = useAppDispatch();
+    const itemDiscountDebounceTimers = useRef({});
     // [WHY] Centralized table resolution logic to ensure consistent ID identification across all handlers.
     const dbTableId = useMemo(() => 
         selectedTable?.originalTableId || 
@@ -284,15 +286,44 @@ export const usePaymentLogic = ({
         }
 
         const fallbackTId = dbTableId || selectedTable?.id;
+        let matchedItem = null;
+        
         const newItems = draftItems.map(i => {
             const isMatch = ((i.product_id || i.id) === productId) && 
                             ((i.tableId || fallbackTId) === tId) && 
                             ((i.note || '') === origNote) &&
                             (Number(i.price || 0) === Number(prc));
-            return isMatch ? { ...i, ...newUpdates } : i;
+                            
+            if (isMatch) {
+                matchedItem = { ...i, ...newUpdates };
+                return matchedItem;
+            }
+            return i;
         });
+        
         onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
+
+        // [WHY] Fire debounced API call to persist item discount while local state updates instantly
+        if (matchedItem && !isHistoryEdit && (matchedItem.order_item_id || (typeof matchedItem.id === 'number' && matchedItem.id !== matchedItem.product_id))) {
+            const dbItemId = matchedItem.order_item_id || matchedItem.id;
+            
+            if (itemDiscountDebounceTimers.current[dbItemId]) {
+                clearTimeout(itemDiscountDebounceTimers.current[dbItemId]);
+            }
+            
+            itemDiscountDebounceTimers.current[dbItemId] = setTimeout(async () => {
+                try {
+                    await orderApi.updateItemDiscount(dbItemId, {
+                        discount_type: matchedItem.discountType || matchedItem.discount_type || 'fixed',
+                        discount: Number(matchedItem.discount) || 0
+                    });
+                } catch (err) {
+                    console.error("Failed to update item discount", err);
+                    toast.error("Lỗi khi lưu giảm giá món!");
+                }
+            }, 500);
+        }
+    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems, isHistoryEdit]);
 
     const handleAddProduct = useCallback((product) => {
         const activeTId = targetTableId || dbTableId || selectedTable?.id;

@@ -56,6 +56,8 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     startTime: safeParseDate(order.created_at || order.updated_at),
                     orderNote: order.order_note || '',
                     guestCount: order.guest_count || 1,
+                    discount_type: order.discount_type || 'fixed',
+                    discount_value: Number(order.discount_value) || 0,
                     items: [],
                     itemsMap: {},
                     orders: [], // [NEW] Track individual orders for split payment support
@@ -101,6 +103,9 @@ export const consolidateOrders = (tables, tableIdToGroupKey, { filterType = null
                     name_vi: item.product?.name_vi || '',
                     quantity: item.quantity,
                     price: item.price || item.product?.price || 0,
+                    discount: Number(item.discount) || 0,
+                    discount_type: item.discount_type || 'fixed',
+                    discountType: item.discount_type || 'fixed',
                     status: item.status || 'pending',
                     done: item.status === 'ready' || item.status === 'served',
                     orderTime: safeParseDate(item.created_at),

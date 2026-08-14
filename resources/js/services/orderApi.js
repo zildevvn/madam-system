@@ -66,6 +66,14 @@ const orderApi = {
         const response = await axios.patch(`/api/orders/${orderId}/payment`, data);
         return response.data;
     },
+    updateOrderDiscount: async (orderId, payload) => {
+        const response = await axios.patch(`/api/orders/${orderId}/discount`, payload);
+        return response.data;
+    },
+    updateItemDiscount: async (itemId, payload) => {
+        const response = await axios.patch(`/api/order-items/${itemId}/discount`, payload);
+        return response.data;
+    },
 
     // --- SUB-RESOURCES ---
     updateItemStatus: async (itemId, status, quantity = null) => {

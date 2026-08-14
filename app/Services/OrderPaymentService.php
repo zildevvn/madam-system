@@ -24,8 +24,20 @@ class OrderPaymentService
 
             // [CALC] Calculate combined subtotal across all related orders
             $groupSubtotal = $relatedOrders->sum('total_price');
-            $discountType = $data['discount_type'] ?? null;
-            $discountValue = $data['discount_value'] ?? 0;
+            // [RULE] DB là nguồn mặc định cho discount, payload ($data) chỉ override khi có gửi rõ ràng.
+            // Điều này đảm bảo an toàn nếu local state của client bị sai/mất.
+            $discountType = $order->discount_type;
+            $discountValue = (float)($order->discount_value ?? 0);
+
+            if (array_key_exists('discount_value', $data) && $data['discount_value'] !== null) {
+                $discountType = $data['discount_type'] ?? 'fixed';
+                $discountValue = (float)$data['discount_value'];
+                
+                // Cập nhật luôn vào DB để nhất quán trước khi tính toán
+                $order->discount_type = $discountType;
+                $order->discount_value = $discountValue;
+                $order->save();
+            }
             $groupDiscountAmount = 0;
 
             if ($discountType === 'percent') {
