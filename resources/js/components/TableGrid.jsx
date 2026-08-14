@@ -38,12 +38,19 @@ const TableGrid = ({
                 // In string-based merging, the first ID in the dash-separated string is the primary
                 const isPrimary = groupKey ? groupKey.split('-')[0] === table.id.toString() : true;
 
+                // Resolve the actual active_order, checking siblings in the group
+                // if this table doesn't hold it directly.
+                const resolvedActiveOrder = table.active_order ||
+                    (groupKey
+                        ? tables.find(t => tableIdToGroupKey[t.id.toString()] === groupKey && t.active_order)?.active_order
+                        : null);
+
                 const statusText = (!isBusy)
                     ? 'Bàn Trống'
                     : (!isPrimary
                         ? 'Đang gộp'
-                        : (table.active_order?.created_at
-                            ? getElapsed(table.active_order.created_at)
+                        : (resolvedActiveOrder?.created_at
+                            ? getElapsed(resolvedActiveOrder.created_at)
                             : 'Đang xử lý'));
 
                 return (
