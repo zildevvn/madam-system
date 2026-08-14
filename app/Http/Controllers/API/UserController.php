@@ -94,10 +94,28 @@ class UserController extends Controller
             ], 401);
         }
 
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Temporarily make session_token visible so frontend doesn't break
+        $user->makeVisible('session_token');
+
         return response()->json([
             'data' => $user,
+            'token' => $token, // Sanctum token for step 3
             'message' => 'Login successful',
             'errors' => null
+        ]);
+    }
+
+    /**
+     * Logout the user (revoke token).
+     */
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully'
         ]);
     }
 

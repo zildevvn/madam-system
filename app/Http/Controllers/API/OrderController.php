@@ -40,8 +40,7 @@ class OrderController extends Controller
         $validated = $request->validated();
         // [WHY] Auth session is stateless for this app (no Auth::login on the login endpoint).
         // The frontend sends the logged-in user's ID explicitly in the request body.
-        $currentUser = $this->getCurrentUser($request);
-        $userId = $currentUser ? $currentUser->id : ($validated['user_id'] ?? $request->header('X-User-Id'));
+        $userId = $request->user() ? $request->user()->id : ($validated['user_id'] ?? null);
         
         $data = array_merge($validated, ['user_id' => $userId]);
         $order = $this->orderService->createOrder($data);
@@ -58,8 +57,7 @@ class OrderController extends Controller
     {
         $validated = $request->validated();
         
-        $currentUser = $this->getCurrentUser($request);
-        $cashierId = $currentUser ? $currentUser->id : $request->header('X-User-Id');
+        $cashierId = $request->user() ? $request->user()->id : null;
         
         $data = array_merge($validated, ['cashier_id' => $cashierId]);
         $order = $this->orderService->completeOrder($id, $data);
@@ -72,8 +70,7 @@ class OrderController extends Controller
         $validated = $request->validated();
         // [WHY] Auth session is stateless for this app (no Auth::login on the login endpoint).
         // The frontend sends the logged-in user's ID explicitly in the request body.
-        $currentUser = $this->getCurrentUser($request);
-        $userId = $currentUser ? $currentUser->id : ($validated['user_id'] ?? $request->header('X-User-Id'));
+        $userId = $request->user() ? $request->user()->id : ($validated['user_id'] ?? null);
         
         $order = $this->orderService->checkoutOrder(
             $id,

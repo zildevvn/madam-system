@@ -46,7 +46,8 @@ Route::middleware('web')->group(function () {
 });
 
 // Accounts management
-Route::post('/login', [UserController::class, 'login']);
+Route::post('/login', [UserController::class, 'login'])->withoutMiddleware('auth:sanctum');
+Route::middleware('auth:sanctum')->post('/logout', [UserController::class, 'logout']);
 Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::get('/users/{id}', [UserController::class, 'show']);

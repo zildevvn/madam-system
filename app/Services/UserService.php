@@ -53,7 +53,6 @@ class UserService
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'plain_password' => $data['password'],
             'session_token' => \Illuminate\Support\Str::random(60),
             'role' => $data['role'] ?? 'order_staff',
             'join_date' => $data['join_date'] ?? null,
@@ -92,7 +91,6 @@ class UserService
 
         if (!empty($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);
-            $updateData['plain_password'] = $data['password'];
             $updateData['session_token'] = \Illuminate\Support\Str::random(60);
         }
 

@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
         ]);
         $middleware->api(prepend: [
-            \App\Http\Middleware\CheckSessionToken::class,
+            'auth:sanctum',
         ]);
         $middleware->alias([
             'order.export.auth' => \App\Http\Middleware\AuthorizeOrderExport::class,

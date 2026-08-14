@@ -216,6 +216,7 @@ function App() {
     // [WHY] Initial Data Fetch for Products and Categories
     // Performs cache validation before dispatching to optimize network usage and boot performance.
     useEffect(() => {
+        if (!user) return;
         dispatch(fetchSettings());
         if (productCount === 0) {
             dispatch(fetchProducts());
@@ -223,7 +224,7 @@ function App() {
         if (categoryCount === 0) {
             dispatch(fetchCategories());
         }
-    }, [dispatch, productCount, categoryCount]);
+    }, [dispatch, user, productCount, categoryCount]);
 
     return (
         <ErrorBoundary>

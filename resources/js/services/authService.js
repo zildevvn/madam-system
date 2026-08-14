@@ -8,3 +8,8 @@ export const loginApi = async (credentials) => {
     });
     return response.data;
 };
+
+export const logoutApi = async () => {
+    const response = await axios.post('/api/logout');
+    return response.data;
+};

@@ -9,11 +9,8 @@ window.axios.interceptors.request.use((config) => {
     if (storedUser) {
         try {
             const user = JSON.parse(storedUser);
-            if (user && user.id) {
-                config.headers['X-User-Id'] = user.id;
-                if (user.session_token) {
-                    config.headers['X-Session-Token'] = user.session_token;
-                }
+            if (user && user.token) {
+                config.headers['Authorization'] = 'Bearer ' + user.token;
             }
         } catch (e) {
             console.error('Failed to parse user from localStorage', e);

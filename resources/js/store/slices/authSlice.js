@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { loginApi } from '../../services/authService';
+import { loginApi, logoutApi } from '../../services/authService';
 
 export const login = createAsyncThunk('auth/login', async ({ username, password }, { rejectWithValue }) => {
   try {
     const response = await loginApi({ username, password });
-    const user = response.data;
+    const user = { ...response.data, token: response.token };
     localStorage.setItem('user', JSON.stringify(user));
     return user;
   } catch (err) {
@@ -35,7 +35,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    logout: (state) => {
+    logoutLocal: (state) => {
       state.user = null;
       localStorage.removeItem('user');
     },
@@ -61,5 +61,14 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, updateUserInStore } = authSlice.actions;
+export const logout = createAsyncThunk('auth/logout', async (_, { dispatch }) => {
+  try {
+    await logoutApi();
+  } catch (err) {
+    console.warn('Logout API failed, continuing local logout...', err);
+  }
+  dispatch(logoutLocal());
+});
+
+export const { logoutLocal, updateUserInStore } = authSlice.actions;
 export default authSlice.reducer;
