@@ -125,7 +125,10 @@ export const useCashierHistory = (historyOrders = []) => {
                     if (itemId) handledItemIds.add(itemId);
 
                     const tid = item.tableId || order.table_id;
-                    const key = `${item.product_id || item.name}-${item.note || ''}`; // [WHY] No tid in key to merge across tables
+                    // [FIX] Include price in the merge key — items with the same name/note but different
+                    // price (e.g. adult vs child pricing on custom items with no product_id) must stay on
+                    // separate lines, not be merged into one with a wrong quantity/price.
+                    const key = `${item.product_id || item.name}-${item.note || ''}-${Number(item.price) || 0}`; // [WHY] No tid in key to merge across tables
                     if (groups[groupKey].itemsMap[key]) {
                         groups[groupKey].itemsMap[key].quantity += item.quantity;
                     } else {
@@ -152,7 +155,10 @@ export const useCashierHistory = (historyOrders = []) => {
                     if (itemId) handledItemIds.add(itemId);
 
                     const tid = item.tableId || order.table_id;
-                    const key = `${item.product_id || item.name}-${item.note || ''}`; // [WHY] No tid in key to merge across tables
+                    // [FIX] Include price in the merge key — items with the same name/note but different
+                    // price (e.g. adult vs child pricing on custom items with no product_id) must stay on
+                    // separate lines, not be merged into one with a wrong quantity/price.
+                    const key = `${item.product_id || item.name}-${item.note || ''}-${Number(item.price) || 0}`; // [WHY] No tid in key to merge across tables
                     if (g.itemsMap[key]) {
                         g.itemsMap[key].quantity += item.quantity;
                     } else {
