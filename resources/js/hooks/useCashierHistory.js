@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { cleanMergedString, generateTableRange } from '../shared/utils/normalizeTableStrings';
-import { calculateTotals } from '../shared/utils/priceCalculations';
 
 /**
  * computeSignals
@@ -171,19 +170,15 @@ export const useCashierHistory = (historyOrders = []) => {
             }
         });
 
-        // [WHY] Step 4: Final pass to calculate synchronized totals for each group
+        // [WHY] Step 4: Final pass — aggregate payments and resolve display metadata.
+        // [FIX] DO NOT recalculate total_price from items.
+        // Backend (OrderPaymentService) already computed the correct NET price for each order,
+        // including per-item discounts, VAT, and group discount distribution across split orders.
+        // Recalculating from items[].price causes inflated totals because item prices are gross/pre-discount.
         return Object.values(groups).map(g => {
             const rawItems = Object.values(g.itemsMap);
-            
-            // [WHY] Get the deterministic primary order for inherited metadata
             const primaryOrder = getPrimaryOrder(g.allOrders) || g.allOrders[0];
-            
-            const totals = calculateTotals(rawItems, {
-                type: primaryOrder.discount_type || 'fixed',
-                value: primaryOrder.discount_value || 0
-            });
 
-            // [WHY] Ensure each item has a tableId for UI components immutably
             const items = rawItems.map(item => ({
                 ...item,
                 tableId: item.tableId || g.table_id
@@ -194,15 +189,12 @@ export const useCashierHistory = (historyOrders = []) => {
                 mergedTablesRange = generateTableRange(g.allTableIds);
             }
 
-            // Find the latest updated_at across all related orders
             const latestUpdatedAt = g.allOrders.reduce((latest, current) => {
                 return new Date(current.updated_at) > new Date(latest) ? current.updated_at : latest;
             }, g.updated_at);
 
-            // [WHY] Aggregate all payments across split bills in the group
             const mergedPaymentsMap = g.allOrders.reduce((acc, currentOrder) => {
-                const payments = currentOrder.payments || [];
-                payments.forEach(p => {
+                (currentOrder.payments || []).forEach(p => {
                     const method = p.payment_method;
                     if (!acc[method]) {
                         acc[method] = { payment_method: method, amount: 0 };
@@ -211,8 +203,30 @@ export const useCashierHistory = (historyOrders = []) => {
                 });
                 return acc;
             }, {});
-
             const mergedPayments = Object.values(mergedPaymentsMap);
+
+            // [FIX] Sum total_price directly from backend values — do NOT use calculateTotals().
+            const aggregatedTotalPrice = g.allOrders.reduce(
+                (sum, o) => sum + (Number(o.total_price) || 0), 0
+            );
+            const aggregatedDiscountAmount = g.allOrders.reduce(
+                (sum, o) => sum + (Number(o.discount_amount) || 0), 0
+            );
+            // [FIX] Use ?? not || — a legitimately-zero subtotal must not fall back to total_price.
+            const aggregatedSubtotal = g.allOrders.reduce(
+                (sum, o) => sum + (Number(o.subtotal ?? o.total_price) || 0), 0
+            );
+            // [FIX] Preserve item-level discount info instead of hardcoding 0 — sum per-item discount
+            // (price * discount, or price * discount/100 for percent type) across rawItems so any UI
+            // reading itemDiscountsTotal for breakdown display doesn't silently regress to 0.
+            const aggregatedItemDiscountsTotal = rawItems.reduce((sum, item) => {
+                const price = Number(item.price) || 0;
+                const qty = Number(item.quantity) || 0;
+                const disc = Number(item.discount) || 0;
+                const type = item.discount_type || item.discountType || 'fixed';
+                const perUnitDisc = type === 'percent' ? (price * disc / 100) : disc;
+                return sum + (perUnitDisc * qty);
+            }, 0);
 
             return {
                 ...g,
@@ -221,10 +235,10 @@ export const useCashierHistory = (historyOrders = []) => {
                 reservation: primaryOrder.reservation || null,
                 reservation_id: primaryOrder.reservation_id || null,
                 isGroup: !!primaryOrder.reservation_id,
-                total_price: totals.finalTotal,
-                discount_amount: totals.globalDiscountAmount,
-                itemDiscountsTotal: totals.itemDiscountsTotal,
-                subtotal: totals.grossTotal,
+                total_price: aggregatedTotalPrice,
+                discount_amount: aggregatedDiscountAmount,
+                itemDiscountsTotal: aggregatedItemDiscountsTotal,
+                subtotal: aggregatedSubtotal,
                 merged_tables: mergedTablesRange,
                 mergedTables: mergedTablesRange,
                 tableName: mergedTablesRange,
