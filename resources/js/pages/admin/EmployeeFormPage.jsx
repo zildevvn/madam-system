@@ -193,32 +193,39 @@ const EmployeeFormPage = () => {
         setSubmitting(true);
         try {
             const formData = new FormData();
+
+            // Required fields — luôn append
             formData.append('name', data.name);
             formData.append('email', data.email);
+            formData.append('role', data.role);
+            formData.append('status', data.status || 'active');
+            formData.append('date_of_birth', data.date_of_birth);
 
+            // Password — chỉ append khi có giá trị
             if (data.password) {
                 formData.append('password', data.password);
             }
 
-            formData.append('role', data.role);
-            formData.append('join_date', data.join_date);
-            formData.append('date_of_birth', data.date_of_birth);
-            formData.append('work_shift', data.work_shift);
-            formData.append('salary', data.salary);
-            formData.append('bonus', data.bonus);
-            formData.append('address', data.address || '');
-            formData.append('phone', data.phone || '');
-            formData.append('status', data.status || 'active');
+            // Nullable string fields — chỉ append khi có giá trị
+            // [FIX] Empty string gây lỗi validation nullable|date và nullable|string trên backend
+            if (data.join_date)  formData.append('join_date', data.join_date);
+            if (data.work_shift) formData.append('work_shift', data.work_shift);
+            if (data.address)    formData.append('address', data.address);
+            if (data.phone)      formData.append('phone', data.phone);
 
-            if (photoFile) {
-                formData.append('photo', photoFile);
+            // Nullable numeric fields — chỉ append khi là số hợp lệ
+            // [FIX] Empty string "" không pass nullable|numeric validation
+            if (data.salary !== '' && data.salary !== null && data.salary !== undefined) {
+                formData.append('salary', data.salary);
             }
-            if (idCardFile) {
-                formData.append('id_card_image', idCardFile);
+            if (data.bonus !== '' && data.bonus !== null && data.bonus !== undefined) {
+                formData.append('bonus', data.bonus);
             }
-            if (contractFile) {
-                formData.append('contract_image', contractFile);
-            }
+
+            // File uploads — chỉ append khi user chọn file mới
+            if (photoFile)    formData.append('photo', photoFile);
+            if (idCardFile)   formData.append('id_card_image', idCardFile);
+            if (contractFile) formData.append('contract_image', contractFile);
 
             if (isEditMode) {
                 await updateUserApi(id, formData);

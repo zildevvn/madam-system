@@ -53,7 +53,6 @@ class UserService
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'session_token' => \Illuminate\Support\Str::random(60),
             'role' => $data['role'] ?? 'order_staff',
             'join_date' => $data['join_date'] ?? null,
             'date_of_birth' => $data['date_of_birth'] ?? null,
@@ -91,7 +90,6 @@ class UserService
 
         if (!empty($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);
-            $updateData['session_token'] = \Illuminate\Support\Str::random(60);
         }
 
         if (isset($data['remove_id_card_image']) && $data['remove_id_card_image'] == true) {
