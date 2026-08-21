@@ -8,13 +8,15 @@ const MergeTableSelector = ({
     mergedTableIds,
     toggleMergedTable,
     showMergeDropdown,
-    setShowMergeDropdown
+    setShowMergeDropdown,
+    isDisabled
 }) => {
     return (
-        <div className="relative flex items-center">
+        <div className="relative flex items-center list-table-number">
             <button
                 onClick={() => setShowMergeDropdown(!showMergeDropdown)}
-                className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 rounded-full text-[11px] md:text-[13px] font-semibold transition-colors border ${mergedTableIds.length > 0 ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200'} hover:bg-orange-100 hover:border-orange-300 cursor-pointer`}
+                disabled={isDisabled}
+                className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 rounded-full text-[11px] md:text-[13px] font-semibold transition-colors border ${mergedTableIds.length > 0 ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200'} ${isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-orange-100 hover:border-orange-300 cursor-pointer'}`}
             >
                 <Icon name="plus" className="w-3.5 h-3.5" size={14} />
                 <span>Gộp{mergedTableIds.length > 0 ? `: ${mergedTableIds.length}` : ' bàn'}</span>

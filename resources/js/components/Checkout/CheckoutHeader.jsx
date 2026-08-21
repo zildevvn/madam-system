@@ -13,7 +13,8 @@ const CheckoutHeader = ({
     mergedTableIds,
     toggleMergedTable,
     showMergeDropdown,
-    setShowMergeDropdown
+    setShowMergeDropdown,
+    isDisabled
 }) => {
 
     return (
@@ -35,7 +36,8 @@ const CheckoutHeader = ({
                         <select
                             value={selectedTableId}
                             onChange={(e) => setSelectedTableId(e.target.value)}
-                            className="btn-number-table appearance-none bg-gray-100 text-gray-600 pl-2 pr-4 md:pl-4 md:pr-8 py-1.5 rounded-full text-[11px] md:text-[13px] font-semibold leading-none border border-gray-200 cursor-pointer hover:bg-gray-200 hover:border-orange-200 transition-colors"
+                            disabled={isDisabled}
+                            className={`list-table-number btn-number-table appearance-none bg-gray-100 text-gray-600 pl-2 pr-4 md:pl-4 md:pr-8 py-1.5 rounded-full text-[11px] md:text-[13px] font-semibold leading-none border border-gray-200 transition-colors ${isDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer hover:bg-gray-200 hover:border-orange-200'}`}
                         >
                             <option value={tableId}>
                                 {allTables.find(t => t.id.toString() === tableId?.toString())?.name || `Bàn ${tableId.toString().replace(/^Bàn\s+/i, '')}`}
@@ -69,6 +71,7 @@ const CheckoutHeader = ({
                         toggleMergedTable={toggleMergedTable}
                         showMergeDropdown={showMergeDropdown}
                         setShowMergeDropdown={setShowMergeDropdown}
+                        isDisabled={isDisabled}
                     />
                 </div>
             </div>
