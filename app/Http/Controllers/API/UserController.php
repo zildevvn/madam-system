@@ -156,13 +156,22 @@ class UserController extends Controller
             ], 403);
         }
 
+        // [FIX] Convert empty strings to null for nullable fields
+        // Laravel nullable validation accepts null but rejects empty string ""
+        $nullableFields = ['salary', 'bonus', 'join_date', 'work_shift', 'address', 'phone'];
+        foreach ($nullableFields as $field) {
+            if ($request->input($field) === '') {
+                $request->merge([$field => null]);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role' => 'required|string|in:admin,accountant,manager,order_staff,kitchen,bar,cashier,bill,seller',
             'join_date' => 'nullable|date',
-            'date_of_birth' => 'required|date',
+            'date_of_birth' => 'required|date_format:Y-m-d|before:today|after:1900-01-01',
             'work_shift' => 'nullable|string|max:255',
             'salary' => 'nullable|numeric|min:0',
             'bonus' => 'nullable|numeric|min:0',
@@ -209,13 +218,21 @@ class UserController extends Controller
             }
         }
 
+        // [FIX] Convert empty strings to null for nullable fields
+        $nullableFields = ['salary', 'bonus', 'join_date', 'work_shift', 'address', 'phone'];
+        foreach ($nullableFields as $field) {
+            if ($request->input($field) === '') {
+                $request->merge([$field => null]);
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $id,
             'password' => 'sometimes|nullable|string|min:6',
             'role' => 'sometimes|required|string|in:admin,accountant,manager,order_staff,kitchen,bar,cashier,bill,seller',
             'join_date' => 'sometimes|nullable|date',
-            'date_of_birth' => 'sometimes|required|date',
+            'date_of_birth' => 'sometimes|required|date_format:Y-m-d|before:today|after:1900-01-01',
             'work_shift' => 'sometimes|nullable|string|max:255',
             'flexible_shifts' => 'sometimes|nullable|array',
             'salary' => 'sometimes|nullable|numeric|min:0',

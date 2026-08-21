@@ -68,6 +68,7 @@ export default function Checkout() {
                 toggleMergedTable={toggleMergedTable}
                 showMergeDropdown={showMergeDropdown}
                 setShowMergeDropdown={setShowMergeDropdown}
+                isDisabled={isModified || isSaving}
             />
 
             <CheckoutItemList

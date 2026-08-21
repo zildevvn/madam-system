@@ -107,6 +107,7 @@
 
 
         .list-tables {
+            padding-bottom: 20px;
             grid-template-columns: repeat(6, minmax(0, 1fr));
 
             @media (max-width: 1199.98px) {
