@@ -13,18 +13,25 @@ const initialState = {
   status: 'idle',
   error: null,
   activeTab: 'tables',
+
   // Tracks tables that have pending optimistic patches.
   // fetchTables.fulfilled will not overwrite these tables to avoid race conditions.
-  pendingTableIds: {},  // { [tableId]: pendingCount }
+  pendingTableIds: {},
+
+  // Tracks the latest fetchTables request.
+  // Prevents an older/slower request from overwriting newer Redux state.
+  currentRequestId: null,
 };
 
 const tableSlice = createSlice({
   name: 'table',
   initialState,
+
   reducers: {
     setActiveTab: (state, action) => {
       state.activeTab = action.payload;
     },
+
     // Optimistic item status patch: updates specific items in-place before API confirms.
     // Also registers the table as 'pending' to guard against stale fetchTables overwrites.
     // [WHY] Global search across all tables is required to correctly update merged/combined views.
@@ -38,6 +45,7 @@ const tableSlice = createSlice({
       //    This ensures that in a merged group, items belonging to "follower" tables are also updated.
       state.allIds.forEach(id => {
         const table = state.byId[id];
+
         if (table?.active_order?.items) {
           table.active_order.items.forEach(item => {
             if (itemIds.includes(item.id)) {
@@ -45,6 +53,7 @@ const tableSlice = createSlice({
             }
           });
         }
+
         if (table?.active_orders) {
           table.active_orders.forEach(o => {
             if (o.items) {
@@ -58,15 +67,19 @@ const tableSlice = createSlice({
         }
       });
     },
+
     // [WHY] Optimistically removes a completed order from the active orders list immediately.
     // Prevents "ghost" duplicates from lingering on the UI before the WebSocket confirmation arrives.
     optimisticallyCompleteOrder: (state, action) => {
       const orderId = action.payload;
+
       state.allIds.forEach(id => {
         const table = state.byId[id];
         let hasActiveOrders = false;
+
         if (table?.active_orders) {
           table.active_orders = table.active_orders.filter(o => o.id !== orderId);
+
           if (table.active_orders.length > 0) {
             // Find the remaining active order with the max ID (matches Laravel backend max ID logic)
             const remainingSorted = [...table.active_orders].sort((a, b) => b.id - a.id);
@@ -76,25 +89,29 @@ const tableSlice = createSlice({
             table.active_order = null;
           }
         }
-        
+
         // Fallback for singular active_order case
         if (!hasActiveOrders && table?.active_order?.id === orderId) {
           table.active_order = null;
         }
       });
     },
+
     markOrderAsPrinted: (state, action) => {
       const { orderId, siblingOrderIds = [] } = action.payload;
       const allTargetIds = [orderId, ...siblingOrderIds].map(id => Number(id));
 
       state.allIds.forEach(id => {
         const table = state.byId[id];
+
         if (table?.active_order && allTargetIds.includes(table.active_order.id)) {
           table.active_order.is_printed = true;
-          table.active_order.print_count = (Number(table.active_order.print_count) || 0) + 1;
+          table.active_order.print_count =
+            (Number(table.active_order.print_count) || 0) + 1;
           table.active_order.printed_at = new Date().toISOString();
           table.active_order.printedAt = table.active_order.printed_at;
         }
+
         if (table?.active_orders) {
           table.active_orders.forEach(o => {
             if (allTargetIds.includes(o.id)) {
@@ -107,8 +124,10 @@ const tableSlice = createSlice({
         }
       });
     },
+
     updateTableFromSocket: (state, action) => {
       const { id, status, active_order, active_orders } = action.payload;
+
       if (state.byId[id]) {
         if (status) state.byId[id].status = status;
         if (active_order !== undefined) state.byId[id].active_order = active_order;
@@ -116,26 +135,63 @@ const tableSlice = createSlice({
       }
     },
   },
+
   extraReducers: (builder) => {
     builder
-      .addCase(fetchTables.pending, (state) => {
+
+      // ---------------------------------------------------------
+      // fetchTables
+      // ---------------------------------------------------------
+
+      .addCase(fetchTables.pending, (state, action) => {
         state.status = 'loading';
+
+        // Store the latest request ID.
+        // Any older request that resolves later will be ignored.
+        state.currentRequestId = action.meta.requestId;
       })
+
       .addCase(fetchTables.fulfilled, (state, action) => {
+        // Ignore stale/older fetch responses.
+        //
+        // Example:
+        // Request A starts
+        // Request B starts
+        // B finishes first -> accepted
+        // A finishes later -> ignored
+        if (state.currentRequestId !== action.meta.requestId) {
+          return;
+        }
+
         state.status = 'succeeded';
+
         const tables = action.payload;
+
         tables.forEach(table => {
           // Skip tables that have in-flight optimistic patches.
           // Their confirmed data will arrive via updateItemStatusAsync.fulfilled addMatcher.
           if (state.pendingTableIds[table.id] > 0) return;
+
           state.byId[table.id] = table;
         });
+
         state.allIds = tables.map(table => table.id);
       })
+
       .addCase(fetchTables.rejected, (state, action) => {
+        // Ignore errors from stale/older requests as well.
+        if (state.currentRequestId !== action.meta.requestId) {
+          return;
+        }
+
         state.status = 'failed';
         state.error = action.error.message;
       })
+
+      // ---------------------------------------------------------
+      // updateItemStatusAsync
+      // ---------------------------------------------------------
+
       // When a full table fetch comes in, update all tables.
       // Use a surgical merge: update each table but preserve any in-flight local patches.
       // NOTE: This is fine because fetchTables is called AFTER the server has committed the change.
@@ -144,8 +200,11 @@ const tableSlice = createSlice({
         isAnyOf(updateItemStatusAsync.fulfilled),
         (state, action) => {
           const order = action.payload;
+
           if (!order || !order.table_id) return;
+
           const tableId = order.table_id;
+
           if (!state.byId[tableId]) return;
 
           // Clear one pending count for this table
@@ -155,9 +214,13 @@ const tableSlice = createSlice({
 
           // 1. Surgical patch with server-confirmed statuses for active_order
           const existingOrder = state.byId[tableId].active_order;
+
           if (existingOrder && order.items && existingOrder.items) {
             order.items.forEach(updatedItem => {
-              const idx = existingOrder.items.findIndex(i => i.id === updatedItem.id);
+              const idx = existingOrder.items.findIndex(
+                i => i.id === updatedItem.id
+              );
+
               if (idx !== -1) {
                 existingOrder.items[idx] = updatedItem;
               } else {
@@ -170,13 +233,19 @@ const tableSlice = createSlice({
 
           // 2. Surgical patch with server-confirmed statuses for active_orders array
           const activeOrders = state.byId[tableId].active_orders;
+
           if (activeOrders && order.items) {
             const orderIdx = activeOrders.findIndex(o => o.id === order.id);
+
             if (orderIdx !== -1) {
               const existingO = activeOrders[orderIdx];
+
               if (existingO.items) {
                 order.items.forEach(updatedItem => {
-                  const idx = existingO.items.findIndex(i => i.id === updatedItem.id);
+                  const idx = existingO.items.findIndex(
+                    i => i.id === updatedItem.id
+                  );
+
                   if (idx !== -1) {
                     existingO.items[idx] = updatedItem;
                   } else {
@@ -192,59 +261,81 @@ const tableSlice = createSlice({
           }
         }
       )
+
       .addMatcher(
         isAnyOf(updateItemStatusAsync.rejected),
         (state, action) => {
           // On failure, clear the pending guard.
           // Bills.jsx will dispatch a revert patchItemsStatus separately.
           const tableId = action.meta?.arg?.tableId;
+
           if (tableId && state.pendingTableIds[tableId] > 0) {
             state.pendingTableIds[tableId] -= 1;
           }
         }
       )
+
+      // ---------------------------------------------------------
+      // checkoutOrderAsync / fetchActiveOrderAsync
+      // ---------------------------------------------------------
+
       .addMatcher(
-        isAnyOf(checkoutOrderAsync.fulfilled, fetchActiveOrderAsync.fulfilled),
+        isAnyOf(
+          checkoutOrderAsync.fulfilled,
+          fetchActiveOrderAsync.fulfilled
+        ),
         (state, action) => {
           const payload = action.payload;
-          
+
           if (action.type === fetchActiveOrderAsync.fulfilled.type) {
             // payload is now an array of active orders for the table
             if (payload && Array.isArray(payload) && payload.length > 0) {
               const tableId = payload[0].table_id;
+
               if (tableId && state.byId[tableId]) {
                 const table = state.byId[tableId];
+
                 table.active_orders = payload;
+
                 // fallback active_order to the main order or the first one
-                const mainOrder = payload.find(o => !o.parent_order_id) || payload[0];
+                const mainOrder =
+                  payload.find(o => !o.parent_order_id) || payload[0];
+
                 table.active_order = mainOrder;
               }
             } else if (action.meta?.arg) {
-               // payload is empty array, meaning no active orders.
-               const tableId = action.meta.arg;
-               if (state.byId[tableId]) {
-                   state.byId[tableId].active_order = null;
-                   state.byId[tableId].active_orders = [];
-               }
+              // payload is empty array, meaning no active orders.
+              const tableId = action.meta.arg;
+
+              if (state.byId[tableId]) {
+                state.byId[tableId].active_order = null;
+                state.byId[tableId].active_orders = [];
+              }
             }
+
             return;
           }
 
           const order = payload;
+
           if (order && order.table_id && state.byId[order.table_id]) {
             const table = state.byId[order.table_id];
+
             table.active_order = order;
-            
+
             // [FIX] If active_orders array exists (e.g. split bills, merged tables),
             // we must also update the specific order within that array so that useConsolidatedOrders
             // (which prefers the array) receives the instantaneous local update before WebSockets fire.
             if (table.active_orders) {
-                const idx = table.active_orders.findIndex(o => o.id === order.id);
-                if (idx !== -1) {
-                    table.active_orders[idx] = order;
-                } else {
-                    table.active_orders.push(order);
-                }
+              const idx = table.active_orders.findIndex(
+                o => o.id === order.id
+              );
+
+              if (idx !== -1) {
+                table.active_orders[idx] = order;
+              } else {
+                table.active_orders.push(order);
+              }
             }
 
             if (action.type === checkoutOrderAsync.fulfilled.type) {
@@ -256,22 +347,29 @@ const tableSlice = createSlice({
   },
 });
 
-export const { setActiveTab, patchItemsStatus, optimisticallyCompleteOrder, updateTableFromSocket, markOrderAsPrinted } = tableSlice.actions;
+export const {
+  setActiveTab,
+  patchItemsStatus,
+  optimisticallyCompleteOrder,
+  updateTableFromSocket,
+  markOrderAsPrinted,
+} = tableSlice.actions;
 
 // Selectors
 const selectTablesState = state => state.table;
 
 export const selectAllTables = createSelector(
   [selectTablesState],
-  (tableState) => tableState.allIds.map(id => tableState.byId[id])
+  tableState => tableState.allIds.map(id => tableState.byId[id])
 );
 
 /**
  * [HELPER] Builds a mapping of table IDs to their logical group keys.
  * Handles both standard merges and group reservations.
  */
-const getGroupMapping = (tables) => {
+const getGroupMapping = tables => {
   const mapping = {};
+
   tables.forEach(t => {
     const rawPlural = t.active_orders || t.activeOrders;
     const rawSingular = t.active_order || t.activeOrder;
@@ -283,31 +381,40 @@ const getGroupMapping = (tables) => {
       // Case A: Merged Tables string
       if (order.merged_tables) {
         const groupKey = order.merged_tables;
+
         groupKey.split('-').forEach(id => {
           if (id) mapping[id.toString()] = groupKey;
         });
       }
 
       // Case B: Group Reservation IDs
-      if (order.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
+      if (
+        order.reservation?.type === 'group' &&
+        Array.isArray(order.reservation.table_ids)
+      ) {
         const groupKey = order.reservation.table_ids
           .map(id => id.toString())
           .sort((a, b) => parseInt(a) - parseInt(b))
           .join('-');
+
         order.reservation.table_ids.forEach(id => {
           if (id) mapping[id.toString()] = groupKey;
         });
       }
     });
   });
+
   return mapping;
 };
 
 export const selectBusyTablesCount = createSelector(
   [selectAllTables],
-  (tables) => {
+  tables => {
     const groupMapping = getGroupMapping(tables);
-    return tables.filter(t => !!t.active_order || !!groupMapping[t.id.toString()]).length;
+
+    return tables.filter(
+      t => !!t.active_order || !!groupMapping[t.id.toString()]
+    ).length;
   }
 );
 
@@ -318,44 +425,72 @@ export const selectEmptyTablesCount = createSelector(
 
 export const selectBusyTables = createSelector(
   [selectAllTables],
-  (tables) => {
+  tables => {
     const tableIdToGroupKey = getGroupMapping(tables);
     const consolidatedGroups = new Set();
 
-    return tables.filter(t => {
-      // [RULE] A table belongs in 'Busy Tables' list if it has an active order.
-      if (!t.active_order) {
-        return false;
-      }
+    return tables
+      .filter(t => {
+        // [RULE] A table belongs in 'Busy Tables' list if it has an active order.
+        if (!t.active_order) {
+          return false;
+        }
 
-      const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
+        const groupKey =
+          tableIdToGroupKey[t.id.toString()] || t.id.toString();
 
-      // [RULE] If in a group, only show the 'primary' table (first ID in sorted group key)
-      if (groupKey.includes('-')) {
-        const primaryId = groupKey.split('-')[0];
-        if (t.id.toString() !== primaryId) return false;
-      }
+        // [RULE] If in a group, only show the 'primary' table (first ID in sorted group key)
+        if (groupKey.includes('-')) {
+          const primaryId = groupKey.split('-')[0];
 
-      if (consolidatedGroups.has(groupKey)) return false;
-      consolidatedGroups.add(groupKey);
-      return true;
-    }).map(t => {
-      // [WHY] Attach a descriptive tableName that resolves IDs to numeric labels
-      const groupKey = tableIdToGroupKey[t.id.toString()] || t.id.toString();
-      if (groupKey.includes('-')) {
-        const labels = groupKey.split('-').map(id => {
-          const tableObj = tables.find(allT => allT.id.toString() === id.toString());
-          return tableObj?.name?.replace(/[^0-9]/g, '') || id;
-        }).filter(Boolean);
-        return { ...t, tableName: labels.join('-') };
-      }
-      return { ...t, tableName: t.name?.replace(/[^0-9]/g, '') || t.id.toString() };
-    }).sort((a, b) => {
-      const orderAId = a.active_order?.id || 0;
-      const orderBId = b.active_order?.id || 0;
-      return orderAId - orderBId;
-    });
+          if (t.id.toString() !== primaryId) return false;
+        }
+
+        if (consolidatedGroups.has(groupKey)) return false;
+
+        consolidatedGroups.add(groupKey);
+
+        return true;
+      })
+      .map(t => {
+        // [WHY] Attach a descriptive tableName that resolves IDs to numeric labels
+        const groupKey =
+          tableIdToGroupKey[t.id.toString()] || t.id.toString();
+
+        if (groupKey.includes('-')) {
+          const labels = groupKey
+            .split('-')
+            .map(id => {
+              const tableObj = tables.find(
+                allT => allT.id.toString() === id.toString()
+              );
+
+              return (
+                tableObj?.name?.replace(/[^0-9]/g, '') || id
+              );
+            })
+            .filter(Boolean);
+
+          return {
+            ...t,
+            tableName: labels.join('-'),
+          };
+        }
+
+        return {
+          ...t,
+          tableName:
+            t.name?.replace(/[^0-9]/g, '') || t.id.toString(),
+        };
+      })
+      .sort((a, b) => {
+        const orderAId = a.active_order?.id || 0;
+        const orderBId = b.active_order?.id || 0;
+
+        return orderAId - orderBId;
+      });
   }
 );
 
 export default tableSlice.reducer;
+
