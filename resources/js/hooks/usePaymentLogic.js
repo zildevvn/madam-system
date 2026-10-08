@@ -26,40 +26,58 @@ export const usePaymentLogic = ({
     paymentMethod,
     setPaymentMethod,
     payments = [],
-    setPayments
+    setPayments,
+    onPreparePrint
 }) => {
     const dispatch = useAppDispatch();
     const itemDiscountDebounceTimers = useRef({});
+
     // [WHY] Centralized table resolution logic to ensure consistent ID identification across all handlers.
-    const dbTableId = useMemo(() => 
-        selectedTable?.originalTableId || 
-        currentOrder?.tableId || 
-        currentOrder?.table_id || 
-        currentOrder?.table?.id
-    , [selectedTable, currentOrder]);
+    const dbTableId = useMemo(
+        () =>
+            selectedTable?.originalTableId ||
+            currentOrder?.tableId ||
+            currentOrder?.table_id ||
+            currentOrder?.table?.id,
+        [selectedTable, currentOrder]
+    );
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSplitMode, setIsSplitMode] = useState(false);
-    const [selectedSplitItems, setSelectedSplitItems] = useState([]); // Array of { order_item_id, quantity }
+    const [selectedSplitItems, setSelectedSplitItems] = useState([]);
 
-    // Metadata state (still local as they are transient UI helpers)
+    // Metadata state
     const [allProducts, setAllProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [showProductSearch, setShowProductSearch] = useState(false);
+
     const [targetTableId, setTargetTableId] = useState(() => {
         // [WHY] For group orders, default to the first table in the reservation
         // so the table selector's first button is active on open.
         const tableIds = currentOrder?.reservation?.table_ids;
-        if (currentOrder?.reservation?.type === 'group' && Array.isArray(tableIds) && tableIds.length > 0) {
-            return Number([...tableIds].sort((a, b) => Number(a) - Number(b))[0]);
+
+        if (
+            currentOrder?.reservation?.type === 'group' &&
+            Array.isArray(tableIds) &&
+            tableIds.length > 0
+        ) {
+            return Number(
+                [...tableIds].sort(
+                    (a, b) => Number(a) - Number(b)
+                )[0]
+            );
         }
+
         // [FIX] Ensure we use the database table ID (not the order lookup key)
         return dbTableId || selectedTable?.id;
     });
 
     // Fetch products for "Add new items"
     useEffect(() => {
-        productService.getProducts().then(res => setAllProducts(res.data)).catch(console.error);
+        productService
+            .getProducts()
+            .then(res => setAllProducts(res.data))
+            .catch(console.error);
     }, []);
 
     const {
@@ -73,33 +91,72 @@ export const usePaymentLogic = ({
             // draftItems may only contain a partial list of items (e.g. for merged tables),
             // which causes the recalculated global discount and final total to be incorrect.
             // Always use the exact values saved by the backend.
-            const calculatedItemDiscounts = draftItems.reduce((sum, item) => {
-                const type = item.discountType || item.discount_type || 'fixed';
-                const val = Number(item.discount || 0);
-                if (type === 'percent') return sum + (item.price * item.quantity * val / 100);
-                return sum + (val * item.quantity);
-            }, 0);
-            
+            const calculatedItemDiscounts = draftItems.reduce(
+                (sum, item) => {
+                    const type =
+                        item.discountType ||
+                        item.discount_type ||
+                        'fixed';
+
+                    const val = Number(item.discount || 0);
+
+                    if (type === 'percent') {
+                        return (
+                            sum +
+                            (item.price *
+                                item.quantity *
+                                val) /
+                            100
+                        );
+                    }
+
+                    return sum + val * item.quantity;
+                },
+                0
+            );
+
             return {
-                grossTotal: Number(currentOrder.subtotal) + calculatedItemDiscounts, 
+                grossTotal:
+                    Number(currentOrder.subtotal) +
+                    calculatedItemDiscounts,
                 itemDiscountsTotal: calculatedItemDiscounts,
-                globalDiscountAmount: Number(currentOrder.discount_amount || 0),
-                finalTotal: Number(currentOrder.total_price || 0)
+                globalDiscountAmount: Number(
+                    currentOrder.discount_amount || 0
+                ),
+                finalTotal: Number(
+                    currentOrder.total_price || 0
+                )
             };
         }
-        return calculateTotals(draftItems, { type: discountType, value: discountValue });
-    }, [draftItems, discountType, discountValue, isHistoryEdit, currentOrder]);
+
+        return calculateTotals(draftItems, {
+            type: discountType,
+            value: discountValue
+        });
+    }, [
+        draftItems,
+        discountType,
+        discountValue,
+        isHistoryEdit,
+        currentOrder
+    ]);
 
     const handlePayment = useCallback(async () => {
-        if (!currentOrder || !paymentMethod || isProcessing) return;
+        if (!currentOrder || !paymentMethod || isProcessing) {
+            return;
+        }
 
         setIsProcessing(true);
+
         try {
             if (isHistoryEdit) {
                 // [WHY] History edit only updates payment details, no item checkout required
                 await orderApi.updatePayment(currentOrder.id, {
                     payment_method: paymentMethod,
-                    payments: paymentMethod === 'split' ? payments : [],
+                    payments:
+                        paymentMethod === 'split'
+                            ? payments
+                            : [],
                     discount_type: discountType,
                     discount_value: discountValue,
                     cashier_note: cashierNote
@@ -107,36 +164,73 @@ export const usePaymentLogic = ({
             } else {
                 // [WHY] relatedOrderIds contains all order IDs merged into a unified group view.
                 // We must complete each one to properly close the group + individual extras.
-                const orderIds = currentOrder.relatedOrderIds || [currentOrder.id];
+                const orderIds =
+                    currentOrder.relatedOrderIds ||
+                    [currentOrder.id];
 
-                // 1. Persist changes to DB if draft items changed (Skip for pure group reservations which are read-only)
+                // 1. Persist changes to DB if draft items changed
+                // Skip for pure group reservations which are read-only
                 if (!currentOrder.isGroup) {
                     await orderApi.checkout(currentOrder.id, {
                         items: draftItems.map(i => ({
-                            product_id: (i.isCustom || i.product_id === null) ? null : (i.product_id || i.id),
+                            product_id:
+                                i.isCustom ||
+                                    i.product_id === null
+                                    ? null
+                                    : i.product_id || i.id,
+
                             // [FIX] i.order_item_id is set for PaymentModal-native items.
                             // For items from consolidateOrders format, i.id IS the DB OrderItem ID —
-                            // BUT only if it differs from i.product_id (a newly-added item has id === product_id
-                            // as a placeholder; those are not yet in the DB so order_item_id must be null).
-                            order_item_id: i.order_item_id || (typeof i.id === 'number' && i.id !== i.product_id ? i.id : null),
-                            name: (i.isCustom || i.product_id === null) ? i.name : undefined,
-                            type: (i.isCustom || i.product_id === null) ? i.type : undefined,
+                            // BUT only if it differs from i.product_id (a newly-added item has
+                            // id === product_id as a placeholder; those are not yet in the DB).
+                            order_item_id:
+                                i.order_item_id ||
+                                (typeof i.id === 'number' &&
+                                    i.id !== i.product_id
+                                    ? i.id
+                                    : null),
+
+                            name:
+                                i.isCustom ||
+                                    i.product_id === null
+                                    ? i.name
+                                    : undefined,
+
+                            type:
+                                i.isCustom ||
+                                    i.product_id === null
+                                    ? i.type
+                                    : undefined,
+
                             quantity: i.quantity,
                             price: i.price,
                             note: i.note,
                             discount: i.discount || 0,
-                            discount_type: i.discountType || 'fixed',
-                            table_id: i.tableId || currentOrder.tableId
+                            discount_type:
+                                i.discountType || 'fixed',
+                            table_id:
+                                i.tableId ||
+                                currentOrder.tableId
                         })),
-                        merged_tables: currentOrder?.mergedTables || selectedTable.merged_tables || null
+
+                        merged_tables:
+                            currentOrder?.mergedTables ||
+                            selectedTable?.merged_tables ||
+                            null
                     });
                 }
 
                 // 2. Complete payment for ALL related orders in ONE atomic call
-                const relatedIds = currentOrder.relatedOrderIds || [currentOrder.id];
+                const relatedIds =
+                    currentOrder.relatedOrderIds ||
+                    [currentOrder.id];
+
                 await orderApi.complete(currentOrder.id, {
                     payment_method: paymentMethod,
-                    payments: paymentMethod === 'split' ? payments : [],
+                    payments:
+                        paymentMethod === 'split'
+                            ? payments
+                            : [],
                     discount_type: discountType,
                     discount_value: discountValue,
                     cashier_note: cashierNote,
@@ -147,334 +241,741 @@ export const usePaymentLogic = ({
             onPaymentSuccess();
         } catch (err) {
             console.error('Payment failed:', err);
-            alert('Có lỗi xảy ra khi cập nhật. Vui lòng thử lại.');
+            alert(
+                'Có lỗi xảy ra khi cập nhật. Vui lòng thử lại.'
+            );
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, paymentMethod, isProcessing, draftItems, selectedTable, discountType, discountValue, cashierNote, payments, onPaymentSuccess, isHistoryEdit]);
+    }, [
+        currentOrder,
+        paymentMethod,
+        isProcessing,
+        draftItems,
+        selectedTable,
+        discountType,
+        discountValue,
+        cashierNote,
+        payments,
+        onPaymentSuccess,
+        isHistoryEdit
+    ]);
 
     const handleCancelTable = useCallback(async () => {
-        if (!currentOrder || isProcessing) return;
+        if (!currentOrder || isProcessing) {
+            return;
+        }
 
         setIsProcessing(true);
+
         try {
             await orderApi.cancel(currentOrder.id, {
-                sibling_order_ids: currentOrder.relatedOrderIds || []
+                sibling_order_ids:
+                    currentOrder.relatedOrderIds || []
             });
-            onPaymentSuccess(); // Reuse this callback to close modal and refresh tables
+
+            onPaymentSuccess();
         } catch (err) {
-            console.error('Failed to cancel table:', err);
-            alert('Không thể hủy bàn. Vui lòng thử lại.');
+            console.error(
+                'Failed to cancel table:',
+                err
+            );
+
+            alert(
+                'Không thể hủy bàn. Vui lòng thử lại.'
+            );
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, isProcessing, onPaymentSuccess]);
+    }, [
+        currentOrder,
+        isProcessing,
+        onPaymentSuccess
+    ]);
 
-    const handleUpdateQuantity = useCallback((itemContextOrProductId, tableId, quantity, originalNote = '', price = 0, discount = 0, discountType = 'fixed') => {
-        let productId = itemContextOrProductId;
-        let tId = tableId;
-        let qty = quantity;
-        let origNote = originalNote;
-        let prc = price;
-        let disc = discount;
-        let discType = discountType;
+    const handleUpdateQuantity = useCallback(
+        (
+            itemContextOrProductId,
+            tableId,
+            quantity,
+            originalNote = '',
+            price = 0,
+            discount = 0,
+            discountType = 'fixed'
+        ) => {
+            let productId = itemContextOrProductId;
+            let tId = tableId;
+            let qty = quantity;
+            let origNote = originalNote;
+            let prc = price;
+            let disc = discount;
+            let discType = discountType;
 
-        if (itemContextOrProductId && typeof itemContextOrProductId === 'object') {
-            productId = itemContextOrProductId.productId;
-            tId = itemContextOrProductId.tableId;
-            qty = tableId; // Second argument is the new quantity value when context is first
-            origNote = itemContextOrProductId.note;
-            prc = itemContextOrProductId.price;
-            disc = itemContextOrProductId.discount;
-            discType = itemContextOrProductId.discountType;
-        }
-
-        const fallbackTId = dbTableId || selectedTable?.id;
-        
-        let newItems = [...draftItems];
-        const matchingIndices = [];
-        let currentTotal = 0;
-        
-        draftItems.forEach((i, idx) => {
-            const isMatch = ((i.product_id || i.id) === productId) && 
-                            ((i.tableId || fallbackTId) === tId) && 
-                            ((i.note || '') === origNote) &&
-                            (Number(i.price || 0) === Number(prc));
-            
-            if (isMatch) {
-                matchingIndices.push(idx);
-                currentTotal += i.quantity;
+            if (
+                itemContextOrProductId &&
+                typeof itemContextOrProductId === 'object'
+            ) {
+                productId =
+                    itemContextOrProductId.productId;
+                tId = itemContextOrProductId.tableId;
+                qty = tableId;
+                origNote =
+                    itemContextOrProductId.note;
+                prc =
+                    itemContextOrProductId.price;
+                disc =
+                    itemContextOrProductId.discount;
+                discType =
+                    itemContextOrProductId.discountType;
             }
-        });
-        
-        if (matchingIndices.length === 0) return;
-        
-        const diff = qty - currentTotal;
-        if (diff === 0) return;
-        
-        if (qty < 1) {
-            newItems = draftItems.filter((_, idx) => !matchingIndices.includes(idx));
-        } else if (diff > 0) {
-            const firstIdx = matchingIndices[0];
-            newItems[firstIdx] = { ...newItems[firstIdx], quantity: newItems[firstIdx].quantity + diff };
-        } else {
-            let remainingDiff = -diff;
-            for (let i = matchingIndices.length - 1; i >= 0; i--) {
-                const idx = matchingIndices[i];
-                if (newItems[idx].quantity > remainingDiff) {
-                    newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity - remainingDiff };
-                    break;
-                } else {
-                    remainingDiff -= newItems[idx].quantity;
-                    newItems[idx] = null; // Mark for removal
-                    if (remainingDiff === 0) break;
+
+            const fallbackTId =
+                dbTableId || selectedTable?.id;
+
+            let newItems = [...draftItems];
+            const matchingIndices = [];
+            let currentTotal = 0;
+
+            draftItems.forEach((i, idx) => {
+                const isMatch =
+                    ((i.product_id || i.id) ===
+                        productId) &&
+                    ((i.tableId || fallbackTId) ===
+                        tId) &&
+                    ((i.note || '') === origNote) &&
+                    Number(i.price || 0) ===
+                    Number(prc);
+
+                if (isMatch) {
+                    matchingIndices.push(idx);
+                    currentTotal += i.quantity;
                 }
+            });
+
+            if (matchingIndices.length === 0) {
+                return;
             }
-            newItems = newItems.filter(Boolean);
-        }
-        
-        onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
 
-    const handleUpdateNote = useCallback((itemContextOrProductId, tableId, note, originalNote = '', price = 0, discount = 0, discountType = 'fixed') => {
-        let productId = itemContextOrProductId;
-        let tId = tableId;
-        let newNote = note;
-        let origNote = originalNote;
-        let prc = price;
-        let disc = discount;
-        let discType = discountType;
+            const diff = qty - currentTotal;
 
-        if (itemContextOrProductId && typeof itemContextOrProductId === 'object') {
-            productId = itemContextOrProductId.productId;
-            tId = itemContextOrProductId.tableId;
-            newNote = tableId; // Second argument is the new note value when context is first
-            origNote = itemContextOrProductId.note;
-            prc = itemContextOrProductId.price;
-            disc = itemContextOrProductId.discount;
-            discType = itemContextOrProductId.discountType;
-        }
-
-        const fallbackTId = dbTableId || selectedTable?.id;
-        const newItems = draftItems.map(i => {
-            const isMatch = ((i.product_id || i.id) === productId) && 
-                            ((i.tableId || fallbackTId) === tId) && 
-                            ((i.note || '') === origNote) &&
-                            (Number(i.price || 0) === Number(prc));
-            return isMatch ? { ...i, note: newNote } : i;
-        });
-        onUpdateDraftItems(newItems);
-    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems]);
-
-    const handleUpdateItemDiscount = useCallback((itemContextOrProductId, tableId, updates, originalNote = '', price = 0, discount = 0, discountType = 'fixed') => {
-        let productId = itemContextOrProductId;
-        let tId = tableId;
-        let newUpdates = updates;
-        let origNote = originalNote;
-        let prc = price;
-        let disc = discount;
-        let discType = discountType;
-
-        if (itemContextOrProductId && typeof itemContextOrProductId === 'object') {
-            productId = itemContextOrProductId.productId;
-            tId = itemContextOrProductId.tableId;
-            newUpdates = tableId; // Second argument is the updates object when context is first
-            origNote = itemContextOrProductId.note;
-            prc = itemContextOrProductId.price;
-            disc = itemContextOrProductId.discount;
-            discType = itemContextOrProductId.discountType;
-        }
-
-        const fallbackTId = dbTableId || selectedTable?.id;
-        let matchedItem = null;
-        
-        const newItems = draftItems.map(i => {
-            const isMatch = ((i.product_id || i.id) === productId) && 
-                            ((i.tableId || fallbackTId) === tId) && 
-                            ((i.note || '') === origNote) &&
-                            (Number(i.price || 0) === Number(prc));
-                            
-            if (isMatch) {
-                matchedItem = { ...i, ...newUpdates };
-                return matchedItem;
+            if (diff === 0) {
+                return;
             }
-            return i;
-        });
-        
-        onUpdateDraftItems(newItems);
 
-        // [WHY] Fire debounced API call to persist item discount while local state updates instantly
-        if (matchedItem && !isHistoryEdit && (matchedItem.order_item_id || (typeof matchedItem.id === 'number' && matchedItem.id !== matchedItem.product_id))) {
-            const dbItemId = matchedItem.order_item_id || matchedItem.id;
-            
-            if (itemDiscountDebounceTimers.current[dbItemId]) {
-                clearTimeout(itemDiscountDebounceTimers.current[dbItemId]);
-            }
-            
-            itemDiscountDebounceTimers.current[dbItemId] = setTimeout(async () => {
-                try {
-                    await orderApi.updateItemDiscount(dbItemId, {
-                        discount_type: matchedItem.discountType || matchedItem.discount_type || 'fixed',
-                        discount: Number(matchedItem.discount) || 0
-                    });
-                } catch (err) {
-                    console.error("Failed to update item discount", err);
-                    toast.error("Lỗi khi lưu giảm giá món!");
+            if (qty < 1) {
+                newItems = draftItems.filter(
+                    (_, idx) =>
+                        !matchingIndices.includes(idx)
+                );
+            } else if (diff > 0) {
+                const firstIdx =
+                    matchingIndices[0];
+
+                newItems[firstIdx] = {
+                    ...newItems[firstIdx],
+                    quantity:
+                        newItems[firstIdx].quantity +
+                        diff
+                };
+            } else {
+                let remainingDiff = -diff;
+
+                for (
+                    let i = matchingIndices.length - 1;
+                    i >= 0;
+                    i--
+                ) {
+                    const idx =
+                        matchingIndices[i];
+
+                    if (
+                        newItems[idx].quantity >
+                        remainingDiff
+                    ) {
+                        newItems[idx] = {
+                            ...newItems[idx],
+                            quantity:
+                                newItems[idx].quantity -
+                                remainingDiff
+                        };
+
+                        break;
+                    }
+
+                    remainingDiff -=
+                        newItems[idx].quantity;
+
+                    newItems[idx] = null;
+
+                    if (remainingDiff === 0) {
+                        break;
+                    }
                 }
-            }, 500);
-        }
-    }, [draftItems, selectedTable, dbTableId, onUpdateDraftItems, isHistoryEdit]);
 
-    const handleAddProduct = useCallback((product) => {
-        const activeTId = targetTableId || dbTableId || selectedTable?.id;
-        const existing = draftItems.find(i =>
-            (i.product_id || i.id) === product.id &&
-            (i.tableId || activeTId) === activeTId
-        );
+                newItems =
+                    newItems.filter(Boolean);
+            }
 
-        let newItems;
-        if (existing) {
-            newItems = draftItems.map(i =>
-                (i === existing) ? { ...i, quantity: i.quantity + 1 } : i
+            onUpdateDraftItems(newItems);
+        },
+        [
+            draftItems,
+            selectedTable,
+            dbTableId,
+            onUpdateDraftItems
+        ]
+    );
+
+    const handleUpdateNote = useCallback(
+        (
+            itemContextOrProductId,
+            tableId,
+            note,
+            originalNote = '',
+            price = 0,
+            discount = 0,
+            discountType = 'fixed'
+        ) => {
+            let productId =
+                itemContextOrProductId;
+            let tId = tableId;
+            let newNote = note;
+            let origNote = originalNote;
+            let prc = price;
+            let disc = discount;
+            let discType = discountType;
+
+            if (
+                itemContextOrProductId &&
+                typeof itemContextOrProductId === 'object'
+            ) {
+                productId =
+                    itemContextOrProductId.productId;
+                tId =
+                    itemContextOrProductId.tableId;
+                newNote = tableId;
+                origNote =
+                    itemContextOrProductId.note;
+                prc =
+                    itemContextOrProductId.price;
+                disc =
+                    itemContextOrProductId.discount;
+                discType =
+                    itemContextOrProductId.discountType;
+            }
+
+            const fallbackTId =
+                dbTableId || selectedTable?.id;
+
+            const newItems = draftItems.map(i => {
+                const isMatch =
+                    ((i.product_id || i.id) ===
+                        productId) &&
+                    ((i.tableId || fallbackTId) ===
+                        tId) &&
+                    ((i.note || '') === origNote) &&
+                    Number(i.price || 0) ===
+                    Number(prc);
+
+                return isMatch
+                    ? { ...i, note: newNote }
+                    : i;
+            });
+
+            onUpdateDraftItems(newItems);
+        },
+        [
+            draftItems,
+            selectedTable,
+            dbTableId,
+            onUpdateDraftItems
+        ]
+    );
+
+    const handleUpdateItemDiscount = useCallback(
+        (
+            itemContextOrProductId,
+            tableId,
+            updates,
+            originalNote = '',
+            price = 0,
+            discount = 0,
+            discountType = 'fixed'
+        ) => {
+            let productId =
+                itemContextOrProductId;
+            let tId = tableId;
+            let newUpdates = updates;
+            let origNote = originalNote;
+            let prc = price;
+            let disc = discount;
+            let discType = discountType;
+
+            if (
+                itemContextOrProductId &&
+                typeof itemContextOrProductId === 'object'
+            ) {
+                productId =
+                    itemContextOrProductId.productId;
+                tId =
+                    itemContextOrProductId.tableId;
+                newUpdates = tableId;
+                origNote =
+                    itemContextOrProductId.note;
+                prc =
+                    itemContextOrProductId.price;
+                disc =
+                    itemContextOrProductId.discount;
+                discType =
+                    itemContextOrProductId.discountType;
+            }
+
+            const fallbackTId =
+                dbTableId || selectedTable?.id;
+
+            let matchedItem = null;
+
+            const newItems = draftItems.map(i => {
+                const isMatch =
+                    ((i.product_id || i.id) ===
+                        productId) &&
+                    ((i.tableId || fallbackTId) ===
+                        tId) &&
+                    ((i.note || '') === origNote) &&
+                    Number(i.price || 0) ===
+                    Number(prc);
+
+                if (isMatch) {
+                    matchedItem = {
+                        ...i,
+                        ...newUpdates
+                    };
+
+                    return matchedItem;
+                }
+
+                return i;
+            });
+
+            onUpdateDraftItems(newItems);
+
+            // [WHY] Fire debounced API call to persist item discount while local state updates instantly
+            if (
+                matchedItem &&
+                !isHistoryEdit &&
+                (
+                    matchedItem.order_item_id ||
+                    (
+                        typeof matchedItem.id ===
+                        'number' &&
+                        matchedItem.id !==
+                        matchedItem.product_id
+                    )
+                )
+            ) {
+                const dbItemId =
+                    matchedItem.order_item_id ||
+                    matchedItem.id;
+
+                if (
+                    itemDiscountDebounceTimers
+                        .current[dbItemId]
+                ) {
+                    clearTimeout(
+                        itemDiscountDebounceTimers
+                            .current[dbItemId]
+                    );
+                }
+
+                itemDiscountDebounceTimers.current[
+                    dbItemId
+                ] = setTimeout(async () => {
+                    try {
+                        await orderApi.updateItemDiscount(
+                            dbItemId,
+                            {
+                                discount_type:
+                                    matchedItem.discountType ||
+                                    matchedItem.discount_type ||
+                                    'fixed',
+                                discount:
+                                    Number(
+                                        matchedItem.discount
+                                    ) || 0
+                            }
+                        );
+                    } catch (err) {
+                        console.error(
+                            'Failed to update item discount',
+                            err
+                        );
+
+                        toast.error(
+                            'Lỗi khi lưu giảm giá món!'
+                        );
+                    }
+                }, 500);
+            }
+        },
+        [
+            draftItems,
+            selectedTable,
+            dbTableId,
+            onUpdateDraftItems,
+            isHistoryEdit
+        ]
+    );
+
+    const handleAddProduct = useCallback(
+        product => {
+            const activeTId =
+                targetTableId ||
+                dbTableId ||
+                selectedTable?.id;
+
+            const existing = draftItems.find(
+                i =>
+                    (i.product_id || i.id) ===
+                    product.id &&
+                    (i.tableId || activeTId) ===
+                    activeTId
             );
-        } else {
-            newItems = [...draftItems, {
-                id: product.id,
-                product_id: product.id,
-                name: product.name,
-                price: product.price,
-                quantity: 1,
-                note: '',
-                discount: 0,
-                discountType: 'fixed',
-                tableId: activeTId
-            }];
-        }
-        onUpdateDraftItems(newItems);
-        setShowProductSearch(false);
-        setSearchQuery('');
-    }, [draftItems, targetTableId, selectedTable.id, onUpdateDraftItems]);
+
+            let newItems;
+
+            if (existing) {
+                newItems = draftItems.map(i =>
+                    i === existing
+                        ? {
+                            ...i,
+                            quantity:
+                                i.quantity + 1
+                        }
+                        : i
+                );
+            } else {
+                newItems = [
+                    ...draftItems,
+                    {
+                        id: product.id,
+                        product_id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        note: '',
+                        discount: 0,
+                        discountType: 'fixed',
+                        tableId: activeTId
+                    }
+                ];
+            }
+
+            onUpdateDraftItems(newItems);
+            setShowProductSearch(false);
+            setSearchQuery('');
+        },
+        [
+            draftItems,
+            targetTableId,
+            selectedTable?.id,
+            onUpdateDraftItems,
+            dbTableId
+        ]
+    );
 
     const filteredProducts = useMemo(() => {
-        if (!searchQuery) return [];
-        const query = normalizeString(searchQuery);
-        return allProducts.filter(p => 
-            normalizeString(p.name).includes(query) || 
-            (p.name_vi && normalizeString(p.name_vi).includes(query))
-        ).slice(0, 5);
+        if (!searchQuery) {
+            return [];
+        }
+
+        const query = normalizeString(
+            searchQuery
+        );
+
+        return allProducts
+            .filter(
+                p =>
+                    normalizeString(p.name).includes(
+                        query
+                    ) ||
+                    (
+                        p.name_vi &&
+                        normalizeString(
+                            p.name_vi
+                        ).includes(query)
+                    )
+            )
+            .slice(0, 5);
     }, [allProducts, searchQuery]);
 
     const handleSplitOrder = useCallback(async () => {
-        if (!currentOrder || selectedSplitItems.length === 0 || isProcessing) return;
+        if (
+            !currentOrder ||
+            selectedSplitItems.length === 0 ||
+            isProcessing
+        ) {
+            return;
+        }
 
         setIsProcessing(true);
+
         try {
-            // Distribute split quantities across individual database order items
             const distributedSplitItems = [];
-            
+
             selectedSplitItems.forEach(splitItem => {
-                const splitItemId = splitItem.order_item_id || splitItem.id;
-                
-                // Find the representative item to get product/note mapping
-                const repItem = draftItems.find(it => String(it.order_item_id || it.id) === String(splitItemId));
-                if (!repItem) return;
+                const splitItemId =
+                    splitItem.order_item_id ||
+                    splitItem.id;
 
-                // Find all matching items in draftItems (same product/note or custom name/note)
-                const matchingItems = draftItems.filter(it => {
-                    if (repItem.product_id) {
-                        return it.product_id === repItem.product_id
-                            && (it.note || '') === (repItem.note || '')
-                            && Number(it.price) === Number(repItem.price)
-                            && Number(it.discount || 0) === Number(repItem.discount || 0)
-                            && (it.discount_type || it.discountType || '') === (repItem.discount_type || repItem.discountType || '');
-                    } else {
-                        return it.name === repItem.name
-                            && (it.note || '') === (repItem.note || '')
-                            && Number(it.price) === Number(repItem.price)
-                            && Number(it.discount || 0) === Number(repItem.discount || 0)
-                            && (it.discount_type || it.discountType || '') === (repItem.discount_type || repItem.discountType || '');
-                    }
-                });
+                const repItem = draftItems.find(
+                    it =>
+                        String(
+                            it.order_item_id ||
+                            it.id
+                        ) === String(splitItemId)
+                );
 
-                // Distribute requested split quantity
-                let remainingToSplit = splitItem.quantity;
+                if (!repItem) {
+                    return;
+                }
+
+                const matchingItems =
+                    draftItems.filter(it => {
+                        if (repItem.product_id) {
+                            return (
+                                it.product_id ===
+                                repItem.product_id &&
+                                (it.note || '') ===
+                                (repItem.note || '') &&
+                                Number(it.price) ===
+                                Number(repItem.price) &&
+                                Number(
+                                    it.discount || 0
+                                ) ===
+                                Number(
+                                    repItem.discount ||
+                                    0
+                                ) &&
+                                (
+                                    it.discount_type ||
+                                    it.discountType ||
+                                    ''
+                                ) ===
+                                (
+                                    repItem.discount_type ||
+                                    repItem.discountType ||
+                                    ''
+                                )
+                            );
+                        }
+
+                        return (
+                            it.name === repItem.name &&
+                            (it.note || '') ===
+                            (repItem.note || '') &&
+                            Number(it.price) ===
+                            Number(repItem.price) &&
+                            Number(
+                                it.discount || 0
+                            ) ===
+                            Number(
+                                repItem.discount || 0
+                            ) &&
+                            (
+                                it.discount_type ||
+                                it.discountType ||
+                                ''
+                            ) ===
+                            (
+                                repItem.discount_type ||
+                                repItem.discountType ||
+                                ''
+                            )
+                        );
+                    });
+
+                let remainingToSplit =
+                    splitItem.quantity;
+
                 for (const it of matchingItems) {
-                    if (remainingToSplit <= 0) break;
-                    
-                    const actualId = it.order_item_id || it.id;
-                    if (!actualId) continue;
+                    if (remainingToSplit <= 0) {
+                        break;
+                    }
 
-                    const availableQty = it.quantity;
-                    const splitQty = Math.min(availableQty, remainingToSplit);
-                    
+                    const actualId =
+                        it.order_item_id || it.id;
+
+                    if (!actualId) {
+                        continue;
+                    }
+
+                    const availableQty =
+                        it.quantity;
+
+                    const splitQty = Math.min(
+                        availableQty,
+                        remainingToSplit
+                    );
+
                     distributedSplitItems.push({
                         order_item_id: actualId,
                         quantity: splitQty
                     });
-                    
+
                     remainingToSplit -= splitQty;
                 }
             });
 
-            if (distributedSplitItems.length === 0) {
+            if (
+                distributedSplitItems.length === 0
+            ) {
                 setIsProcessing(false);
                 return;
             }
 
-            const response = await orderApi.split(currentOrder.id, distributedSplitItems);
+            const response =
+                await orderApi.split(
+                    currentOrder.id,
+                    distributedSplitItems
+                );
+
             setIsSplitMode(false);
             setSelectedSplitItems([]);
-            // [WHY] Refresh data after split
-            onPaymentSuccess(response.data.new_order);
+
+            onPaymentSuccess(
+                response.data.new_order
+            );
+
             return response.data;
         } catch (err) {
             console.error('Split failed:', err);
-            alert('Có lỗi xảy ra khi tách đơn. Vui lòng thử lại.');
+
+            alert(
+                'Có lỗi xảy ra khi tách đơn. Vui lòng thử lại.'
+            );
         } finally {
             setIsProcessing(false);
         }
-    }, [currentOrder, selectedSplitItems, draftItems, isProcessing, onPaymentSuccess]);
+    }, [
+        currentOrder,
+        selectedSplitItems,
+        draftItems,
+        isProcessing,
+        onPaymentSuccess
+    ]);
 
-    const toggleSplitItem = useCallback((item) => {
+    const toggleSplitItem = useCallback(item => {
         setSelectedSplitItems(prev => {
-            const itemId = item.order_item_id || item.id;
-            const existing = prev.find(i => String(i.order_item_id || i.id) === String(itemId));
+            const itemId =
+                item.order_item_id || item.id;
+
+            const existing = prev.find(
+                i =>
+                    String(
+                        i.order_item_id || i.id
+                    ) === String(itemId)
+            );
+
             if (existing) {
-                return prev.filter(i => String(i.order_item_id || i.id) !== String(itemId));
-            } else {
-                return [...prev, { order_item_id: itemId, quantity: 1 }];
+                return prev.filter(
+                    i =>
+                        String(
+                            i.order_item_id || i.id
+                        ) !== String(itemId)
+                );
             }
+
+            return [
+                ...prev,
+                {
+                    order_item_id: itemId,
+                    quantity: 1
+                }
+            ];
         });
     }, []);
 
-    const handleUpdateSplitQuantity = useCallback((itemId, quantity) => {
-        setSelectedSplitItems(prev =>
-            prev.map(i => String(i.order_item_id || i.id) === String(itemId) ? { ...i, quantity } : i)
-        );
-    }, []);
+    const handleUpdateSplitQuantity = useCallback(
+        (itemId, quantity) => {
+            setSelectedSplitItems(prev =>
+                prev.map(i =>
+                    String(
+                        i.order_item_id || i.id
+                    ) === String(itemId)
+                        ? { ...i, quantity }
+                        : i
+                )
+            );
+        },
+        []
+    );
 
+    /**
+     * Print invoice using a stable snapshot of the current draft.
+     *
+     * [FIX]
+     * - Removes the arbitrary 250ms timeout.
+     * - Does not call window.print() directly.
+     * - Snapshots draftItems at click time.
+     * - Delegates print lifecycle to CheckoutManager via onPreparePrint.
+     */
     const handlePrintInvoice = useCallback(async () => {
-        if (currentOrder && currentOrder.id) {
-            const siblingOrderIds = currentOrder.relatedOrderIds || [];
-            
-            // [WHY] Optimistically update local store immediately for instant UI feedback
-            dispatch(markOrderAsPrinted({ orderId: currentOrder.id, siblingOrderIds }));
-            
-            // [WHY] A tiny delay ensures React has re-rendered the Receipt with the updated print_count before printing
-            setTimeout(async () => {
-                window.print();
-                
-                try {
-                    // For group orders, or single orders, we mark the main currentOrder.id and siblings
-                    await orderApi.markPrinted(currentOrder.id, siblingOrderIds);
-                } catch (err) {
-                    console.error('Failed to mark order as printed:', err);
-                }
-            }, 250);
-        } else {
+        if (!currentOrder?.id) {
             window.print();
+            return;
         }
-    }, [currentOrder, dispatch]);
+
+        const siblingOrderIds =
+            currentOrder.relatedOrderIds || [];
+
+        // Optimistically update local printed state.
+        dispatch(
+            markOrderAsPrinted({
+                orderId: currentOrder.id,
+                siblingOrderIds
+            })
+        );
+
+        // Create a stable snapshot at the exact moment
+        // the user clicks Print.
+        onPreparePrint({
+            order: {
+                ...currentOrder,
+                items: draftItems.map(item => ({
+                    ...item
+                }))
+            },
+            siblingOrderIds,
+            discountType,
+            discountValue,
+            paymentMethod,
+            payments: payments.map(payment => ({
+                ...payment
+            }))
+        });
+
+        // Persist printed state in the backend.
+        try {
+            await orderApi.markPrinted(
+                currentOrder.id,
+                siblingOrderIds
+            );
+        } catch (err) {
+            console.error(
+                'Failed to mark order as printed:',
+                err
+            );
+        }
+    }, [
+        currentOrder,
+        draftItems,
+        discountType,
+        discountValue,
+        paymentMethod,
+        payments,
+        dispatch,
+        onPreparePrint
+    ]);
 
     return {
         paymentMethod,

@@ -33,7 +33,8 @@ const PaymentModal = ({
     showExtras = false,
     onUpdateShowExtras,
     isHistoryEdit = false,
-    isLoading = false
+    isLoading = false,
+    onPreparePrint
 }) => {
     const {
         isProcessing,
@@ -75,9 +76,9 @@ const PaymentModal = ({
         setPaymentMethod: onUpdatePaymentMethod,
         payments,
         setPayments: onUpdatePayments,
-        isHistoryEdit
+        isHistoryEdit,
+        onPreparePrint
     });
-
 
     if (!selectedTable) return null;
 
@@ -92,7 +93,10 @@ const PaymentModal = ({
             .replace(/^Bàn\s+/i, '');
     }, [currentOrder?.tableName, selectedTable.name, selectedTable.id]);
 
-    const totalQty = useMemo(() => draftItems.reduce((s, i) => s + i.quantity, 0), [draftItems]);
+    const totalQty = useMemo(
+        () => draftItems.reduce((s, i) => s + i.quantity, 0),
+        [draftItems]
+    );
 
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -123,7 +127,9 @@ const PaymentModal = ({
                             <Icon name="dollarSign" className="w-[18px] h-[18px] text-orange-500" size={18} />
                         </div>
                         <div>
-                            <p className="m-0 text-[9px] font-bold uppercase tracking-widest text-gray-400">Hóa đơn</p>
+                            <p className="m-0 text-[9px] font-bold uppercase tracking-widest text-gray-400">
+                                Hóa đơn
+                            </p>
                             <h4 className="label-table m-0 !text-[17px] font-black text-gray-900 leading-tight">
                                 Bàn {tableName}
                             </h4>
@@ -136,6 +142,7 @@ const PaymentModal = ({
                             )}
                         </div>
                     </div>
+
                     <div className="flex items-center gap-2">
                         {currentOrder && !isHistoryEdit && (
                             <button
@@ -147,7 +154,11 @@ const PaymentModal = ({
                                 Hủy Bàn
                             </button>
                         )}
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500 flex items-center justify-center">
+
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer text-gray-500"
+                        >
                             <Icon name="close" className="w-4 h-4" size={16} />
                         </button>
                     </div>
@@ -157,7 +168,9 @@ const PaymentModal = ({
                 {isLoading ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
                         <div className="w-12 h-12 border-4 border-orange-100 border-t-orange-500 rounded-full animate-spin mb-4"></div>
-                        <p className="text-gray-500 font-medium">Đang cập nhật dữ liệu hóa đơn...</p>
+                        <p className="text-gray-500 font-medium">
+                            Đang cập nhật dữ liệu hóa đơn...
+                        </p>
                     </div>
                 ) : (
                     <PaymentItemEditor
