@@ -170,32 +170,35 @@ class OrderController extends Controller
 
     /**
      * DELETE /api/v1/orders/{order}
+     * Chỉ cho phép xoá order cash qua External API.
      */
     public function destroy(Order $order): JsonResponse
     {
+        abort_unless($order->payment_method === 'cash', 404);
+
         DB::transaction(function () use ($order) {
-            $order->delete();
+            $this->deleteOrdersSafely([$order->id]);
         });
 
-        return response()->json(
-            null,
-            204
-        );
+        return response()->json(null, 204);
     }
+
 
     /**
      * DELETE /api/v1/orders
      *
-     * Body:
-     * {
-     *     "ids": [1, 2, 3]
-     * }
+     * Xoá order đã chọn:
+     * { "ids": [101, 102], "date_from": "2026-10-01", "date_to": "2026-10-07" }
+     *
+     * Xoá ngẫu nhiên 30%:
+     * { "random_percent": 30, "date_from": "2026-10-01", "date_to": "2026-10-07" }
      */
     public function bulkDestroy(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'ids' => [
-                'required',
+                'sometimes',
+                'required_without:random_percent',
                 'array',
                 'min:1',
                 'max:100',
@@ -205,40 +208,158 @@ class OrderController extends Controller
                 'distinct',
                 'min:1',
             ],
+            'random_percent' => [
+                'sometimes',
+                'required_without:ids',
+                'integer',
+                'in:30',
+            ],
+            'order_id' => ['nullable', 'integer', 'min:1'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
 
-        $ids = $validated['ids'];
+        // Random deletion must be scoped to an active filter.
+        if (isset($validated['random_percent'])) {
+            $hasOrderId = !empty($validated['order_id']);
+            $hasDateRange = !empty($validated['date_from'])
+                && !empty($validated['date_to']);
 
-        $existingIds = Order::query()
-            ->whereIn('id', $ids)
-            ->pluck('id')
-            ->map(
-                fn($id) => (int) $id
-            )
-            ->values()
-            ->all();
+            if (!$hasOrderId && !$hasDateRange) {
+                return response()->json([
+                    'message' => 'An Order ID or date range is required.',
+                ], 422);
+            }
 
-        if (empty($existingIds)) {
-            return response()->json([
-                'message' => 'No matching orders found.',
-            ], 404);
+            $matchingQuery = $this->filteredCashOrders($validated);
+            $matchingCount = (clone $matchingQuery)->count();
+
+            if ($matchingCount === 0) {
+                return response()->json([
+                    'deleted_ids' => [],
+                    'deleted_count' => 0,
+                    'matching_count' => 0,
+                    'message' => 'No matching cash orders found.',
+                ]);
+            }
+
+            // Round to the nearest whole order; delete at least one if matches exist.
+            $deleteCount = max(
+                1,
+                (int) round($matchingCount * 0.30)
+            );
+
+            $ids = (clone $matchingQuery)
+                ->inRandomOrder()
+                ->limit($deleteCount)
+                ->pluck('id')
+                ->all();
+        } else {
+            $ids = $validated['ids'];
+
+            $matchingQuery = $this->filteredCashOrders($validated)
+                ->whereIn('orders.id', $ids);
+
+            $ids = $matchingQuery->pluck('orders.id')->all();
+
+            if (empty($ids)) {
+                return response()->json([
+                    'deleted_ids' => [],
+                    'deleted_count' => 0,
+                    'not_found_ids' => $validated['ids'],
+                    'message' => 'No matching cash orders found.',
+                ], 404);
+            }
         }
 
-        DB::transaction(function () use ($existingIds) {
-            Order::query()
-                ->whereIn('id', $existingIds)
-                ->delete();
+        DB::transaction(function () use ($ids) {
+            $this->deleteOrdersSafely($ids);
         });
 
+        $deletedIds = array_map('intval', $ids);
+
         return response()->json([
-            'deleted_ids' => $existingIds,
-            'deleted_count' => count($existingIds),
-            'not_found_ids' => array_values(
-                array_diff(
-                    $ids,
-                    $existingIds
-                )
-            ),
+            'deleted_ids' => $deletedIds,
+            'deleted_count' => count($deletedIds),
+            'matching_count' => isset($matchingCount)
+                ? $matchingCount
+                : null,
+            'not_found_ids' => isset($validated['ids'])
+                ? array_values(array_diff(
+                    $validated['ids'],
+                    $deletedIds
+                ))
+                : [],
         ]);
+    }
+
+
+    /**
+     * Build the cash-order query using the active WordPress filters.
+     */
+    private function filteredCashOrders(array $filters)
+    {
+        $query = Order::query()
+            ->where('orders.payment_method', 'cash');
+
+        if (!empty($filters['order_id'])) {
+            $query->where('orders.id', $filters['order_id']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $query->whereDate(
+                'orders.created_at',
+                '>=',
+                $filters['date_from']
+            );
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate(
+                'orders.created_at',
+                '<=',
+                $filters['date_to']
+            );
+        }
+
+        return $query;
+    }
+
+    /**
+     * Delete order records and their direct items/payments.
+     * Preserve unselected child orders by detaching them from selected parents.
+     */
+    private function deleteOrdersSafely(array $ids): void
+    {
+        $orders = Order::query()
+            ->whereIn('id', $ids)
+            ->where('payment_method', 'cash')
+            ->get();
+
+        $existingIds = $orders->modelKeys();
+
+        if (empty($existingIds)) {
+            return;
+        }
+
+        // Preserve children that are not part of this deletion request.
+        Order::query()
+            ->whereIn('parent_order_id', $existingIds)
+            ->whereNotIn('id', $existingIds)
+            ->update(['parent_order_id' => null]);
+
+        // Break parent references among the orders being deleted.
+        Order::query()
+            ->whereIn('id', $existingIds)
+            ->update(['parent_order_id' => null]);
+
+        foreach ($orders as $order) {
+            $order->items()->delete();
+            $order->payments()->delete();
+        }
+
+        foreach ($orders as $order) {
+            $order->delete();
+        }
     }
 }
