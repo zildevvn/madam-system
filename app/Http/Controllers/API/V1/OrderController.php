@@ -26,6 +26,7 @@ class OrderController extends Controller
 
 
         $query = Order::query()
+            ->where('payment_method', 'cash')
             ->with([
                 'items',
                 'payments',
