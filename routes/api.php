@@ -15,6 +15,8 @@ use App\Http\Controllers\API\StatsController;
 use App\Http\Controllers\API\SystemMessageController;
 use App\Http\Controllers\API\PartnerCompanyController;
 use App\Http\Controllers\API\SystemSettingController;
+// use App\Http\Controllers\API\External\OrderController as ExternalOrderController;
+use App\Http\Controllers\API\V1\OrderController as ExternalOrderController;
 
 // Same-domain or stateless API routes
 Route::get('/tables', [TableController::class, 'index']);
@@ -115,3 +117,29 @@ Route::middleware('order.export.auth')->group(function () {
     Route::get('/order-export/export', [OrderExportController::class, 'export']);
     Route::get('/order-export/cashiers', [OrderExportController::class, 'cashiers']);
 });
+
+
+// External API - WordPress
+// Route::prefix('external')
+//     ->middleware('external.api')
+//     ->group(function () {
+//         Route::get('/orders', [ExternalOrderController::class, 'index']);
+//         Route::get('/orders/{id}', [ExternalOrderController::class, 'show']);
+//         Route::delete('/orders/{id}', [ExternalOrderController::class, 'destroy']);
+//         Route::delete('/orders', [ExternalOrderController::class, 'bulkDestroy']);
+//     });
+
+/*
+|--------------------------------------------------------------------------
+| External REST API v1
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('v1')
+    ->middleware('external.api')
+    ->group(function () {
+        Route::get('/orders', [ExternalOrderController::class, 'index']);
+        Route::get('/orders/{order}', [ExternalOrderController::class, 'show']);
+        Route::delete('/orders/{order}', [ExternalOrderController::class, 'destroy']);
+        Route::delete('/orders', [ExternalOrderController::class, 'bulkDestroy']);
+    });
