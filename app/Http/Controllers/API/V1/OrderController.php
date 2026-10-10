@@ -21,7 +21,7 @@ class OrderController extends Controller
     ): AnonymousResourceCollection {
         $filters = $request->validated();
 
-        $perPage = $filters['per_page'] ?? 20;
+        $perPage = $filters['per_page'] ?? 100;
         $page = $filters['page'] ?? 1;
 
 
