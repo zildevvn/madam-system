@@ -1,0 +1,13 @@
+body.page-bills {
+    .list-tables {
+        // background-color: red !important;
+
+        >div {
+            &.isRead {
+                border-style: dashed;
+                border-width: 3px;
+                border-color: black;
+            }
+        }
+    }
+}

@@ -20,103 +20,158 @@ const ActiveOrderTableCard = React.memo(({
     onMergeBack,
     options = {}
 }) => {
-    const { statusClass, duration, isNewOrder } = calculateTableStatus(order, currentTimeTs, options);
+    // Track whether this table card has been clicked/read.
+    const [isRead, setIsRead] = React.useState(false);
+
+    const { statusClass, duration, isNewOrder } = calculateTableStatus(
+        order,
+        currentTimeTs,
+        options
+    );
 
     const getDisplayName = () => {
-        // [RULE] If the consolidation logic already provided a tableName, use it.
-        // This is the most reliable source as it has already handled the ID-to-Name mapping.
+        // Prefer the table name provided by the consolidation logic.
         if (order?.tableName) {
             return order.tableName.replace(/^Bàn\s+/i, '');
         }
 
-        // [FALLBACK] If tableName is missing (unlikely), manually resolve table_ids to names.
-        if (order?.reservation?.type === 'group' && Array.isArray(order.reservation.table_ids)) {
-            // NOTE: We don't have access to allTables here, so we hope the backend or 
-            // previous consolidation step provided the name. 
-            // If not, we resort to the merged_tables string which contains IDs.
-            const raw = order.mergedTables || order.reservation.table_ids.join('-');
+        // Fallback for grouped reservations.
+        if (
+            order?.reservation?.type === 'group' &&
+            Array.isArray(order.reservation.table_ids)
+        ) {
+            const raw =
+                order.mergedTables ||
+                order.reservation.table_ids.join('-');
+
             return raw.toString().replace(/^Bàn\s+/i, '');
         }
-        return (table.name || table.id.toString()).toString().replace(/^Bàn\s+/i, '');
+
+        return String(table?.name ?? table?.id ?? '')
+            .replace(/^Bàn\s+/i, '');
     };
 
     const itemCounts = React.useMemo(() => {
-        if (!options.showItemCounts || !order?.items) return null;
+        if (!options.showItemCounts || !order?.items) {
+            return null;
+        }
 
-        const counts = order.items.reduce((acc, item) => {
-            if (['pending', 'processing'].includes(item.status)) {
-                acc.notCompleted += item.quantity;
-            } else if (item.status === 'completed') {
-                acc.notServed += item.quantity;
-            }
-            return acc;
-        }, { notCompleted: 0, notServed: 0 });
+        return order.items.reduce(
+            (acc, item) => {
+                if (['pending', 'processing'].includes(item.status)) {
+                    acc.notCompleted += item.quantity;
+                } else if (item.status === 'completed') {
+                    acc.notServed += item.quantity;
+                }
 
-        return counts;
+                return acc;
+            },
+            { notCompleted: 0, notServed: 0 }
+        );
     }, [order?.items, options.showItemCounts]);
+
+    const handleTableClick = () => {
+        // Add isRead only on the first click.
+        if (!isRead) {
+            setIsRead(true);
+        }
+
+        // Preserve the existing table click behavior.
+        onTableClick?.(table);
+    };
 
     return (
         <div
-            onClick={() => onTableClick && onTableClick(table)}
-            className={`relative bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''} ${table.isGroupLinked ? 'is-group-linked' : ''} ${table.groupColorIndex ? `is-group-color-${table.groupColorIndex}` : ''} ${table.isSplit ? 'is-split-bill' : ''}`}
+            onClick={handleTableClick}
+            className={`relative bg-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center gap-1 cursor-pointer ${statusClass} ${!statusClass ? 'border border-gray-100' : ''} ${table.isGroupLinked ? 'is-group-linked' : ''} ${table.groupColorIndex != null ? `is-group-color-${table.groupColorIndex}` : ''} ${table.isSplit ? 'is-split-bill' : ''} ${isRead ? 'isRead' : ''}`}
         >
-
             <div className="absolute -top-1 -right-1 z-10">
                 {isNewOrder && <NewOrderIcon />}
             </div>
-            <span className={`label-table text-[18px] font-black text-center flex items-center justify-center gap-1.5 ${!statusClass ? 'text-gray-900' : ''}`}>
 
+            <span
+                className={`label-table text-[18px] font-black text-center flex items-center justify-center gap-1.5 ${!statusClass ? 'text-gray-900' : ''}`}
+            >
                 {getDisplayName()}
             </span>
 
             <div className="flex items-center gap-2">
-
                 <div className="flex items-center gap-2">
                     {order?.guestCount > 0 && (
-                        <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
-                            <Icon name="users" size={10} className="w-2.5 h-2.5" />
+                        <span
+                            className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}
+                        >
+                            <Icon
+                                name="users"
+                                size={10}
+                                className="w-2.5 h-2.5"
+                            />
                             {order.guestCount}
                         </span>
                     )}
 
-                    {(order?.orderNote || order?.items?.some(i => i.note)) && (
-                        <span className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}>
-                            <NoteIcon />
-                        </span>
-                    )}
+                    {(order?.orderNote ||
+                        order?.items?.some(item => item.note)) && (
+                            <span
+                                className={`text-[10px] font-bold flex items-center gap-1 ${!statusClass ? 'text-gray-400' : ''}`}
+                            >
+                                <NoteIcon />
+                            </span>
+                        )}
                 </div>
 
-                {options.showItemCounts && itemCounts && (itemCounts.notCompleted > 0 || itemCounts.notServed > 0) && (
-                    <div className="not-completed-count flex items-center gap-2">
-                        {itemCounts.notCompleted > 0 && (
-                            <span className={`text-[10px] font-bold flex items-center gap-0.5 ${!statusClass ? 'text-red-500' : ''}`} title="Chưa làm xong">
-                                <Icon name="clock" size={10} className="w-2.5 h-2.5" />
-                                {itemCounts.notCompleted}
-                            </span>
-                        )}
-                        {itemCounts.notServed > 0 && (
-                            <span className={`text-[10px] font-bold flex items-center gap-0.5 ${!statusClass ? 'text-orange-500' : ''}`} title="Chờ phục vụ (Chưa bưng)">
-                                <Icon name="check" size={10} className="w-2.5 h-2.5" />
-                                {itemCounts.notServed}
-                            </span>
-                        )}
-                    </div>
-                )}
+                {options.showItemCounts &&
+                    itemCounts &&
+                    (itemCounts.notCompleted > 0 ||
+                        itemCounts.notServed > 0) && (
+                        <div className="not-completed-count flex items-center gap-2">
+                            {itemCounts.notCompleted > 0 && (
+                                <span
+                                    className={`text-[10px] font-bold flex items-center gap-0.5 ${!statusClass ? 'text-red-500' : ''}`}
+                                    title="Chưa làm xong"
+                                >
+                                    <Icon
+                                        name="clock"
+                                        size={10}
+                                        className="w-2.5 h-2.5"
+                                    />
+                                    {itemCounts.notCompleted}
+                                </span>
+                            )}
+
+                            {itemCounts.notServed > 0 && (
+                                <span
+                                    className={`text-[10px] font-bold flex items-center gap-0.5 ${!statusClass ? 'text-orange-500' : ''}`}
+                                    title="Chờ phục vụ (Chưa bưng)"
+                                >
+                                    <Icon
+                                        name="check"
+                                        size={10}
+                                        className="w-2.5 h-2.5"
+                                    />
+                                    {itemCounts.notServed}
+                                </span>
+                            )}
+                        </div>
+                    )}
             </div>
 
             {duration && (
                 <>
-                    <div className="w-full h-[1px] bg-current opacity-20 rounded-full"></div>
-                    <span className={`text-[8px] font-bold uppercase tracking-wider ${!statusClass ? 'text-gray-400' : ''}`}>
+                    <div className="w-full h-[1px] bg-current opacity-20 rounded-full" />
+                    <span
+                        className={`text-[8px] font-bold uppercase tracking-wider ${!statusClass ? 'text-gray-400' : ''}`}
+                    >
                         {duration}
                     </span>
                 </>
             )}
-            
+
             {table.isSplit && onMergeBack && (
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
+                    type="button"
+                    onClick={(event) => {
+                        event.stopPropagation();
                         onMergeBack(order.id);
                     }}
                     className="absolute -bottom-2 px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-[9px] font-bold rounded-full shadow-sm z-20 uppercase whitespace-nowrap transition-colors"
