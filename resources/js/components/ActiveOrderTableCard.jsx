@@ -21,7 +21,17 @@ const ActiveOrderTableCard = React.memo(({
     options = {}
 }) => {
     // Track whether this table card has been clicked/read.
-    const [isRead, setIsRead] = React.useState(false);
+    const orderId = order?.id;
+
+    const [readOrderIds, setReadOrderIds] = React.useState(() => {
+        try {
+            return JSON.parse(
+                localStorage.getItem('active-order-read-ids') || '[]'
+            );
+        } catch {
+            return [];
+        }
+    });
 
     const { statusClass, duration, isNewOrder } = calculateTableStatus(
         order,
@@ -70,13 +80,27 @@ const ActiveOrderTableCard = React.memo(({
         );
     }, [order?.items, options.showItemCounts]);
 
+    const isRead = orderId != null && readOrderIds.includes(String(orderId));
+
+
     const handleTableClick = () => {
-        // Add isRead only on the first click.
-        if (!isRead) {
-            setIsRead(true);
+        if (orderId != null && !isRead) {
+            setReadOrderIds(prev => {
+                const next = [...prev, String(orderId)];
+
+                try {
+                    localStorage.setItem(
+                        'active-order-read-ids',
+                        JSON.stringify(next)
+                    );
+                } catch {
+                    // Không để lỗi lưu localStorage ảnh hưởng thao tác click.
+                }
+
+                return next;
+            });
         }
 
-        // Preserve the existing table click behavior.
         onTableClick?.(table);
     };
 
