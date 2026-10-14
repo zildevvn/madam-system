@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
-
 // Store & Hooks
 import { useAppDispatch } from '../store/hooks';
 import { optimisticallyCompleteOrder, fetchTables } from '../store/slices/tableSlice';
@@ -8,11 +7,9 @@ import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';
 import { useCashierSegmentation } from '../hooks/useCashierSegmentation';
 import { useCashierHistory } from '../hooks/useCashierHistory';
 import { useCashierData } from '../hooks/useCashierData';
-
 // Services & Utils
 import orderApi from '../services/orderApi';
 import { formatLocalDate } from '../shared/utils/formatLocalDate';
-
 // Components
 import CashierIndividualLane from '../components/cashier/CashierIndividualLane';
 import CashierGroupLane from '../components/cashier/CashierGroupLane';
