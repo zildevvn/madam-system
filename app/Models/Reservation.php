@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\User;
 use App\Models\Table;
 use App\Models\ReservationItem;
 
 class Reservation extends Model
 {
+    use HasFactory;
     public const STATUS_PENDING = 'pending';
     public const STATUS_CONFIRMED = 'confirmed';
     public const STATUS_CANCELLED = 'cancelled';
@@ -21,12 +23,6 @@ class Reservation extends Model
         'number_of_guests',
         'email',
         'nationality',
-        'tour_guide_name',
-        'company_name',
-        'partner_company_id',
-        'set_menu',
-        'table_id',
-        'table_ids',
         'reservation_date',
         'reservation_time',
         'note',
@@ -34,7 +30,14 @@ class Reservation extends Model
         'updated_by',
         'staff_id',
         'apply_vat',
-        'vat_percentage'
+        'vat_percentage',
+        'tour_guide_name',
+        'company_name',
+        'partner_company_id',
+        'set_menu',
+        'table_id',
+        'table_ids',
+
     ];
 
     protected $casts = [

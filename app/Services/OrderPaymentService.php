@@ -204,6 +204,8 @@ class OrderPaymentService
                     'discount_type' => null,
                     'discount_value' => 0,
                     'discount_amount' => 0,
+                    // Restore total_price to original pre‑discount subtotal if present
+                    'total_price' => $o->subtotal ?? $o->total_price,
                     'updated_at' => $now
                 ]);
 

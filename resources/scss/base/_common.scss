@@ -1,3 +1,5 @@
+@use "sass:color";
+
 html {
     scroll-behavior: smooth;
 }
@@ -179,7 +181,7 @@ h6,
     border: none;
 
     &:hover {
-        background: darken($color-primary, 10%);
+        background: color.adjust($color-primary, $lightness: -10%);
     }
 
     svg {
