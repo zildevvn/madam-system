@@ -27,6 +27,49 @@ class OrderSplitService
                 throw new \Exception("Cannot split a completed order.");
             }
 
+            $allowedOrderIds = $this->getAllowedOrderIds($sourceOrder);
+
+            // [VALIDATION] Pre-validate all items before performing any mutations or creating new orders.
+            // Aggregate quantities by order_item_id to prevent bypassing available quantity via duplicate IDs.
+            $aggregatedQuantities = [];
+            foreach ($itemsToSplit as $splitData) {
+                $itemId = $splitData['order_item_id'] ?? null;
+                $quantityToMove = $splitData['quantity'] ?? null;
+
+                if (!is_numeric($itemId)) {
+                    throw new \Exception("Invalid order item ID.");
+                }
+
+                if (!is_int($quantityToMove) || $quantityToMove < 1) {
+                    throw new \Exception("Split quantity must be a positive integer.");
+                }
+
+                $itemId = (int) $itemId;
+                $aggregatedQuantities[$itemId] = ($aggregatedQuantities[$itemId] ?? 0) + $quantityToMove;
+            }
+
+            $sourceItems = [];
+            foreach ($aggregatedQuantities as $itemId => $totalQuantityToMove) {
+                $sourceItem = OrderItem::with('order')->findOrFail($itemId);
+
+                if (!in_array((int) $sourceItem->order_id, $allowedOrderIds, true)) {
+                    throw new \Exception("Cannot split an item from an unrelated order.");
+                }
+
+                if ($sourceItem->order->status === 'completed') {
+                    throw new \Exception("Cannot split an item from a completed order.");
+                }
+
+                if ($totalQuantityToMove > $sourceItem->quantity) {
+                    throw new \Exception("Split quantity exceeds current item quantity.");
+                }
+
+                $sourceItems[] = [
+                    'item' => $sourceItem,
+                    'quantity' => $totalQuantityToMove
+                ];
+            }
+
             $parentOrderId = $sourceOrder->parent_order_id ?: $sourceOrder->id;
 
             // [WHY] Create a new sibling order inheriting the same metadata
@@ -44,20 +87,9 @@ class OrderSplitService
 
             $affectedOrderIds = [$sourceOrderId];
 
-            foreach ($itemsToSplit as $splitData) {
-                $itemId = $splitData['order_item_id'];
-                $quantityToMove = $splitData['quantity'];
-
-                // [WHY] Find the item globally to allow splitting from any order in a consolidated group.
-                $sourceItem = OrderItem::with('order')->findOrFail($itemId);
-
-                if ($sourceItem->order->status === 'completed') {
-                    throw new \Exception("Cannot split an item from a completed order.");
-                }
-
-                if ($quantityToMove > $sourceItem->quantity) {
-                    throw new \Exception("Split quantity exceeds current item quantity.");
-                }
+            foreach ($sourceItems as $splitEntry) {
+                $sourceItem = $splitEntry['item'];
+                $quantityToMove = $splitEntry['quantity'];
 
                 $affectedOrderIds[] = $sourceItem->order_id;
 
@@ -144,7 +176,18 @@ class OrderSplitService
 
     private function recalculateOrderTotal(Order $order)
     {
-        $order->total_price = $order->items()->sum(DB::raw('quantity * price'));
+        // Calculate total price using net price per item (considering discount and discount type)
+        $total = 0;
+        foreach ($order->items as $item) {
+            $itemNet = $this->calculateItemNetPrice(
+                $item->quantity,
+                $item->price,
+                $item->discount ?? 0,
+                $item->discount_type ?? 'fixed'
+            );
+            $total += $itemNet;
+        }
+        $order->total_price = $total;
         $order->save();
     }
 
@@ -212,4 +255,53 @@ class OrderSplitService
     }
 
     // calculateItemNetPrice is now provided by App\Traits\PriceCalculator
+
+    /**
+     * Determine all order IDs that are legitimately related to the source order
+     * and eligible to contribute items to this split operation.
+     */
+    protected function getAllowedOrderIds(Order $sourceOrder): array
+    {
+        $allowedIds = [(int) $sourceOrder->id];
+
+        // 1. Sibling split orders and parent order
+        if ($sourceOrder->parent_order_id) {
+            $allowedIds[] = (int) $sourceOrder->parent_order_id;
+            $siblingIds = Order::where('parent_order_id', $sourceOrder->parent_order_id)
+                ->whereIn('status', ['draft', 'pending', 'processing'])
+                ->pluck('id')
+                ->toArray();
+            $allowedIds = array_merge($allowedIds, $siblingIds);
+        } else {
+            // Child split orders of this source order
+            $childIds = Order::where('parent_order_id', $sourceOrder->id)
+                ->whereIn('status', ['draft', 'pending', 'processing'])
+                ->pluck('id')
+                ->toArray();
+            $allowedIds = array_merge($allowedIds, $childIds);
+        }
+
+        // 2. Merged tables group: Only orders that share the exact same merged_tables group
+        if ($sourceOrder->merged_tables) {
+            $mergedOrderIds = Order::where('merged_tables', $sourceOrder->merged_tables)
+                ->whereIn('status', ['draft', 'pending', 'processing'])
+                ->pluck('id')
+                ->toArray();
+            $allowedIds = array_merge($allowedIds, $mergedOrderIds);
+        }
+
+        // 3. Group reservation: Only orders that belong to a unified group reservation
+        if ($sourceOrder->reservation_id) {
+            $sourceOrder->loadMissing('reservation');
+            if ($sourceOrder->reservation && $sourceOrder->reservation->type === 'group') {
+                $reservationOrderIds = Order::where('reservation_id', $sourceOrder->reservation_id)
+                    ->whereIn('status', ['draft', 'pending', 'processing'])
+                    ->pluck('id')
+                    ->toArray();
+                $allowedIds = array_merge($allowedIds, $reservationOrderIds);
+            }
+        }
+
+        return array_values(array_unique(array_map('intval', $allowedIds)));
+    }
 }

@@ -16,8 +16,8 @@ class SplitOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'items' => 'required|array',
-            'items.*.order_item_id' => 'required|exists:order_items,id',
+            'items' => 'required|array|min:1',
+            'items.*.order_item_id' => 'required|distinct|exists:order_items,id',
             'items.*.quantity' => 'required|integer|min:1'
         ];
     }
