@@ -163,6 +163,27 @@ class OrderService
         ]);
     }
 
+    /**
+     * Recalculate total price of an order, considering item discounts.
+     * Returns the computed total price.
+     */
+    public function recalculateOrderTotal(Order $order)
+    {
+        $total = 0;
+        foreach ($order->items as $item) {
+            $itemNet = $this->calculateItemNetPrice(
+                $item->quantity,
+                $item->price,
+                $item->discount ?? 0,
+                $item->discount_type ?? 'fixed'
+            );
+            $total += $itemNet;
+        }
+        $order->total_price = $total;
+        $order->save();
+        return $total;
+    }
+
     // [WHY] Submit kitchen order and sync items
     public function checkoutOrder($orderId, array $items, $mergedTables = null, $orderNote = null, $guestCount = null, $userId = null)
     {
