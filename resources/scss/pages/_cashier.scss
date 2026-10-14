@@ -109,6 +109,7 @@
         .list-tables {
             padding-bottom: 20px;
             grid-template-columns: repeat(6, minmax(0, 1fr));
+            box-sizing: border-box;
 
             @media (max-width: 1199.98px) {
                 grid-template-columns: repeat(5, minmax(0, 1fr));
