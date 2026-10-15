@@ -37,11 +37,14 @@ const Bills = () => {
             return;
         }
 
+
+
         //   If we are doing partial completion from TableDetailModal
         if (quantityToServe !== null && item.rawPendingItems) {
             let remaining = quantityToServe;
             const promises = [];
             const optimisticIds = [];
+
             for (const raw of item.rawPendingItems) {
                 if (remaining <= 0) break;
                 const qtyToServe = Math.min(raw.quantity, remaining);
