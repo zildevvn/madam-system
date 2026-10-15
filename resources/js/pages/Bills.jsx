@@ -37,17 +37,16 @@ const Bills = () => {
             return;
         }
 
-        // If we are doing partial completion from TableDetailModal
+        //   If we are doing partial completion from TableDetailModal
         if (quantityToServe !== null && item.rawPendingItems) {
             let remaining = quantityToServe;
             const promises = [];
             const optimisticIds = [];
-
             for (const raw of item.rawPendingItems) {
                 if (remaining <= 0) break;
                 const qtyToServe = Math.min(raw.quantity, remaining);
                 promises.push(dispatch(updateItemStatusAsync({ itemId: raw.id, status: nextStatus, quantity: qtyToServe })).unwrap());
-                
+
                 // If we served the whole raw item, we can optimistically update its status
                 if (qtyToServe === raw.quantity) {
                     optimisticIds.push(raw.id);
