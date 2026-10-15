@@ -36,11 +36,9 @@ class PaymentEditHistoryAuthTest extends TestCase
             'completed_at' => now()->subHours(50), // Over 24 hours ago
         ]);
 
-        $response = $this->patchJson("/api/orders/{$order->id}/payment", [
+        $response = $this->actingAs($cashier, 'sanctum')->patchJson("/api/orders/{$order->id}/payment", [
             'payment_method' => 'card',
             'cashier_note' => 'Updated by own cashier after 50h',
-        ], [
-            'X-User-Id' => $cashier->id
         ]);
 
         $response->assertStatus(200);
@@ -75,10 +73,8 @@ class PaymentEditHistoryAuthTest extends TestCase
             'completed_at' => now()->subHours(12),
         ]);
 
-        $response = $this->patchJson("/api/orders/{$order->id}/payment", [
+        $response = $this->actingAs($cashierB, 'sanctum')->patchJson("/api/orders/{$order->id}/payment", [
             'payment_method' => 'card',
-        ], [
-            'X-User-Id' => $cashierB->id
         ]);
 
         $response->assertStatus(403);
@@ -121,20 +117,16 @@ class PaymentEditHistoryAuthTest extends TestCase
         ]);
 
         // Admin can edit
-        $responseAdmin = $this->patchJson("/api/orders/{$order->id}/payment", [
+        $responseAdmin = $this->actingAs($admin, 'sanctum')->patchJson("/api/orders/{$order->id}/payment", [
             'payment_method' => 'bank',
             'cashier_note' => 'Admin override',
-        ], [
-            'X-User-Id' => $admin->id
         ]);
         $responseAdmin->assertStatus(200);
 
         // Accountant can edit
-        $responseAccountant = $this->patchJson("/api/orders/{$order->id}/payment", [
+        $responseAccountant = $this->actingAs($accountant, 'sanctum')->patchJson("/api/orders/{$order->id}/payment", [
             'payment_method' => 'cash',
             'cashier_note' => 'Accountant override',
-        ], [
-            'X-User-Id' => $accountant->id
         ]);
         $responseAccountant->assertStatus(200);
     }

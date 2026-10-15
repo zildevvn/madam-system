@@ -43,10 +43,8 @@ class AttendanceToggleTest extends TestCase
             'role' => 'order_staff'
         ]);
 
-        $response = $this->putJson('/api/system-settings', [
+        $response = $this->actingAs($user, 'sanctum')->putJson('/api/system-settings', [
             'attendance_enabled' => 'true'
-        ], [
-            'X-User-Id' => $user->id
         ]);
 
         $response->assertStatus(403);
@@ -61,10 +59,8 @@ class AttendanceToggleTest extends TestCase
             'role' => 'admin'
         ]);
 
-        $response = $this->putJson('/api/system-settings', [
+        $response = $this->actingAs($admin, 'sanctum')->putJson('/api/system-settings', [
             'attendance_enabled' => 'true'
-        ], [
-            'X-User-Id' => $admin->id
         ]);
 
         $response->assertStatus(200)
@@ -88,9 +84,7 @@ class AttendanceToggleTest extends TestCase
 
         // When toggle is OFF: todayStatus should return 'working'
         SystemSetting::setVal('attendance_enabled', 'false');
-        $response = $this->getJson('/api/attendances/today-status', [
-            'X-User-Id' => $user->id
-        ]);
+        $response = $this->actingAs($user, 'sanctum')->getJson('/api/attendances/today-status');
         $response->assertStatus(200)
             ->assertJson([
                 'status' => 'working'
@@ -98,9 +92,7 @@ class AttendanceToggleTest extends TestCase
 
         // When toggle is ON: todayStatus should return 'not_checked_in'
         SystemSetting::setVal('attendance_enabled', 'true');
-        $response = $this->getJson('/api/attendances/today-status', [
-            'X-User-Id' => $user->id
-        ]);
+        $response = $this->actingAs($user, 'sanctum')->getJson('/api/attendances/today-status');
         $response->assertStatus(200)
             ->assertJson([
                 'status' => 'not_checked_in'

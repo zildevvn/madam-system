@@ -50,9 +50,9 @@ class UserAccountantRoleTest extends TestCase
             'role'     => 'order_staff',
         ]);
 
-        $response = $this->putJson("/api/users/{$staff->id}/role", [
+        $response = $this->actingAs($admin, 'sanctum')->putJson("/api/users/{$staff->id}/role", [
             'role' => 'accountant',
-        ], ['X-User-Id' => $admin->id]);
+        ]);
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.role', 'accountant');
@@ -71,9 +71,9 @@ class UserAccountantRoleTest extends TestCase
             'role'     => 'cashier',
         ]);
 
-        $response = $this->putJson("/api/users/{$staff->id}/role", [
+        $response = $this->actingAs($admin, 'sanctum')->putJson("/api/users/{$staff->id}/role", [
             'role' => 'accountant',
-        ], ['X-User-Id' => $admin->id]);
+        ]);
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.role', 'accountant');
@@ -86,7 +86,7 @@ class UserAccountantRoleTest extends TestCase
     {
         $admin = $this->makeAdmin();
 
-        $response = $this->postJson('/api/users', [
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/users', [
             'name'          => 'Bad Role',
             'email'         => 'badrole@example.com',
             'password'      => 'password123',
@@ -96,7 +96,7 @@ class UserAccountantRoleTest extends TestCase
             'work_shift'    => 'Ca sáng',
             'salary'        => 10000000,
             'bonus'         => 0,
-        ], ['X-User-Id' => $admin->id]);
+        ]);
 
         $response->assertStatus(422);
     }

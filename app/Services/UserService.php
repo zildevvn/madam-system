@@ -73,23 +73,20 @@ class UserService
     {
         $user = User::findOrFail($id);
         
-        $updateData = [
-            'name' => $data['name'] ?? $user->name,
-            'email' => $data['email'] ?? $user->email,
-            'role' => $data['role'] ?? $user->role,
-            'join_date' => isset($data['join_date']) ? $data['join_date'] : $user->join_date,
-            'date_of_birth' => isset($data['date_of_birth']) ? $data['date_of_birth'] : $user->date_of_birth,
-            'work_shift' => isset($data['work_shift']) ? $data['work_shift'] : $user->work_shift,
-            'flexible_shifts' => isset($data['flexible_shifts']) ? $data['flexible_shifts'] : $user->flexible_shifts,
-            'salary' => isset($data['salary']) ? $data['salary'] : $user->salary,
-            'bonus' => isset($data['bonus']) ? $data['bonus'] : $user->bonus,
-            'address' => isset($data['address']) ? $data['address'] : $user->address,
-            'status' => isset($data['status']) ? $data['status'] : $user->status,
-            'phone' => isset($data['phone']) ? $data['phone'] : $user->phone,
-        ];
+        $updateData = [];
+        if (isset($data['name'])) $updateData['name'] = $data['name'];
+        if (isset($data['email'])) $updateData['email'] = $data['email'];
+        if (isset($data['role'])) $updateData['role'] = $data['role'];
+
+        foreach (['join_date', 'date_of_birth', 'work_shift', 'flexible_shifts', 'salary', 'bonus', 'address', 'status', 'phone'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $updateData[$field] = $data[$field];
+            }
+        }
 
         if (!empty($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);
+            $user->tokens()->delete();
         }
 
         if (isset($data['remove_id_card_image']) && $data['remove_id_card_image'] == true) {

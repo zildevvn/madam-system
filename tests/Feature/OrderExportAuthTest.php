@@ -18,13 +18,13 @@ class OrderExportAuthTest extends TestCase
     public function test_guest_cannot_access_order_export_endpoints()
     {
         $response1 = $this->getJson('/api/order-export');
-        $response1->assertStatus(403);
+        $response1->assertStatus(401);
 
         $response2 = $this->getJson('/api/order-export/export');
-        $response2->assertStatus(403);
+        $response2->assertStatus(401);
 
         $response3 = $this->getJson('/api/order-export/cashiers');
-        $response3->assertStatus(403);
+        $response3->assertStatus(401);
     }
 
     public function test_non_privileged_roles_cannot_access_order_export_endpoints()
@@ -39,19 +39,15 @@ class OrderExportAuthTest extends TestCase
                 'role' => $role
             ]);
 
-            $response1 = $this->getJson('/api/order-export', [
-                'X-User-Id' => $user->id
-            ]);
+            \Laravel\Sanctum\Sanctum::actingAs($user);
+
+            $response1 = $this->getJson('/api/order-export');
             $response1->assertStatus(403);
 
-            $response2 = $this->getJson('/api/order-export/export', [
-                'X-User-Id' => $user->id
-            ]);
+            $response2 = $this->getJson('/api/order-export/export');
             $response2->assertStatus(403);
 
-            $response3 = $this->getJson('/api/order-export/cashiers', [
-                'X-User-Id' => $user->id
-            ]);
+            $response3 = $this->getJson('/api/order-export/cashiers');
             $response3->assertStatus(403);
         }
     }
@@ -68,19 +64,15 @@ class OrderExportAuthTest extends TestCase
                 'role' => $role
             ]);
 
-            $response1 = $this->getJson('/api/order-export', [
-                'X-User-Id' => $user->id
-            ]);
+            \Laravel\Sanctum\Sanctum::actingAs($user);
+
+            $response1 = $this->getJson('/api/order-export');
             $response1->assertStatus(200);
 
-            $response2 = $this->getJson('/api/order-export/export', [
-                'X-User-Id' => $user->id
-            ]);
+            $response2 = $this->getJson('/api/order-export/export');
             $response2->assertStatus(200);
 
-            $response3 = $this->getJson('/api/order-export/cashiers', [
-                'X-User-Id' => $user->id
-            ]);
+            $response3 = $this->getJson('/api/order-export/cashiers');
             $response3->assertStatus(200);
         }
     }
@@ -139,9 +131,8 @@ class OrderExportAuthTest extends TestCase
 
         // Run the export request
         \Illuminate\Support\Facades\DB::flushQueryLog();
-        $response = $this->getJson('/api/order-export/export', [
-            'X-User-Id' => $admin->id
-        ]);
+        \Laravel\Sanctum\Sanctum::actingAs($admin);
+        $response = $this->getJson('/api/order-export/export');
         $response->assertStatus(200);
 
         
@@ -221,9 +212,8 @@ class OrderExportAuthTest extends TestCase
             'name' => 'Product 1'
         ]);
 
-        $response = $this->getJson('/api/order-export/export', [
-            'X-User-Id' => $admin->id
-        ]);
+        \Laravel\Sanctum\Sanctum::actingAs($admin);
+        $response = $this->getJson('/api/order-export/export');
         $response->assertStatus(200);
 
         ob_start();
@@ -283,16 +273,13 @@ class OrderExportAuthTest extends TestCase
         ]);
 
         // Preview Index Request
-        $indexResponse = $this->getJson('/api/order-export', [
-            'X-User-Id' => $admin->id
-        ]);
+        \Laravel\Sanctum\Sanctum::actingAs($admin);
+        $indexResponse = $this->getJson('/api/order-export');
         $indexResponse->assertStatus(200);
         $indexResponse->assertJsonFragment(['status' => 'cancelled']);
 
         // CSV Export Request
-        $response = $this->getJson('/api/order-export/export', [
-            'X-User-Id' => $admin->id
-        ]);
+        $response = $this->getJson('/api/order-export/export');
         $response->assertStatus(200);
 
         ob_start();

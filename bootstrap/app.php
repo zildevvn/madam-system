@@ -16,16 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
-        $middleware->api(prepend: [
-            'auth:sanctum',
-        ]);
+
         $middleware->alias([
             'order.export.auth' => \App\Http\Middleware\AuthorizeOrderExport::class,
-        ]);
-    })
-    ->withMiddleware(function ($middleware) {
-        $middleware->alias([
-            'external.api' => \App\Http\Middleware\ExternalApiAuth::class,
+            'external.api'      => \App\Http\Middleware\ExternalApiAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
