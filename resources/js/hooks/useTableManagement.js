@@ -60,7 +60,7 @@ export const useTableManagement = () => {
 
     const deleteTable = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa bàn này?')) return;
-        
+
         setProcessing(true);
         try {
             await tableService.deleteTable(id);

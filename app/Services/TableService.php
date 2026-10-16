@@ -26,12 +26,12 @@ class TableService
             'activeOrder.server:id,name',
             'activeOrders.reservation',
             'activeOrders.server:id,name',
-            'activeOrders.items' => function($query) use ($type) {
+            'activeOrders.items' => function ($query) use ($type) {
                 if ($type) {
                     $query->where('type', $type);
                 }
             },
-            'activeOrders.items.product' => function($query) {
+            'activeOrders.items.product' => function ($query) {
                 $query->select('id', 'name', 'name_vi', 'price', 'type');
             }
         ])->get();
