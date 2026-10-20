@@ -33,7 +33,7 @@ class PrintService
             $tableText = str_replace('Bàn ', '', $order->table->name ?? $order->table_id);
             $printer->text("BAN: " . $this->normalizeText($tableText) . "\n");
             $printer->setEmphasis(false);
-            
+
             $printer->text("Gio in: " . now()->format('H:i d/m/Y') . "\n");
             $printer->text(str_repeat("-", 32) . "\n");
 
@@ -41,16 +41,17 @@ class PrintService
             $printer->setJustification(Printer::JUSTIFY_LEFT);
             foreach ($order->items as $item) {
                 $itemType = $item->product ? $item->product->type : ($item->type ?? 'food');
-                if ($itemType !== 'drink' && $itemType !== 'packaged_drink') continue;
+                if ($itemType !== 'drink' && $itemType !== 'packaged_drink')
+                    continue;
 
                 $printer->setEmphasis(true);
                 $itemName = $item->product ? $item->product->name : ($item->name ?? 'Custom Item');
                 $printer->text($this->normalizeText($itemName) . "\n");
                 $printer->setEmphasis(false);
-                
+
                 // Quantity and layout
                 $printer->text("SL: " . $item->quantity . "\n");
-                
+
                 if ($item->note) {
                     $printer->text("- " . $this->normalizeText($item->note) . "\n");
                 }
@@ -61,7 +62,7 @@ class PrintService
             $printer->setJustification(Printer::JUSTIFY_CENTER);
             $printer->feed(2);
             $printer->text("MADAM SYSTEM - BAR SLIP\n");
-            
+
             // Cut and close
             $printer->cut();
             $printer->close();
@@ -89,13 +90,13 @@ class PrintService
             $printer->selectPrintMode(Printer::MODE_DOUBLE_HEIGHT | Printer::MODE_DOUBLE_WIDTH);
             $printer->text("DIAGNOSTIC TEST\n");
             $printer->feed();
-            
+
             $printer->selectPrintMode(Printer::MODE_FONT_A);
             $printer->text("Ket noi: THANH CONG\n");
             $printer->text("Thoi gian: " . now()->format('H:i:s d/m/Y') . "\n");
             $printer->text(str_repeat("-", 32) . "\n");
             $printer->text("MADAM SYSTEM - BAR PRINTER\n");
-            
+
             $printer->feed(3);
             $printer->cut();
             $printer->close();
@@ -112,8 +113,9 @@ class PrintService
      */
     private function normalizeText($text)
     {
-        if (!$text) return "";
-        
+        if (!$text)
+            return "";
+
         $unicode = array(
             'a' => 'á|à|ả|ã|ạ|ă|ắ|ặ|ằ|ẳ|ẵ|â|ấ|ầ|ẩ|ẫ|ậ',
             'd' => 'đ',
@@ -130,11 +132,11 @@ class PrintService
             'U' => 'Ú|Ù|Ủ|Ũ|Ụ|Ư|Ứ|Ừ|Ử|Ữ|Ự',
             'Y' => 'Ý|Ỳ|Ỷ|Ỹ|Ỵ',
         );
-        
+
         foreach ($unicode as $nonUnicode => $uni) {
             $text = preg_replace("/($uni)/i", $nonUnicode, $text);
         }
-        
+
         return $text;
     }
 }

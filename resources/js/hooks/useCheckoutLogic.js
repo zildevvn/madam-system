@@ -20,6 +20,7 @@ import {
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';
+import { printDrinkTicket, isDrinkItem } from '../services/barPrinterService';
 
 /**
  * useCheckoutLogic: Encapsulates business logic for table checkout, 
@@ -112,17 +113,6 @@ export const useCheckoutLogic = () => {
         }
     }, [dispatch, activeOrderId]);
 
-    const triggerBackendPrint = useCallback(async (orderId, title) => {
-        if (!title) return;
-        try {
-            await orderApi.print(orderId, title);
-        } catch (err) {
-            console.error("Printing failed:", err);
-            // setWarningMessage('Lỗi kết nối máy in Bar. Vui lòng báo Bar thủ công!');
-            // setShowWarningPopup(true);
-        }
-    }, [setWarningMessage, setShowWarningPopup]);
-
     const prepareMergedTables = useCallback(() => {
         const finalTableId = selectedTableId.toString();
         const otherIds = mergedTableIds
@@ -182,9 +172,9 @@ export const useCheckoutLogic = () => {
     }, [originalItems, selectedItems]);
 
     const buildDrinkTitle = useCallback((hasDrinkChanges, isTableMove, wasConfirmed) => {
-        if (!hasDrinkChanges && !isTableMove) return null;
+        if (!hasDrinkChanges && !isTableMove && wasConfirmed) return null;
         const tableText = selectedTableId.toString().replace(/^Bàn\s+/i, '');
-        let title = wasConfirmed ? `Bill doi mon ban so ${tableText}` : '';
+        let title = wasConfirmed ? `Bill doi mon ban so ${tableText}` : 'PHIẾU PHA CHẾ';
 
         if (isTableMove && wasConfirmed) {
             const oldTable = tableId.toString().replace(/^Bàn\s+/i, '');
@@ -208,12 +198,12 @@ export const useCheckoutLogic = () => {
             const hasChangedTable = selectedTableId.toString() !== tableId.toString();
 
             if (isModified || isMergeChanged || !wasConfirmed) {
-                const allDrinks = selectedItems.filter(item => item.type === 'drink' && !item.isSplit);
+                const allDrinks = selectedItems.filter(item => isDrinkItem(item) && !item.isSplit);
                 const hasDrinkChanges = checkForDrinkChanges(allDrinks);
                 const isTableMove = wasConfirmed && hasChangedTable;
                 const drinkPrintTitle = buildDrinkTitle(hasDrinkChanges, isTableMove, wasConfirmed);
 
-                await dispatch(checkoutOrderAsync({
+                const savedOrder = await dispatch(checkoutOrderAsync({
                     orderId: currentOrderId,
                     items: selectedItems.filter(i => !i.isSplit).map(i => ({
                         product_id: (i.isCustom || i.product_id === null) ? null : (i.product_id || i.id),
@@ -231,8 +221,19 @@ export const useCheckoutLogic = () => {
                     userId: currentUser?.id
                 })).unwrap();
 
+                // Automatic drink printing to Xprinter_Bar via QZ Tray
                 if (drinkPrintTitle && allDrinks.length > 0) {
-                    await triggerBackendPrint(currentOrderId, drinkPrintTitle);
+                    const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
+                    const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
+                    await printDrinkTicket({
+                        orderId: savedOrder?.id || currentOrderId,
+                        tableName,
+                        items: allDrinks,
+                        orderNote,
+                        title: drinkPrintTitle,
+                        staffName: savedOrder?.server?.name || savedOrder?.staffName || currentUser?.name || '',
+                        order: savedOrder
+                    });
                 }
 
                 dispatch(fetchTables());
@@ -243,11 +244,20 @@ export const useCheckoutLogic = () => {
                 }, 1500);
 
             } else if (hasChangedTable) {
-                const allDrinks = selectedItems.filter(item => item.type === 'drink' && !item.isSplit);
+                const allDrinks = selectedItems.filter(item => isDrinkItem(item) && !item.isSplit);
                 const drinkPrintTitle = buildDrinkTitle(false, true, wasConfirmed);
 
                 if (drinkPrintTitle && allDrinks.length > 0) {
-                    await triggerBackendPrint(currentOrderId, drinkPrintTitle);
+                    const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
+                    const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
+                    await printDrinkTicket({
+                        orderId: currentOrderId,
+                        tableName,
+                        items: allDrinks,
+                        orderNote,
+                        title: drinkPrintTitle,
+                        staffName: currentUser?.name || ''
+                    });
                 }
 
                 dispatch(clearCart());
@@ -268,8 +278,8 @@ export const useCheckoutLogic = () => {
     }, [
         prepareMergedTables, ensureOrderSynced, isConfirmed, isModified,
         isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId,
-        tableId, buildDrinkTitle, dispatch, triggerBackendPrint, navigate,
-        setShowSuccessPopup, orderNote, guestCount, currentUser
+        tableId, buildDrinkTitle, dispatch, navigate,
+        setShowSuccessPopup, orderNote, guestCount, currentUser, allTables
     ]);
 
     const handleCancelOrder = useCallback(async () => {
@@ -315,10 +325,10 @@ export const useCheckoutLogic = () => {
         setIsSaving(true);
         try {
             await dispatch(mergeBackAsync(undoSplitData.orderId)).unwrap();
-            
+
             dispatch(fetchTables());
             setUndoSplitData(null);
-            
+
             setSuccessMessage('Đã hoàn tác tách đơn thành công.');
             setShowSuccessPopup(true);
             safeSetTimeout(() => setShowSuccessPopup(false), 2000);
@@ -361,10 +371,10 @@ export const useCheckoutLogic = () => {
 
         // Distribute split quantities across individual database order items
         const distributedSplitItems = [];
-        
+
         selectedSplitItems.forEach(splitItem => {
             const splitItemId = splitItem.order_item_id || splitItem.id;
-            
+
             // Find the representative item to get product/note mapping
             const repItem = selectedItems.find(it => String(it.order_item_id || it.id) === String(splitItemId));
             if (!repItem) return;
@@ -394,12 +404,12 @@ export const useCheckoutLogic = () => {
 
                 const availableQty = it.quantity;
                 const splitQty = Math.min(availableQty, remainingToSplit);
-                
+
                 distributedSplitItems.push({
                     order_item_id: it.order_item_id,
                     quantity: splitQty
                 });
-                
+
                 remainingToSplit -= splitQty;
             }
         });

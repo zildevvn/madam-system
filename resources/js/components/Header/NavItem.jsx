@@ -15,7 +15,6 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
     React.useEffect(() => {
         if (isAnyChildActive) {
             setExpanded(true);
-            console.log(":Ádsd")
         }
     }, [isAnyChildActive]);
 
@@ -42,11 +41,11 @@ const NavItem = ({ item, isActive, setSidebarOpen }) => {
                             setExpanded(!expanded);
                         }}
                     >
-                        <Icon 
-                            name="chevronDown" 
-                            className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} 
-                            size={14} 
-                            strokeWidth={3.5} 
+                        <Icon
+                            name="chevronDown"
+                            className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
+                            size={14}
+                            strokeWidth={3.5}
                         />
                     </div>
                 )}

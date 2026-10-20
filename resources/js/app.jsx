@@ -49,6 +49,7 @@ const ReservationEdit = ReservationCreate; // [WHY] Alias to make the dual-use o
 import ExpenseManagement from './pages/ExpenseManagement';
 import UserProfilePage from './pages/UserProfilePage';
 import EmployeeSchedulePage from './pages/EmployeeSchedulePage';
+import PrinterTest from './pages/PrinterTest';
 
 // 8. Store / Slices / Bootstraps / Styles
 import { store } from './store';
@@ -232,6 +233,7 @@ function App() {
                 <RouteLayoutHandler />
                 <Routes>
                     <Route path="/" element={<Home />} />
+
                     <Route element={<ProtectedRoute />}>
                         {/* User Profile */}
                         <Route path="/profile" element={<DefaultLayout><UserProfilePage /></DefaultLayout>} />
@@ -252,6 +254,8 @@ function App() {
                             <Route path="/reservations/stats" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CASHIER]}><DefaultLayout><ReservationStatsPage /></DefaultLayout></RoleProtectedRoute>} />
                             <Route path="/reservations/partner-companies" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.CASHIER]}><DefaultLayout><PartnerCompaniesPage /></DefaultLayout></RoleProtectedRoute>} />
                         </Route>
+
+                        <Route path="/printer-test" element={<RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}><DefaultLayout><PrinterTest /></DefaultLayout></RoleProtectedRoute>} />
 
                         {/* Cashier page: Access by admin, cashier */}
                         <Route path="/cashier" element={<RoleProtectedRoute allowedRoles={[ROLES.CASHIER, ROLES.ACCOUNTANT]}><DefaultLayout><Cashier /></DefaultLayout></RoleProtectedRoute>} />

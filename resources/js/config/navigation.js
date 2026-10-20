@@ -21,6 +21,7 @@ export const NAVIGATION_ITEMS = [
     { name: 'Staff Order', href: '/staff-order', roles: [ROLES.MANAGER, ROLES.ORDER_STAFF, ROLES.SELLER, ROLES.CASHIER] },
     { name: 'Kitchen', href: '/kitchen', roles: [ROLES.KITCHEN] },
     { name: 'Bar', href: '/bar', roles: [ROLES.BAR] },
+    { name: 'Printer', href: '/printer-test', roles: [ROLES.MANAGER, ROLES.ACCOUNTANT, ROLES.CASHIER] },
     { name: 'Bills', href: '/bills', roles: [ROLES.BILL, ROLES.CASHIER] },
     { name: 'Cashier', href: '/cashier', roles: [ROLES.CASHIER, ROLES.ACCOUNTANT] },
     {
