@@ -55,6 +55,8 @@ export const useCheckoutState = () => {
     const [warningMessage, setWarningMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('Đơn hàng đã được lưu thành công.');
     const [undoSplitData, setUndoSplitData] = useState(null);
+    const [printRetryPayload, setPrintRetryPayload] = useState(null);
+    const [isRetryingPrint, setIsRetryingPrint] = useState(false);
 
     const isTableChanged = useMemo(() => selectedTableId !== tableId, [selectedTableId, tableId]);
 
@@ -112,6 +114,10 @@ export const useCheckoutState = () => {
         orderNote,
         guestCount: useAppSelector(state => state.order.guestCount),
         undoSplitData,
-        setUndoSplitData
+        setUndoSplitData,
+        printRetryPayload,
+        setPrintRetryPayload,
+        isRetryingPrint,
+        setIsRetryingPrint
     };
 };

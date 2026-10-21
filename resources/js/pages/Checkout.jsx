@@ -51,7 +51,11 @@ export default function Checkout() {
         handleUpdateSplitQuantity,
         onConfirmSplit,
         undoSplitData,
-        handleUndoSplit
+        handleUndoSplit,
+        handleRetryPrint,
+        handleDismissPrintWarning,
+        printRetryPayload,
+        isRetryingPrint
     } = useCheckoutLogic();
 
     return (
@@ -118,6 +122,10 @@ export default function Checkout() {
                 warningTitle={warningTitle}
                 warningMessage={warningMessage}
                 setShowWarningPopup={setShowWarningPopup}
+                onRetry={printRetryPayload ? handleRetryPrint : undefined}
+                isRetrying={isRetryingPrint}
+                retryLabel="Thử in lại"
+                onDismiss={printRetryPayload ? handleDismissPrintWarning : undefined}
             />
 
             {undoSplitData && (

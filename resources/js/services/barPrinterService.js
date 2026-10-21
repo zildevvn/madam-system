@@ -366,13 +366,14 @@ export const formatDrinkReceiptHtml = ({
 
 // Cache for recent prints to prevent accidental duplicate prints within a 10s cooldown
 const recentPrints = new Map();
+const inFlightPrints = new Set();
 const DEDUPLICATION_WINDOW_MS = 10000;
 
 /**
  * Automatically print drink items to Xprinter_Bar via QZ Tray.
  *
  * @param {Object} options
- * @param {string|number} options.orderId
+ * @param {string|number} [options.orderId]
  * @param {string} options.tableName
  * @param {Array} options.items
  * @param {string} [options.orderNote]
@@ -401,15 +402,28 @@ export const printDrinkTicket = async ({
     }
 
     const resolvedStaffName = staffName || order?.server?.name || order?.staffName || '';
+    const resolvedOrderId = orderId || order?.id || 'new';
 
-    // 3. Deduplication check: prevent duplicate print for the same ticket within 10s
-    const printKey = `${orderId || 'new'}-${tableName || ''}-${drinkItems.map(i => `${i.id || i.product_id}:${i.quantity}:${i.note || ''}`).join('|')}-${title}`;
+    // 3. Deduplication check: prevent concurrent calls and duplicate print within 10s
+    const itemsSignature = drinkItems.map(i => `${i.id || i.product_id}:${i.quantity}:${i.note || ''}`).join('|');
+    const printKey = `${resolvedOrderId}-${tableName || ''}-${itemsSignature}-${title}`;
+
+    // 3a. In-flight check: Prevent concurrent or double-click calls for the exact same ticket
+    if (inFlightPrints.has(printKey)) {
+        console.warn('Bar print request already in-flight, ignoring concurrent call:', printKey);
+        return { success: false, reason: 'in_flight' };
+    }
+
+    // 3b. Cooldown check: Prevent duplicate print within cooldown window (10s)
     const lastPrintedAt = recentPrints.get(printKey);
     const now = Date.now();
     if (lastPrintedAt && (now - lastPrintedAt) < DEDUPLICATION_WINDOW_MS) {
-        console.warn('Duplicate bar print request ignored:', printKey);
+        console.warn('Duplicate bar print request ignored (cooldown):', printKey);
         return { success: false, reason: 'duplicate_prevented' };
     }
+
+    // Lock the ticket as in-flight
+    inFlightPrints.add(printKey);
 
     try {
         // 4. Ensure connection to QZ Tray
@@ -417,7 +431,7 @@ export const printDrinkTicket = async ({
             await qz.websocket.connect();
         }
 
-        const barPrinter = printerName || localStorage.getItem('bar_printer_name') || 'Xprinter_Bar';
+        const barPrinter = printerName || (typeof localStorage !== 'undefined' ? localStorage.getItem('bar_printer_name') : null) || 'Xprinter_Bar';
 
         // 5. Configure 80mm continuous thermal receipt matching Cashier Payment Receipt with auto-scaling disabled
         const config = qz.configs.create(barPrinter, {
@@ -429,7 +443,7 @@ export const printDrinkTicket = async ({
 
         // 6. Generate HTML payload
         const html = formatDrinkReceiptHtml({
-            orderId,
+            orderId: resolvedOrderId,
             tableName,
             time: new Date(),
             items: drinkItems,
@@ -448,7 +462,7 @@ export const printDrinkTicket = async ({
         // 7. Dispatch print job to QZ Tray
         await qz.print(config, htmlData);
 
-        // Record successful print for deduplication
+        // Record successful print for deduplication only after qz.print resolves
         recentPrints.set(printKey, Date.now());
 
         // Cleanup old keys in cache
@@ -462,7 +476,20 @@ export const printDrinkTicket = async ({
     } catch (error) {
         // Graceful error handling: log error without breaking caller execution
         console.error('Lỗi in máy quầy nước Xprinter_Bar via QZ Tray:', error);
-        return { success: false, error: error.message || error };
+        return { success: false, error: error.message || String(error) };
+    } finally {
+        // Always release in-flight lock, regardless of success or failure
+        inFlightPrints.delete(printKey);
+    }
+};
+
+export const _testHooks = {
+    recentPrints,
+    inFlightPrints,
+    DEDUPLICATION_WINDOW_MS,
+    clearCaches: () => {
+        recentPrints.clear();
+        inFlightPrints.clear();
     }
 };
 
@@ -471,5 +498,6 @@ export default {
     getNewlyAddedDrinks,
     formatBilingualItemName,
     formatDrinkReceiptHtml,
-    printDrinkTicket
+    printDrinkTicket,
+    _testHooks
 };

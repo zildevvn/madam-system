@@ -39,7 +39,8 @@ export const useCheckoutLogic = () => {
         guestCount,
         orderNote,
         setWarningTitle, setWarningMessage, setSuccessMessage, setShowSuccessPopup,
-        allTables, currentUser, undoSplitData, setUndoSplitData
+        allTables, currentUser, undoSplitData, setUndoSplitData,
+        printRetryPayload, setPrintRetryPayload, isRetryingPrint, setIsRetryingPrint
     } = state;
 
     const [isSaving, setIsSaving] = useState(false);
@@ -229,11 +230,14 @@ export const useCheckoutLogic = () => {
                     ? allDrinks
                     : getNewlyAddedDrinks(allDrinks, originalItems, wasConfirmed);
 
+                let printResult = { success: true };
+                let printPayload = null;
+
                 // Automatic drink printing to Xprinter_Bar via QZ Tray
                 if (drinkPrintTitle && drinksToPrint.length > 0) {
                     const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
                     const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
-                    await printDrinkTicket({
+                    printPayload = {
                         orderId: savedOrder?.id || currentOrderId,
                         tableName,
                         items: drinksToPrint,
@@ -241,44 +245,76 @@ export const useCheckoutLogic = () => {
                         title: drinkPrintTitle,
                         staffName: savedOrder?.server?.name || savedOrder?.staffName || currentUser?.name || '',
                         order: savedOrder
-                    });
+                    };
+                    try {
+                        printResult = await printDrinkTicket(printPayload);
+                    } catch (printErr) {
+                        console.error('Print exception during checkout:', printErr);
+                        printResult = { success: false, error: printErr?.message || String(printErr) };
+                    }
                 }
 
                 dispatch(fetchTables());
-                setShowSuccessPopup(true);
-                safeSetTimeout(() => {
-                    setShowSuccessPopup(false);
-                    navigate('/staff-order');
-                }, 1500);
+
+                if (printResult.success || printResult.reason === 'duplicate_prevented' || !printPayload) {
+                    setShowSuccessPopup(true);
+                    safeSetTimeout(() => {
+                        setShowSuccessPopup(false);
+                        navigate('/staff-order');
+                    }, 1500);
+                } else {
+                    // Order successfully saved in database, but printing to Bar printer failed
+                    setPrintRetryPayload(printPayload);
+                    setWarningTitle('Đã lưu đơn - Lỗi in phiếu pha chế');
+                    setWarningMessage(`Đơn hàng đã được lưu thành công trên hệ thống.\nTuy nhiên máy in quầy nước (Xprinter_Bar) không in được phiếu: ${printResult.error || printResult.reason || 'Không kết nối được QZ Tray'}.\n\nVui lòng kiểm tra máy in và bấm "Thử in lại" hoặc "Đóng / Về bàn".`);
+                    setShowWarningPopup(true);
+                }
 
             } else if (hasChangedTable) {
                 const allDrinks = selectedItems.filter(item => isDrinkItem(item) && !item.isSplit);
                 const drinkPrintTitle = buildDrinkTitle(false, true, wasConfirmed);
 
+                let printResult = { success: true };
+                let printPayload = null;
+
                 if (drinkPrintTitle && allDrinks.length > 0) {
                     const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
                     const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
-                    await printDrinkTicket({
+                    printPayload = {
                         orderId: currentOrderId,
                         tableName,
                         items: allDrinks,
                         orderNote,
                         title: drinkPrintTitle,
                         staffName: currentUser?.name || ''
-                    });
+                    };
+                    try {
+                        printResult = await printDrinkTicket(printPayload);
+                    } catch (printErr) {
+                        console.error('Print exception during table transfer:', printErr);
+                        printResult = { success: false, error: printErr?.message || String(printErr) };
+                    }
                 }
 
                 dispatch(clearCart());
                 dispatch(fetchTables());
-                setShowSuccessPopup(true);
-                safeSetTimeout(() => {
-                    setShowSuccessPopup(false);
-                    navigate('/staff-order');
-                }, 1500);
+
+                if (printResult.success || printResult.reason === 'duplicate_prevented' || !printPayload) {
+                    setShowSuccessPopup(true);
+                    safeSetTimeout(() => {
+                        setShowSuccessPopup(false);
+                        navigate('/staff-order');
+                    }, 1500);
+                } else {
+                    setPrintRetryPayload(printPayload);
+                    setWarningTitle('Đã chuyển bàn - Lỗi in phiếu pha chế');
+                    setWarningMessage(`Bàn đã được cập nhật thành công trên hệ thống.\nTuy nhiên máy in quầy nước (Xprinter_Bar) không in được phiếu: ${printResult.error || printResult.reason || 'Không kết nối được QZ Tray'}.\n\nVui lòng kiểm tra máy in và bấm "Thử in lại" hoặc "Đóng / Về bàn".`);
+                    setShowWarningPopup(true);
+                }
             }
         } catch (error) {
-            console.error(error);
-            alert("Lỗi Order");
+            console.error('Lỗi khi lưu đơn hàng:', error);
+            alert(error?.message || "Lỗi lưu đơn hàng vào hệ thống");
         } finally {
             isProcessing.current = false;
             setIsSaving(false);
@@ -287,8 +323,42 @@ export const useCheckoutLogic = () => {
         prepareMergedTables, ensureOrderSynced, isConfirmed, isModified,
         isMergeChanged, selectedItems, checkForDrinkChanges, selectedTableId,
         tableId, buildDrinkTitle, dispatch, navigate,
-        setShowSuccessPopup, orderNote, guestCount, currentUser, allTables
+        setShowSuccessPopup, orderNote, guestCount, currentUser, allTables,
+        setPrintRetryPayload, setWarningTitle, setWarningMessage, setShowWarningPopup, safeSetTimeout
     ]);
+
+    const handleRetryPrint = useCallback(async () => {
+        if (!printRetryPayload || isRetryingPrint) return;
+        setIsRetryingPrint(true);
+        try {
+            const res = await printDrinkTicket(printRetryPayload);
+            if (res.success) {
+                setShowWarningPopup(false);
+                setPrintRetryPayload(null);
+                setSuccessMessage('In phiếu pha chế thành công!');
+                setShowSuccessPopup(true);
+                safeSetTimeout(() => {
+                    setShowSuccessPopup(false);
+                    navigate('/staff-order');
+                }, 1200);
+            } else {
+                setWarningTitle('Thử in lại thất bại');
+                setWarningMessage(`Không thể in phiếu pha chế: ${res.error || res.reason || 'Không kết nối được QZ Tray'}.\n\nVui lòng kiểm tra kết nối QZ Tray / nguồn máy in rồi bấm "Thử in lại".`);
+            }
+        } catch (err) {
+            console.error('Retry print exception:', err);
+            setWarningTitle('Thử in lại thất bại');
+            setWarningMessage(`Lỗi ngoại lệ khi in: ${err?.message || String(err)}.\n\nVui lòng kiểm tra máy in và thử lại.`);
+        } finally {
+            setIsRetryingPrint(false);
+        }
+    }, [printRetryPayload, isRetryingPrint, safeSetTimeout, navigate, setShowWarningPopup, setShowSuccessPopup, setSuccessMessage, setWarningTitle, setWarningMessage, setIsRetryingPrint, setPrintRetryPayload]);
+
+    const handleDismissPrintWarning = useCallback(() => {
+        setShowWarningPopup(false);
+        setPrintRetryPayload(null);
+        navigate('/staff-order');
+    }, [navigate, setShowWarningPopup, setPrintRetryPayload]);
 
     const handleCancelOrder = useCallback(async () => {
         if (activeOrderId) await dispatch(cancelOrderAsync(activeOrderId));
@@ -455,6 +525,8 @@ export const useCheckoutLogic = () => {
         toggleSplitItem,
         handleUpdateSplitQuantity,
         onConfirmSplit,
-        handleUndoSplit
+        handleUndoSplit,
+        handleRetryPrint,
+        handleDismissPrintWarning
     };
 };
