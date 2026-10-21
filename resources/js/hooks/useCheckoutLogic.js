@@ -20,7 +20,7 @@ import {
 } from '../store/slices/orderSlice';
 import { fetchTables } from '../store/slices/tableSlice';
 import orderApi from '../services/orderApi';
-import { printDrinkTicket, isDrinkItem } from '../services/barPrinterService';
+import { printDrinkTicket, isDrinkItem, getNewlyAddedDrinks } from '../services/barPrinterService';
 
 /**
  * useCheckoutLogic: Encapsulates business logic for table checkout, 
@@ -221,14 +221,22 @@ export const useCheckoutLogic = () => {
                     userId: currentUser?.id
                 })).unwrap();
 
+                // Determine which drinks to print:
+                // - For new orders (!wasConfirmed): print all eligible drinks
+                // - For table transfers with modifications (isTableMove): all drinks on moved table
+                // - For updating an existing order: ONLY newly added drinks and increased quantities
+                const drinksToPrint = isTableMove
+                    ? allDrinks
+                    : getNewlyAddedDrinks(allDrinks, originalItems, wasConfirmed);
+
                 // Automatic drink printing to Xprinter_Bar via QZ Tray
-                if (drinkPrintTitle && allDrinks.length > 0) {
+                if (drinkPrintTitle && drinksToPrint.length > 0) {
                     const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
                     const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
                     await printDrinkTicket({
                         orderId: savedOrder?.id || currentOrderId,
                         tableName,
-                        items: allDrinks,
+                        items: drinksToPrint,
                         orderNote,
                         title: drinkPrintTitle,
                         staffName: savedOrder?.server?.name || savedOrder?.staffName || currentUser?.name || '',

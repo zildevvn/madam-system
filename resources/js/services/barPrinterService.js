@@ -14,6 +14,56 @@ export const isDrinkItem = (item) => {
 };
 
 /**
+ * Identify and extract only newly added drinks or increased drink quantities
+ * between the original saved order snapshot and the current cart items.
+ *
+ * - For new orders (wasConfirmed = false), all current drinks are returned.
+ * - For existing orders (wasConfirmed = true):
+ *   - Completely new drink items (not present in original snapshot) are returned with their full quantity.
+ *   - Existing drinks with increased quantity are returned with only the newly added delta (currentQty - originalQty).
+ *   - Unchanged drinks, decreased quantity drinks, and removed drinks are omitted.
+ *
+ * @param {Array} currentDrinks - Array of drink items currently in cart
+ * @param {Object} originalItemsSnapshot - Map of [itemId]: { quantity, note, type } from Redux orderSlice
+ * @param {boolean} [wasConfirmed=true] - Whether the order was previously saved/confirmed
+ * @returns {Array} Array of drink items to be printed with adjusted quantities
+ */
+export const getNewlyAddedDrinks = (currentDrinks = [], originalItemsSnapshot = {}, wasConfirmed = true) => {
+    if (!wasConfirmed || !originalItemsSnapshot || Object.keys(originalItemsSnapshot).length === 0) {
+        return currentDrinks.filter(isDrinkItem);
+    }
+
+    const newlyAdded = [];
+
+    for (const item of currentDrinks) {
+        if (!isDrinkItem(item)) continue;
+
+        const original = originalItemsSnapshot[item.id];
+        if (!original) {
+            // New drink item added to cart that was not present in original order snapshot
+            const qty = Number(item.quantity) || 0;
+            if (qty > 0) {
+                newlyAdded.push({ ...item, quantity: qty });
+            }
+        } else {
+            const originalQty = Number(original.quantity) || 0;
+            const currentQty = Number(item.quantity) || 0;
+            const deltaQty = currentQty - originalQty;
+
+            // Existing drink item whose quantity has increased
+            if (deltaQty > 0) {
+                newlyAdded.push({
+                    ...item,
+                    quantity: deltaQty
+                });
+            }
+        }
+    }
+
+    return newlyAdded;
+};
+
+/**
  * Format bilingual item name in 'Tên tiếng Việt - English Name' format.
  * Matches Cashier Payment Receipt naming convention while deduplicating
  * identical names across languages.
@@ -418,6 +468,7 @@ export const printDrinkTicket = async ({
 
 export default {
     isDrinkItem,
+    getNewlyAddedDrinks,
     formatBilingualItemName,
     formatDrinkReceiptHtml,
     printDrinkTicket
