@@ -228,6 +228,7 @@ class OrderService
             $productTypes = Product::whereIn('id', $productIds)->pluck('type', 'id');
 
             $handledItemIds = [];
+            $newlyAddedDrinks = [];
 
             foreach ($items as $itemData) {
                 $productId = $itemData['product_id'];
@@ -291,6 +292,21 @@ class OrderService
                         $newOrderItem->save();
                         
                         $handledItemIds[] = $newOrderItem->id;
+
+                        // Track newly added drink for Bar print ticket
+                        if ($productType === 'drink' || $productType === 'packaged_drink') {
+                            $prod = $productId ? Product::find($productId) : null;
+                            $newlyAddedDrinks[] = [
+                                'id' => $newOrderItem->id,
+                                'product_id' => $productId,
+                                'name' => $newOrderItem->name ?: ($prod?->name ?? 'Món nước'),
+                                'name_vi' => $prod?->name_vi ?? '',
+                                'type' => 'drink',
+                                'quantity' => (int) $quantityDiff,
+                                'price' => $newOrderItem->price,
+                                'note' => $newOrderItem->note ?? ''
+                            ];
+                        }
                         
                         // [FIX] Add the newly replicated item's price (net of item discount) to the order total
                         $totalPrice += ($newItemGross - $newItemDiscountAmount);
@@ -333,6 +349,20 @@ class OrderService
                         'sort_order' => $maxSortOrder + 1
                     ]);
                     $handledItemIds[] = $orderItem->id;
+
+                    // Track newly added drink for Bar print ticket
+                    if ($productType === 'drink' || $productType === 'packaged_drink') {
+                        $newlyAddedDrinks[] = [
+                            'id' => $orderItem->id,
+                            'product_id' => $productId,
+                            'name' => $orderItem->name ?: ($product?->name ?? 'Món nước'),
+                            'name_vi' => $product?->name_vi ?? '',
+                            'type' => 'drink',
+                            'quantity' => (int) $orderItem->quantity,
+                            'price' => $orderItem->price,
+                            'note' => $orderItem->note ?? ''
+                        ];
+                    }
                 }
 
                 $discount = $itemData['discount'] ?? 0;
@@ -385,15 +415,66 @@ class OrderService
                 Table::where('id', $order->table_id)->update(['status' => 'busy']);
             }
 
-            return ['order' => $order, 'wasDraft' => $wasDraft];
+            // For brand-new orders (was draft): all drinks in the order must be printed
+            if ($wasDraft) {
+                $newlyAddedDrinks = [];
+                $order->load(['items.product:id,name,name_vi,type']);
+                foreach ($order->items as $item) {
+                    $pType = $item->product?->type ?? $item->type;
+                    if ($pType === 'drink' || $pType === 'packaged_drink') {
+                        $newlyAddedDrinks[] = [
+                            'id' => $item->id,
+                            'product_id' => $item->product_id,
+                            'name' => $item->name ?: ($item->product?->name ?? 'Món nước'),
+                            'name_vi' => $item->product?->name_vi ?? '',
+                            'type' => 'drink',
+                            'quantity' => (int) $item->quantity,
+                            'price' => $item->price,
+                            'note' => $item->note ?? ''
+                        ];
+                    }
+                }
+            }
+
+            $table = Table::find($order->table_id);
+            $tableName = $table?->name ?? ('Bàn ' . $order->table_id);
+            $tableNumber = preg_replace('/^Bàn\s+/ui', '', $tableName);
+            $drinkPrintTitle = $wasDraft ? 'PHIẾU PHA CHẾ' : ('Bill doi mon ban so ' . $tableNumber);
+
+            return [
+                'order' => $order,
+                'wasDraft' => $wasDraft,
+                'drinksToPrint' => $newlyAddedDrinks,
+                'tableName' => $tableName,
+                'drinkPrintTitle' => $drinkPrintTitle
+            ];
         });
 
         try {
             $orderObj = $result['order'];
             $orderObj->load(['items.product:id,name,name_vi,price,type', 'table:id,name', 'server:id,name', 'cashier:id,name']);
             broadcast(new OrderUpdated($orderObj, $result['wasDraft'] ? 'order_created' : 'order_updated'));
+
+            // Centralized drink printing event for POS stations
+            $drinksToPrint = $result['drinksToPrint'] ?? [];
+            if (!empty($drinksToPrint)) {
+                $requestId = 'pr-' . $orderObj->id . '-' . round(microtime(true) * 1000) . '-' . \Illuminate\Support\Str::random(4);
+                $printReq = \App\Models\BarPrintRequest::create([
+                    'request_id' => $requestId,
+                    'order_id' => $orderObj->id,
+                    'table_name' => $result['tableName'] ?? ($orderObj->table?->name ?? ('Bàn ' . $orderObj->table_id)),
+                    'table_id' => $orderObj->table_id,
+                    'title' => $result['drinkPrintTitle'] ?? 'PHIẾU PHA CHẾ',
+                    'items' => $drinksToPrint,
+                    'order_note' => $orderObj->order_note ?? '',
+                    'staff_name' => $orderObj->server?->name ?? ($orderObj->cashier?->name ?? ''),
+                    'status' => 'pending'
+                ]);
+
+                broadcast(new \App\Events\DrinkPrintRequested($printReq->toArray()));
+            }
         } catch (\Exception $e) {
-            Log::error('Broadcast failed during checkout: ' . $e->getMessage());
+            Log::error('Broadcast or BarPrintRequest failed during checkout: ' . $e->getMessage());
         }
 
         return $orderObj;

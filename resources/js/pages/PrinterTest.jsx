@@ -143,12 +143,62 @@ const PrinterTest = () => {
         }
     };
 
+    const [isStation, setIsStation] = useState(false);
+
+    useEffect(() => {
+        const stationStatus = localStorage.getItem('is_bar_printer_station') === 'true';
+        setIsStation(stationStatus);
+        const savedBarPrinter = localStorage.getItem('bar_printer_name');
+        if (savedBarPrinter) setBarPrinter(savedBarPrinter);
+    }, []);
+
+    const toggleStation = () => {
+        const nextStatus = !isStation;
+        setIsStation(nextStatus);
+        localStorage.setItem('is_bar_printer_station', nextStatus ? 'true' : 'false');
+    };
+
+    const handleSaveBarPrinterName = (name) => {
+        setBarPrinter(name);
+        localStorage.setItem('bar_printer_name', name);
+    };
+
     return (
-        <div style={{ padding: '30px', maxWidth: '600px', margin: '50px auto', border: '1px solid #ccc', borderRadius: '8px', fontFamily: 'sans-serif' }}>
-            <h2>📋 Xprinter Antigravity Print Test</h2>
+        <div style={{ padding: '30px', maxWidth: '650px', margin: '40px auto', border: '1px solid #ccc', borderRadius: '8px', fontFamily: 'sans-serif' }}>
+            <h2>Xprinter  Print Test</h2>
 
             <div style={{ padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '4px', marginBottom: '20px', fontWeight: 'bold' }}>
                 Trạng thái hệ thống: <span style={{ color: isAvailable ? 'green' : 'red' }}>{status}</span>
+            </div>
+
+            {/* Centralized Bar Station Toggle Card */}
+            <div style={{ padding: '15px', backgroundColor: isStation ? '#e8f5e9' : '#fff3e0', border: `1px solid ${isStation ? '#81c784' : '#ffb74d'}`, borderRadius: '6px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ fontWeight: 'bold', fontSize: '15px' }}>
+                            {isStation ? '🟢 Thiết bị này đang là TRẠM IN BAR TỰ ĐỘNG' : '⚪ Thiết bị này CHƯA là Trạm In Bar'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px', maxWidth: '420px' }}>
+                            {isStation
+                                ? 'Máy này sẽ tự động nhận lệnh in qua Pusher/Echo khi bất kỳ nhân viên nào order trên điện thoại hoặc POS khác.'
+                                : 'Bật chế độ này trên máy tính Windows/Mac kết nối máy in Xprinter_Bar.'}
+                        </div>
+                    </div>
+                    <button
+                        onClick={toggleStation}
+                        style={{
+                            padding: '8px 16px',
+                            backgroundColor: isStation ? '#d32f2f' : '#2e7d32',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        {isStation ? 'Tắt chế độ' : 'Bật làm Trạm In'}
+                    </button>
+                </div>
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -162,11 +212,11 @@ const PrinterTest = () => {
             </div>
 
             <div style={{ marginBottom: '30px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Tên Máy In Quầy Nước (Xprinter tương lai):</label>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Tên Máy In Quầy Nước (Xprinter_Bar LAN):</label>
                 <input
                     type="text"
                     value={barPrinter}
-                    onChange={(e) => setBarPrinter(e.target.value)}
+                    onChange={(e) => handleSaveBarPrinterName(e.target.value)}
                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
                 />
             </div>

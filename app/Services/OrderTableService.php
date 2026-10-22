@@ -176,6 +176,50 @@ class OrderTableService
                 $deletedOrderRepresentation->status = 'cancelled';
                 broadcast(new OrderUpdated($deletedOrderRepresentation, 'order_updated'));
             }
+
+            // [NEW] Centralized table-transfer drink printing for POS Bar printer
+            if (in_array($result->status, ['pending', 'processing'])) {
+                $drinkItems = [];
+                foreach ($result->items as $item) {
+                    $pType = $item->product?->type ?? $item->type;
+                    if ($pType === 'drink' || $pType === 'packaged_drink') {
+                        $drinkItems[] = [
+                            'id' => $item->id,
+                            'product_id' => $item->product_id,
+                            'name' => $item->name ?: ($item->product?->name ?? 'Món nước'),
+                            'name_vi' => $item->product?->name_vi ?? '',
+                            'type' => 'drink',
+                            'quantity' => (int) $item->quantity,
+                            'price' => $item->price,
+                            'note' => $item->note ?? ''
+                        ];
+                    }
+                }
+
+                if (!empty($drinkItems)) {
+                    $oldTableObj = Table::find($oldTableId);
+                    $oldTableName = $oldTableObj?->name ?? ('Bàn ' . $oldTableId);
+                    $newTableName = $result->table?->name ?? ('Bàn ' . $newTableId);
+                    $oldNum = preg_replace('/^Bàn\s+/ui', '', $oldTableName);
+                    $newNum = preg_replace('/^Bàn\s+/ui', '', $newTableName);
+                    $title = "Bill Chuyen Ban - Tu Ban {$oldNum} den Ban {$newNum}";
+
+                    $requestId = 'pr-move-' . $result->id . '-' . round(microtime(true) * 1000) . '-' . \Illuminate\Support\Str::random(4);
+                    $printReq = \App\Models\BarPrintRequest::create([
+                        'request_id' => $requestId,
+                        'order_id' => $result->id,
+                        'table_name' => $newTableName,
+                        'table_id' => $result->table_id,
+                        'title' => $title,
+                        'items' => $drinkItems,
+                        'order_note' => $result->order_note ?? '',
+                        'staff_name' => $result->server?->name ?? '',
+                        'status' => 'pending'
+                    ]);
+
+                    broadcast(new \App\Events\DrinkPrintRequested($printReq->toArray()));
+                }
+            }
         } catch (\Exception $e) {
             Log::error('Broadcast failed during table update: ' . $e->getMessage());
         }

@@ -493,11 +493,35 @@ export const _testHooks = {
     }
 };
 
+/**
+ * Check if current device is designated as the Bar Printer station.
+ * Waiters' mobile devices return false by default.
+ * Only the designated POS station connected to Xprinter_Bar returns true.
+ *
+ * @returns {boolean}
+ */
+export const isBarPrinterStation = () => {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('is_bar_printer_station') === 'true';
+};
+
+/**
+ * Configure whether current device acts as the Bar Printer station.
+ *
+ * @param {boolean} enabled
+ */
+export const setBarPrinterStation = (enabled) => {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('is_bar_printer_station', enabled ? 'true' : 'false');
+};
+
 export default {
     isDrinkItem,
     getNewlyAddedDrinks,
     formatBilingualItemName,
     formatDrinkReceiptHtml,
     printDrinkTicket,
+    isBarPrinterStation,
+    setBarPrinterStation,
     _testHooks
 };

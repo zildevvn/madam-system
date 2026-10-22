@@ -45,6 +45,11 @@ Route::middleware('web')->group(function () {
     Route::post('/orders/{id}/mark-printed', [OrderController::class, 'markPrinted']);
     Route::put('/order-items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
     Route::patch('/order-items/{itemId}/discount', [OrderController::class, 'updateItemDiscount'])->name('order-item.discount.update');
+
+    // Centralized Bar Printer Management
+    Route::get('/bar-printer/pending', [\App\Http\Controllers\API\BarPrinterController::class, 'getPendingRequests']);
+    Route::post('/bar-printer/acknowledge', [\App\Http\Controllers\API\BarPrinterController::class, 'acknowledge']);
+    Route::post('/bar-printer/reprint/{id}', [\App\Http\Controllers\API\BarPrinterController::class, 'reprint']);
 });
 
 // Accounts management

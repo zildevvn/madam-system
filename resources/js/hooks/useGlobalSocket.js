@@ -4,6 +4,7 @@ import { updateReservationFromSocket } from "../store/slices/reservationSlice";
 import { updateOrderFromSocket } from "../store/slices/orderSlice";
 import { updateTableFromSocket, fetchTables } from "../store/slices/tableSlice";
 import { addNotificationFromSocket } from "../store/slices/notificationSlice";
+import { useBarPrinterListener } from "./useBarPrinterListener";
 
 /**
  * useGlobalSocket: Hook that encapsulates all Laravel Echo global socket listeners.
@@ -12,6 +13,9 @@ import { addNotificationFromSocket } from "../store/slices/notificationSlice";
  */
 export const useGlobalSocket = () => {
     const dispatch = useAppDispatch();
+
+    // Centralized automatic bar print listener for designated POS stations
+    useBarPrinterListener();
 
     useEffect(() => {
         if (window.Echo) {

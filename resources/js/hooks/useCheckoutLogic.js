@@ -222,95 +222,21 @@ export const useCheckoutLogic = () => {
                     userId: currentUser?.id
                 })).unwrap();
 
-                // Determine which drinks to print:
-                // - For new orders (!wasConfirmed): print all eligible drinks
-                // - For table transfers with modifications (isTableMove): all drinks on moved table
-                // - For updating an existing order: ONLY newly added drinks and increased quantities
-                const drinksToPrint = isTableMove
-                    ? allDrinks
-                    : getNewlyAddedDrinks(allDrinks, originalItems, wasConfirmed);
-
-                let printResult = { success: true };
-                let printPayload = null;
-
-                // Automatic drink printing to Xprinter_Bar via QZ Tray
-                if (drinkPrintTitle && drinksToPrint.length > 0) {
-                    const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
-                    const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
-                    printPayload = {
-                        orderId: savedOrder?.id || currentOrderId,
-                        tableName,
-                        items: drinksToPrint,
-                        orderNote,
-                        title: drinkPrintTitle,
-                        staffName: savedOrder?.server?.name || savedOrder?.staffName || currentUser?.name || '',
-                        order: savedOrder
-                    };
-                    try {
-                        printResult = await printDrinkTicket(printPayload);
-                    } catch (printErr) {
-                        console.error('Print exception during checkout:', printErr);
-                        printResult = { success: false, error: printErr?.message || String(printErr) };
-                    }
-                }
-
                 dispatch(fetchTables());
-
-                if (printResult.success || printResult.reason === 'duplicate_prevented' || !printPayload) {
-                    setShowSuccessPopup(true);
-                    safeSetTimeout(() => {
-                        setShowSuccessPopup(false);
-                        navigate('/staff-order');
-                    }, 1500);
-                } else {
-                    // Order successfully saved in database, but printing to Bar printer failed
-                    setPrintRetryPayload(printPayload);
-                    setWarningTitle('Đã lưu đơn - Lỗi in phiếu pha chế');
-                    setWarningMessage(`Đơn hàng đã được lưu thành công trên hệ thống.\nTuy nhiên máy in quầy nước (Xprinter_Bar) không in được phiếu: ${printResult.error || printResult.reason || 'Không kết nối được QZ Tray'}.\n\nVui lòng kiểm tra máy in và bấm "Thử in lại" hoặc "Đóng / Về bàn".`);
-                    setShowWarningPopup(true);
-                }
+                setShowSuccessPopup(true);
+                safeSetTimeout(() => {
+                    setShowSuccessPopup(false);
+                    navigate('/staff-order');
+                }, 1500);
 
             } else if (hasChangedTable) {
-                const allDrinks = selectedItems.filter(item => isDrinkItem(item) && !item.isSplit);
-                const drinkPrintTitle = buildDrinkTitle(false, true, wasConfirmed);
-
-                let printResult = { success: true };
-                let printPayload = null;
-
-                if (drinkPrintTitle && allDrinks.length > 0) {
-                    const currentTable = allTables.find(t => t.id.toString() === selectedTableId.toString());
-                    const tableName = currentTable?.name || `Bàn số ${selectedTableId}`;
-                    printPayload = {
-                        orderId: currentOrderId,
-                        tableName,
-                        items: allDrinks,
-                        orderNote,
-                        title: drinkPrintTitle,
-                        staffName: currentUser?.name || ''
-                    };
-                    try {
-                        printResult = await printDrinkTicket(printPayload);
-                    } catch (printErr) {
-                        console.error('Print exception during table transfer:', printErr);
-                        printResult = { success: false, error: printErr?.message || String(printErr) };
-                    }
-                }
-
                 dispatch(clearCart());
                 dispatch(fetchTables());
-
-                if (printResult.success || printResult.reason === 'duplicate_prevented' || !printPayload) {
-                    setShowSuccessPopup(true);
-                    safeSetTimeout(() => {
-                        setShowSuccessPopup(false);
-                        navigate('/staff-order');
-                    }, 1500);
-                } else {
-                    setPrintRetryPayload(printPayload);
-                    setWarningTitle('Đã chuyển bàn - Lỗi in phiếu pha chế');
-                    setWarningMessage(`Bàn đã được cập nhật thành công trên hệ thống.\nTuy nhiên máy in quầy nước (Xprinter_Bar) không in được phiếu: ${printResult.error || printResult.reason || 'Không kết nối được QZ Tray'}.\n\nVui lòng kiểm tra máy in và bấm "Thử in lại" hoặc "Đóng / Về bàn".`);
-                    setShowWarningPopup(true);
-                }
+                setShowSuccessPopup(true);
+                safeSetTimeout(() => {
+                    setShowSuccessPopup(false);
+                    navigate('/staff-order');
+                }, 1500);
             }
         } catch (error) {
             console.error('Lỗi khi lưu đơn hàng:', error);
