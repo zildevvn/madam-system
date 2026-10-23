@@ -13,6 +13,8 @@ const categoryService = {
         const response = await axios.put(`/api/categories/${id}`, data);
         return response.data;
     },
+
+
     deleteCategory: async (id) => {
         const response = await axios.delete(`/api/categories/${id}`);
         return response.data;
