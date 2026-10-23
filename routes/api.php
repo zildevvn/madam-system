@@ -94,6 +94,10 @@ Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 Route::get('/debug/printer', [DebugController::class, 'checkPrinter']);
 Route::get('/debug/broadcast', [DebugController::class, 'sendTestBroadcast']);
 
+// QZ Tray Message Signing (Silent Printing)
+Route::post('/qz/sign', [\App\Http\Controllers\QzController::class, 'sign'])
+    ->middleware(['auth:sanctum', 'throttle:120,1']);
+
 // Reservations
 Route::post('/reservations/{id}/confirm', [ReservationController::class, 'confirm']);
 Route::get('/reservations/{id}/bill', [ReservationController::class, 'getBill']);

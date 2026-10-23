@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { setupQzSecurity } from '../services/qzSecurityService';
 import qz from 'qz-tray';
 
 const PrinterTest = () => {
@@ -7,25 +8,30 @@ const PrinterTest = () => {
     const [cashierPrinter, setCashierPrinter] = useState('Xprinter_Cashier');
     const [barPrinter, setBarPrinter] = useState('Xprinter_Bar');
 
-    // Tự động kiểm tra xem phần mềm QZ Tray trên Mac có đang bật không khi vào trang
+    // Tự động cấu hình Bảo mật & Kiểm tra kết nối QZ Tray khi mount
     useEffect(() => {
-        const checkQZConnection = async () => {
+        const initQZ = async () => {
             try {
+                // 1. Cấu hình Certificate (Đọc tệp công khai từ thư mục public)
+                setupQzSecurity();
+
+
+                // 3. Thực hiện kết nối tới QZ Tray Client
                 if (!qz.websocket.isActive()) {
                     await qz.websocket.connect();
                 }
-                setStatus('🟢 Đã kết nối thành công tới phần mềm QZ Tray trên Mac!');
+                setStatus('🟢 Đã kết nối & xác thực thành công với QZ Tray!');
                 setIsAvailable(true);
             } catch (error) {
-                setStatus('🔴 Không thể kết nối tới QZ Tray. Hãy chắc chắn ứng dụng QZ Tray đang chạy trên Mac!');
+                setStatus('🔴 Không thể kết nối tới QZ Tray. Hãy chắc chắn ứng dụng QZ Tray đang chạy!');
                 setIsAvailable(false);
-                console.error(error);
+                console.error('Lỗi khởi tạo QZ Tray:', error);
             }
         };
 
-        checkQZConnection();
+        initQZ();
 
-        // Cleanup: Đóng kết nối khi rời khỏi trang test để không ảnh hưởng page khác
+        // Cleanup: Đóng kết nối khi rời khỏi Component
         return () => {
             if (qz.websocket.isActive()) {
                 qz.websocket.disconnect().catch(console.error);
@@ -33,20 +39,18 @@ const PrinterTest = () => {
         };
     }, []);
 
-    // Hàm test in máy Thu Ngân (Đã sửa cú pháp cấu hình khổ giấy cho máy HP LaserJet)
+    // Hàm test in máy Thu Ngân
     const testPrintCashier = async () => {
         if (!isAvailable) return alert('QZ Tray chưa sẵn sàng!');
         try {
             setStatus(`⏳ Đang gửi lệnh in đồ họa tới máy văn phòng: ${cashierPrinter}...`);
 
-            // Cách cấu hình đúng của QZ Tray: Truyền size và margins trực tiếp vào object options
             const config = qz.configs.create(cashierPrinter, {
-                size: { width: 148, height: 210 }, // Khổ giấy A5 tính bằng milimet (mm)
+                size: { width: 148, height: 210 }, // Khổ giấy A5 (mm)
                 units: 'mm',
-                margins: { top: 10, right: 10, bottom: 10, left: 10 } // Đặt lề 10mm giúp máy HP không lệch chữ
+                margins: { top: 10, right: 10, bottom: 10, left: 10 }
             });
 
-            // Nội dung HTML hóa đơn hiển thị tiếng Việt chỉn chu trên máy in HP
             const htmlData = [{
                 type: 'html',
                 format: 'plain',
@@ -97,13 +101,12 @@ const PrinterTest = () => {
         }
     };
 
-    // Hàm test in máy Quầy Nước (Đã sửa cú pháp cấu hình khổ giấy K80 cuộn cho Xprinter)
+    // Hàm test in máy Quầy Nước K80
     const testPrintBarHTML = async () => {
         if (!isAvailable) return alert('QZ Tray chưa sẵn sàng!');
         try {
             setStatus(`⏳ Đang gửi lệnh in HTML tới máy: ${barPrinter}...`);
 
-            // Cấu hình chuẩn cho giấy in nhiệt liên tục (K80): width cố định, height tự động giãn, không tự scale to phồng chữ
             const config = qz.configs.create(barPrinter, {
                 size: { width: 80 },
                 units: 'mm',
@@ -165,13 +168,12 @@ const PrinterTest = () => {
 
     return (
         <div style={{ padding: '30px', maxWidth: '650px', margin: '40px auto', border: '1px solid #ccc', borderRadius: '8px', fontFamily: 'sans-serif' }}>
-            <h2>Xprinter  Print Test</h2>
+            <h2>Xprinter Print Test</h2>
 
             <div style={{ padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '4px', marginBottom: '20px', fontWeight: 'bold' }}>
                 Trạng thái hệ thống: <span style={{ color: isAvailable ? 'green' : 'red' }}>{status}</span>
             </div>
 
-            {/* Centralized Bar Station Toggle Card */}
             <div style={{ padding: '15px', backgroundColor: isStation ? '#e8f5e9' : '#fff3e0', border: `1px solid ${isStation ? '#81c784' : '#ffb74d'}`, borderRadius: '6px', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>

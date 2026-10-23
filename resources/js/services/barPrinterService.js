@@ -1,4 +1,5 @@
 import qz from 'qz-tray';
+import { setupQzSecurity } from './qzSecurityService';
 
 /**
  * Identify if an item has product type exactly 'drink'.
@@ -426,7 +427,8 @@ export const printDrinkTicket = async ({
     inFlightPrints.add(printKey);
 
     try {
-        // 4. Ensure connection to QZ Tray
+        // 4. Ensure connection to QZ Tray with valid security certificate and signature
+        setupQzSecurity();
         if (!qz.websocket.isActive()) {
             await qz.websocket.connect();
         }
