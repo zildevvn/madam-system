@@ -1,5 +1,5 @@
 import qz from 'qz-tray';
-import { setupQzSecurity } from './qzSecurityService';
+import { setupQzSecurity } from './qzSecurityService.js';
 
 /**
  * Identify if an item has product type exactly 'drink'.
@@ -392,7 +392,8 @@ export const printDrinkTicket = async ({
     title = 'PHIẾU PHA CHẾ',
     printerName,
     staffName = '',
-    order = null
+    order = null,
+    isReprint = false
 }) => {
     // 1. Filter only items whose product type is strictly 'drink'
     const drinkItems = items.filter(isDrinkItem);
@@ -415,10 +416,10 @@ export const printDrinkTicket = async ({
         return { success: false, reason: 'in_flight' };
     }
 
-    // 3b. Cooldown check: Prevent duplicate print within cooldown window (10s)
+    // 3b. Cooldown check: Prevent duplicate print within cooldown window (10s), unless explicitly forced via reprint
     const lastPrintedAt = recentPrints.get(printKey);
     const now = Date.now();
-    if (lastPrintedAt && (now - lastPrintedAt) < DEDUPLICATION_WINDOW_MS) {
+    if (!isReprint && lastPrintedAt && (now - lastPrintedAt) < DEDUPLICATION_WINDOW_MS) {
         console.warn('Duplicate bar print request ignored (cooldown):', printKey);
         return { success: false, reason: 'duplicate_prevented' };
     }

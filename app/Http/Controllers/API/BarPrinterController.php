@@ -7,18 +7,40 @@ use App\Models\BarPrintRequest;
 use App\Events\DrinkPrintRequested;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class BarPrinterController extends Controller
 {
     use ApiResponse;
+
     /**
-     * Get all pending bar print requests created within the last 2 hours.
+     * Stale threshold for printing requests in seconds (120s).
+     */
+    const STALE_TIMEOUT_SECONDS = 120;
+
+    /**
+     * Get all pending or stale-printing bar print requests created within the last 2 hours.
      * Used by POS when coming online or reconnecting.
      */
     public function getPendingRequests()
     {
-        $requests = BarPrintRequest::where('status', 'pending')
+        $staleThreshold = now()->subSeconds(self::STALE_TIMEOUT_SECONDS);
+
+        $requests = BarPrintRequest::where(function ($query) use ($staleThreshold) {
+                $query->where('status', 'pending')
+                    ->orWhere(function ($q) use ($staleThreshold) {
+                        $q->where('status', 'printing')
+                          ->where(function ($sub) use ($staleThreshold) {
+                              $sub->where('claimed_at', '<=', $staleThreshold)
+                                  ->orWhere(function ($s) use ($staleThreshold) {
+                                      $s->whereNull('claimed_at')
+                                        ->where('updated_at', '<=', $staleThreshold);
+                                  });
+                          });
+                    });
+            })
             ->where('created_at', '>=', now()->subHours(2))
             ->orderBy('id', 'asc')
             ->get();
@@ -27,46 +49,153 @@ class BarPrinterController extends Controller
     }
 
     /**
+     * Atomically claim a bar print request before printing.
+     * Generates a new fencing token (claim_token) upon successful claim.
+     * Uses row-level DB locking to ensure that even with multiple tabs or multiple stations,
+     * only ONE station/tab successfully claims and prints.
+     */
+    public function claim(Request $request)
+    {
+        $validated = $request->validate([
+            'request_id' => 'required|string',
+        ]);
+
+        $requestId = $validated['request_id'];
+        $now = now();
+        $staleThreshold = now()->subSeconds(self::STALE_TIMEOUT_SECONDS);
+
+        return DB::transaction(function () use ($requestId, $now, $staleThreshold) {
+            $printReq = BarPrintRequest::where('request_id', $requestId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$printReq) {
+                return $this->error('Print request not found', null, 404);
+            }
+
+            // If already successfully printed, reject claim
+            if ($printReq->status === 'printed') {
+                return $this->error('Request already printed', [
+                    'status' => 'already_printed',
+                    'reason' => 'already_printed',
+                    'printed_at' => $printReq->printed_at,
+                ], 409);
+            }
+
+            // Check if claimable: 'pending', 'failed', OR stale 'printing' (> 120s)
+            $isStale = ($printReq->status === 'printing' && (
+                ($printReq->claimed_at && $printReq->claimed_at <= $staleThreshold) ||
+                (!$printReq->claimed_at && $printReq->updated_at <= $staleThreshold)
+            ));
+
+            if ($printReq->status === 'pending' || $printReq->status === 'failed' || $isStale) {
+                $claimToken = (string) Str::uuid();
+
+                $printReq->update([
+                    'status' => 'printing',
+                    'claimed_at' => $now,
+                    'claim_token' => $claimToken,
+                ]);
+
+                return $this->success([
+                    'request_id' => $printReq->request_id,
+                    'status' => 'printing',
+                    'claimed_at' => $now->toISOString(),
+                    'claim_token' => $claimToken,
+                ], 'Request claimed successfully');
+            }
+
+            // Currently claimed by another active station/tab
+            return $this->error('Request is already claimed by another station', [
+                'status' => 'claimed_by_another_station',
+                'reason' => 'claimed_by_another_station',
+                'claimed_at' => $printReq->claimed_at ? $printReq->claimed_at->toISOString() : null,
+            ], 409);
+        });
+    }
+
+    /**
      * Acknowledge the print result from the designated POS Bar printer.
+     * Enforces fencing token: claim_token must match the current database value.
+     * Rejects acknowledgment if token is missing, wrong, or superseded by another station.
      */
     public function acknowledge(Request $request)
     {
         $validated = $request->validate([
             'request_id' => 'required|string',
+            'claim_token' => 'required|string',
             'status' => 'required|string|in:printed,failed',
-            'error_message' => 'nullable|string'
+            'error_message' => 'nullable|string',
         ]);
 
-        $printReq = BarPrintRequest::where('request_id', $validated['request_id'])->first();
+        $requestId = $validated['request_id'];
+        $claimToken = $validated['claim_token'];
 
-        if (!$printReq) {
-            return $this->error('Print request not found', null, 404);
-        }
+        return DB::transaction(function () use ($validated, $requestId, $claimToken) {
+            $printReq = BarPrintRequest::where('request_id', $requestId)
+                ->lockForUpdate()
+                ->first();
 
-        $updateData = [
-            'status' => $validated['status'],
-            'error_message' => $validated['error_message'] ?? null
-        ];
+            if (!$printReq) {
+                return $this->error('Print request not found', null, 404);
+            }
 
-        if ($validated['status'] === 'printed') {
-            $updateData['printed_at'] = now();
-        }
+            // Fencing token check: token must match exactly
+            if (empty($printReq->claim_token) || $printReq->claim_token !== $claimToken) {
+                return $this->error('Claim token is invalid or has been superseded by another station', [
+                    'status' => 'claim_superseded',
+                    'reason' => 'token_mismatch',
+                    'current_status' => $printReq->status,
+                ], 409);
+            }
 
-        $printReq->update($updateData);
+            $updateData = [
+                'status' => $validated['status'],
+                'error_message' => $validated['error_message'] ?? null,
+            ];
 
-        return $this->success($printReq, 'Print request status updated');
+            if ($validated['status'] === 'printed') {
+                $updateData['printed_at'] = now();
+            }
+
+            $printReq->update($updateData);
+
+            return $this->success($printReq, 'Print request status updated');
+        });
     }
 
     /**
-     * Manually trigger re-broadcast of a print request if staff needs reprint.
+     * Manually trigger reprint of a print request if staff needs reprint.
+     * Creates a new BarPrintRequest record with a distinct request_id linked to the original order,
+     * ensuring cache-free processing on the printer station without needing a browser reload.
      */
     public function reprint($id)
     {
-        $printReq = BarPrintRequest::findOrFail($id);
-        $printReq->update(['status' => 'pending']);
+        $originalReq = is_numeric($id)
+            ? BarPrintRequest::find($id)
+            : BarPrintRequest::where('request_id', $id)->first();
 
-        broadcast(new DrinkPrintRequested($printReq->toArray()));
+        if (!$originalReq) {
+            return $this->error('Print request not found', null, 404);
+        }
 
-        return $this->success($printReq, 'Print request re-queued for printing');
+        // Generate a new distinct request_id linked to the order
+        $newRequestId = 'pr-rep-' . $originalReq->order_id . '-' . round(microtime(true) * 1000) . '-' . Str::random(4);
+
+        $newPrintReq = BarPrintRequest::create([
+            'request_id' => $newRequestId,
+            'order_id' => $originalReq->order_id,
+            'table_name' => $originalReq->table_name,
+            'table_id' => $originalReq->table_id,
+            'title' => $originalReq->title,
+            'items' => $originalReq->items,
+            'order_note' => $originalReq->order_note,
+            'staff_name' => $originalReq->staff_name,
+            'status' => 'pending',
+        ]);
+
+        broadcast(new DrinkPrintRequested($newPrintReq->toArray()));
+
+        return $this->success($newPrintReq, 'Print request re-queued for printing');
     }
 }
