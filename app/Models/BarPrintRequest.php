@@ -19,12 +19,15 @@ class BarPrintRequest extends Model
         'order_note',
         'staff_name',
         'status',
+        'claimed_at',
+        'claim_token',
         'printed_at',
         'error_message',
     ];
 
     protected $casts = [
         'items' => 'array',
+        'claimed_at' => 'datetime',
         'printed_at' => 'datetime',
     ];
 

@@ -48,6 +48,7 @@ Route::middleware('web')->group(function () {
 
     // Centralized Bar Printer Management
     Route::get('/bar-printer/pending', [\App\Http\Controllers\API\BarPrinterController::class, 'getPendingRequests']);
+    Route::post('/bar-printer/claim', [\App\Http\Controllers\API\BarPrinterController::class, 'claim']);
     Route::post('/bar-printer/acknowledge', [\App\Http\Controllers\API\BarPrinterController::class, 'acknowledge']);
     Route::post('/bar-printer/reprint/{id}', [\App\Http\Controllers\API\BarPrinterController::class, 'reprint']);
 });
