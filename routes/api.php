@@ -94,7 +94,6 @@ Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 // Printer debug tools
 Route::get('/debug/printer', [DebugController::class, 'checkPrinter']);
 Route::get('/debug/broadcast', [DebugController::class, 'sendTestBroadcast']);
-Route::get('/debug/qz-diagnostic', [DebugController::class, 'qzDiagnostic']);
 
 // QZ Tray Message Signing (Silent Printing)
 Route::post('/qz/sign', [\App\Http\Controllers\QzController::class, 'sign'])
