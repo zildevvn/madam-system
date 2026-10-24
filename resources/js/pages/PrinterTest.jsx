@@ -31,9 +31,10 @@ const PrinterTest = () => {
 
         initQZ();
 
-        // Cleanup: Đóng kết nối khi rời khỏi Component
+        // Cleanup: Đóng kết nối khi rời khỏi Component (chỉ đóng nếu thiết bị KHÔNG phải là trạm in Bar)
         return () => {
-            if (qz.websocket.isActive()) {
+            const isStation = typeof localStorage !== 'undefined' && localStorage.getItem('is_bar_printer_station') === 'true';
+            if (qz.websocket.isActive() && !isStation) {
                 qz.websocket.disconnect().catch(console.error);
             }
         };

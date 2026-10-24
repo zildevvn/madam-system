@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import axios from 'axios';
+import qz from 'qz-tray';
 import { printDrinkTicket, isBarPrinterStation } from '../services/barPrinterService.js';
+import { setupQzSecurity } from '../services/qzSecurityService.js';
 
 // Set of request IDs currently processing or processed to prevent duplicate prints within the tab
 const processedRequestIds = new Set();
@@ -199,31 +201,40 @@ export const useBarPrinterListener = () => {
                             const ackData = ackErr.response?.data?.data || ackErr.response?.data || {};
                             if (ackStatus === 409 && (ackData.status === 'claim_superseded' || ackData.reason === 'token_mismatch')) {
                                 console.warn('[BarPrinter] Acknowledge rejected (claim superseded by another station):', reqId);
+                            } else if (ackStatus === 422) {
+                                console.error('[BarPrinter] Acknowledge validation error (422):', ackErr.response?.data);
                             } else {
                                 console.error('[BarPrinter] Failed to acknowledge printed status:', ackErr);
                             }
                         }
                     } else if (result.reason !== 'in_flight') {
                         try {
+                            const errorMsg = String(result.error || result.reason || 'Unknown error').substring(0, 1000);
                             await axios.post('/api/bar-printer/acknowledge', {
                                 request_id: reqId,
                                 claim_token: claimToken,
                                 status: 'failed',
-                                error_message: result.error || result.reason || 'Unknown error'
+                                error_message: errorMsg
                             });
                         } catch (ackErr) {
-                            console.error('[BarPrinter] Failed to acknowledge failed status:', ackErr);
+                            const ackStatus = ackErr.response?.status;
+                            if (ackStatus === 422) {
+                                console.error('[BarPrinter] Acknowledge failed validation error (422):', ackErr.response?.data);
+                            } else {
+                                console.error('[BarPrinter] Failed to acknowledge failed status:', ackErr);
+                            }
                         }
                     }
                 } catch (err) {
                     console.error('[BarPrinter] Exception during print execution:', err);
                     if (claimToken) {
                         try {
+                            const errorMsg = String(err?.message || err || 'Unknown exception').substring(0, 1000);
                             await axios.post('/api/bar-printer/acknowledge', {
                                 request_id: reqId,
                                 claim_token: claimToken,
                                 status: 'failed',
-                                error_message: err?.message || String(err)
+                                error_message: errorMsg
                             });
                         } catch (ackErr) {
                             console.error('[BarPrinter] Failed to acknowledge exception status:', ackErr);
@@ -255,10 +266,20 @@ export const useBarPrinterListener = () => {
             }
         };
 
-        // 1. Catch-up on mount if designated as bar printer
+        // 1. Proactively configure QZ Tray security & connection on mount if designated Bar Station
+        if (isBarPrinterStation()) {
+            setupQzSecurity();
+            if (!qz.websocket.isActive()) {
+                qz.websocket.connect().catch((err) => {
+                    console.warn('[BarPrinter] Initial QZ Tray connection failed on mount:', err);
+                });
+            }
+        }
+
+        // 2. Catch-up on mount if designated as bar printer
         fetchPendingRequests();
 
-        // 2. Periodic catch-up polling every 60 seconds to recover any stale or missed requests
+        // 3. Periodic catch-up polling every 60 seconds to recover any stale or missed requests
         const intervalId = setInterval(() => {
             fetchPendingRequests();
         }, 60000);
