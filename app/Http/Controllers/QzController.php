@@ -32,34 +32,55 @@ class QzController extends Controller
                     ->header('Content-Type', 'text/plain');
             }
 
-            // 2. Đường dẫn an toàn tới file khóa bí mật (Private Key)
-            $keyPath = storage_path('app/qz/private-key.pem');
-
-            // Chẩn đoán an toàn: không ghi nội dung private key vào log
-            $fileExists = file_exists($keyPath);
-            $isReadable = $fileExists && is_readable($keyPath);
-            $isLink = is_link($keyPath);
-
-            // Phân biệt rõ ràng Lỗi 1: File không tồn tại tại đường dẫn runtime
-            if (!$fileExists) {
-                Log::error('QZ Signing: Private key file not found.', [
-                    'resolved_path' => $keyPath,
-                    'is_symlink'    => $isLink,
-                    'parent_dir'    => dirname($keyPath),
-                    'parent_exists' => is_dir(dirname($keyPath)),
-                    'base_path'     => base_path(),
+            // 2. Tìm đường dẫn an toàn tới file khóa bí mật (Private Key)
+            $customPath = env('QZ_PRIVATE_KEY_PATH');
+            if (!empty($customPath)) {
+                $candidatePaths = [$customPath];
+            } else {
+                $candidatePaths = array_unique([
+                    storage_path('app/qz/private-key.pem'),
+                    storage_path('app/private/qz/private-key.pem'),
+                    storage_path('private-key.pem'),
+                    base_path('storage/app/qz/private-key.pem'),
                 ]);
-
-                return response('Private key file not found or not readable', 500)
-                    ->header('Content-Type', 'text/plain');
             }
 
-            // Phân biệt rõ ràng Lỗi 2: File tồn tại nhưng không có quyền đọc
-            if (!$isReadable) {
+            $keyPath = null;
+            foreach ($candidatePaths as $candidate) {
+                clearstatcache(true, $candidate);
+                if (file_exists($candidate) && is_readable($candidate)) {
+                    $keyPath = $candidate;
+                    break;
+                }
+            }
+
+            // Nếu không tìm thấy file đọc được, dùng đường dẫn mặc định để chẩn đoán nguyên nhân
+            if (!$keyPath) {
+                $primaryPath = $customPath ?: storage_path('app/qz/private-key.pem');
+                clearstatcache(true, $primaryPath);
+                $fileExists = file_exists($primaryPath);
+                $isLink = is_link($primaryPath);
+
+                // Phân biệt rõ ràng Lỗi 1: File không tồn tại tại đường dẫn runtime
+                if (!$fileExists) {
+                    Log::error('QZ Signing: Private key file not found.', [
+                        'primary_path'    => $primaryPath,
+                        'is_symlink'      => $isLink,
+                        'parent_dir'      => dirname($primaryPath),
+                        'parent_exists'   => is_dir(dirname($primaryPath)),
+                        'base_path'       => base_path(),
+                        'checked_paths'   => $candidatePaths,
+                    ]);
+
+                    return response('Private key file not found or not readable', 500)
+                        ->header('Content-Type', 'text/plain');
+                }
+
+                // Phân biệt rõ ràng Lỗi 2: File tồn tại nhưng không có quyền đọc
                 Log::error('QZ Signing: Private key file exists but is not readable.', [
-                    'resolved_path' => $keyPath,
-                    'permissions'   => substr(sprintf('%o', @fileperms($keyPath)), -4),
-                    'file_owner'    => @fileowner($keyPath),
+                    'primary_path'  => $primaryPath,
+                    'permissions'   => substr(sprintf('%o', @fileperms($primaryPath)), -4),
+                    'file_owner'    => @fileowner($primaryPath),
                     'process_uid'   => function_exists('posix_geteuid') ? posix_geteuid() : null,
                 ]);
 

@@ -119,4 +119,66 @@ class QzSigningTest extends TestCase
         $response->assertStatus(422);
         $this->assertStringContainsString('exceeds maximum allowed length', $response->getContent());
     }
+
+    /**
+     * TC-06: Request không xác thực gửi Header Accept: text/plain trả về JSON 401 chứ không chuyển hướng về route login.
+     */
+    public function test_unauthenticated_request_with_text_plain_accept_header_returns_json_401(): void
+    {
+        $response = $this->withHeader('Accept', 'text/plain')
+            ->post('/api/qz/sign', [
+                'request' => 'some_challenge',
+            ]);
+
+        $response->assertStatus(401);
+        $this->assertStringContainsString('Unauthenticated', $response->getContent());
+    }
+
+    /**
+     * TC-07: Xác thực ký số thành công khi Private Key được chỉ định qua biến môi trường QZ_PRIVATE_KEY_PATH.
+     */
+    public function test_signing_with_custom_key_path_via_env(): void
+    {
+        $user = $this->createStaffUser();
+        $keyPath = storage_path('app/qz/private-key.pem');
+
+        putenv("QZ_PRIVATE_KEY_PATH={$keyPath}");
+        $_ENV['QZ_PRIVATE_KEY_PATH'] = $keyPath;
+
+        try {
+            $response = $this->actingAs($user, 'sanctum')->postJson('/api/qz/sign', [
+                'request' => 'test_custom_path',
+            ]);
+
+            $response->assertStatus(200);
+            $this->assertNotEmpty($response->getContent());
+        } finally {
+            putenv('QZ_PRIVATE_KEY_PATH');
+            unset($_ENV['QZ_PRIVATE_KEY_PATH']);
+        }
+    }
+
+    /**
+     * TC-08: Trả về HTTP 500 khi đường dẫn private key không tồn tại.
+     */
+    public function test_missing_key_file_returns_500(): void
+    {
+        $user = $this->createStaffUser();
+        $nonExistentPath = storage_path('app/qz/non_existent_key.pem');
+
+        putenv("QZ_PRIVATE_KEY_PATH={$nonExistentPath}");
+        $_ENV['QZ_PRIVATE_KEY_PATH'] = $nonExistentPath;
+
+        try {
+            $response = $this->actingAs($user, 'sanctum')->postJson('/api/qz/sign', [
+                'request' => 'test_missing_file',
+            ]);
+
+            $response->assertStatus(500);
+            $this->assertStringContainsString('Private key file not found or not readable', $response->getContent());
+        } finally {
+            putenv('QZ_PRIVATE_KEY_PATH');
+            unset($_ENV['QZ_PRIVATE_KEY_PATH']);
+        }
+    }
 }

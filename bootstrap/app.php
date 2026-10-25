@@ -17,12 +17,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
         ]);
 
+        $middleware->redirectGuestsTo(fn (\Illuminate\Http\Request $request) => $request->is('api/*') ? null : (\Illuminate\Support\Facades\Route::has('login') ? route('login') : null));
+
         $middleware->alias([
             'order.export.auth' => \App\Http\Middleware\AuthorizeOrderExport::class,
             'external.api'      => \App\Http\Middleware\ExternalApiAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->shouldRenderJsonWhen(function (\Illuminate\Http\Request $request, \Throwable $e) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
     })->create();
 
