@@ -17,6 +17,7 @@ use App\Http\Controllers\API\PartnerCompanyController;
 use App\Http\Controllers\API\SystemSettingController;
 // use App\Http\Controllers\API\External\OrderController as ExternalOrderController;
 use App\Http\Controllers\API\V1\OrderController as ExternalOrderController;
+use App\Http\Controllers\API\V1\OrderItemController as ExternalOrderItemController;
 
 // Same-domain or stateless API routes
 Route::get('/tables', [TableController::class, 'index']);
@@ -152,4 +153,7 @@ Route::prefix('v1')
         Route::get('/orders/{order}', [ExternalOrderController::class, 'show']);
         Route::delete('/orders/{order}', [ExternalOrderController::class, 'destroy']);
         Route::delete('/orders', [ExternalOrderController::class, 'bulkDestroy']);
+
+        Route::get('/orders/{order}/items', [ExternalOrderItemController::class, 'index']);
+        Route::delete('/orders/{order}/items', [ExternalOrderItemController::class, 'bulkDestroy']);
     });
