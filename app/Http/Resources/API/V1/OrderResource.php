@@ -27,6 +27,7 @@ class OrderResource extends JsonResource
 
             'subtotal' => $this->subtotal,
             'total_price' => $this->total_price,
+            'cash_amount' => $this->getCashAmount(),
 
             'discount_type' => $this->discount_type,
             'discount_value' => $this->discount_value,
@@ -101,5 +102,33 @@ class OrderResource extends JsonResource
                 )->values()
             ),
         ];
+    }
+
+    /**
+     * Calculate the actual cash portion for this order.
+     * - If payment records exist: sum only cash payments, returning 0 if none or total cash <= 0 (never fallback to total_price).
+     * - If no payment records exist: fallback to total_price only when order payment_method is cash.
+     * - Result is guaranteed to be non-negative.
+     */
+    private function getCashAmount(): int
+    {
+        $payments = $this->relationLoaded('payments') ? $this->payments : $this->payments()->get();
+
+        if ($payments && $payments->isNotEmpty()) {
+            $cashSum = (int) $payments
+                ->filter(function ($payment) {
+                    return strtolower(trim((string) ($payment->payment_method ?? ''))) === 'cash';
+                })
+                ->sum('amount');
+
+            return max(0, $cashSum);
+        }
+
+        $orderPaymentMethod = strtolower(trim((string) ($this->payment_method ?? '')));
+        if ($orderPaymentMethod === 'cash') {
+            return max(0, (int) $this->total_price);
+        }
+
+        return 0;
     }
 }

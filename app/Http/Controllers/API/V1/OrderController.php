@@ -26,8 +26,17 @@ class OrderController extends Controller
 
 
         $query = Order::query()
-            ->where('payment_method', 'cash')
             ->where('status', 'completed')
+            ->where(function ($q) {
+                $q->where('payment_method', 'cash')
+                    ->orWhere(function ($splitQ) {
+                        $splitQ->where('payment_method', 'split')
+                            ->whereHas('payments', function ($payQ) {
+                                $payQ->where('payment_method', 'cash')
+                                    ->where('amount', '>', 0);
+                            });
+                    });
+            })
             ->with([
                 'items',
                 'payments',
