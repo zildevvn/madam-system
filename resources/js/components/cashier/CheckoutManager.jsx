@@ -31,6 +31,7 @@ const checkoutReducer = (state, action) => {
                     paymentMethod: 'cash',
                     payments: [],
                     showExtras: false,
+                    requiresVat: Boolean(action.payload.order?.requires_vat || false),
                     initializedOrderId: action.payload.orderId
                 }
             };
@@ -51,6 +52,7 @@ const checkoutReducer = (state, action) => {
                         amount: Number(p.amount)
                     })),
                     showExtras: true,
+                    requiresVat: Boolean(action.payload.order?.requires_vat || false),
                     discountType: action.payload.order.discount_type || 'fixed',
                     discountValue: action.payload.order.discount_value || 0,
                     cashierNote: action.payload.order.cashier_note || '',
@@ -478,6 +480,11 @@ const CheckoutManager = ({
             onUpdatePayments: (payments) =>
                 updateContext(activeModalId, {
                     payments: payments
+                }),
+
+            onUpdateRequiresVat: (requiresVat) =>
+                updateContext(activeModalId, {
+                    requiresVat: Boolean(requiresVat)
                 })
         };
     }, [activeModalId, updateContext]);
@@ -558,6 +565,7 @@ const CheckoutManager = ({
                 paymentMethod={ctx?.paymentMethod || 'cash'}
                 payments={ctx?.payments || []}
                 showExtras={ctx?.showExtras || false}
+                requiresVat={ctx?.requiresVat || false}
                 {...modalHandlers}
             />
 

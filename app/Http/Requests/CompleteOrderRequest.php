@@ -23,6 +23,7 @@ class CompleteOrderRequest extends FormRequest
             'discount_type' => 'nullable|string|in:fixed,percent',
             'discount_value' => 'nullable|numeric|min:0',
             'cashier_note' => 'nullable|string|max:255',
+            'requires_vat' => 'nullable|boolean',
             'sibling_order_ids' => 'nullable|array',
             'sibling_order_ids.*' => 'exists:orders,id'
         ];

@@ -34,6 +34,7 @@ class OrderResource extends JsonResource
             'discount_amount' => $this->discount_amount,
 
             'payment_method' => $this->payment_method,
+            'requires_vat' => (bool) ($this->requires_vat ?? false),
 
             'cashier_note' => $this->cashier_note,
             'order_note' => $this->order_note,

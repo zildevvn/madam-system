@@ -32,6 +32,7 @@ class Order extends Model
         'discount_value',
         'discount_amount',
         'payment_method',
+        'requires_vat',
         'cashier_note',
         'order_note',
         'guest_count',
@@ -39,7 +40,12 @@ class Order extends Model
         'completed_at',
     ];
 
+    protected $attributes = [
+        'requires_vat' => false,
+    ];
+
     protected $casts = [
+        'requires_vat' => 'boolean',
         'completed_at' => 'datetime',
         'printed_at' => 'datetime',
     ];

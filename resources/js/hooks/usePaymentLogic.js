@@ -22,6 +22,7 @@ export const usePaymentLogic = ({
     discountType,
     discountValue,
     cashierNote,
+    requiresVat = false,
     isHistoryEdit = false,
     paymentMethod,
     setPaymentMethod,
@@ -234,6 +235,7 @@ export const usePaymentLogic = ({
                     discount_type: discountType,
                     discount_value: discountValue,
                     cashier_note: cashierNote,
+                    requires_vat: Boolean(requiresVat),
                     sibling_order_ids: relatedIds
                 });
             }
@@ -256,6 +258,7 @@ export const usePaymentLogic = ({
         discountType,
         discountValue,
         cashierNote,
+        requiresVat,
         payments,
         onPaymentSuccess,
         isHistoryEdit

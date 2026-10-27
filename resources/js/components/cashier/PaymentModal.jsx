@@ -32,6 +32,8 @@ const PaymentModal = ({
     onUpdatePayments,
     showExtras = false,
     onUpdateShowExtras,
+    requiresVat = false,
+    onUpdateRequiresVat,
     isHistoryEdit = false,
     isLoading = false,
     onPreparePrint
@@ -72,6 +74,7 @@ const PaymentModal = ({
         discountType,
         discountValue,
         cashierNote,
+        requiresVat,
         paymentMethod,
         setPaymentMethod: onUpdatePaymentMethod,
         payments,
@@ -230,6 +233,8 @@ const PaymentModal = ({
                     selectedSplitItemsCount={selectedSplitItems.length}
                     handleSplitOrder={handleSplitOrder}
                     handlePrintInvoice={handlePrintInvoice}
+                    requiresVat={requiresVat}
+                    onUpdateRequiresVat={onUpdateRequiresVat}
                 />
             </div>
 

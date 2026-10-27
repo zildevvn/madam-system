@@ -64,9 +64,14 @@ class OrderPaymentService
 
                 $finalOrderPrice = max(0, $o->total_price - $orderDiscount);
 
+                $primaryRequiresVat = array_key_exists('requires_vat', $data)
+                    ? filter_var($data['requires_vat'], FILTER_VALIDATE_BOOLEAN)
+                    : (bool) $o->requires_vat;
+
                 $updateData = [
                     'status' => Order::STATUS_COMPLETED,
                     'payment_method' => $data['payment_method'] ?? null,
+                    'requires_vat' => $isPrimary ? $primaryRequiresVat : false,
                     'cashier_id' => $data['cashier_id'] ?? null,
                     'cashier_note' => $data['cashier_note'] ?? $o->cashier_note,
                     'subtotal' => $o->total_price,

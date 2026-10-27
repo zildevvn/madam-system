@@ -36,7 +36,9 @@ const PaymentModalFooter = ({
     setIsSplitMode,
     selectedSplitItemsCount = 0,
     handleSplitOrder,
-    handlePrintInvoice
+    handlePrintInvoice,
+    requiresVat = false,
+    onUpdateRequiresVat
 }) => {
     const hasAnyDiscount = discountAmount > 0 || itemDiscountsTotal > 0;
 
@@ -304,6 +306,18 @@ const PaymentModalFooter = ({
                         <Icon name="grid" size={14} />
                         Tách hóa đơn
                     </button>
+                )}
+                {!isSplitMode && step === 2 && !isHistoryEdit && (
+                    <label className="flex items-center gap-2.5 px-3 py-2 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors select-none">
+                        <input
+                            type="checkbox"
+                            checked={Boolean(requiresVat)}
+                            onChange={(e) => onUpdateRequiresVat?.(e.target.checked)}
+                            disabled={isProcessing}
+                            className="w-4 h-4 text-orange-500 rounded border-gray-300 focus:ring-orange-400 cursor-pointer"
+                        />
+                        <span className="text-xs font-bold text-gray-800">Xuất hóa đơn VAT</span>
+                    </label>
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
