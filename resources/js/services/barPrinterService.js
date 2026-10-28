@@ -10,8 +10,10 @@ import { setupQzSecurity } from './qzSecurityService.js';
  */
 export const isDrinkItem = (item) => {
     if (!item) return false;
-    const type = item.product?.type || item.type;
-    return type === 'drink';
+    const rawType = item.product?.type || item.type;
+    if (!rawType || typeof rawType !== 'string') return false;
+    const type = rawType.trim().toLowerCase();
+    return type === 'drink' || type === 'packaged_drink';
 };
 
 /**
@@ -385,6 +387,7 @@ const DEDUPLICATION_WINDOW_MS = 10000;
  * @returns {Promise<{ success: boolean, reason?: string, error?: any }>}
  */
 export const printDrinkTicket = async ({
+    requestId,
     orderId,
     tableName,
     items = [],
@@ -395,25 +398,28 @@ export const printDrinkTicket = async ({
     order = null,
     isReprint = false
 }) => {
-    // 1. Filter only items whose product type is strictly 'drink'
+    // 1. Filter only items whose product type is strictly 'drink' or 'packaged_drink'
     const drinkItems = items.filter(isDrinkItem);
 
     // 2. If no drink items exist, do not trigger printing
     if (drinkItems.length === 0) {
-        return { success: false, reason: 'no_drinks' };
+        return { success: false, reason: 'no_drinks', requestId };
     }
 
     const resolvedStaffName = staffName || order?.server?.name || order?.staffName || '';
     const resolvedOrderId = orderId || order?.id || 'new';
 
-    // 3. Deduplication check: prevent concurrent calls and duplicate print within 10s
+    // 3. Deduplication check: prevent concurrent calls and duplicate print within 10s.
+    // If requestId is provided, key deduplication on requestId to ensure different requests print independently.
     const itemsSignature = drinkItems.map(i => `${i.id || i.product_id}:${i.quantity}:${i.note || ''}`).join('|');
-    const printKey = `${resolvedOrderId}-${tableName || ''}-${itemsSignature}-${title}`;
+    const printKey = requestId
+        ? `req-${requestId}`
+        : `${resolvedOrderId}-${tableName || ''}-${itemsSignature}-${title}`;
 
     // 3a. In-flight check: Prevent concurrent or double-click calls for the exact same ticket
     if (inFlightPrints.has(printKey)) {
         console.warn('Bar print request already in-flight, ignoring concurrent call:', printKey);
-        return { success: false, reason: 'in_flight' };
+        return { success: false, reason: 'in_flight', requestId };
     }
 
     // 3b. Cooldown check: Prevent duplicate print within cooldown window (10s), unless explicitly forced via reprint
@@ -421,11 +427,19 @@ export const printDrinkTicket = async ({
     const now = Date.now();
     if (!isReprint && lastPrintedAt && (now - lastPrintedAt) < DEDUPLICATION_WINDOW_MS) {
         console.warn('Duplicate bar print request ignored (cooldown):', printKey);
-        return { success: false, reason: 'duplicate_prevented' };
+        return {
+            success: false,
+            reason: 'duplicate_prevented',
+            requestId,
+            wasPrinted: Boolean(lastPrintedAt)
+        };
     }
 
     // Lock the ticket as in-flight
     inFlightPrints.add(printKey);
+
+    let timer = null;
+    let isTimedOut = false;
 
     try {
         // 4. Ensure connection to QZ Tray with valid security certificate and signature
@@ -462,8 +476,39 @@ export const printDrinkTicket = async ({
             data: html
         }];
 
-        // 7. Dispatch print job to QZ Tray
-        await qz.print(config, htmlData);
+        // 7. Dispatch print job to QZ Tray with 20s timeout
+        const printPromise = qz.print(config, htmlData);
+
+        // Suppress unhandled rejection if printPromise rejects after timeout has already won
+        printPromise.catch((lateError) => {
+            if (isTimedOut) {
+                console.warn('Lệnh in QZ Tray bị reject sau khi đã hết thời gian chờ (20s):', lateError?.message || lateError);
+            }
+        });
+
+        const timeoutPromise = new Promise((_, reject) => {
+            timer = setTimeout(() => {
+                isTimedOut = true;
+                reject(new Error('QZ_INDETERMINATE_TIMEOUT'));
+            }, 20000);
+        });
+
+        await Promise.race([printPromise, timeoutPromise]);
+
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+
+        // Late guard: if already timed out, ignore late completion
+        if (isTimedOut) {
+            return {
+                success: false,
+                reason: 'indeterminate_timeout',
+                error: 'QZ_INDETERMINATE_TIMEOUT: Print job timed out after 20s. Physical output unconfirmed.',
+                requestId
+            };
+        }
 
         // Record successful print for deduplication only after qz.print resolves
         recentPrints.set(printKey, Date.now());
@@ -475,13 +520,32 @@ export const printDrinkTicket = async ({
             }
         }
 
-        return { success: true };
+        return { success: true, requestId };
     } catch (error) {
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+
+        if (isTimedOut || error?.message === 'QZ_INDETERMINATE_TIMEOUT') {
+            console.warn('Lệnh in máy quầy nước Xprinter_Bar quá thời gian chờ (20s) - kết quả in chưa xác định:', requestId);
+            return {
+                success: false,
+                reason: 'indeterminate_timeout',
+                error: 'QZ_INDETERMINATE_TIMEOUT: Print job timed out after 20s. Physical output unconfirmed.',
+                requestId
+            };
+        }
+
         // Graceful error handling: log error without breaking caller execution
         console.error('Lỗi in máy quầy nước Xprinter_Bar via QZ Tray:', error);
-        return { success: false, error: error.message || String(error) };
+        return { success: false, error: error.message || String(error), requestId };
     } finally {
-        // Always release in-flight lock, regardless of success or failure
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+        // Always release in-flight lock, regardless of success, failure or timeout
         inFlightPrints.delete(printKey);
     }
 };

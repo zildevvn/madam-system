@@ -21,24 +21,20 @@ class BarPrinterController extends Controller
     const STALE_TIMEOUT_SECONDS = 120;
 
     /**
-     * Get all pending or stale-printing bar print requests created within the last 2 hours.
+     * Get all pending or retryable failed bar print requests created within the last 2 hours.
+     * Excludes printing requests (both active and stale) to prevent duplicate physical prints.
      * Used by POS when coming online or reconnecting.
      */
     public function getPendingRequests()
     {
-        $staleThreshold = now()->subSeconds(self::STALE_TIMEOUT_SECONDS);
-
-        $requests = BarPrintRequest::where(function ($query) use ($staleThreshold) {
+        $requests = BarPrintRequest::where(function ($query) {
                 $query->where('status', 'pending')
-                    ->orWhere(function ($q) use ($staleThreshold) {
-                        $q->where('status', 'printing')
-                          ->where(function ($sub) use ($staleThreshold) {
-                              $sub->where('claimed_at', '<=', $staleThreshold)
-                                  ->orWhere(function ($s) use ($staleThreshold) {
-                                      $s->whereNull('claimed_at')
-                                        ->where('updated_at', '<=', $staleThreshold);
-                                  });
-                          });
+                    ->orWhere(function ($qFailed) {
+                        $qFailed->where('status', 'failed')
+                                ->where(function ($sub) {
+                                    $sub->whereNull('error_message')
+                                        ->orWhere('error_message', 'not like', 'QZ_INDETERMINATE_TIMEOUT%');
+                                });
                     });
             })
             ->where('created_at', '>=', now()->subHours(2))
@@ -82,13 +78,40 @@ class BarPrinterController extends Controller
                 ], 409);
             }
 
-            // Check if claimable: 'pending', 'failed', OR stale 'printing' (> 120s)
+            // If request failed due to indeterminate timeout, reject auto-claim to prevent duplicate physical print
+            if ($printReq->status === 'failed' && \Illuminate\Support\Str::startsWith($printReq->error_message ?? '', 'QZ_INDETERMINATE_TIMEOUT')) {
+                return $this->error('Print request timed out with unconfirmed physical output. Manual reprint required.', [
+                    'status' => 'unconfirmed_timeout',
+                    'reason' => 'unconfirmed_timeout',
+                ], 409);
+            }
+
+            // If request is in printing status and stale (> 120s), reject claim as unconfirmed stale printing
             $isStale = ($printReq->status === 'printing' && (
                 ($printReq->claimed_at && $printReq->claimed_at <= $staleThreshold) ||
                 (!$printReq->claimed_at && $printReq->updated_at <= $staleThreshold)
             ));
 
-            if ($printReq->status === 'pending' || $printReq->status === 'failed' || $isStale) {
+            if ($isStale) {
+                return $this->error('Print request is in unconfirmed printing state beyond threshold. Manual inspection required.', [
+                    'status' => 'unconfirmed_stale_printing',
+                    'reason' => 'unconfirmed_stale_printing',
+                    'claimed_at' => $printReq->claimed_at ? $printReq->claimed_at->toISOString() : null,
+                ], 409);
+            }
+
+            // If request is currently claimed and active (printing and not stale)
+            if ($printReq->status === 'printing') {
+                return $this->error('Request is already claimed by another station', [
+                    'status' => 'claimed_by_another_station',
+                    'reason' => 'claimed_by_another_station',
+                    'claimed_at' => $printReq->claimed_at ? $printReq->claimed_at->toISOString() : null,
+                ], 409);
+            }
+
+            $isFailedRetryable = ($printReq->status === 'failed' && (!\Illuminate\Support\Str::startsWith($printReq->error_message ?? '', 'QZ_INDETERMINATE_TIMEOUT')));
+
+            if ($printReq->status === 'pending' || $isFailedRetryable) {
                 $claimToken = (string) Str::uuid();
 
                 $printReq->update([
@@ -105,11 +128,9 @@ class BarPrinterController extends Controller
                 ], 'Request claimed successfully');
             }
 
-            // Currently claimed by another active station/tab
-            return $this->error('Request is already claimed by another station', [
-                'status' => 'claimed_by_another_station',
-                'reason' => 'claimed_by_another_station',
-                'claimed_at' => $printReq->claimed_at ? $printReq->claimed_at->toISOString() : null,
+            return $this->error('Request cannot be claimed in its current status', [
+                'status' => $printReq->status,
+                'reason' => 'invalid_status',
             ], 409);
         });
     }

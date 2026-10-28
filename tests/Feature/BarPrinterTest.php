@@ -354,7 +354,7 @@ class BarPrinterTest extends TestCase
         ]);
     }
 
-    public function test_station_a_superseded_by_station_b_after_stale_acknowledge_a_rejected_b_accepted()
+    public function test_station_b_cannot_claim_stale_request_of_station_a_and_station_a_can_still_acknowledge()
     {
         // 1. Station A claims request at T=0
         $printReq = BarPrintRequest::create([
@@ -379,42 +379,30 @@ class BarPrinterTest extends TestCase
             'updated_at' => now()->subSeconds(130)
         ]);
 
-        // 3. Station B comes in and claims the stale request
+        // 3. Station B comes in and attempts to claim the stale request - MUST be rejected with 409
         $resB = $this->postJson('/api/bar-printer/claim', [
             'request_id' => 'fencing-test-001'
         ]);
-        $resB->assertStatus(200);
-        $tokenB = $resB->json('data.claim_token');
-        $this->assertNotEmpty($tokenB);
-        $this->assertNotEquals($tokenA, $tokenB);
+        $resB->assertStatus(409);
+        $resB->assertJsonFragment([
+            'status' => 'unconfirmed_stale_printing',
+            'reason' => 'unconfirmed_stale_printing'
+        ]);
 
-        // 4. Station A lagged behind (e.g. slow spooler) and now tries to acknowledge with tokenA
+        // Verify status and token in DB were NOT overwritten by Station B
+        $printReq->refresh();
+        $this->assertEquals('printing', $printReq->status);
+        $this->assertEquals($tokenA, $printReq->claim_token);
+
+        // 4. Station A finishes printing (e.g. slow spooler or network recovered) and acknowledges with tokenA
         $ackA = $this->postJson('/api/bar-printer/acknowledge', [
             'request_id' => 'fencing-test-001',
             'claim_token' => $tokenA,
             'status' => 'printed'
         ]);
 
-        // Station A's acknowledge must be REJECTED because tokenA was superseded by tokenB
-        $ackA->assertStatus(409);
-        $ackA->assertJsonFragment([
-            'status' => 'claim_superseded'
-        ]);
-
-        // Verify status in DB was not overwritten by Station A
-        $printReq->refresh();
-        $this->assertEquals('printing', $printReq->status);
-        $this->assertEquals($tokenB, $printReq->claim_token);
-
-        // 5. Station B finishes printing and acknowledges with tokenB
-        $ackB = $this->postJson('/api/bar-printer/acknowledge', [
-            'request_id' => 'fencing-test-001',
-            'claim_token' => $tokenB,
-            'status' => 'printed'
-        ]);
-
-        // Station B's acknowledge must SUCCEED
-        $ackB->assertStatus(200);
+        // Station A's acknowledge must SUCCEED because tokenA was never superseded
+        $ackA->assertStatus(200);
 
         $printReq->refresh();
         $this->assertEquals('printed', $printReq->status);
@@ -457,7 +445,7 @@ class BarPrinterTest extends TestCase
         $this->assertEquals('printing', $printReq->status);
     }
 
-    public function test_claim_stale_printing_request_succeeds_after_120s_timeout()
+    public function test_claim_stale_printing_request_rejected_with_409_unconfirmed_stale_printing()
     {
         // Request was claimed 130 seconds ago by a station that crashed
         $printReq = BarPrintRequest::create([
@@ -472,24 +460,23 @@ class BarPrinterTest extends TestCase
             'claim_token' => 'crashed-station-token'
         ]);
 
-        // New station comes in to rescue the stale request
+        // Another station attempts to claim the stale request - MUST be rejected with 409
         $response = $this->postJson('/api/bar-printer/claim', [
             'request_id' => 'claim-test-004'
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(409);
         $response->assertJsonFragment([
-            'status' => 'printing',
-            'request_id' => 'claim-test-004'
+            'status' => 'unconfirmed_stale_printing',
+            'reason' => 'unconfirmed_stale_printing'
         ]);
 
         $printReq->refresh();
         $this->assertEquals('printing', $printReq->status);
-        $this->assertNotEquals('crashed-station-token', $printReq->claim_token);
-        $this->assertTrue($printReq->claimed_at->gt(now()->subSeconds(5)));
+        $this->assertEquals('crashed-station-token', $printReq->claim_token);
     }
 
-    public function test_get_pending_requests_includes_stale_printing_requests()
+    public function test_get_pending_requests_excludes_stale_printing_requests()
     {
         // 1. Fresh pending
         BarPrintRequest::create([
@@ -511,7 +498,7 @@ class BarPrinterTest extends TestCase
             'claim_token' => 'active-token'
         ]);
 
-        // 3. Stale printing (claimed 130s ago) - SHOULD be included for recovery
+        // 3. Stale printing (claimed 130s ago) - MUST NOT be included to prevent duplicate physical prints
         BarPrintRequest::create([
             'request_id' => 'printing-stale',
             'order_id' => 203,
@@ -527,7 +514,7 @@ class BarPrinterTest extends TestCase
 
         $returnedReqIds = collect($response->json('data'))->pluck('request_id')->toArray();
         $this->assertContains('pending-fresh', $returnedReqIds);
-        $this->assertContains('printing-stale', $returnedReqIds);
+        $this->assertNotContains('printing-stale', $returnedReqIds);
         $this->assertNotContains('printing-active', $returnedReqIds);
     }
 
