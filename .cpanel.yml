@@ -1,19 +1,19 @@
+
 ---
-
 deployment:
-tasks:
-- export DEPLOYPATH=/home/huhwqacu/banhnamhue.com
+  tasks:
+    - export DEPLOYPATH=/home/huhwqacu/banhnamhue.com
 
-```
-- /bin/cp -R app $DEPLOYPATH
-- /bin/cp -R bootstrap $DEPLOYPATH
-- /bin/cp -R config $DEPLOYPATH
-- /bin/cp -R database $DEPLOYPATH
-- /bin/cp -R public $DEPLOYPATH
-- /bin/cp -R resources $DEPLOYPATH
-- /bin/cp -R routes $DEPLOYPATH
-- /bin/cp -R vendor $DEPLOYPATH
+    - /bin/cp -R app $DEPLOYPATH
+    - /bin/cp -R bootstrap $DEPLOYPATH
+    - /bin/cp -R config $DEPLOYPATH
+    - /bin/cp -R database $DEPLOYPATH
+    - /bin/cp -R public $DEPLOYPATH
+    - /bin/cp -R resources $DEPLOYPATH
+    - /bin/cp -R routes $DEPLOYPATH
+    - /bin/cp -R vendor $DEPLOYPATH
 
-- /bin/cp artisan $DEPLOYPATH
-- /bin/cp .env $DEPLOYPATH
-```
+    - /bin/cp artisan $DEPLOYPATH
+    - /bin/cp .env $DEPLOYPATH
+
+    - 'if [ -L "$DEPLOYPATH/public/storage" ] && [ "$(readlink -f "$DEPLOYPATH/public/storage")" = "$(readlink -f "$DEPLOYPATH/storage/app/public")" ]; then echo "Storage link OK"; elif [ ! -e "$DEPLOYPATH/public/storage" ] && [ ! -L "$DEPLOYPATH/public/storage" ]; then cd "$DEPLOYPATH" && php artisan storage:link; else echo "ERROR: public/storage exists but is not the expected symlink"; exit 1; fi'
