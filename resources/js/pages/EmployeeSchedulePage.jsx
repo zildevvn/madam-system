@@ -18,7 +18,6 @@ import ScheduleDesktopGrid from '../components/schedule/ScheduleDesktopGrid';
  */
 export default function EmployeeSchedulePage() {
     const {
-        employees,
         activeEmployees,
         roleCounts,
         leaves,

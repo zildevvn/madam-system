@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppDispatch } from '../store/hooks';
 import { updateItemStatusAsync } from '../store/slices/orderSlice';
 import { patchItemsStatus } from '../store/slices/tableSlice';
 import { useConsolidatedOrders } from '../hooks/useConsolidatedOrders';

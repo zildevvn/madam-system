@@ -48,9 +48,7 @@ const Cashier = () => {
     const [selectedDate, setSelectedDate] = useState(() => getTodayStr());
 
     const {
-        reservations,
         historyOrders,
-        isLoadingRes,
         isLoadingHistory,
         refreshAllData
     } = useCashierData(status, selectedDate);
